@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/mtd/rammtd.c
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,40 +50,42 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/fs/fs.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
 
 #ifndef CONFIG_RAMMTD_BLOCKSIZE
-#define CONFIG_RAMMTD_BLOCKSIZE 512
+#  define CONFIG_RAMMTD_BLOCKSIZE 512
 #endif
 
 #ifndef CONFIG_RAMMTD_ERASESIZE
-#define CONFIG_RAMMTD_ERASESIZE 4096
+#  define CONFIG_RAMMTD_ERASESIZE 4096
 #endif
 
 #ifndef CONFIG_RAMMTD_ERASESTATE
-#define CONFIG_RAMMTD_ERASESTATE 0xff
+#  define CONFIG_RAMMTD_ERASESTATE 0xff
 #endif
 
 #if CONFIG_RAMMTD_ERASESTATE != 0xff && CONFIG_RAMMTD_ERASESTATE != 0x00
-#error "Unsupported value for CONFIG_RAMMTD_ERASESTATE"
+#  error "Unsupported value for CONFIG_RAMMTD_ERASESTATE"
 #endif
 
 #if CONFIG_RAMMTD_BLOCKSIZE > CONFIG_RAMMTD_ERASESIZE
-#error "Must have CONFIG_RAMMTD_BLOCKSIZE <= CONFIG_RAMMTD_ERASESIZE"
+#  error "Must have CONFIG_RAMMTD_BLOCKSIZE <= CONFIG_RAMMTD_ERASESIZE"
 #endif
 
 #undef  RAMMTD_BLKPER
 #define RAMMTD_BLKPER (CONFIG_RAMMTD_ERASESIZE/CONFIG_RAMMTD_BLOCKSIZE)
 
 #if RAMMTD_BLKPER*CONFIG_RAMMTD_BLOCKSIZE != CONFIG_RAMMTD_ERASESIZE
-#error "CONFIG_RAMMTD_ERASESIZE must be an even multiple of CONFIG_RAMMTD_BLOCKSIZE"
+#  error "CONFIG_RAMMTD_ERASESIZE must be an even multiple of CONFIG_RAMMTD_BLOCKSIZE"
 #endif
 
 /****************************************************************************
@@ -109,14 +98,15 @@
  */
 
 struct ram_dev_s {
-	struct mtd_dev_s mtd;		/* MTD device */
-	FAR uint8_t *start;			/* Start of RAM */
-	size_t nblocks;				/* Number of erase blocks */
+	struct mtd_dev_s mtd;      /* MTD device */
+	FAR uint8_t     *start;    /* Start of RAM */
+	size_t           nblocks;  /* Number of erase blocks */
 };
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
+
 /* The RAM MTD driver may be useful just as it is, but another good use of
  * the RAM MTD driver is as a FLASH simulation -- to support testing of FLASH
  * based logic without having FLASH.  CONFIG_RAMMTD_FLASHSIM will add some
@@ -127,23 +117,34 @@ struct ram_dev_s {
 #ifdef CONFIG_RAMMTD_FLASHSIM
 static void *ram_write(FAR void *dest, FAR const void *src, size_t len);
 #else
-#define ram_write(dest, src, len) memcpy(dest, src, len)
+#  define ram_write(dest, src, len) memcpy(dest, src, len)
 #endif
 
 /* MTD driver methods */
 
-static int ram_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks);
-static ssize_t ram_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf);
-static ssize_t ram_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf);
-static ssize_t ram_byteread(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buf);
+static int ram_erase(FAR struct mtd_dev_s *dev,
+                     off_t startblock,
+                     size_t nblocks);
+static ssize_t ram_bread(FAR struct mtd_dev_s *dev,
+                         off_t startblock,
+                         size_t nblocks,
+                         FAR uint8_t *buf);
+static ssize_t ram_bwrite(FAR struct mtd_dev_s *dev,
+                          off_t startblock,
+                          size_t nblocks,
+                          FAR const uint8_t *buf);
+static ssize_t ram_byteread(FAR struct mtd_dev_s *dev,
+                            off_t offset,
+                            size_t nbytes, FAR uint8_t *buf);
 #ifdef CONFIG_MTD_BYTE_WRITE
-static ssize_t ram_bytewrite(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buf);
+static ssize_t ram_bytewrite(FAR struct mtd_dev_s *dev,
+                             off_t offset,
+                             size_t nbytes,
+                             FAR const uint8_t *buf);
 #endif
-static int ram_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
+static int ram_ioctl(FAR struct mtd_dev_s *dev,
+                     int cmd,
+                     unsigned long arg);
 
 /****************************************************************************
  * Private Functions
@@ -156,8 +157,8 @@ static int ram_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
 #ifdef CONFIG_RAMMTD_FLASHSIM
 static void *ram_write(FAR void *dest, FAR const void *src, size_t len)
 {
-	FAR uint8_t *pout = (FAR uint8_t *)dest;
-	FAR const uint8_t *pin = (FAR const uint8_t *)src;
+	FAR uint8_t       *pout = (FAR uint8_t *)dest;
+	FAR const uint8_t *pin  = (FAR const uint8_t *)src;
 
 	while (len-- > 0) {
 		/* Get the source and destination values */
@@ -171,18 +172,19 @@ static void *ram_write(FAR void *dest, FAR const void *src, size_t len)
 		 */
 
 #if CONFIG_RAMMTD_ERASESTATE == 0xff
-		newvalue = oldvalue & srcvalue;	/* We can only clear bits */
-#else							/* CONFIG_RAMMTD_ERASESTATE == 0x00 */
-		newvalue = oldvalue | srcvalue;	/* We can only set bits */
+		newvalue = oldvalue & srcvalue; /* We can only clear bits */
+#else /* CONFIG_RAMMTD_ERASESTATE == 0x00 */
+		newvalue = oldvalue | srcvalue; /* We can only set bits */
 #endif
 
 		/* Report any attempt to change the value of bits that are not in the
 		 * erased state.
 		 */
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG_FEATURES
 		if (newvalue != srcvalue) {
-			dbg("ERROR: Bad write: source=%02x dest=%02x result=%02x\n", srcvalue, oldvalue, newvalue);
+			_err("ERROR: Bad write: source=%02x dest=%02x result=%02x\n",
+			    srcvalue, oldvalue, newvalue);
 		}
 #endif
 
@@ -199,7 +201,8 @@ static void *ram_write(FAR void *dest, FAR const void *src, size_t len)
  * Name: ram_erase
  ****************************************************************************/
 
-static int ram_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
+static int ram_erase(FAR struct mtd_dev_s *dev, off_t startblock,
+                     size_t nblocks)
 {
 	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
 	off_t offset;
@@ -222,7 +225,7 @@ static int ram_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks
 	 */
 
 	startblock *= RAMMTD_BLKPER;
-	nblocks *= RAMMTD_BLKPER;
+	nblocks    *= RAMMTD_BLKPER;
 
 	/* Get the offset corresponding to the first block and the size
 	 * corresponding to the number of blocks.
@@ -241,7 +244,10 @@ static int ram_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks
  * Name: ram_bread
  ****************************************************************************/
 
-static ssize_t ram_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf)
+static ssize_t ram_bread(FAR struct mtd_dev_s *dev,
+                         off_t startblock,
+                         size_t nblocks,
+                         FAR uint8_t *buf)
 {
 	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
 	off_t offset;
@@ -278,7 +284,8 @@ static ssize_t ram_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbl
  * Name: ram_bwrite
  ****************************************************************************/
 
-static ssize_t ram_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf)
+static ssize_t ram_bwrite(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks, FAR const uint8_t *buf)
 {
 	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
 	off_t offset;
@@ -315,16 +322,23 @@ static ssize_t ram_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nb
  * Name: ram_byteread
  ****************************************************************************/
 
-static ssize_t ram_byteread(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buf)
+static ssize_t ram_byteread(FAR struct mtd_dev_s *dev, off_t offset,
+                            size_t nbytes, FAR uint8_t *buf)
 {
 	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
+	off_t maxoffset;
 
 	DEBUGASSERT(dev && buf);
 
-	/* Don't let read read past end of buffer */
+	/* Don't let the read exceed the size of the ram buffer */
 
-	if (offset + nbytes > priv->nblocks * CONFIG_RAMMTD_ERASESIZE) {
+	maxoffset = priv->nblocks * CONFIG_RAMMTD_ERASESIZE;
+	if (offset >= maxoffset) {
 		return 0;
+	}
+
+	if (offset + nbytes > maxoffset) {
+		nbytes = maxoffset - offset;
 	}
 
 	ram_read(buf, &priv->start[offset], nbytes);
@@ -336,18 +350,23 @@ static ssize_t ram_byteread(FAR struct mtd_dev_s *dev, off_t offset, size_t nbyt
  ****************************************************************************/
 
 #ifdef CONFIG_MTD_BYTE_WRITE
-static ssize_t ram_bytewrite(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR const uint8_t *buf)
+static ssize_t ram_bytewrite(FAR struct mtd_dev_s *dev, off_t offset,
+                             size_t nbytes, FAR const uint8_t *buf)
 {
 	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
-	off_t maxaddr;
+	off_t maxoffset;
 
 	DEBUGASSERT(dev && buf);
 
 	/* Don't let the write exceed the size of the ram buffer */
 
-	maxaddr = priv->nblocks * CONFIG_RAMMTD_ERASESIZE;
-	if (offset + nbytes > maxaddr) {
+	maxoffset = priv->nblocks * CONFIG_RAMMTD_ERASESIZE;
+	if (offset >= maxoffset) {
 		return 0;
+	}
+
+	if (offset + nbytes > maxoffset) {
+		nbytes = maxoffset - offset;
 	}
 
 	/* Then write the data to RAM */
@@ -364,36 +383,58 @@ static ssize_t ram_bytewrite(FAR struct mtd_dev_s *dev, off_t offset, size_t nby
 static int ram_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 {
 	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
-	int ret = -EINVAL;			/* Assume good command with bad parameters */
+	int ret = -EINVAL; /* Assume good command with bad parameters */
 
 	switch (cmd) {
-	case MTDIOC_GEOMETRY: {
-		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)((uintptr_t)arg);
+	case MTDIOC_GEOMETRY:
+	{
+		FAR struct mtd_geometry_s *geo =
+		                    (FAR struct mtd_geometry_s *)((uintptr_t)arg);
 		if (geo) {
-			/* Populate the geometry structure with information need to know
-			 * the capacity and how to access the device.
+			memset(geo, 0, sizeof(*geo));
+
+			/* Populate the geometry structure with information need to
+			 * know the capacity and how to access the device.
 			 */
 
-			geo->blocksize = CONFIG_RAMMTD_BLOCKSIZE;
-			geo->erasesize = CONFIG_RAMMTD_ERASESIZE;
+			geo->blocksize    = CONFIG_RAMMTD_BLOCKSIZE;
+			geo->erasesize    = CONFIG_RAMMTD_ERASESIZE;
 			geo->neraseblocks = priv->nblocks;
-			ret = OK;
+			ret               = OK;
 		}
 	}
 	break;
 
-	case MTDIOC_XIPBASE: {
+	case BIOC_XIPBASE:
+	{
 		FAR void **ppv = (FAR void **)((uintptr_t)arg);
 		if (ppv) {
-			/* Return (void*)base address of device memory */
+			/* Return (void*) base address of device memory */
 
 			*ppv = (FAR void *)priv->start;
-			ret = OK;
+			ret  = OK;
 		}
 	}
 	break;
 
-	case MTDIOC_BULKERASE: {
+	case BIOC_PARTINFO:
+	{
+		FAR struct partition_info_s *info =
+		  (FAR struct partition_info_s *)arg;
+		if (info != NULL) {
+			info->numsectors  = priv->nblocks *
+			                    CONFIG_RAMMTD_ERASESIZE /
+			                    CONFIG_RAMMTD_BLOCKSIZE;
+			info->sectorsize  = CONFIG_RAMMTD_BLOCKSIZE;
+			info->startsector = 0;
+			info->parent[0]   = '\0';
+			ret               = OK;
+		}
+	}
+	break;
+
+	case MTDIOC_BULKERASE:
+	{
 		size_t size = priv->nblocks * CONFIG_RAMMTD_ERASESIZE;
 
 		/* Erase the entire device */
@@ -403,8 +444,17 @@ static int ram_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	}
 	break;
 
+	case MTDIOC_ERASESTATE:
+	{
+		FAR uint8_t *result = (FAR uint8_t *)arg;
+		*result = CONFIG_RAMMTD_ERASESTATE;
+
+		ret = OK;
+	}
+	break;
+
 	default:
-		ret = -ENOTTY;			/* Bad command */
+		ret = -ENOTTY; /* Bad command */
 		break;
 	}
 
@@ -432,50 +482,57 @@ FAR struct mtd_dev_s *rammtd_initialize(FAR uint8_t *start, size_t size)
 	FAR struct ram_dev_s *priv;
 	size_t nblocks;
 
+	/* Create an instance of the RAM MTD device state structure */
+
+	priv = kmm_zalloc(sizeof(struct ram_dev_s));
+	if (!priv) {
+		ferr("ERROR: Failed to allocate the RAM MTD state structure\n");
+		return NULL;
+	}
+
 	/* Force the size to be an even number of the erase block size */
 
 	nblocks = size / CONFIG_RAMMTD_ERASESIZE;
 	if (nblocks < 1) {
-		fdbg("Need to provide at least one full erase block\n");
+		ferr("ERROR: Need to provide at least one full erase block\n");
+		kmm_free(priv);
 		return NULL;
 	}
-
-	size_t remain = size % CONFIG_RAMMTD_ERASESIZE;
-	if (remain != 0) {
-		fdbg("%zu bytes cannot be utilized; provide a multiple of %d bytes\n", remain, CONFIG_RAMMTD_ERASESIZE);
-	}
-
-	/* Create an instance of the RAM MTD device state structure */
-
-	priv = (FAR struct ram_dev_s *)kmm_zalloc(sizeof(struct ram_dev_s));
-	if (!priv) {
-		fdbg("Failed to allocate the RAM MTD state structure\n");
-		return NULL;
-	}
-	/* Use memset to initialize when it started, to guarantees cleaned space for sw reset */
-	memset(start, CONFIG_RAMMTD_ERASESTATE, size);
 
 	/* Perform initialization as necessary. (unsupported methods were
 	 * nullified by kmm_zalloc).
 	 */
 
-	priv->mtd.erase = ram_erase;
-	priv->mtd.bread = ram_bread;
+	priv->mtd.erase  = ram_erase;
+	priv->mtd.bread  = ram_bread;
 	priv->mtd.bwrite = ram_bwrite;
-	priv->mtd.read = ram_byteread;
+	priv->mtd.read   = ram_byteread;
 #ifdef CONFIG_MTD_BYTE_WRITE
-	priv->mtd.write = ram_bytewrite;
+	priv->mtd.write  = ram_bytewrite;
 #endif
-	priv->mtd.ioctl = ram_ioctl;
+	priv->mtd.ioctl  = ram_ioctl;
+	priv->mtd.name   = "rammtd";
 
-	priv->start = start;
-	priv->nblocks = nblocks;
-
-	/* Register the MTD with the procfs system if enabled */
-
-#ifdef CONFIG_MTD_REGISTRATION
-	mtd_register(&priv->mtd, "rammtd");
-#endif
+	priv->start      = start;
+	priv->nblocks    = nblocks;
 
 	return &priv->mtd;
+}
+
+/****************************************************************************
+ * Name: rammtd_uninitialize
+ *
+ * Description:
+ *   Free the resources associated with a RAM MTD device instance.
+ *
+ * Input Parameters:
+ *   dev - Pointer to the MTD device instance to be uninitialized.
+ *
+ ****************************************************************************/
+
+void rammtd_uninitialize(FAR struct mtd_dev_s *dev)
+{
+	FAR struct ram_dev_s *priv = (FAR struct ram_dev_s *)dev;
+
+	kmm_free(priv);
 }

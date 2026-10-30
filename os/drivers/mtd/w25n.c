@@ -16,802 +16,909 @@
  *
  ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
+ * drivers/mtd/w25n.c
+ *
+ * Driver for Winbond W25N SPI NAND flash.
+ * Currently only W25N01GV (1Gbit/128MB) is supported and tested.
+ *
+ * Limitations:
+ *   - No bad block management (BBM). Factory bad blocks and runtime bad
+ *     blocks are not tracked.
+ *   - No bad block table (BBT) scanning at initialization.
+ *   - No Quad SPI support (standard SPI only).
+ *   - No access to spare area (64 bytes/page) or OTP region.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include <sys/types.h>
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
-#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
 #include <tinyara/kmalloc.h>
+#include <tinyara/signal.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/spi/spi.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 
-#include <tinyara/mtd/nand_raw.h>
-#include <tinyara/mtd/nand_scheme.h>
-#include <debug.h>
-
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 
-/* SPI bus operation Mode 0 (0,0) and 3 (1,1) are supported. */
+/* Configuration ************************************************************/
 
 #ifndef CONFIG_W25N_SPIMODE
-#define CONFIG_W25N_SPIMODE SPIDEV_MODE0
+#  define CONFIG_W25N_SPIMODE SPIDEV_MODE0
 #endif
-
-/* SPI clock frequencies of up to 104MHz are supported, also supports Dual and Quad SPI interface */
 
 #ifndef CONFIG_W25N_SPIFREQUENCY
-#define CONFIG_W25N_SPIFREQUENCY 48000000
+#  define CONFIG_W25N_SPIFREQUENCY 20000000
 #endif
 
-/* W25N Instructions *********************************************************************/
-/*      Command                    Value      Description                                */
-/*                                                                                       */
-#define W25N_RESET                  0xff	/* Reset device                          */
-#define W25N_WREN                   0x06	/* Write enable                          */
-#define W25N_WRDI                   0x04	/* Write Disable                         */
-#define W25N_RDSR                   0x05	/* Read status register                  */
-#define W25N_SR1_ADDR               0xA0	/* Status register 1 address             */
-#define W25N_SR2_ADDR               0xB0	/* Status register 2 address             */
-#define W25N_SR3_ADDR               0xC0	/* Status register 3 address             */
-#define W25N_WRSR                   0x01	/* Write Status Register                 */
-#define W25N_RDDATA                 0x03	/* Read data bytes                       */
-#define W25N_READ_PAGE              0x13	/* Read data bytes(4bytes address)       */
-#define W25N_FRD                    0x0b	/* Higher speed read                     */
-#define W25N_FRD4BYTE               0x0c	/* Higher speed read(4bytes address)     */
-#define W25N_FRDD                   0x3b	/* Fast read, dual output                */
-#define W25N_FRDD4BYTE              0x3c	/* Fast read, dual output(4bytes address) */
-#define W25N_PP                     0x02	/* Program page                          */
-#define W25N_PE                     0x10	/* Program execute                       */
-#define W25N_PP4BYTE                0x12	/* Program page(4bytes address)          */
-#define W25N_BE                     0xd8	/* Block Erase (64KB)                    */
-#define W25N_BE32                   0x52	/* Block Erase (32KB)                    */
-#define W25N_CE                     0xc7	/* Chip erase                            */
-#define W25N_PD                     0xb9	/* Power down                            */
-#define W25N_PURDID                 0xab	/* Release PD, Device ID                 */
-#define W25N_RDMFID                 0x90	/* Read Manufacturer / Device            */
-#define W25N_JEDEC_ID               0x9f	/* JEDEC ID read                         */
-#define W25N_ADDR4BYTE              0xb7	/* 4-byte Address mode                   */
+/* W25N Commands ************************************************************/
 
-/* W25N Registers ********************************************************************/
-/* Read ID (RDID) register values */
+#define W25N_RESET              0xff  /* Device reset */
+#define W25N_READ_ID            0x9f  /* Read JEDEC ID */
+#define W25N_READ_STATUS        0x0f  /* Read status register */
+#define W25N_WRITE_STATUS       0x1f  /* Write status register */
+#define W25N_WRITE_ENABLE       0x06  /* Write enable */
+#define W25N_WRITE_DISABLE      0x04  /* Write disable */
+#define W25N_PAGE_READ          0x13  /* Page data read (array to buffer) */
+#define W25N_READ_DATA          0x03  /* Read data (from buffer) */
+#define W25N_PROGRAM_LOAD       0x02  /* Program load (to buffer) */
+#define W25N_PROGRAM_EXECUTE    0x10  /* Program execute (buffer to array) */
+#define W25N_BLOCK_ERASE        0xd8  /* Block erase */
 
-/* JEDEC Read ID register values */
+#define W25N_DUMMY              0x00  /* Dummy byte for SPI */
 
-#define W25N_JEDEC_MANUFACTURER		0xef	/* SST manufacturer ID */
+/* Status Register Addresses ************************************************/
 
-#define W25NQ_JEDEC_MEMORY_TYPE		0xAA	/* W25NQ memory type */
+#define W25N_SR1_ADDR           0xa0  /* Protection register */
+#define W25N_SR2_ADDR           0xb0  /* Configuration register */
+#define W25N_SR3_ADDR           0xc0  /* Status register */
 
-#define W25N_JEDEC_CAPACITY_2048MBIT	0x22	/* 65536x4096 = 2048Mbit memory capacity */
+/* Status Register 1 (Protection) bits **************************************/
 
-#define NBLOCKS_2048MBIT		512	/* 512 sectors x 65536 bytes/sector = 32Mb */
+#define W25N_SR1_SRP0           (1 << 7)
+#define W25N_SR1_BP3            (1 << 6)
+#define W25N_SR1_BP2            (1 << 5)
+#define W25N_SR1_BP1            (1 << 4)
+#define W25N_SR1_BP0            (1 << 3)
+#define W25N_SR1_TB             (1 << 2)
+#define W25N_SR1_WPE            (1 << 1)
+#define W25N_SR1_SRP1           (1 << 0)
 
-/* Status register bit definitions */
+/* Status Register 2 (Configuration) bits ***********************************/
 
-#define W25N_SR_BUSY                (1 << 0)	/* Bit 0: Write in progress */
-#define W25N_SR_WEL                 (1 << 1)	/* Bit 1: Write enable latch bit */
+#define W25N_SR2_OTPL           (1 << 7)
+#define W25N_SR2_OTPE           (1 << 6)
+#define W25N_SR2_SR1L           (1 << 5)
+#define W25N_SR2_ECCE           (1 << 4)
+#define W25N_SR2_BUF            (1 << 3)
 
-/* Status register 1 layout */
+/* Status Register 3 (Status) bits ******************************************/
 
-/* |s7  |s6 |s5 |s4 |s3 |s2|s1 |s0  |  */
-/* |SRP0|BP3|BP2|BP1|BP0|TB|WPE|SRP1|  */
+#define W25N_SR3_LUTF           (1 << 6)
+#define W25N_SR3_ECC1           (1 << 5)
+#define W25N_SR3_ECC0           (1 << 4)
+#define W25N_SR3_PFAIL          (1 << 3)
+#define W25N_SR3_EFAIL          (1 << 2)
+#define W25N_SR3_WEL            (1 << 1)
+#define W25N_SR3_BUSY           (1 << 0)
 
-/* TODO add block protection regions so we can use them easily, like protect first half of flash etc. */
+#define W25N_SR3_ECC_MASK       (W25N_SR3_ECC1 | W25N_SR3_ECC0)
+#define W25N_SR3_ECC_OK         (0x00)
+#define W25N_SR3_ECC_CORRECTED  (W25N_SR3_ECC0)
+#define W25N_SR3_ECC_ERROR      (W25N_SR3_ECC1)
 
-#define W25N_SR_BP_SHIFT            (2)	/* Bits 2-5: Block protect bits */
-#define W25N_SR_BP_MASK             (31 << W25N_SR_BP_SHIFT)	/* s2 to s6, 5 bits for block protection */
-#define W25N_SR_BP_NONE             (0 << W25N_SR_BP_SHIFT)	/* Unprotected */
+/* Device Identification ****************************************************/
 
-/* Status register 2 layout */
+#define W25N_MANUFACTURER_ID    0xef  /* Winbond */
+#define W25N01GV_DEVICE_ID      0xaa21
 
-/* |s7  |s6  |s5  |s4  |s3 |s2  |s1  |s0  |  */
-/* |OTPL|OTPE|SR1L|ECCE|BUF|ODS1|ODS0|HDIS|  */
+/* Memory Organization ******************************************************/
 
-#define W25N_SR_ECC_SHIFT           (4)
-#define W25N_SR_ECC_MASK	    (1 << W25N_SR_ECC_SHIFT)	/* Bit 4 is for ECC enable */
-#define W25N_SR_ECC_ENABLE	    (1 << W25N_SR_ECC_SHIFT)	/* Enable ECC */
-#define W25N_SR_ECC_DISABLE         (0 << W25N_SR_ECC_SHIFT)	/* Disable ECC */
+#define W25N_PAGE_SIZE          2048  /* Bytes per page (data only) */
+#define W25N_PAGE_SHIFT         11    /* 2^11 = 2048 */
+#define W25N_PAGES_PER_BLOCK    64
+#define W25N_BLOCK_SIZE         (W25N_PAGE_SIZE * W25N_PAGES_PER_BLOCK)
+#define W25N_BLOCK_SHIFT        17    /* 2^17 = 128KB */
+#define W25N01GV_BLOCKS         1024  /* Total blocks for 1Gbit device */
 
-/* Status Register 3 layout */
-
-/* |s7 |s6 |s5  |s4  |s3   |s2   |s1 |s0  |  */
-/* |(R)|(R)|ECC1|ECC0|PFAIL|EFAIL|WEL|BUSY|  */
-
-#define W25N_SR_EFAIL_SHIFT           (2)
-#define W25N_SR_EFAIL		      (1 << W25N_SR_EFAIL_SHIFT)
-#define W25N_SR_PFAIL_SHIFT           (3)
-#define W25N_SR_PFAIL		      (1 << W25N_SR_PFAIL_SHIFT)
-#define W25N_ECC_STATUS_SHIFT	      (4)
-#define W25N_ECC_STATUS_MASK          (3 << W25N_ECC_STATUS_SHIFT)
-#define W25N_ECC_STATUS(status)	      (status & ~(W25N_ECC_STATUS_MASK)) >> W25N_ECC_STATUS_SHIFT
-
-#define W25N_DUMMY                  0x00
-
-/* Chip Geometries ******************************************************************/
-/* 0~11, column address in page, 12 ~ 17, page address in block, 18 ~ 28 block address */
-
-#define W25N_BLOCK_SHIFT                18
-#define W25N_PAGE_SHIFT                 12
-#define W25N_PAGE_SIZE                  2048
-#define W25N_PAGES_PER_BLOCK		64
-#define W25N_NBLOCKS                    2048
-#define W25N_ERASED_STATE               0xff	/* State of FLASH when erased */
-
-/************************************************************************************
+/****************************************************************************
  * Private Types
- ************************************************************************************/
-
-/* This type represents the state of the MTD device.  The struct mtd_dev_s must
- * appear at the beginning of the definition so that you can freely cast between
- * pointers to struct mtd_dev_s and struct w25n_dev_s.
- */
+ ****************************************************************************/
 
 struct w25n_dev_s {
-	struct nand_raw_s raw;		/* MTD NAND lowerhalf interface */
-	FAR struct spi_dev_s *spi;	/* Saved SPI interface instance */
-	uint16_t nblocks;			/* Number of erase sectors */
-	uint8_t prev_instr;			/* Previous executed instruction */
+	struct mtd_dev_s       mtd;         /* MTD interface */
+	FAR struct spi_dev_s  *spi;         /* SPI device */
+	uint32_t               spi_devid;   /* SPI device ID for chip select */
+	uint16_t               nblocks;     /* Number of erase blocks */
+	uint8_t                blockshift;  /* Block size shift (17 = 128KB) */
+	uint8_t                pageshift;   /* Page size shift (11 = 2KB) */
+	uint8_t                eccstatus;   /* Last ECC status */
 };
 
-/************************************************************************************
+/****************************************************************************
  * Private Function Prototypes
- ************************************************************************************/
+ ****************************************************************************/
 
-/* Helpers */
+/* SPI helpers */
 
-static void w25n_lock(FAR struct spi_dev_s *spi);
-static inline void w25n_unlock(FAR struct spi_dev_s *spi);
-static inline int w25n_readid(FAR struct w25n_dev_s *priv);
-#ifndef CONFIG_W25N_READONLY
-static void w25n_unprotect(FAR struct w25n_dev_s *priv);
-#endif
-static void w25n_eccenable(FAR struct w25n_dev_s *priv);
-static uint8_t w25n_waitoperationcomplete(FAR struct w25n_dev_s *priv);
-static inline void w25n_wren(FAR struct w25n_dev_s *priv);
-static inline void w25n_wrdi(FAR struct w25n_dev_s *priv);
+static void w25n_lock(FAR struct w25n_dev_s *priv);
+static void w25n_unlock(FAR struct w25n_dev_s *priv);
 
-/* MTD NAND raw methods */
-static int w25n_blockerase(FAR struct nand_raw_s *raw, off_t block);
-static int w25n_pageread(FAR struct nand_raw_s *raw, off_t block, unsigned int page, FAR void *data, FAR void *spare);
-static int w25n_pagewrite(FAR struct nand_raw_s *raw, off_t block, unsigned int page, FAR const void *data, FAR const void *spare);
+/* Command helpers */
 
-/************************************************************************************
- * Private Data
- ************************************************************************************/
+static void    w25n_reset(FAR struct w25n_dev_s *priv);
+static int     w25n_readid(FAR struct w25n_dev_s *priv);
+static uint8_t w25n_read_status(FAR struct w25n_dev_s *priv, uint8_t reg);
+static void    w25n_write_status(FAR struct w25n_dev_s *priv,
+                                 uint8_t reg, uint8_t val);
+static void    w25n_writeenable(FAR struct w25n_dev_s *priv);
+static void    w25n_writedisable(FAR struct w25n_dev_s *priv);
+static int     w25n_waitready(FAR struct w25n_dev_s *priv);
+static int     w25n_waitready_erase(FAR struct w25n_dev_s *priv);
 
-/************************************************************************************
+/* Page operations */
+
+static int     w25n_read_page(FAR struct w25n_dev_s *priv, uint32_t page);
+static void    w25n_read_buffer(FAR struct w25n_dev_s *priv, uint16_t col,
+                                FAR uint8_t *buf, size_t len);
+static void    w25n_load_buffer(FAR struct w25n_dev_s *priv, uint16_t col,
+                                FAR const uint8_t *buf, size_t len);
+static int     w25n_program_execute(FAR struct w25n_dev_s *priv,
+                                    uint32_t page);
+static int     w25n_block_erase(FAR struct w25n_dev_s *priv, uint32_t block);
+
+/* Configuration */
+
+static void    w25n_enable_ecc(FAR struct w25n_dev_s *priv);
+static void    w25n_unprotect(FAR struct w25n_dev_s *priv);
+
+/* MTD driver methods */
+
+static int     w25n_erase(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks);
+static ssize_t w25n_bread(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks, FAR uint8_t *buf);
+static ssize_t w25n_bwrite(FAR struct mtd_dev_s *dev, off_t startblock,
+                           size_t nblocks, FAR const uint8_t *buf);
+static ssize_t w25n_read(FAR struct mtd_dev_s *dev, off_t offset,
+                         size_t nbytes, FAR uint8_t *buf);
+static int     w25n_ioctl(FAR struct mtd_dev_s *dev, int cmd,
+                          unsigned long arg);
+
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: w25n_lock
- ************************************************************************************/
+ ****************************************************************************/
 
-static void w25n_lock(FAR struct spi_dev_s *spi)
+static void w25n_lock(FAR struct w25n_dev_s *priv)
 {
-	/* On SPI busses where there are multiple devices, it will be necessary to
-	 * lock SPI to have exclusive access to the busses for a sequence of
-	 * transfers.  The bus should be locked before the chip is selected.
-	 *
-	 * This is a blocking call and will not return until we have exclusiv access to
-	 * the SPI buss.  We will retain that exclusive access until the bus is unlocked.
-	 */
-
-	(void)SPI_LOCK(spi, true);
-
-	/* After locking the SPI bus, the we also need call the setfrequency, setbits, and
-	 * setmode methods to make sure that the SPI is properly configured for the device.
-	 * If the SPI buss is being shared, then it may have been left in an incompatible
-	 * state.
-	 */
-
-	SPI_SETMODE(spi, CONFIG_W25N_SPIMODE);
-	SPI_SETBITS(spi, 8);
-	(void)SPI_SETFREQUENCY(spi, CONFIG_W25N_SPIFREQUENCY);
+	SPI_LOCK(priv->spi, true);
+	SPI_SETMODE(priv->spi, CONFIG_W25N_SPIMODE);
+	SPI_SETBITS(priv->spi, 8);
+	SPI_HWFEATURES(priv->spi, 0);
+	SPI_SETFREQUENCY(priv->spi, CONFIG_W25N_SPIFREQUENCY);
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: w25n_unlock
- ************************************************************************************/
+ ****************************************************************************/
 
-static inline void w25n_unlock(FAR struct spi_dev_s *spi)
+static void w25n_unlock(FAR struct w25n_dev_s *priv)
 {
-	(void)SPI_LOCK(spi, false);
+	SPI_LOCK(priv->spi, false);
 }
 
-/************************************************************************************
- * Name: w25n_readid
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_reset
+ ****************************************************************************/
 
-static inline int w25n_readid(struct w25n_dev_s *priv)
+static void w25n_reset(FAR struct w25n_dev_s *priv)
 {
-	uint16_t manufacturer;
-	uint16_t memory;
-	uint16_t capacity;
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_RESET);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 
-	fvdbg("priv: %p\n", priv);
+	/* Wait for reset to complete (tRST max 500us) */
 
-	/* Lock and configure the SPI bus */
+	nxsig_usleep(500);
+}
 
-	w25n_lock(priv->spi);
+/****************************************************************************
+ * Name: w25n_readid
+ ****************************************************************************/
 
-	/* Wait for any preceding write or erase operation to complete. */
+static int w25n_readid(FAR struct w25n_dev_s *priv)
+{
+	uint8_t manufacturer;
+	uint8_t device_hi;
+	uint8_t device_lo;
 
-	(void)w25n_waitoperationcomplete(priv);
-
-	/* Reset the flash */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	(void)SPI_SEND(priv->spi, W25N_RESET);
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	/* wait for 500us */
-	up_mdelay(1);
-
-	/* Select this FLASH part. */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	/* Send the "Read ID (RDID)" command and read the first three ID bytes */
-	(void)SPI_SEND(priv->spi, W25N_JEDEC_ID);
-
-	/* Send a dummy byte before reading the device ID and other details */
-	(void)SPI_SEND(priv->spi, W25N_DUMMY);
-
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_READ_ID);
+	SPI_SEND(priv->spi, W25N_DUMMY);
 	manufacturer = SPI_SEND(priv->spi, W25N_DUMMY);
-	memory = SPI_SEND(priv->spi, W25N_DUMMY);
-	capacity = SPI_SEND(priv->spi, W25N_DUMMY);
+	device_hi = SPI_SEND(priv->spi, W25N_DUMMY);
+	device_lo = SPI_SEND(priv->spi, W25N_DUMMY);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 
-	/* Deselect the FLASH and unlock the bus */
+	finfo("W25N: Manufacturer=0x%02x Device=0x%02x%02x\n",
+	      manufacturer, device_hi, device_lo);
 
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-	w25n_unlock(priv->spi);
-
-	fvdbg("manufacturer: %02x memory: %02x capacity: %02x\n", manufacturer, memory, capacity);
-
-	/* Check for a valid manufacturer and memory type */
-
-	if (manufacturer == W25N_JEDEC_MANUFACTURER && memory == W25NQ_JEDEC_MEMORY_TYPE) {
-
-		/* 256 M-Byte
-		 *
-		 * W25N02KV
-		 */
-
-		if (capacity == W25N_JEDEC_CAPACITY_2048MBIT) {
-
-			fvdbg("Winbond Flash Model : W25N02KVxxIR/U found\n");
-
-			priv->nblocks = NBLOCKS_2048MBIT;
-			priv->raw.model.devid = W25N_JEDEC_MANUFACTURER;	/* Identifier for the device */
-			priv->raw.model.pagesize = 2048;	/* Size of the data area of a page in bytes */
-			priv->raw.model.sparesize = 128;	/* Size of the spare area of a page in bytes */
-			priv->raw.model.devsize = 256;	/* Size of the device in MB */
-			priv->raw.model.blocksize = 128;	/* Size of one block in kilobytes */
-			priv->raw.model.scheme = &g_nand_sparescheme2048;
-		} else {
-			/* Nope.. we don't understand this capacity. */
-
-			return -ENODEV;
-		}
-
-		return OK;
+	if (manufacturer != W25N_MANUFACTURER_ID) {
+		ferr("ERROR: Unexpected manufacturer ID: 0x%02x\n", manufacturer);
+		return -ENODEV;
 	}
 
-	/* We don't understand the manufacturer or the memory type */
+	if (device_hi == 0xaa && device_lo == 0x21) {
+		/* W25N01GV - 1Gbit */
 
-	return -ENODEV;
+		priv->nblocks = W25N01GV_BLOCKS;
+		finfo("W25N01GV detected: %d blocks\n", priv->nblocks);
+	} else {
+		ferr("ERROR: Unsupported device ID: 0x%02x%02x\n",
+		     device_hi, device_lo);
+		return -ENODEV;
+	}
+
+	priv->blockshift = W25N_BLOCK_SHIFT;
+	priv->pageshift = W25N_PAGE_SHIFT;
+
+	return OK;
 }
 
-/************************************************************************************
- * Name: w25n_unprotect
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_read_status
+ ****************************************************************************/
 
-#ifndef CONFIG_W25N_READONLY
-static void w25n_unprotect(FAR struct w25n_dev_s *priv)
+static uint8_t w25n_read_status(FAR struct w25n_dev_s *priv, uint8_t reg)
 {
-	uint8_t status_register;
-
-	/* Lock and configure the SPI bus */
-
-	w25n_lock(priv->spi);
-
-	/* Wait for any preceding write or erase operation to complete. */
-
-	(void)w25n_waitoperationcomplete(priv);
-
-	/*
-	 * We want to disable block protection so that we can write to the flash,
-	 * As per my understanding, its the only thing this function is required for
-	 */
-
-	/* Read the SR1 register */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	SPI_SEND(priv->spi, W25N_RDSR);
-
-	/* Send Status Register 1 address */
-
-	SPI_SEND(priv->spi, W25N_SR1_ADDR);
-
-	/* Get value of Register */
-
-	status_register = SPI_SEND(priv->spi, W25N_DUMMY);
-
-	/* Deselect the FLASH and unlock the bus */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	/* Now that we have the value of the register, we need to disable block protection */
-
-	fvdbg("Value of SR1 : %02X\n", status_register);
-
-	status_register = ((status_register & ~(W25N_SR_BP_MASK)) | W25N_SR_BP_NONE);
-
-	fvdbg("Updated value of SR1 with no block protection : %02X\n", status_register);
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	SPI_SEND(priv->spi, W25N_WRSR);
-
-	/* Send Status Register 1 address */
-
-	SPI_SEND(priv->spi, W25N_SR1_ADDR);
-
-	/* Send value of Register */
-
-	SPI_SEND(priv->spi, status_register);
-
-	/* Deselect the FLASH and unlock the bus */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-	w25n_unlock(priv->spi);
-}
-#endif
-
-/************************************************************************************
- * Name: w25n_eccenable
- ************************************************************************************/
-static void w25n_eccenable(struct w25n_dev_s *priv)
-{
-	uint8_t status_register;
-
-	/* Lock and configure the SPI bus */
-
-	w25n_lock(priv->spi);
-
-	/* Wait for any preceding write or erase operation to complete. */
-
-	(void)w25n_waitoperationcomplete(priv);
-
-	/* Read the SR1 register */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	SPI_SEND(priv->spi, W25N_RDSR);
-
-	/* Send Status Register 2 address */
-
-	SPI_SEND(priv->spi, W25N_SR2_ADDR);
-
-	/* Get value of Register */
-
-	status_register = SPI_SEND(priv->spi, W25N_DUMMY);
-
-	/* Deselect the FLASH and unlock the bus */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	/* Now that we have the value of the register, we need to set ECC enable bit */
-
-	fvdbg("Value of SR2 : %02X\n", status_register);
-
-	status_register = ((status_register & ~(W25N_SR_ECC_MASK)) | W25N_SR_ECC_ENABLE);
-
-	fvdbg("Updated value of SR2 with ECC : %02X\n", status_register);
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	SPI_SEND(priv->spi, W25N_WRSR);
-
-	/* Send Status Register 2 address */
-
-	SPI_SEND(priv->spi, W25N_SR2_ADDR);
-
-	/* Send value of Register */
-
-	SPI_SEND(priv->spi, status_register);
-
-	/* Deselect the FLASH and unlock the bus */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-	w25n_unlock(priv->spi);
-}
-
-/************************************************************************************
- * Name: w25n_waitoperationcomplete
- ************************************************************************************/
-
-static uint8_t w25n_waitoperationcomplete(struct w25n_dev_s *priv)
-{
-	/*
-	 * For NOR flash, just checking the In progress bit is enough.
-	 * However, in NAND flash, the operations might fail if a block
-	 * turns bad (erase block, write page can fail). In such cases
-	 * we need to test the block and add it to bad blocks if requried.
-	 * For this particular reason, we need to check the status at the
-	 * end of each operation
-	 */
 	uint8_t status;
 
-	do {
-		SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-		/* Send "Read Status Register (RDSR)" command */
-
-		(void)SPI_SEND(priv->spi, W25N_RDSR);
-
-		/* Send "Status Register 3 address" */
-
-		(void)SPI_SEND(priv->spi, W25N_SR3_ADDR);
-
-		/* Send a dummy byte to generate the clock needed to shift out the status */
-
-		status = SPI_SEND(priv->spi, W25N_DUMMY);
-
-		SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	} while ((status & W25N_SR_BUSY) != 0);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_READ_STATUS);
+	SPI_SEND(priv->spi, reg);
+	status = SPI_SEND(priv->spi, W25N_DUMMY);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 
 	return status;
 }
 
-/************************************************************************************
- * Name:  w25n_wren
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_write_status
+ ****************************************************************************/
 
-static inline void w25n_wren(struct w25n_dev_s *priv)
+static void w25n_write_status(FAR struct w25n_dev_s *priv,
+                              uint8_t reg, uint8_t val)
 {
-	/* Select this FLASH part */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	/* Send "Write Enable (WREN)" command */
-
-	(void)SPI_SEND(priv->spi, W25N_WREN);
-
-	/* Deselect the FLASH */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_WRITE_STATUS);
+	SPI_SEND(priv->spi, reg);
+	SPI_SEND(priv->spi, val);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 }
 
-/************************************************************************************
- * Name:  w25n_wrdi
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_writeenable
+ ****************************************************************************/
 
-static inline void w25n_wrdi(struct w25n_dev_s *priv)
+static void w25n_writeenable(FAR struct w25n_dev_s *priv)
 {
-	/* Select this FLASH part */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	/* Send "Write Disable (WRDI)" command */
-
-	(void)SPI_SEND(priv->spi, W25N_WRDI);
-
-	/* Deselect the FLASH */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_WRITE_ENABLE);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 }
 
-/************************************************************************************
- * Name:  w25n_blockerase
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_writedisable
+ ****************************************************************************/
 
-static int w25n_blockerase(FAR struct nand_raw_s *raw, off_t block)
+static void w25n_writedisable(FAR struct w25n_dev_s *priv)
 {
-	struct w25n_dev_s *priv = (struct w25n_dev_s *)raw;
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_WRITE_DISABLE);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
+}
 
-	uint32_t address = block << W25N_BLOCK_SHIFT;
+/****************************************************************************
+ * Name: w25n_waitready
+ ****************************************************************************/
 
-	fdbg("block: %08lx\n", (long)block);
+static int w25n_waitready(FAR struct w25n_dev_s *priv)
+{
+	uint8_t status;
+	int timeout = 10000;
 
-	fvdbg("24bit address sent : %02X %02X %02X\n", (address >> (16 + W25N_PAGE_SHIFT)) & 0xff, (address >> (8 + W25N_PAGE_SHIFT)) & 0xff, (address >> (W25N_PAGE_SHIFT)) & 0xff);
+	/* Busy-wait for fast operations (page read ~60us, page program ~250us) */
 
-	w25n_lock(priv->spi);
+	do {
+		status = w25n_read_status(priv, W25N_SR3_ADDR);
+		if ((status & W25N_SR3_BUSY) == 0) {
+			priv->eccstatus = (status & W25N_SR3_ECC_MASK);
+			return OK;
+		}
+	} while (--timeout > 0);
 
-	/* Wait for any preceding write or erase operation to complete. */
+	ferr("ERROR: Timeout waiting for device ready\n");
+	return -ETIMEDOUT;
+}
 
-	(void)w25n_waitoperationcomplete(priv);
+/****************************************************************************
+ * Name: w25n_waitready_erase
+ *
+ * Description:
+ *   Wait for block erase to complete. Uses sleep since erase is slow
+ *   (2-10ms typical) and we can release the SPI bus for other tasks.
+ *
+ ****************************************************************************/
 
-	/* Send write enable instruction */
+static int w25n_waitready_erase(FAR struct w25n_dev_s *priv)
+{
+	uint8_t status;
+	int timeout = 100;  /* 100 iterations, ~1 second max */
 
-	w25n_wren(priv);
+	do {
+		status = w25n_read_status(priv, W25N_SR3_ADDR);
+		if ((status & W25N_SR3_BUSY) == 0) {
+			priv->eccstatus = (status & W25N_SR3_ECC_MASK);
+			return OK;
+		}
 
-	/* Select this FLASH part */
+		/* Unlock SPI, sleep, re-lock - allows other SPI access while waiting */
 
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
+		w25n_unlock(priv);
+		nxsched_usleep(1000);
+		w25n_lock(priv);
+	} while (--timeout > 0);
 
-	/* Send the "Block Erase" instruction */
-	(void)SPI_SEND(priv->spi, W25N_BE);
-	priv->prev_instr = W25N_BE;
+	ferr("ERROR: Timeout waiting for erase to complete\n");
+	return -ETIMEDOUT;
+}
 
-	(void)SPI_SEND(priv->spi, (address >> (16 + W25N_PAGE_SHIFT)) & 0xff);
-	(void)SPI_SEND(priv->spi, (address >> (8 + W25N_PAGE_SHIFT)) & 0xff);
-	(void)SPI_SEND(priv->spi, (address >> (W25N_PAGE_SHIFT)) & 0xff);
+/****************************************************************************
+ * Name: w25n_read_page
+ *
+ * Description:
+ *   Load a page from the NAND array into the device buffer.
+ *
+ ****************************************************************************/
 
-	/* Deselect the FLASH */
+static int w25n_read_page(FAR struct w25n_dev_s *priv, uint32_t page)
+{
+	int ret;
 
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
+	/* Send Page Data Read command with 16-bit page address */
 
-	/* check SR3 here to catch any errors */
-	uint8_t status = w25n_waitoperationcomplete(priv);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_PAGE_READ);
+	SPI_SEND(priv->spi, W25N_DUMMY);
+	SPI_SEND(priv->spi, (page >> 8) & 0xff);
+	SPI_SEND(priv->spi, page & 0xff);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 
-	fvdbg("status register after operation complete : %02X\n", status);
+	/* Wait for page read to complete (tRD max 60us with ECC) */
 
-	w25n_unlock(priv->spi);
+	ret = w25n_waitready(priv);
+	if (ret < 0) {
+		return ret;
+	}
 
-	if (status & W25N_SR_EFAIL) {
-		lldbg("erase failed, status : %02X\n", status);
+	/* Check ECC status */
+
+	if (priv->eccstatus == W25N_SR3_ECC_ERROR) {
+		ferr("ERROR: Uncorrectable ECC error on page %lu\n",
+		     (unsigned long)page);
 		return -EIO;
 	}
 
 	return OK;
 }
 
-/************************************************************************************
- * Name:  w25n_pageread
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_read_buffer
+ *
+ * Description:
+ *   Read data from the device buffer (after page read).
+ *
+ ****************************************************************************/
 
-static int w25n_pageread(FAR struct nand_raw_s *raw, off_t block, unsigned int page, FAR void *data, FAR void *spare)
+static void w25n_read_buffer(FAR struct w25n_dev_s *priv, uint16_t col,
+                             FAR uint8_t *buf, size_t len)
 {
-	/* in the current requirement, we either read from start for data or from spare, so offset needs to be set accordingly */
-
-	struct w25n_dev_s *priv = (struct w25n_dev_s *)raw;
-
-	uint32_t row_address = (block << W25N_BLOCK_SHIFT) + (page << W25N_PAGE_SHIFT);
-	uint32_t column_address = 0;
-
-	if ((data == NULL) && (spare != NULL)) {
-		// get model details and set spare offset accordingly??
-		column_address += W25N_PAGE_SIZE;
-	}
-
-	fvdbg("block: %08lx page : %08lx\n", (long)block, (long)page);
-	fvdbg("24bit row address sent : %02X %02X %02X\n", (row_address >> (16 + W25N_PAGE_SHIFT)) & 0xff, (row_address >> (8 + W25N_PAGE_SHIFT)) & 0xff, (row_address >> (W25N_PAGE_SHIFT)) & 0xff);
-	fvdbg("16bit col address sent : %02X %02X\n", (column_address >> 8) & 0xff, column_address & 0xff);
-
-	w25n_lock(priv->spi);
-
-	/* Wait for any preceding write or erase operation to complete. */
-
-	(void)w25n_waitoperationcomplete(priv);
-
-	/* Select this FLASH part */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	/* Send the "Page Data Read" instruction */
-	(void)SPI_SEND(priv->spi, W25N_READ_PAGE);
-	priv->prev_instr = W25N_READ_PAGE;
-
-	/* send page address */
-	(void)SPI_SEND(priv->spi, (row_address >> (16 + W25N_PAGE_SHIFT)) & 0xff);
-	(void)SPI_SEND(priv->spi, (row_address >> (8 + W25N_PAGE_SHIFT)) & 0xff);
-	(void)SPI_SEND(priv->spi, (row_address >> (W25N_PAGE_SHIFT)) & 0xff);
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	uint8_t status = w25n_waitoperationcomplete(priv);
-
-	fvdbg("status register after operation complete : %02X\n", status);
-
-	if (W25N_ECC_STATUS(status) > 1) {
-		lldbg("ecc recovery failed, status : %02x\n", status);
-		w25n_unlock(priv->spi);
-		return -EIO;
-	}
-
-	/*Now we can read the data */
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	(void)SPI_SEND(priv->spi, W25N_RDDATA);
-
-	/* Send the column address */
-	(void)SPI_SEND(priv->spi, (column_address >> 8) & 0xff);
-	(void)SPI_SEND(priv->spi, column_address & 0xff);
-
-	/* Send dummy byte */
-	(void)SPI_SEND(priv->spi, W25N_DUMMY);
-
-	/* send data */
-	if (data != NULL) {
-		SPI_RECVBLOCK(priv->spi, data, W25N_PAGE_SIZE);
-	}
-
-	/* send spare */
-	if (spare != NULL) {
-		SPI_RECVBLOCK(priv->spi, spare, 64);
-	}
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	w25n_unlock(priv->spi);
-
-	/* check SR3 here to catch any errors */
-
-	return OK;
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_READ_DATA);
+	SPI_SEND(priv->spi, (col >> 8) & 0xff);
+	SPI_SEND(priv->spi, col & 0xff);
+	SPI_SEND(priv->spi, W25N_DUMMY);
+	SPI_RECVBLOCK(priv->spi, buf, len);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
 }
 
-/************************************************************************************
- * Name:  w25n_pagewrite
- ************************************************************************************/
+/****************************************************************************
+ * Name: w25n_load_buffer
+ *
+ * Description:
+ *   Load data into the device program buffer.
+ *
+ ****************************************************************************/
 
-static int w25n_pagewrite(FAR struct nand_raw_s *raw, off_t block, unsigned int page, FAR const void *data, FAR const void *spare)
+static void w25n_load_buffer(FAR struct w25n_dev_s *priv, uint16_t col,
+                             FAR const uint8_t *buf, size_t len)
 {
-	/* in the current requirement, we either write data or spare, so set the offset accordingly */
-	struct w25n_dev_s *priv = (struct w25n_dev_s *)raw;
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_PROGRAM_LOAD);
+	SPI_SEND(priv->spi, (col >> 8) & 0xff);
+	SPI_SEND(priv->spi, col & 0xff);
+	SPI_SNDBLOCK(priv->spi, buf, len);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
+}
 
-	uint32_t row_address = (block << W25N_BLOCK_SHIFT) + (page << W25N_PAGE_SHIFT);
-	uint32_t column_address = 0;
+/****************************************************************************
+ * Name: w25n_program_execute
+ *
+ * Description:
+ *   Program the buffer contents to the specified page.
+ *
+ ****************************************************************************/
 
-	if ((data == NULL) && (spare != NULL)) {
-		// get model details and set spare offset accordingly??
-		column_address += W25N_PAGE_SIZE;
+static int w25n_program_execute(FAR struct w25n_dev_s *priv, uint32_t page)
+{
+	uint8_t status;
+	int ret;
+
+	/* Send Program Execute command with 16-bit page address */
+
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_PROGRAM_EXECUTE);
+	SPI_SEND(priv->spi, W25N_DUMMY);
+	SPI_SEND(priv->spi, (page >> 8) & 0xff);
+	SPI_SEND(priv->spi, page & 0xff);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
+
+	/* Wait for program to complete (tPP max 700us) */
+
+	ret = w25n_waitready(priv);
+	if (ret < 0) {
+		return ret;
 	}
 
-	fvdbg("block: %08lx page : %08lx\n", (long)block, (long)page);
-	fvdbg("24bit row address sent : %02X %02X %02X\n", (row_address >> (16 + W25N_PAGE_SHIFT)) & 0xff, (row_address >> (8 + W25N_PAGE_SHIFT)) & 0xff, (row_address >> (W25N_PAGE_SHIFT)) & 0xff);
-	fvdbg("16bit col address sent : %02X %02X\n", (column_address >> 8) & 0xff, column_address & 0xff);
+	/* Check for program failure */
 
-	w25n_lock(priv->spi);
-
-	/* Wait for any preceding write or erase operation to complete. */
-
-	(void)w25n_waitoperationcomplete(priv);
-
-	/* Send write enable instruction */
-
-	w25n_wren(priv);
-
-	/* Select this FLASH part */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	/* Send the "Page Program" instruction */
-	(void)SPI_SEND(priv->spi, W25N_PP);
-	priv->prev_instr = W25N_PP;
-
-	/* Send the column address */
-	(void)SPI_SEND(priv->spi, (column_address >> 8) & 0xff);
-	(void)SPI_SEND(priv->spi, column_address & 0xff);
-
-	/* send data */
-	if (data != NULL) {
-		SPI_SNDBLOCK(priv->spi, data, W25N_PAGE_SIZE);
-	}
-
-	/* send spare */
-	if (spare != NULL) {
-		SPI_SNDBLOCK(priv->spi, spare, 64);
-	}
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	/* restart transfer */
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, true);
-
-	/* start program execute */
-	(void)SPI_SEND(priv->spi, W25N_PE);
-
-	/* send page address */
-	(void)SPI_SEND(priv->spi, (row_address >> (16 + W25N_PAGE_SHIFT)) & 0xff);
-	(void)SPI_SEND(priv->spi, (row_address >> (8 + W25N_PAGE_SHIFT)) & 0xff);
-	(void)SPI_SEND(priv->spi, (row_address >> (W25N_PAGE_SHIFT)) & 0xff);
-
-	/* Deselect the FLASH */
-
-	SPI_SELECT(priv->spi, SPIDEV_FLASH, false);
-
-	uint8_t status = w25n_waitoperationcomplete(priv);
-
-	fvdbg("status register after operation complete : %02X\n", status);
-
-	w25n_unlock(priv->spi);
-
-	if (status & W25N_SR_PFAIL) {
-		lldbg("program failed, status : %02X\n", status);
+	status = w25n_read_status(priv, W25N_SR3_ADDR);
+	if (status & W25N_SR3_PFAIL) {
+		ferr("ERROR: Program failed on page %lu\n", (unsigned long)page);
 		return -EIO;
 	}
 
 	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
+ * Name: w25n_block_erase
+ *
+ * Description:
+ *   Erase a 128KB block.
+ *
+ ****************************************************************************/
+
+static int w25n_block_erase(FAR struct w25n_dev_s *priv, uint32_t block)
+{
+	uint32_t page;
+	uint8_t status;
+	int ret;
+
+	/* Convert block number to page address (block * 64) */
+
+	page = block << 6;
+
+	finfo("Erasing block %lu (page %lu)\n",
+	      (unsigned long)block, (unsigned long)page);
+
+	w25n_writeenable(priv);
+
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), true);
+	SPI_SEND(priv->spi, W25N_BLOCK_ERASE);
+	SPI_SEND(priv->spi, W25N_DUMMY);
+	SPI_SEND(priv->spi, (page >> 8) & 0xff);
+	SPI_SEND(priv->spi, page & 0xff);
+	SPI_SELECT(priv->spi, SPIDEV_FLASH(priv->spi_devid), false);
+
+	/* Wait for erase to complete (2-10ms typical) */
+
+	ret = w25n_waitready_erase(priv);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Check for erase failure */
+
+	status = w25n_read_status(priv, W25N_SR3_ADDR);
+	if (status & W25N_SR3_EFAIL) {
+		ferr("ERROR: Erase failed on block %lu\n", (unsigned long)block);
+		w25n_writedisable(priv);
+		return -EIO;
+	}
+
+	w25n_writedisable(priv);
+	return OK;
+}
+
+/****************************************************************************
+ * Name: w25n_enable_ecc
+ ****************************************************************************/
+
+static void w25n_enable_ecc(FAR struct w25n_dev_s *priv)
+{
+	uint8_t sr2;
+
+	sr2 = w25n_read_status(priv, W25N_SR2_ADDR);
+	sr2 |= W25N_SR2_ECCE;
+	w25n_write_status(priv, W25N_SR2_ADDR, sr2);
+
+	finfo("ECC enabled\n");
+}
+
+/****************************************************************************
+ * Name: w25n_unprotect
+ ****************************************************************************/
+
+static void w25n_unprotect(FAR struct w25n_dev_s *priv)
+{
+	/* Clear all block protection bits */
+
+	w25n_write_status(priv, W25N_SR1_ADDR, 0x00);
+
+	finfo("All blocks unprotected\n");
+}
+
+/****************************************************************************
+ * Name: w25n_erase
+ ****************************************************************************/
+
+static int w25n_erase(FAR struct mtd_dev_s *dev, off_t startblock,
+                      size_t nblocks)
+{
+	FAR struct w25n_dev_s *priv = (FAR struct w25n_dev_s *)dev;
+	size_t i;
+	int ret;
+
+	finfo("startblock=%lu nblocks=%zu\n", (unsigned long)startblock, nblocks);
+
+	w25n_lock(priv);
+
+	ret = w25n_waitready(priv);
+	if (ret < 0) {
+		w25n_unlock(priv);
+		return ret;
+	}
+
+	for (i = 0; i < nblocks; i++) {
+		ret = w25n_block_erase(priv, startblock + i);
+		if (ret < 0) {
+			w25n_unlock(priv);
+			return ret;
+		}
+	}
+
+	w25n_unlock(priv);
+	return (int)nblocks;
+}
+
+/****************************************************************************
+ * Name: w25n_bread
+ ****************************************************************************/
+
+static ssize_t w25n_bread(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks, FAR uint8_t *buf)
+{
+	FAR struct w25n_dev_s *priv = (FAR struct w25n_dev_s *)dev;
+	size_t i;
+	int ret;
+
+	finfo("startblock=%lu nblocks=%zu\n", (unsigned long)startblock, nblocks);
+
+	w25n_lock(priv);
+
+	for (i = 0; i < nblocks; i++) {
+		uint32_t page = startblock + i;
+
+		ret = w25n_read_page(priv, page);
+		if (ret < 0) {
+			w25n_unlock(priv);
+			return ret;
+		}
+
+		w25n_read_buffer(priv, 0, buf + (i * W25N_PAGE_SIZE), W25N_PAGE_SIZE);
+	}
+
+	w25n_unlock(priv);
+	return nblocks;
+}
+
+/****************************************************************************
+ * Name: w25n_bwrite
+ ****************************************************************************/
+
+static ssize_t w25n_bwrite(FAR struct mtd_dev_s *dev, off_t startblock,
+                           size_t nblocks, FAR const uint8_t *buf)
+{
+	FAR struct w25n_dev_s *priv = (FAR struct w25n_dev_s *)dev;
+	size_t i;
+	int ret;
+
+	finfo("startblock=%lu nblocks=%zu\n", (unsigned long)startblock, nblocks);
+
+	w25n_lock(priv);
+
+	ret = w25n_waitready(priv);
+	if (ret < 0) {
+		w25n_unlock(priv);
+		return ret;
+	}
+
+	for (i = 0; i < nblocks; i++) {
+		uint32_t page = startblock + i;
+
+		/* Write Enable must be set before Program Load */
+
+		w25n_writeenable(priv);
+		w25n_load_buffer(priv, 0, buf + (i * W25N_PAGE_SIZE), W25N_PAGE_SIZE);
+		ret = w25n_program_execute(priv, page);
+		if (ret < 0) {
+			w25n_writedisable(priv);
+			w25n_unlock(priv);
+			return ret;
+		}
+	}
+
+	w25n_writedisable(priv);
+	w25n_unlock(priv);
+	return nblocks;
+}
+
+/****************************************************************************
+ * Name: w25n_read
+ ****************************************************************************/
+
+static ssize_t w25n_read(FAR struct mtd_dev_s *dev, off_t offset,
+                         size_t nbytes, FAR uint8_t *buf)
+{
+	FAR struct w25n_dev_s *priv = (FAR struct w25n_dev_s *)dev;
+	size_t bytesread = 0;
+	int ret;
+
+	finfo("offset=%lu nbytes=%zu\n", (unsigned long)offset, nbytes);
+
+	w25n_lock(priv);
+
+	while (bytesread < nbytes) {
+		uint32_t page = offset >> priv->pageshift;
+		uint16_t col = offset & ((1 << priv->pageshift) - 1);
+		size_t chunk = nbytes - bytesread;
+
+		if (chunk > W25N_PAGE_SIZE - col) {
+			chunk = W25N_PAGE_SIZE - col;
+		}
+
+		ret = w25n_read_page(priv, page);
+		if (ret < 0) {
+			w25n_unlock(priv);
+			return ret;
+		}
+
+		w25n_read_buffer(priv, col, buf + bytesread, chunk);
+
+		bytesread += chunk;
+		offset += chunk;
+	}
+
+	w25n_unlock(priv);
+	return bytesread;
+}
+
+/****************************************************************************
+ * Name: w25n_ioctl
+ ****************************************************************************/
+
+static int w25n_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
+{
+	FAR struct w25n_dev_s *priv = (FAR struct w25n_dev_s *)dev;
+	int ret = -EINVAL;
+
+	finfo("cmd=%d arg=%lu\n", cmd, arg);
+
+	switch (cmd) {
+	case MTDIOC_GEOMETRY:
+	{
+		FAR struct mtd_geometry_s *geo =
+		  (FAR struct mtd_geometry_s *)((uintptr_t)arg);
+
+		if (geo) {
+			memset(geo, 0, sizeof(*geo));
+
+			/* Block size is the page size (smallest writable unit) */
+
+			geo->blocksize = W25N_PAGE_SIZE;
+
+			/* Erase size is the block size (smallest erasable unit) */
+
+			geo->erasesize = W25N_BLOCK_SIZE;
+
+			/* Number of erase blocks */
+
+			geo->neraseblocks = priv->nblocks;
+
+			ret = OK;
+
+			finfo("blocksize=%lu erasesize=%lu neraseblocks=%lu\n",
+			      (unsigned long)geo->blocksize,
+			      (unsigned long)geo->erasesize,
+			      (unsigned long)geo->neraseblocks);
+		}
+	}
+	break;
+
+	case BIOC_PARTINFO:
+	{
+		FAR struct partition_info_s *info =
+		  (FAR struct partition_info_s *)((uintptr_t)arg);
+
+		if (info != NULL) {
+			info->numsectors = (uint32_t)priv->nblocks *
+			                   W25N_PAGES_PER_BLOCK;
+			info->sectorsize = W25N_PAGE_SIZE;
+			info->startsector = 0;
+			info->parent[0] = '\0';
+			ret = OK;
+		}
+	}
+	break;
+
+	case MTDIOC_BULKERASE:
+	{
+		/* Erase the entire device */
+
+		ret = w25n_erase(dev, 0, priv->nblocks);
+		if (ret >= 0) {
+			ret = OK;
+		}
+	}
+	break;
+
+	case MTDIOC_ECCSTATUS:
+	{
+		FAR uint8_t *result = (FAR uint8_t *)((uintptr_t)arg);
+
+		if (result) {
+			*result = priv->eccstatus >> 4;
+			ret = OK;
+		}
+	}
+	break;
+
+	default:
+		ret = -ENOTTY;
+		break;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: w25n_initialize
  *
  * Description:
- *   Create an initialize MTD device instance.  MTD devices are not registered
- *   in the file system, but are created as instances that can be bound to
- *   other functions (such as a block or character driver front end).
+ *   Create an initialized MTD device instance for W25N SPI NAND FLASH.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-FAR struct mtd_dev_s *w25n_initialize(FAR struct spi_dev_s *spi)
+FAR struct mtd_dev_s *w25n_initialize(FAR struct spi_dev_s *spi,
+                                      uint32_t spi_devid)
 {
 	FAR struct w25n_dev_s *priv;
+	uint32_t actual_freq;
 	int ret;
 
-	fvdbg("spi: %p\n", spi);
+	finfo("spi=%p spi_devid=%lu\n", spi, (unsigned long)spi_devid);
 
-	/* Allocate a state structure (we allocate the structure instead of using
-	 * a fixed, static allocation so that we can handle multiple FLASH devices.
-	 * The current implementation would handle only one FLASH part per SPI
-	 * device (only because of the SPIDEV_FLASH definition) and so would have
-	 * to be extended to handle multiple FLASH parts on the same SPI bus.
-	 */
+	/* Allocate device structure */
 
-	priv = (FAR struct w25n_dev_s *)kmm_zalloc(sizeof(struct w25n_dev_s));
-	if (priv) {
-		/* Initialize the allocated structure (unsupported methods were
-		 * nullified by kmm_zalloc).
-		 */
-		priv->raw.eraseblock = w25n_blockerase;
-		priv->raw.rawread = w25n_pageread;
-		priv->raw.rawwrite = w25n_pagewrite;
-
-		priv->spi = spi;
-		/* Deselect the FLASH */
-
-		SPI_SELECT(spi, SPIDEV_FLASH, false);
-
-		/* Identify the FLASH chip and get its capacity */
-
-		ret = w25n_readid(priv);
-
-		if (ret != OK) {
-			/* Unrecognized! Discard all of that work we just did and return NULL */
-
-			fdbg("ERROR: Unrecognized\n");
-			kmm_free(priv);
-			return NULL;
-		}
-
-		/* Make sure that the FLASH is unprotected so that we can write into it */
-
-#ifndef CONFIG_W25N_READONLY
-		fvdbg("Set Block Protection to none\n");
-		w25n_unprotect(priv);
-#endif
-
-		fvdbg("Enable internal ECC for flash\n");
-		w25n_eccenable(priv);
-
+	priv = kmm_zalloc(sizeof(struct w25n_dev_s));
+	if (priv == NULL) {
+		ferr("ERROR: Failed to allocate device structure\n");
+		return NULL;
 	}
 
-	/* Return the implementation-specific state structure as the MTD device */
+	/* Initialize the device structure */
 
-	fvdbg("Return %p\n", priv);
-	return nand_initialize((struct nand_raw_s *)priv);
+	priv->mtd.erase  = w25n_erase;
+	priv->mtd.bread  = w25n_bread;
+	priv->mtd.bwrite = w25n_bwrite;
+	priv->mtd.read   = w25n_read;
+	priv->mtd.ioctl  = w25n_ioctl;
+	priv->mtd.name   = "w25n";
+	priv->spi        = spi;
+	priv->spi_devid  = spi_devid;
+
+	/* Deselect the device */
+
+	SPI_SELECT(spi, SPIDEV_FLASH(spi_devid), false);
+
+	/* Lock and configure SPI */
+
+	w25n_lock(priv);
+
+	/* Reset the device */
+
+	w25n_reset(priv);
+
+	/* Wait for reset and read ID */
+
+	ret = w25n_readid(priv);
+	if (ret < 0) {
+		w25n_unlock(priv);
+		kmm_free(priv);
+		return NULL;
+	}
+
+	/* Unprotect all blocks */
+
+	w25n_unprotect(priv);
+
+	/* Enable ECC */
+
+	w25n_enable_ecc(priv);
+
+	w25n_unlock(priv);
+
+	/* Log actual SPI frequency */
+
+	w25n_lock(priv);
+	actual_freq = SPI_SETFREQUENCY(priv->spi, CONFIG_W25N_SPIFREQUENCY);
+	w25n_unlock(priv);
+
+	finfo("W25N: SPI freq: requested=%lu, actual=%lu Hz\n",
+	      (unsigned long)CONFIG_W25N_SPIFREQUENCY,
+	      (unsigned long)actual_freq);
+	finfo("W25N initialized: %d blocks, %d bytes/block\n",
+	      priv->nblocks, W25N_BLOCK_SIZE);
+
+	return &priv->mtd;
 }

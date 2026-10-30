@@ -1,0 +1,265 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# drivers/mtd/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+############################################################################
+
+############################################################################
+# These driver supports various Memory Technology Devices (MTD) using the
+# NuttX MTD interface.
+#
+############################################################################
+
+# Include MTD drivers
+
+ifeq ($(CONFIG_MTD),y)
+
+CSRCS += ftl.c
+
+ifeq ($(CONFIG_MTD_CONFIG_NVS),y)
+CSRCS += mtd_config_nvs.c
+else ifeq ($(CONFIG_MTD_CONFIG),y)
+CSRCS += mtd_config.c
+endif
+
+ifeq ($(CONFIG_MTD_PARTITION),y)
+CSRCS += mtd_partition.c
+endif
+
+ifeq ($(CONFIG_MTD_SECT512),y)
+CSRCS += sector512.c
+endif
+
+ifeq ($(CONFIG_MTD_WRBUFFER),y)
+CSRCS += mtd_rwbuffer.c
+else
+ifeq ($(CONFIG_MTD_READAHEAD),y)
+CSRCS += mtd_rwbuffer.c
+endif
+endif
+
+ifeq ($(CONFIG_MTD_PROGMEM),y)
+CSRCS += mtd_progmem.c
+endif
+
+ifeq ($(CONFIG_MTD_NAND),y)
+CSRCS += mtd_nand.c mtd_onfi.c mtd_nandscheme.c mtd_nandmodel.c mtd_modeltab.c
+ifeq ($(CONFIG_MTD_NAND_SWECC),y)
+CSRCS += mtd_nandecc.c hamming.c
+endif
+
+ifeq ($(CONFIG_MTD_NAND_RAM), y)
+CSRCS += mtd_nandram.c
+endif
+
+ifeq ($(CONFIG_MTD_NAND_WRAPPER), y)
+CSRCS += mtd_nandwrapper.c
+endif
+
+endif
+
+ifeq ($(CONFIG_RAMMTD),y)
+CSRCS += rammtd.c
+endif
+
+ifeq ($(CONFIG_FILEMTD),y)
+CSRCS += filemtd.c
+endif
+
+ifeq ($(CONFIG_NULLMTD),y)
+CSRCS += nullmtd.c
+endif
+
+ifeq ($(CONFIG_RPMSGMTD),y)
+CSRCS += rpmsgmtd.c
+endif
+
+ifeq ($(CONFIG_RPMSGMTD_SERVER),y)
+CSRCS += rpmsgmtd_server.c
+endif
+
+ifeq ($(CONFIG_MTD_AT24XX),y)
+CSRCS += at24xx.c
+endif
+
+ifeq ($(CONFIG_MTD_AT25EE),y)
+CSRCS += at25ee.c
+endif
+
+ifeq ($(CONFIG_MTD_AT45DB),y)
+CSRCS += at45db.c
+endif
+
+ifeq ($(CONFIG_MTD_RAMTRON),y)
+CSRCS += ramtron.c
+endif
+
+ifeq ($(CONFIG_MTD_SST25),y)
+CSRCS += sst25.c
+endif
+
+ifeq ($(CONFIG_MTD_SST25XX),y)
+CSRCS += sst25xx.c
+endif
+
+ifeq ($(CONFIG_MTD_SST26),y)
+CSRCS += sst26.c
+endif
+
+ifeq ($(CONFIG_MTD_SST39FV),y)
+CSRCS += sst39vf.c
+endif
+
+ifeq ($(CONFIG_MTD_W25),y)
+CSRCS += w25.c
+endif
+
+ifeq ($(CONFIG_MTD_GD25),y)
+CSRCS += gd25.c
+endif
+
+ifeq ($(CONFIG_MTD_GD55),y)
+CSRCS += gd55.c
+endif
+
+ifeq ($(CONFIG_MTD_GD5F),y)
+CSRCS += gd5f.c
+endif
+
+ifeq ($(CONFIG_MTD_W25N),y)
+CSRCS += w25n.c
+endif
+
+ifeq ($(CONFIG_MTD_AT25),y)
+CSRCS += at25.c
+endif
+
+ifeq ($(CONFIG_MTD_M25P),y)
+CSRCS += m25px.c
+endif
+
+ifeq ($(CONFIG_MTD_MX25L),y)
+CSRCS += mx25lx.c
+endif
+
+ifeq ($(CONFIG_MTD_MX35),y)
+CSRCS += mx35.c
+endif
+
+ifeq ($(CONFIG_MTD_S25FL1),y)
+CSRCS += s25fl1.c
+endif
+
+ifeq ($(CONFIG_MTD_N25QXXX),y)
+CSRCS += n25qxxx.c
+endif
+
+ifeq ($(CONFIG_MTD_W25QXXXJV),y)
+CSRCS += w25qxxxjv.c
+endif
+
+ifeq ($(CONFIG_MTD_MX25RXX),y)
+CSRCS += mx25rxx.c
+endif
+
+ifeq ($(CONFIG_MTD_IS25XP),y)
+CSRCS += is25xp.c
+endif
+
+ifeq ($(CONFIG_MTD_SMART),y)
+ifeq ($(CONFIG_FS_SMARTFS),y)
+CSRCS += smart.c
+endif
+endif
+
+ifeq ($(CONFIG_MTD_DHARA),y)
+
+master.zip:
+	$(call DOWNLOAD,https://github.com/dlbeer/dhara/archive/refs/heads,master.zip)
+
+.dharaunpack: master.zip
+	$(Q) unzip master.zip -d mtd/
+	$(Q) mv mtd/dhara-master mtd/dhara
+	$(Q) touch mtd/dhara/.dharaunpack
+
+ifeq ($(wildcard mtd/dhara/.git),)
+context:: .dharaunpack
+
+distclean::
+	$(call DELFILE, master.zip)
+	$(call DELDIR, mtd/dhara)
+endif
+
+CSRCS += dhara.c
+CSRCS += mtd/dhara/dhara/map.c
+CSRCS += mtd/dhara/dhara/error.c
+CSRCS += mtd/dhara/dhara/journal.c
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)drivers$(DELIM)mtd$(DELIM)dhara
+endif
+
+ifeq ($(CONFIG_MTD_NVBLK),y)
+
+main.zip:
+	$(call DOWNLOAD,https://github.com/Laczen/nvblk/archive/refs/heads,main.zip,mtd/nvblk-main.zip)
+
+.nvblkunpack: main.zip
+	$(Q) unzip mtd/nvblk-main.zip
+	$(call DELFILE, mtd/nvblk-main.zip)
+	$(Q) mv nvblk-main mtd/nvblk
+	$(Q) touch mtd/nvblk/.nvblkunpack
+
+ifeq ($(wildcard mtd/nvblk/.gitignore),)
+context:: .nvblkunpack
+endif
+
+distclean::
+	$(call DELDIR, mtd/nvblk)
+
+CSRCS += nvblk.c
+CSRCS += mtd/nvblk/src/nvblk.c
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)drivers$(DELIM)mtd$(DELIM)nvblk$(DELIM)include
+endif
+
+ifeq ($(CONFIG_MTD_CFI),y)
+CSRCS += mtd_cfi.c
+CSRCS += cfi.c
+endif
+
+# Include MTD driver support
+
+DEPPATH += --dep-path mtd
+VPATH += :mtd
+
+endif
