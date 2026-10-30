@@ -85,6 +85,21 @@ static const char *dequote_list[] = {
 	"CONFIG_PASS1_OBJECT",		/* Pass1 build object */
 	"CONFIG_DEBUG_OPTLEVEL",	/* Custom debug level */
 
+	/* NuttX 12.13.0 */
+
+	"CONFIG_EXECFUNCS_NSYMBOLS_VAR",	/* Variable holding number of symbols in the table */
+	"CONFIG_EXECFUNCS_SYMTAB_ARRAY",	/* Symbol table array used by exec[l|v] */
+	"CONFIG_INIT_ARGS",		/* Argument list of entry point */
+	"CONFIG_INIT_SYMTAB",		/* Global symbol table */
+	"CONFIG_INIT_NEXPORTS",		/* Global symbol table size */
+	"CONFIG_INIT_ENTRYPOINT",	/* Name of entry point function */
+	"CONFIG_LIBC_ELF_SYMTAB_ARRAY",	/* Symbol table array used by elf functions */
+	"CONFIG_LIBC_ELF_NSYMBOLS_VAR",	/* Variable holding number of symbols in the table */
+	"CONFIG_TTY_LAUNCH_ENTRYPOINT",	/* Name of entry point from tty launch */
+	"CONFIG_TTY_LAUNCH_ARGS",	/* Argument list of entry point from tty launch */
+	"CONFIG_BOARD_MEMORY_RANGE",	/* Memory range for board */
+	"CONFIG_FAKE_AUDIO_DEVICE_PARAMS",	/* Arguments for the fake audio device */
+
 	/* apps/ definitions */
 
 	"CONFIG_EXAMPLES_HELLO_PROGNAME",	/* Name of installed hello example program */
@@ -308,6 +323,11 @@ void generate_definitions(FILE * stream)
 
 				else if (strcmp(varval, "y") == 0)
 					printf("#define %s 1\n", varname);
+
+				/* Or to '2' if it has the special value 'm' */
+
+				else if (strcmp(varval, "m") == 0)
+					printf("#define %s 2\n", varname);
 
 				/* Otherwise, use the value as provided */
 
