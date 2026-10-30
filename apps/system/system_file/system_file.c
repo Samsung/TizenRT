@@ -23,6 +23,7 @@
 #endif
 #include <sys/stat.h>
 #include <apps/system/system_file.h>
+#include <tinyara/crc32.h>
 #include <tinyara/fs/ioctl.h>
 
 typedef enum {
