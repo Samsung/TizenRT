@@ -65,7 +65,21 @@ USERLIBS =
 # Add libraries for syscall support.
 
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libarch$(LIBEXT)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libboards$(LIBEXT)
+
+# NuttX libraries
+
+ifeq ($(CONFIG_LIB_BUILTIN),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libbuiltin$(LIBEXT)
+endif
+
+ifeq ($(CONFIG_LIBM_TOOLCHAIN)$(CONFIG_LIBM_NONE),)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libm$(LIBEXT)
+endif
+
+ifeq ($(CONFIG_LIBDSP),y)
+TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libdsp$(LIBEXT)
+endif
 ifeq ($(CONFIG_LIB_SYSCALL),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT)
 USERLIBS  += $(LIBRARIES_DIR)$(DELIM)libproxies$(LIBEXT)
@@ -107,20 +121,8 @@ endif
 
 # Add libraries for file system support
 
-ifeq ($(CONFIG_NFILE_DESCRIPTORS),0)
-ifneq ($(CONFIG_NSOCKET_DESCRIPTORS),0)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT)
-endif
-ifeq ($(CONFIG_NET),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
-endif
-else
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
-endif
-
-ifeq ($(CONFIG_BINFMT_ENABLE),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT)
-endif
 
 # Add libraries for the Audio sub-system
 
