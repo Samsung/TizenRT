@@ -26,6 +26,10 @@
 
 void free_user_at(struct mm_heap_s *heap, void *mem)
 {
+	if (!mem) {
+		return;
+	}
+
 	mm_free(heap, mem);
 }
 
@@ -120,7 +124,6 @@ void *malloc_user_at(struct mm_heap_s *heap, size_t size)
 void *realloc_user_at(struct mm_heap_s *heap, void *oldmem, size_t newsize)
 {
 	if (newsize == 0) {
-		free_user_at(heap, oldmem);
 		return NULL;
 	}
 

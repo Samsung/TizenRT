@@ -264,11 +264,36 @@ static void tc_umm_heap_realloc(void)
 #endif
 	}
 
-	/* Relloc Free by size 0 */
+	/* A zero-size with valid pointer request reports EINVAL. */
 
 	mem_ptr[0] = (int *)malloc(10);
+	set_errno(0);
 	mem_ptr[1] = (int *)realloc(mem_ptr[0], 0);
 	TC_ASSERT_EQ_CLEANUP("realloc", mem_ptr[1], NULL, free(mem_ptr[0]));
+	TC_ASSERT_EQ_CLEANUP("realloc errno", get_errno(), EINVAL, free(mem_ptr[0]));
+	free(mem_ptr[0]);
+
+	/* A zero-size with NULL pointer request return NULL */
+
+	mem_ptr[1] = (int *)realloc(NULL, 0);
+	TC_ASSERT_EQ("realloc(NULL, 0)", mem_ptr[1], NULL);
+
+	/* A failed positive-size request reports ENOMEM and preserves the block. */
+
+#if !defined(CONFIG_MM_ASSERT_ON_FAIL)
+	mem_ptr[0] = (int *)malloc(10);
+	TC_ASSERT_NEQ_CLEANUP("malloc", mem_ptr[0], NULL, free(mem_ptr[0]));
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	cur = mallinfo();
+#else
+	(void)mallinfo(&cur);
+#endif
+	set_errno(0);
+	mem_ptr[1] = (int *)realloc(mem_ptr[0], cur.mxordblk + 1);
+	TC_ASSERT_EQ_CLEANUP("realloc failure", mem_ptr[1], NULL, free(mem_ptr[0]));
+	TC_ASSERT_EQ_CLEANUP("realloc ENOMEM", get_errno(), ENOMEM, free(mem_ptr[0]));
+	free(mem_ptr[0]);
+#endif /* CONFIG_MM_ASSERT_ON_FAIL */
 
 	/* Verify freeing */
 
