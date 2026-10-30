@@ -784,29 +784,21 @@ if ARCH_ARM
 source "libs/libc/machine/arm/Kconfig"
 endif
 if ARCH_ARM64
-source "libs/libc/machine/arm64/Kconfig"
 endif
 if ARCH_RISCV
-source "libs/libc/machine/risc-v/Kconfig"
 endif
 if ARCH_SIM
-source "libs/libc/machine/sim/Kconfig"
 endif
 if ARCH_X86
-source "libs/libc/machine/x86/Kconfig"
 endif
 if ARCH_X86_64
-source "libs/libc/machine/x86_64/Kconfig"
 endif
 if ARCH_XTENSA
-source "libs/libc/machine/xtensa/Kconfig"
 endif
 if ARCH_RENESAS
-source "libs/libc/machine/renesas/Kconfig"
 endif
 
 if ARCH_SPARC
-source "libs/libc/machine/sparc/Kconfig"
 endif
 
 endmenu # Architecture-Specific Support

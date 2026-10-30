@@ -54,13 +54,7 @@ else ifeq ($(CONFIG_LIBCXX),y)
 include libcxx/Make.defs
 endif
 
-ifeq ($(CONFIG_ETL),y)
-include etl/Make.defs
-endif
-
-ifeq ($(CONFIG_LIBCXXABI),y)
-include libcxxabi/Make.defs
-else ifeq ($(CONFIG_LIBMINIABI),y)
+ifeq ($(CONFIG_LIBMINIABI),y)
 include libminiabi/Make.defs
 else ifeq ($(CONFIG_LIBSUPCXX),y)
 include libstdc++/libsupc++.defs

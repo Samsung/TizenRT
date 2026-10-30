@@ -50,7 +50,6 @@ include iob/Make.defs
 include mempool/Make.defs
 include kasan/Make.defs
 include ubsan/Make.defs
-include tlsf/Make.defs
 include map/Make.defs
 include kmap/Make.defs
 

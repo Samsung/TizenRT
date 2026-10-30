@@ -43,7 +43,6 @@ BINDIR ?= bin
 KBIN = libkbuiltin$(LIBEXT)
 KBINDIR = kbin
 
-include compiler-rt/Make.defs
 include libgcc/Make.defs
 
 AOBJS = $(addprefix $(BINDIR)$(DELIM), $(ASRCS:.S=$(OBJEXT)))

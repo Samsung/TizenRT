@@ -41,12 +41,6 @@ include $(TOPDIR)/Make.defs
 
 ifeq ($(CONFIG_LIBM),y)
 include libm/Make.defs
-else ifeq ($(CONFIG_LIBM_NEWLIB),y)
-include newlib/Make.defs
-else ifeq ($(CONFIG_LIBM_LIBMCS),y)
-include libmcs/Make.defs
-else ifeq ($(CONFIG_LIBM_OPENLIBM),y)
-include openlibm/Make.defs
 endif
 
 BINDIR ?= bin
