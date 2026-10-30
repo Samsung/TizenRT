@@ -17,39 +17,27 @@
  ****************************************************************************/
 /****************************************************************************
  * drivers/usbhost/usbhost_devaddr.c
- * Manage USB device addresses
  *
- *   Copyright (C) 2013, 2015 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
+
+/* Manage USB device addresses */
 
 /****************************************************************************
  * Included Files
@@ -58,6 +46,7 @@
 #include <tinyara/config.h>
 
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -74,37 +63,13 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: usbhost_takesem and usbhost_givesem
- *
- * Description:
- *   This is just a wrapper to handle the annoying behavior of semaphore
- *   waits that return due to the receipt of a signal.
- *
- ****************************************************************************/
-
-static void usbhost_takesem(FAR struct usbhost_devaddr_s *devgen)
-{
-	/* Take the semaphore (perhaps waiting) */
-
-	while (sem_wait(&devgen->exclsem) != 0) {
-		/* The only case that an error should occur here is if the wait was
-		 * awakened by a signal.
-		 */
-
-		ASSERT(errno == EINTR);
-	}
-}
-
-#define usbhost_givesem(devgen) sem_post(&devgen->exclsem)
-
-/****************************************************************************
  * Name: usbhost_devaddr_allocate
  *
  * Description:
  *   Allocate a new unique device address.
  *
  * Assumptions:
- *   Caller hold the exclsem
+ *   Caller hold the lock
  *
  ****************************************************************************/
 
@@ -138,7 +103,7 @@ static int usbhost_devaddr_allocate(FAR struct usbhost_devaddr_s *devgen)
 			return (int)devaddr;
 		}
 
-		/* This address has already been allocated.  The followign logic will
+		/* This address has already been allocated.  The following logic will
 		 * prevent (unexpected) infinite loops.
 		 */
 
@@ -157,11 +122,12 @@ static int usbhost_devaddr_allocate(FAR struct usbhost_devaddr_s *devgen)
  *   De-allocate a device address.
  *
  * Assumptions:
- *   Caller hold the exclsem
+ *   Caller hold the lock
  *
  ****************************************************************************/
 
-static void usbhost_devaddr_free(FAR struct usbhost_devaddr_s *devgen, uint8_t devaddr)
+static void usbhost_devaddr_free(FAR struct usbhost_devaddr_s *devgen,
+                                 uint8_t devaddr)
 {
 	int index;
 	int bitno;
@@ -189,7 +155,8 @@ static void usbhost_devaddr_free(FAR struct usbhost_devaddr_s *devgen, uint8_t d
  *
  ****************************************************************************/
 
-static inline FAR struct usbhost_roothubport_s *usbhost_roothubport(FAR struct usbhost_hubport_s *hport)
+static inline FAR struct usbhost_roothubport_s *
+usbhost_roothubport(FAR struct usbhost_hubport_s *hport)
 {
 #ifdef CONFIG_USBHOST_HUB
 	/* If this is a root hub port then the parent port pointer will be NULL.
@@ -198,8 +165,8 @@ static inline FAR struct usbhost_roothubport_s *usbhost_roothubport(FAR struct u
 	 */
 
 	while (hport->parent != NULL) {
-		/* This is not a root hub port.  It is a port on a hub.  Try the port of
-		 * the parent hub that supports this port.
+		/* This is not a root hub port.  It is a port on a hub.  Try the port
+		 * of the parent hub that supports this port.
 		 */
 
 		hport = hport->parent;
@@ -218,13 +185,14 @@ static inline FAR struct usbhost_roothubport_s *usbhost_roothubport(FAR struct u
  *
  ****************************************************************************/
 
-static FAR struct usbhost_devaddr_s *usbhost_devaddr_gen(FAR struct usbhost_hubport_s *hport)
+static FAR struct usbhost_devaddr_s *
+usbhost_devaddr_gen(FAR struct usbhost_hubport_s *hport)
 {
 	FAR struct usbhost_roothubport_s *rhport;
 
 	rhport = usbhost_roothubport(hport);
 	if (rhport != NULL) {
-		return &rhport->devgen;
+		return rhport->pdevgen;
 	}
 
 	return NULL;
@@ -243,23 +211,28 @@ static FAR struct usbhost_devaddr_s *usbhost_devaddr_gen(FAR struct usbhost_hubp
  *   hub port.
  *
  * Input Parameters:
- *   rhport - A reference to a roothubport structure.
+ *   devgen - A reference to a usbhost_devaddr_s structure.
  *
  * Returned Value:
- *   None
+ *   On success, zero (OK) is returned. On a failure, a negated errno value
+ *   is returned indicating the nature of the failure.
  *
  ****************************************************************************/
 
-void usbhost_devaddr_initialize(FAR struct usbhost_roothubport_s *rhport)
+int usbhost_devaddr_initialize(FAR struct usbhost_devaddr_s *devgen)
 {
-	FAR struct usbhost_devaddr_s *devgen;
+	int ret = -EINVAL;
 
-	DEBUGASSERT(rhport);
-	devgen = &rhport->devgen;
+	DEBUGASSERT(devgen);
 
-	memset(devgen, 0, sizeof(struct usbhost_devaddr_s));
-	sem_init(&devgen->exclsem, 0, 1);
-	devgen->next = 1;
+	if (devgen) {
+		memset(devgen, 0, sizeof(struct usbhost_devaddr_s));
+		nxmutex_init(&devgen->lock);
+		devgen->next = 1;
+		ret = OK;
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -282,6 +255,7 @@ int usbhost_devaddr_create(FAR struct usbhost_hubport_s *hport)
 {
 	FAR struct usbhost_devaddr_s *devgen;
 	int devaddr;
+	int ret;
 
 	/* Get the address generation data from the root hub port */
 
@@ -291,15 +265,18 @@ int usbhost_devaddr_create(FAR struct usbhost_hubport_s *hport)
 
 	/* Get exclusive access to the root hub port device address data */
 
-	usbhost_takesem(devgen);
+	ret = nxmutex_lock(&devgen->lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Allocate a device address */
 
 	devaddr = usbhost_devaddr_allocate(devgen);
-	usbhost_givesem(devgen);
+	nxmutex_unlock(&devgen->lock);
 
 	if (devaddr < 0) {
-		udbg("ERROR: Failed to allocate a device address\n");
+		uerr("ERROR: Failed to allocate a device address\n");
 	}
 
 	return devaddr;
@@ -309,7 +286,8 @@ int usbhost_devaddr_create(FAR struct usbhost_hubport_s *hport)
  * Name: usbhost_devaddr_destroy
  *
  * Description:
- *   Release a device address previously assigned by usbhost_devaddr_create().
+ *   Release a device address previously assigned by
+ *   usbhost_devaddr_create().
  *
  * Input Parameters:
  *   hport - A reference to a hub port structure from which a device has been
@@ -321,9 +299,11 @@ int usbhost_devaddr_create(FAR struct usbhost_hubport_s *hport)
  *
  ****************************************************************************/
 
-void usbhost_devaddr_destroy(FAR struct usbhost_hubport_s *hport, uint8_t devaddr)
+void usbhost_devaddr_destroy(FAR struct usbhost_hubport_s *hport,
+                             uint8_t devaddr)
 {
 	FAR struct usbhost_devaddr_s *devgen;
+	int ret;
 
 	/* Ignore bad device address */
 
@@ -336,11 +316,20 @@ void usbhost_devaddr_destroy(FAR struct usbhost_hubport_s *hport, uint8_t devadd
 
 		/* Get exclusive access to the root hub port device address data */
 
-		usbhost_takesem(devgen);
+		do {
+			ret = nxmutex_lock(&devgen->lock);
+
+			/* The only expected error would -ECANCELED meaning that the parent
+			 * thread has been canceled.  We have to continue and free the
+			 * device address in this case.
+			 */
+
+			DEBUGASSERT(ret == OK || ret == -ECANCELED);
+		} while (ret < 0);
 
 		/* Free the device address */
 
 		usbhost_devaddr_free(devgen, devaddr);
-		usbhost_givesem(devgen);
+		nxmutex_unlock(&devgen->lock);
 	}
 }

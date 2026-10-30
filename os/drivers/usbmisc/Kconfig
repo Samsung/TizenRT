@@ -1,0 +1,120 @@
+#
+# For a description of the syntax of this configuration file,
+# see misc/tools/kconfig-language.txt.
+#
+
+menuconfig USBMISC
+	bool "USB Miscellaneous drivers"
+	default n
+	---help---
+		USB Miscellaneous drivers.
+
+if USBMISC
+
+config FUSB301
+	bool "On Semiconductor FUSB301 USB Type-C controller support"
+	default n
+	select I2C
+	---help---
+		Enable device driver for Fairchild/On Semiconductor USB Type-C controller
+
+if FUSB301
+
+config FUSB301_I2C_FREQUENCY
+	int "FUSB301 I2C frequency"
+	default 400000
+	range 1 400000
+
+config DEBUG_FUSB301
+	bool "Enable debug support for the FUSB301"
+	default n
+	---help---
+		Enables debug support for the FUSB301
+
+config FUSB301_NPOLLWAITERS
+	int "Number of waiters to poll"
+	default 2
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+endif
+
+config FUSB302
+	bool "On Semiconductor FUSB302 USB Type-C controller support"
+	default n
+	select I2C
+	---help---
+		Enable device driver for Fairchild/On Semiconductor USB Type-C controller
+
+if FUSB302
+
+config FUSB302_NPOLLWAITERS
+	int "Number of waiters to poll"
+	default 2
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+config DEBUG_FUSB302_REG
+	bool "Enable register dumps for debug"
+	default n
+
+endif
+
+config FUSB303
+	bool "On Semiconductor FUSB303 USB Type-C controller support"
+	default n
+	select I2C
+	---help---
+		Enable device driver for Fairchild/On Semiconductor USB Type-C controller
+
+if FUSB303
+
+config FUSB303_I2C_FREQUENCY
+	int "FUSB303 I2C frequency"
+	default 400000
+	range 1 400000
+
+config DEBUG_FUSB303
+	bool "Enable debug support for the FUSB303"
+	default n
+	---help---
+		Enables debug support for the FUSB303
+
+config FUSB303_NPOLLWAITERS
+	int "Number of waiters to poll"
+	default 2
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+endif
+
+config STUSB4500
+	bool "ST standalone USB PD sink controller"
+	default n
+	select I2C
+	---help---
+		Enable device driver for ST standalone USB PD (power delivery) sink
+		controller that addresses sink up to 100 W (20 V; 5 A).
+
+if STUSB4500
+
+config STUSB4500_I2C_FREQUENCY
+	int "STUSB4500 I2C frequency"
+	default 400000
+	range 1 400000
+
+config DEBUG_STUSB4500
+	bool "Enable debug support for the STUSB4500"
+	default n
+	---help---
+		Enables debug support for the STUSB4500
+
+config STUSB4500_NPOLLWAITERS
+	int "Number of waiters to poll"
+	default 2
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+endif
+
+endif # USBMISC

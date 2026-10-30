@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/usbhost/usbhost_trace.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,13 +42,15 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/spinlock.h>
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
-#include <arch/irq.h>
+#include <tinyara/irq.h>
 #include <tinyara/usb/usbhost_trace.h>
 #undef usbtrace
 
@@ -72,7 +61,7 @@
 /* Configuration ************************************************************/
 
 #ifndef CONFIG_USBHOST_TRACE_NRECORDS
-#define CONFIG_USBHOST_TRACE_NRECORDS 128
+#  define CONFIG_USBHOST_TRACE_NRECORDS 128
 #endif
 
 /****************************************************************************
@@ -89,6 +78,7 @@
 
 #ifdef CONFIG_USBHOST_TRACE
 static uint32_t g_trace[CONFIG_USBHOST_TRACE_NRECORDS];
+static spinlock_t g_usbhost_trace_lock = SP_UNLOCKED;
 static volatile uint16_t g_head = 0;
 static volatile uint16_t g_tail = 0;
 static volatile bool g_disabled = false;
@@ -127,7 +117,7 @@ static int usbhost_trsyslog(uint32_t event, FAR void *arg)
 		syslog(LOG_INFO, fmt, (unsigned int)TRACE_DECODE_U23(event));
 	}
 
-	/* No, then it must be the two argument format first. */
+	/* No, then it must the two argument format first. */
 
 	else {
 		fmt = usbhost_trformat2(id);
@@ -135,13 +125,14 @@ static int usbhost_trsyslog(uint32_t event, FAR void *arg)
 		if (fmt) {
 			/* Just print the data using syslog() */
 
-			syslog(LOG_INFO, fmt, (unsigned int)TRACE_DECODE_U7(event), (unsigned int)TRACE_DECODE_U16(event));
+			syslog(LOG_INFO, fmt, (unsigned int)TRACE_DECODE_U7(event),
+			       (unsigned int)TRACE_DECODE_U16(event));
 		}
 	}
 
 	return OK;
 }
-#endif							/* CONFIG_USBHOST_TRACE */
+#endif /* CONFIG_USBHOST_TRACE */
 
 /****************************************************************************
  * Name: usbhost_trace_common
@@ -161,7 +152,7 @@ void usbhost_trace_common(uint32_t event)
 
 	/* Check if tracing is enabled for this ID */
 
-	flags = enter_critical_section();
+	flags = spin_lock_irqsave(&g_usbhost_trace_lock);
 	if (!g_disabled) {
 		/* Yes... save the new trace data at the head */
 
@@ -179,9 +170,10 @@ void usbhost_trace_common(uint32_t event)
 			}
 		}
 	}
-	leave_critical_section(flags);
+
+	spin_unlock_irqrestore(&g_usbhost_trace_lock, flags);
 }
-#endif							/* CONFIG_USBHOST_TRACE */
+#endif /* CONFIG_USBHOST_TRACE */
 
 /****************************************************************************
  * Public Functions
@@ -199,7 +191,7 @@ void usbhost_trace_common(uint32_t event)
  ****************************************************************************/
 
 #if defined(CONFIG_USBHOST_TRACE) || \
-	(defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
+   (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
 
 void usbhost_trace1(uint16_t id, uint32_t u23)
 {
@@ -211,7 +203,9 @@ void usbhost_trace1(uint16_t id, uint32_t u23)
 	/* Get the format associated with the trace */
 
 	fmt = usbhost_trformat1(id);
-	DEBUGASSERT(fmt);
+	if (fmt == NULL) {
+		return;
+	}
 
 	/* Just print the data using syslog() */
 
@@ -229,7 +223,9 @@ void usbhost_trace2(uint16_t id, uint8_t u7, uint16_t u16)
 	/* Get the format associated with the trace */
 
 	fmt = usbhost_trformat2(id);
-	DEBUGASSERT(fmt);
+	if (fmt == NULL) {
+		return;
+	}
 
 	/* Just print the data using syslog() */
 
@@ -237,7 +233,7 @@ void usbhost_trace2(uint16_t id, uint8_t u7, uint16_t u16)
 #endif
 }
 
-#endif							/* CONFIG_USBHOST_TRACE || CONFIG_DEBUG && CONFIG_DEBUG_USB */
+#endif /* CONFIG_USBHOST_TRACE || CONFIG_DEBUG_FEATURES && CONFIG_DEBUG_USB */
 
 /****************************************************************************
  * Name: usbtrace_enumerate
@@ -288,7 +284,7 @@ int usbhost_trenumerate(usbhost_trcallback_t callback, FAR void *arg)
 	g_disabled = false;
 	return ret;
 }
-#endif							/* CONFIG_USBHOST_TRACE */
+#endif /* CONFIG_USBHOST_TRACE */
 
 /****************************************************************************
  * Name: usbhost_trdump
@@ -306,4 +302,4 @@ int usbhost_trdump(void)
 {
 	return usbhost_trenumerate(usbhost_trsyslog, NULL);
 }
-#endif							/* CONFIG_USBHOST_TRACE */
+#endif /* CONFIG_USBHOST_TRACE */
