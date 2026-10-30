@@ -69,12 +69,6 @@ mm$(DELIM)libkmm$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT): mm$(DELIM)libkmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libkmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT)
 
-wqueue$(DELIM)libkwque$(LIBEXT): context
-	$(Q) $(MAKE) $(JOBS) -C wqueue TOPDIR="$(TOPDIR)" libkwque$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkwque$(LIBEXT) BINDIR=kbin
-
-$(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT): wqueue$(DELIM)libkwque$(LIBEXT)
-	$(Q) install wqueue$(DELIM)libkwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT)
-
 $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT): context
 	$(Q) $(MAKE) $(JOBS) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libkarch$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
@@ -86,6 +80,12 @@ kernel$(DELIM)libkernel$(LIBEXT): context
 
 $(LIBRARIES_DIR)$(DELIM)libkernel$(LIBEXT): kernel$(DELIM)libkernel$(LIBEXT)
 	$(Q) install kernel$(DELIM)libkernel$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkernel$(LIBEXT)
+
+board$(DELIM)libboards$(LIBEXT): context
+	$(Q) $(MAKE) $(JOBS) -C board TOPDIR="$(TOPDIR)" libboards$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+
+$(LIBRARIES_DIR)$(DELIM)libboards$(LIBEXT): board$(DELIM)libboards$(LIBEXT)
+	$(Q) install board$(DELIM)libboards$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libboards$(LIBEXT)
 
 net$(DELIM)libnet$(LIBEXT): context
 	$(Q) $(MAKE) $(JOBS) -C net TOPDIR="$(TOPDIR)" libnet$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
@@ -129,13 +129,11 @@ drivers$(DELIM)libdrivers$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT): drivers$(DELIM)libdrivers$(LIBEXT)
 	$(Q) install drivers$(DELIM)libdrivers$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 
-ifeq ($(CONFIG_BINFMT_ENABLE),y)
 binfmt$(DELIM)libbinfmt$(LIBEXT): context
 	$(Q) $(MAKE) $(JOBS) -C binfmt TOPDIR="$(TOPDIR)" libbinfmt$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT): binfmt$(DELIM)libbinfmt$(LIBEXT)
 	$(Q) install binfmt$(DELIM)libbinfmt$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT)
-endif
 
 # Special case
 
@@ -146,24 +144,6 @@ $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT): syscall$(DELIM)libstubs$(LIBEXT)
 	$(Q) install syscall$(DELIM)libstubs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT)
 
 # Possible user-mode builds
-
-libc$(DELIM)libuc$(LIBEXT): context
-	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n BIN=libuc$(LIBEXT) BINDIR=ubin
-
-$(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT): libc$(DELIM)libuc$(LIBEXT)
-	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libuc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT)
-
-mm$(DELIM)libumm$(LIBEXT): context
-	$(Q) $(MAKE) $(JOBS) -C mm TOPDIR="$(TOPDIR)" libumm$(LIBEXT) KERNEL=n BIN=libumm$(LIBEXT) BINDIR=ubin
-
-$(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT): mm$(DELIM)libumm$(LIBEXT)
-	$(Q) install mm$(DELIM)libumm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT)
-
-wqueue$(DELIM)libuwque$(LIBEXT): context
-	$(Q) $(MAKE) $(JOBS) -C wqueue TOPDIR="$(TOPDIR)" libuwque$(LIBEXT) KERNEL=n BIN=libuwque$(LIBEXT) BINDIR=ubin
-
-$(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT): wqueue$(DELIM)libuwque$(LIBEXT)
-	$(Q) install wqueue$(DELIM)libuwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT)
 
 $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT): context
 	$(Q) $(MAKE) $(JOBS) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libuarch$(LIBEXT) KERNEL=n
@@ -244,17 +224,29 @@ libc$(DELIM)libc$(LIBEXT): context
 $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT): libc$(DELIM)libc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT)
 
+libm$(DELIM)libm$(LIBEXT): context
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libm TOPDIR="$(TOPDIR)" libm$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libm$(LIBEXT): libm$(DELIM)libm$(LIBEXT)
+	$(Q) install $(LIB_DIR)$(DELIM)libm$(DELIM)libm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libm$(LIBEXT)
+
+libbuiltin$(DELIM)libbuiltin$(LIBEXT): context
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libbuiltin TOPDIR="$(TOPDIR)" libbuiltin$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libbuiltin$(LIBEXT): libbuiltin$(DELIM)libbuiltin$(LIBEXT)
+	$(Q) install $(LIB_DIR)$(DELIM)libbuiltin$(DELIM)libbuiltin$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libbuiltin$(LIBEXT)
+
+libdsp$(DELIM)libdsp$(LIBEXT): context
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libdsp TOPDIR="$(TOPDIR)" libdsp$(LIBEXT)
+
+$(LIBRARIES_DIR)$(DELIM)libdsp$(LIBEXT): libdsp$(DELIM)libdsp$(LIBEXT)
+	$(Q) install $(LIB_DIR)$(DELIM)libdsp$(DELIM)libdsp$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdsp$(LIBEXT)
+
 mm$(DELIM)libmm$(LIBEXT): context
 	$(Q) $(MAKE) $(JOBS) -C mm TOPDIR="$(TOPDIR)" libmm$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT): mm$(DELIM)libmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT)
-
-wqueue$(DELIM)libwque$(LIBEXT): context
-	$(Q) $(MAKE) $(JOBS) -C wqueue TOPDIR="$(TOPDIR)" libwque$(LIBEXT) KERNEL=y
-
-$(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT): wqueue$(DELIM)libwque$(LIBEXT)
-	$(Q) install wqueue$(DELIM)libwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT)
 
 $(ARCH_SRC)$(DELIM)libarch$(LIBEXT): context
 	$(Q) $(MAKE) $(JOBS) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libarch$(LIBEXT)

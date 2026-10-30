@@ -135,7 +135,7 @@ BUILD_DIR = ../build
 OUTPUT_DIR = $(BUILD_DIR)/output
 LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 OUTBIN_DIR = $(OUTPUT_DIR)/bin
-LIB_DIR = ../lib
+LIB_DIR = libs
 
 # Add-on directories.  These may or may not be in place in the
 # TinyAra source tree (they must be specifically installed)
@@ -380,7 +380,15 @@ ifneq ($(CONFIG_ARCH_CHIP),)
 	$(Q) $(DIRLINK) $(TOPDIR)/$(ARCH_INC)/$(CONFIG_ARCH_CHIP) include/arch/chip
 endif
 
-dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(ARCH_SRC)/chip include/apps
+# Link the board drivers directory (or drivers/dummy) to drivers/platform.
+# drivers/Kconfig sources $BINDIR/drivers/platform/Kconfig, so the link is
+# needed by the configuration targets too.
+
+drivers/platform:
+	@echo "LN: drivers/platform to $(BOARD_DRIVERS_DIR)"
+	$(Q) $(DIRLINK) $(BOARD_DRIVERS_DIR) drivers/platform
+
+dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(ARCH_SRC)/chip include/apps drivers/platform
 
 # context
 #
@@ -409,6 +417,7 @@ clean_context:
 	$(call DELFILE, include/tinyara/version.h)
 	$(call DELFILE, include/math.h)
 	$(call DELFILE, include/stdarg.h)
+	$(Q) $(DIRUNLINK) drivers/platform
 	$(Q) $(DIRUNLINK) include/arch/board
 	$(Q) $(DIRUNLINK) include/arch/chip
 	$(Q) $(DIRUNLINK) include/arch
@@ -678,25 +687,25 @@ pass2dep: context tools/mkdeps$(HOSTEXEEXT)
 # must first download and install the kconfig-frontends package from this
 # location: http://ymorin.is-a-geek.org/projects/kconfig-frontends.
 
-config: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-conf Kconfig
+config: apps_preconfig drivers/platform
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} BINDIR=${TOPDIR} kconfig-conf Kconfig
 
-oldconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-conf --oldconfig Kconfig
+oldconfig: apps_preconfig drivers/platform
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} BINDIR=${TOPDIR} kconfig-conf --oldconfig Kconfig
 
-menuconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-mconf Kconfig
+menuconfig: apps_preconfig drivers/platform
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} BINDIR=${TOPDIR} kconfig-mconf Kconfig
 
-do_nconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-nconf Kconfig
+do_nconfig: apps_preconfig drivers/platform
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} BINDIR=${TOPDIR} kconfig-nconf Kconfig
 
 nconfig: do_nconfig clean_context
 
-qconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-qconf Kconfig
+qconfig: apps_preconfig drivers/platform
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} BINDIR=${TOPDIR} kconfig-qconf Kconfig
 
-gconfig: apps_preconfig
-	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} kconfig-gconf Kconfig
+gconfig: apps_preconfig drivers/platform
+	$(Q) APPSDIR=${CONFIG_APPS_DIR} EXTERNALDIR=${CONFIG_EXTERNAL_DIR} LIBDIR=${LIB_DIR} LOADABLEDIR=${LOADABLE_APPDIR} BINDIR=${TOPDIR} kconfig-gconf Kconfig
 
 # export
 #
