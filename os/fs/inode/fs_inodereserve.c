@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * fs/inode/fs_registerreserve.c
+ * fs/inode/fs_inodereserve.c
  *
- *   Copyright (C) 2007-2009, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,24 +45,18 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <string.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
+#include "fs_heap.h"
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Private Data
  ****************************************************************************/
 
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
+static ino_t g_ino;
 
 /****************************************************************************
  * Private Functions
@@ -87,10 +68,11 @@
 
 static int inode_namelen(FAR const char *name)
 {
-	const char *tmp = name;
+	FAR const char *tmp = name;
 	while (*tmp && *tmp != '/') {
 		tmp++;
 	}
+
 	return tmp - name;
 }
 
@@ -98,11 +80,12 @@ static int inode_namelen(FAR const char *name)
  * Name: inode_namecpy
  ****************************************************************************/
 
-static void inode_namecpy(char *dest, const char *src)
+static void inode_namecpy(FAR char *dest, FAR const char *src)
 {
 	while (*src && *src != '/') {
 		*dest++ = *src++;
 	}
+
 	*dest = '\0';
 }
 
@@ -110,66 +93,54 @@ static void inode_namecpy(char *dest, const char *src)
  * Name: inode_alloc
  ****************************************************************************/
 
-static FAR struct inode *inode_alloc(FAR const char *name)
+static FAR struct inode *inode_alloc(FAR const char *name, mode_t mode)
 {
-	int namelen = inode_namelen(name);
-	FAR struct inode *node = (FAR struct inode *)kmm_zalloc(FSNODE_SIZE(namelen));
-	if (node) {
-		inode_namecpy(node->i_name, name);
+	FAR struct inode *inode;
+	int namelen;
+
+	namelen = inode_namelen(name);
+	inode   = fs_heap_zalloc(FSNODE_SIZE(namelen));
+	if (inode) {
+		inode->i_ino   = g_ino++;
+		atomic_set(&inode->i_crefs, 1);
+#ifdef CONFIG_PSEUDOFS_ATTRIBUTES
+		inode->i_mode  = mode;
+		clock_gettime(CLOCK_REALTIME, &inode->i_atime);
+		inode->i_mtime = inode->i_atime;
+		inode->i_ctime = inode->i_atime;
+#endif
+		inode_namecpy(inode->i_name, name);
 	}
 
-	return node;
+	return inode;
 }
 
 /****************************************************************************
  * Name: inode_insert
  ****************************************************************************/
 
-static void inode_insert(FAR struct inode *node, FAR struct inode *peer, FAR struct inode *parent)
+static void inode_insert(FAR struct inode *inode,
+                         FAR struct inode *peer,
+                         FAR struct inode *parent)
 {
 	/* If peer is non-null, then new node simply goes to the right
 	 * of that peer node.
 	 */
 
 	if (peer) {
-		node->i_peer = peer->i_peer;
-		peer->i_peer = node;
+		inode->i_peer   = peer->i_peer;
+		inode->i_parent = parent;
+		peer->i_peer    = inode;
 	}
 
-	/* If parent is non-null, then it must go at the head of its
-	 * list of children.
-	 */
-
-	else if (parent) {
-		node->i_peer = parent->i_child;
-		parent->i_child = node;
-	}
-
-	/* Otherwise, this must be the new root_inode */
+	/* Then it must go at the head of parent's list of children. */
 
 	else {
-		node->i_peer = root_inode;
-		root_inode = node;
+		DEBUGASSERT(parent != NULL);
+		inode->i_peer   = parent->i_child;
+		inode->i_parent = parent;
+		parent->i_child = inode;
 	}
-}
-
-/****************************************************************************
- * Name: select_last_inode
- ****************************************************************************/
-
-static void *select_last_inode(FAR const char *name)
-{
-	const char *tmp = name;
-	void *last = NULL;
-
-	while (*tmp && *tmp != '\0') {
-		if (*tmp == '/') {
-			last = (void *)tmp;
-		}
-		tmp++;
-	}
-
-	return ++last;
 }
 
 /****************************************************************************
@@ -177,60 +148,80 @@ static void *select_last_inode(FAR const char *name)
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: inode_root_reserve
+ *
+ * Description:
+ *   Reserve the root inode for the pseudo file system.
+ *
+ ****************************************************************************/
+
+void inode_root_reserve(void)
+{
+	g_root_inode = inode_alloc("", 0777);
+}
+
+/****************************************************************************
  * Name: inode_reserve
  *
  * Description:
- *   Reserve an (initialized) inode the pseudo file system.
+ *   Reserve an (initialized) inode the pseudo file system.  The initial
+ *   reference count on the new inode is zero.
  *
- *   NOTE: Caller must hold the inode semaphore
- *
- * Input parameters:
+ * Input Parameters:
  *   path - The path to the inode to create
+ *   mode - inmode privileges
  *   inode - The location to return the inode pointer
  *
  * Returned Value:
  *   Zero on success (with the inode point in 'inode'); A negated errno
  *   value is returned on failure:
  *
- *   EINVAL       - 'path' is invalid for this operation
- *   EEXIST       - An inode already exists at 'path'
- *   ENOMEM       - Failed to allocate in-memory resources for the operation
- *   ENAMETOOLONG - File name too long
+ *   EINVAL - 'path' is invalid for this operation
+ *   EEXIST - An inode already exists at 'path'
+ *   ENOMEM - Failed to allocate in-memory resources for the operation
+ *
+ * Assumptions:
+ *   Caller must hold the inode semaphore
  *
  ****************************************************************************/
 
-int inode_reserve(FAR const char *path, FAR struct inode **inode)
+int inode_reserve(FAR const char *path,
+                  mode_t mode, FAR struct inode **inode)
 {
-	FAR const char *name = path;
+	struct inode_search_s desc;
 	FAR struct inode *left;
 	FAR struct inode *parent;
+	FAR const char *name;
+	int ret;
 
 	/* Assume failure */
 
-	DEBUGASSERT(path && inode);
+	DEBUGASSERT(path != NULL && inode != NULL);
 	*inode = NULL;
 
-	/* Handle paths that are interpreted as the root directory */
-
-	if (!*path || path[0] != '/') {
+	if (path[0] == '\0') {
 		return -EINVAL;
-	}
-
-	/* Check file name length */
-
-	if (strlen(select_last_inode(name)) > CONFIG_NAME_MAX) {
-		return -ENAMETOOLONG;
 	}
 
 	/* Find the location to insert the new subtree */
 
-	if (inode_search(&name, &left, &parent, (FAR const char **)NULL) != NULL) {
-		/* It is an error if the node already exists in the tree */
+	SETUP_SEARCH(&desc, path, false);
 
-		return -EEXIST;
+	ret = inode_search(&desc);
+	if (ret >= 0) {
+		/* It is an error if the node already exists in the tree (or if it
+		 * lies within a mountpoint, we don't distinguish here).
+		 */
+
+		ret = -EEXIST;
+		goto errout_with_search;
 	}
 
-	/* Now we know the exact position to insert the subtree */
+	/* Now we now where to insert the subtree */
+
+	name   = desc.path;
+	left   = desc.peer;
+	parent = desc.parent;
 
 	for (;;) {
 		FAR struct inode *node;
@@ -240,32 +231,38 @@ int inode_reserve(FAR const char *path, FAR struct inode **inode)
 		 * by looking at the next name.
 		 */
 
-		FAR const char *next_name = inode_nextname(name);
-		if (*next_name) {
+		FAR const char *nextname = inode_nextname(name);
+		if (*nextname != '\0') {
 			/* Insert an operationless node */
 
-			node = inode_alloc(name);
-			if (node) {
+			node = inode_alloc(name, 0777);
+			if (node != NULL) {
 				inode_insert(node, left, parent);
 
 				/* Set up for the next time through the loop */
 
-				name = next_name;
-				left = NULL;
+				name   = nextname;
+				left   = NULL;
 				parent = node;
 				continue;
 			}
 		} else {
-			node = inode_alloc(name);
-			if (node) {
+			node = inode_alloc(name, mode);
+			if (node != NULL) {
 				inode_insert(node, left, parent);
 				*inode = node;
-				return OK;
+				ret = OK;
+				break;
 			}
 		}
 
 		/* We get here on failures to allocate node memory */
 
-		return -ENOMEM;
+		ret = -ENOMEM;
+		break;
 	}
+
+errout_with_search:
+	RELEASE_SEARCH(&desc);
+	return ret;
 }

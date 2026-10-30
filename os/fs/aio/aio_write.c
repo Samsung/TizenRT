@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/aio/aio_write.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -65,46 +52,15 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/fs/fs.h>
+
 #include "aio/aio.h"
 
 #ifdef CONFIG_FS_AIO
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: file_fcntl
- ****************************************************************************/
-
-#ifdef AIO_HAVE_FILEP
-static inline int file_fcntl(FAR struct file *filep, int cmd, ...)
-{
-	va_list ap;
-	int ret;
-
-	va_start(ap, cmd);
-	ret = file_vfcntl(filep, cmd, ap);
-	va_end(ap);
-	return ret;
-}
-#endif
 
 /****************************************************************************
  * Name: aio_write_worker
@@ -131,9 +87,7 @@ static void aio_write_worker(FAR void *arg)
 	uint8_t prio;
 #endif
 	ssize_t nwritten = 0;
-#ifdef AIO_HAVE_FILEP
 	int oflags;
-#endif
 
 	/* Get the information from the container, decant the AIO control block,
 	 * and free the container before starting any I/O.  That will minimize
@@ -141,62 +95,57 @@ static void aio_write_worker(FAR void *arg)
 	 */
 
 	DEBUGASSERT(aioc && aioc->aioc_aiocbp);
-	pid = aioc->aioc_pid;
+	pid    = aioc->aioc_pid;
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	prio = aioc->aioc_prio;
+	prio   = aioc->aioc_prio;
 #endif
 	aiocbp = aioc_decant(aioc);
 
-#ifdef AIO_HAVE_FILEP
-	{
-		/* Call fcntl(F_GETFL) to get the file open mode. */
+	/* Call fcntl(F_GETFL) to get the file open mode. */
 
-		oflags = file_fcntl(aioc->u.aioc_filep, F_GETFL);
-		if (oflags < 0) {
-			int errcode = get_errno();
-			fdbg("ERROR: fcntl failed: %d\n", errcode);
-			aiocbp->aio_result = -errcode;
-			goto errout;
-		}
-
-		/* Perform the write using:
-		 *
-		 *   u.aioc_filep - File structure pointer
-		 *   aio_buf      - Location of buffer
-		 *   aio_nbytes   - Length of transfer
-		 *   aio_offset   - File offset
-		 */
-
-		/* Check if O_APPEND is set in the file open flags */
-
-		if ((oflags & O_APPEND) != 0) {
-			/* Append to the current file position */
-
-			nwritten = file_write(aioc->u.aioc_filep, (FAR const void *)aiocbp->aio_buf, aiocbp->aio_nbytes);
-		} else {
-			nwritten = file_pwrite(aioc->u.aioc_filep, (FAR const void *)aiocbp->aio_buf, aiocbp->aio_nbytes, aiocbp->aio_offset);
-		}
+	oflags = file_fcntl(aioc->aioc_filep, F_GETFL);
+	if (oflags < 0) {
+		ferr("ERROR: file_fcntl failed: %d\n", oflags);
+		aiocbp->aio_result = oflags;
+		goto errout;
 	}
-#endif
 
-	/* Check the result of the write */
+	/* Perform the write using:
+	 *
+	 *   aioc_filep   - File structure pointer
+	 *   aio_buf      - Location of buffer
+	 *   aio_nbytes   - Length of transfer
+	 *   aio_offset   - File offset
+	 */
+
+	/* Check if O_APPEND is set in the file open flags */
+
+	if ((oflags & O_APPEND) != 0) {
+		/* Append to the current file position */
+
+		nwritten = file_write(aioc->aioc_filep,
+		                      (FAR const void *)aiocbp->aio_buf,
+		                      aiocbp->aio_nbytes);
+	} else {
+		nwritten = file_pwrite(aioc->aioc_filep,
+		                       (FAR const void *)aiocbp->aio_buf,
+		                       aiocbp->aio_nbytes,
+		                       aiocbp->aio_offset);
+	}
 
 	if (nwritten < 0) {
-		int errcode = get_errno();
-		fdbg("ERROR: write/pwrite failed: %d\n", errcode);
-		DEBUGASSERT(errcode > 0);
-		aiocbp->aio_result = -errcode;
-	} else {
-		aiocbp->aio_result = nwritten;
+		ferr("ERROR: write/pwrite/send failed: %zd\n", nwritten);
 	}
 
-#ifdef AIO_HAVE_FILEP
+	/* Save the result of the write */
+
+	aiocbp->aio_result = nwritten;
+
 errout:
-#endif
 
 	/* Signal the client */
 
-	(void)aio_signal(pid, aiocbp);
+	aio_signal(pid, aiocbp);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	/* Restore the low priority worker thread default priority */
@@ -236,12 +185,12 @@ errout:
  *
  *   If O_APPEND is not set for the file descriptor aio_fildes, then the
  *   requested operation will take place at the absolute position in the file
- *   as given by aio_offset, as if lseek() were called immediately prior to the
- *   operation with an offset equal to aio_offset and a whence equal to SEEK_SET.
- *   If O_APPEND is set for the file descriptor, write operations append to the
- *   file in the same order as the calls were made. After a successful call to
- *   enqueue an asynchronous I/O operation, the value of the file offset for the
- *   file is unspecified.
+ *   as given by aio_offset, as if lseek() were called immediately prior to
+ *   the operation with an offset equal to aio_offset and a whence equal to
+ *   SEEK_SET. If O_APPEND is set for the file descriptor, write operations
+ *   append to the file in the same order as the calls were made. After a
+ *   successful call to enqueue an asynchronous I/O operation, the value of
+ *   the file offset for the file is unspecified.
  *
  *   The aiocbp->aio_lio_opcode field will be ignored by aio_write().
  *
@@ -260,7 +209,7 @@ errout:
  *   The aio_write() function will return the value zero if the I/O operation
  *   is successfully queued; otherwise, the function will return the value
  *   -1 and set errno to indicate the error.  The aio_write() function will
- *   ail if:
+ *   fail if:
  *
  *   EAGAIN - The requested asynchronous I/O operation was not queued due to
  *     system resource limitations.
@@ -280,7 +229,7 @@ errout:
  *     aiocbp->aio_nbytes is an invalid value.
  *
  *   In the case that the aio_write() successfully queues the I/O operation
- *   but the operation is subsequently cancelled or encounters an error, the
+ *   but the operation is subsequently canceled or encounters an error, the
  *   return status of the asynchronous operation is one of the values
  *   normally returned by the write() function call. In addition, the error
  *   status of the asynchronous operation is set to one of the error
@@ -291,7 +240,7 @@ errout:
  *     open for writing.
  *   EINVAL - The file offset value implied by aiocbp->aio_offset would be
  *     invalid.
- *   ECANCELED - The requested I/O was cancelled before the I/O completed
+ *   ECANCELED - The requested I/O was canceled before the I/O completed
  *     due to an explicit aio_cancel() request.
  *
  * The following condition may be detected synchronously or asynchronously:
@@ -311,13 +260,45 @@ int aio_write(FAR struct aiocb *aiocbp)
 {
 	FAR struct aio_container_s *aioc;
 	int ret;
+	int flags;
 
 	DEBUGASSERT(aiocbp);
 
+	if (aiocbp->aio_reqprio < 0) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
+	if (aiocbp->aio_offset < 0) {
+		aiocbp->aio_result = -EINVAL;
+		return OK;
+	}
+
+	if (aiocbp->aio_fildes < 0) {
+		/* for EBADF, the aio_write do not return error directly, but using
+		 * aio_error to return this error code
+		 */
+
+		aiocbp->aio_result = -EBADF;
+		return OK;
+	}
+
+	/* the aio_fildes that transferred in may be opened with O_RDONLY, for this
+	 * case, we need to return OK directly, and using the aio_error to collect
+	 * the EBADF error code
+	 */
+
+	flags = fcntl(aiocbp->aio_fildes, F_GETFL);
+	if ((flags & O_WRONLY) == 0) {
+		aiocbp->aio_result = -EBADF;
+		return OK;
+	}
+
 	/* The result -EINPROGRESS means that the transfer has not yet completed */
 
+	sigwork_init(&aiocbp->aio_sigwork);
 	aiocbp->aio_result = -EINPROGRESS;
-	aiocbp->aio_priv = NULL;
+	aiocbp->aio_priv   = NULL;
 
 	/* Create a container for the AIO control block.  This may cause us to
 	 * block if there are insufficient resources to satisfy the request.
@@ -337,10 +318,11 @@ int aio_write(FAR struct aiocb *aiocbp)
 	if (ret < 0) {
 		/* The result and the errno have already been set */
 
+		aioc_decant(aioc);
 		return ERROR;
 	}
 
 	return OK;
 }
 
-#endif							/* CONFIG_FS_AIO */
+#endif /* CONFIG_FS_AIO */

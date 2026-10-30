@@ -18,35 +18,20 @@
 /****************************************************************************
  * fs/aio/aio.h
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -62,37 +47,28 @@
 #include <sys/types.h>
 #include <string.h>
 #include <aio.h>
-#include <queue.h>
 
+#include <tinyara/queue.h>
 #include <tinyara/wqueue.h>
-#include <tinyara/net/net.h>
 
 #ifdef CONFIG_FS_AIO
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
 
 /* Number of pre-allocated AIO Control block containers */
 
 #ifndef CONFIG_FS_NAIOC
-#define CONFIG_FS_NAIOC 8
-#endif
-
-#undef AIO_HAVE_FILEP
-
-#if CONFIG_NFILE_DESCRIPTORS > 0
-#define AIO_HAVE_FILEP
-#endif
-
-#if !defined(AIO_HAVE_FILEP)
-#error AIO needs file and/or socket descriptors
+#  define CONFIG_FS_NAIOC 8
 #endif
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+
 /* This structure contains one AIO control block and appends information
  * needed by the logic running on the worker thread.  These structures are
  * pre-allocated, the number pre-allocated controlled by CONFIG_FS_NAIOC.
@@ -100,18 +76,13 @@
 
 struct file;
 struct aio_container_s {
-	dq_entry_t aioc_link;		/* Supports a doubly linked list */
-	FAR struct aiocb *aioc_aiocbp;	/* The contained AIO control block */
-	union {
-#ifdef AIO_HAVE_FILEP
-		FAR struct file *aioc_filep;	/* File structure to use with the I/O */
-#endif
-		FAR void *ptr;			/* Generic pointer to FAR data */
-	} u;
-	struct work_s aioc_work;	/* Used to defer I/O to the work thread */
-	pid_t aioc_pid;				/* ID of the waiting task */
+	dq_entry_t aioc_link;            /* Supports a doubly linked list */
+	FAR struct aiocb *aioc_aiocbp;   /* The contained AIO control block */
+	FAR struct file *aioc_filep;     /* File structure to use with the I/O */
+	struct work_s aioc_work;         /* Used to defer I/O to the work thread */
+	pid_t aioc_pid;                  /* ID of the waiting task */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	uint8_t aioc_prio;			/* Priority of the waiting task */
+	uint8_t aioc_prio;               /* Priority of the waiting task */
 #endif
 };
 
@@ -122,7 +93,8 @@ struct aio_container_s {
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -165,11 +137,11 @@ void aio_initialize(void);
  *   None
  *
  * Returned Value:
- *   None
+ *   aio_lock() return -ECANCELED if the calling thread is canceled.
  *
  ****************************************************************************/
 
-void aio_lock(void);
+int aio_lock(void);
 void aio_unlock(void);
 
 /****************************************************************************
@@ -283,5 +255,10 @@ int aio_queue(FAR struct aio_container_s *aioc, worker_t worker);
 
 int aio_signal(pid_t pid, FAR struct aiocb *aiocbp);
 
-#endif							/* CONFIG_FS_AIO */
-#endif							/* __FS_AIO_AIO_H */
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* CONFIG_FS_AIO */
+#endif /* __FS_AIO_AIO_H */

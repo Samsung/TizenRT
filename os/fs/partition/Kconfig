@@ -1,0 +1,50 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if !DISABLE_MOUNTPOINT
+
+menu "Partition Table"
+
+config PTABLE_PARTITION
+	bool "PTABLE support"
+	default n
+
+config MBR_PARTITION
+	bool "MBR support"
+	default n
+
+config GPT_PARTITION
+	bool "GPT support"
+	default n
+
+config TXTABLE_PARTITION
+	bool "TXTABLE support"
+	default n
+
+if TXTABLE_PARTITION
+
+config TXTABLE_PARTITION_MAX_NUM
+	int "Max num of TXTABLE partition(s)"
+	default 16
+	---help---
+		Include one pseudo partition named "txtable"
+
+config TXTABLE_DEFAULT_PARTITION
+	int "Enable default txtable"
+	default 0
+	---help---
+		0: Disable
+		1: Enable
+
+config TXTABLE_DEFAULT_PARTITION_PATH
+	string "Path of default txtable in device"
+	default "/etc/txtable.txt"
+	depends on TXTABLE_DEFAULT_PARTITION != 0
+
+endif
+
+endmenu
+
+endif

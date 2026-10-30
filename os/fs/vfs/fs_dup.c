@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_dup.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,63 +45,69 @@
 
 #include <unistd.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include <tinyara/fs/fs.h>
+
 #include "inode/inode.h"
+#include "sched/sched.h"
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Functions
+ * Name: file_dup
+ *
+ * Description:
+ *   Equivalent to the standard dup() function except that it
+ *   accepts a struct file instance instead of a file descriptor.
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value
+ *   is returned on any failure.
+ *
  ****************************************************************************/
 
-/****************************************************************************
- * Global Functions
- ****************************************************************************/
+int file_dup(FAR struct file *filep, int minfd, int flags)
+{
+	return fdlist_dupfile(nxsched_get_fdlist_from_tcb(this_task()),
+	                      flags, minfd, filep);
+}
 
 /****************************************************************************
  * Name: dup
  *
  * Description:
- *   Clone a file or socket descriptor to an arbitray descriptor number
+ *   Clone a file or socket descriptor to an arbitrary descriptor number
  *
  ****************************************************************************/
 
 int dup(int fd)
 {
-	int ret = OK;
+	FAR struct file *filep;
+	int ret;
 
-	/* Check the range of the descriptor to see if we got a file or a socket
-	 * descriptor. */
+	/* Get the file structure corresponding to the file descriptor. */
 
-#if CONFIG_NFILE_DESCRIPTORS > 0
-	if ((unsigned int)fd < CONFIG_NFILE_DESCRIPTORS) {
-		/* Its a valid file descriptor.. dup the file descriptor using any
-		 * other file descriptor*/
+	ret = file_get(fd, &filep);
+	if (ret < 0) {
+		goto err;
+	}
 
-		ret = fs_dupfd(fd, 0);
-	} else
-#endif
-	{
-		/* Not a valid file descriptor.  Did we get a valid socket descriptor? */
+	/* Let file_dup() do the real work */
 
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			/* Yes.. dup the socket descriptor */
-
-			ret = net_dupsd(fd);
-		} else
-#endif
-		{
-			/* No.. then it is a bad descriptor number */
-
-			set_errno(EBADF);
-			ret = ERROR;
-		}
+	ret = file_dup(filep, 0, 0);
+	file_put(filep);
+	if (ret < 0) {
+		goto err;
 	}
 
 	return ret;
+
+err:
+	set_errno(-ret);
+	return ERROR;
 }

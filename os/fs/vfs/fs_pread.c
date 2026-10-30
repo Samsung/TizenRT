@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_pread.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -65,10 +52,6 @@
 #include <tinyara/fs/fs.h>
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -82,52 +65,46 @@
  *
  ****************************************************************************/
 
-ssize_t file_pread(FAR struct file *filep, FAR void *buf, size_t nbytes, off_t offset)
+ssize_t file_pread(FAR struct file *filep, FAR void *buf, size_t nbytes,
+                   off_t offset)
 {
 	off_t savepos;
 	off_t pos;
 	ssize_t ret;
-	int errcode;
 
 	/* Perform the seek to the current position.  This will not move the
 	 * file pointer, but will return its current setting
 	 */
 
 	savepos = file_seek(filep, 0, SEEK_CUR);
-	if (savepos == (off_t)-1) {
+	if (savepos < 0) {
 		/* file_seek might fail if this if the media is not seekable */
 
-		return ERROR;
+		return (ssize_t)savepos;
 	}
 
 	/* Then seek to the correct position in the file */
 
 	pos = file_seek(filep, offset, SEEK_SET);
-	if (pos == (off_t)-1) {
+	if (pos < 0) {
 		/* This might fail is the offset is beyond the end of file */
 
-		return ERROR;
+		return (ssize_t)pos;
 	}
 
 	/* Then perform the read operation */
 
 	ret = file_read(filep, buf, nbytes);
-	if (ret < 0) {
-		errcode = -ret;
-		ret = ERROR;
-	}
 
 	/* Restore the file position */
 
 	pos = file_seek(filep, savepos, SEEK_SET);
-	if (pos == (off_t)-1 && ret >= 0) {
+	if (pos < 0 && ret >= 0) {
 		/* This really should not fail */
 
-		return ERROR;
+		ret = (ssize_t)pos;
 	}
-	if (ret == ERROR) {
-		set_errno(errcode);
-	}
+
 	return ret;
 }
 
@@ -147,13 +124,13 @@ ssize_t file_pread(FAR struct file *filep, FAR void *buf, size_t nbytes, off_t o
  *   require four system calls.  If it is implemented within the kernel,
  *   only three.
  *
- * Parameters:
+ * Input Parameters:
  *   file     File structure instance
  *   buf      User-provided to save the data
  *   nbytes   The maximum size of the user-provided buffer
  *   offset   The file offset
  *
- * Return:
+ * Returned Value:
  *   The positive non-zero number of bytes read on success, 0 on if an
  *   end-of-file condition, or -1 on failure with errno set appropriately.
  *   See read() return values
@@ -167,20 +144,19 @@ ssize_t pread(int fd, FAR void *buf, size_t nbytes, off_t offset)
 
 	/* pread() is a cancellation point */
 
-	(void)enter_cancellation_point();
+	enter_cancellation_point();
 
 	/* Get the file structure corresponding to the file descriptor. */
 
-	ret = (ssize_t)fs_getfilep(fd, &filep);
+	ret = (ssize_t)file_get(fd, &filep);
 	if (ret < 0) {
 		goto errout;
 	}
 
-	DEBUGASSERT(filep != NULL);
-
 	/* Let file_pread do the real work */
 
 	ret = file_pread(filep, buf, nbytes, offset);
+	file_put(filep);
 	if (ret < 0) {
 		goto errout;
 	}

@@ -1,0 +1,14 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_USERFS
+	bool "User file system"
+	default n
+	depends on NET_IPv4 && NET_UDP && NET_LOOPBACK
+	---help---
+		Enable support for user file system.  See include/nuttx/fs/userfs.h
+
+if FS_USERFS
+endif

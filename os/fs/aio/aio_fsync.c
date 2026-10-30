@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/aio/aio_fsync.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -68,22 +55,6 @@
 #include "aio/aio.h"
 
 #ifdef CONFIG_FS_AIO
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -121,27 +92,25 @@ static void aio_fsync_worker(FAR void *arg)
 	 */
 
 	DEBUGASSERT(aioc && aioc->aioc_aiocbp);
-	pid = aioc->aioc_pid;
+	pid    = aioc->aioc_pid;
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	prio = aioc->aioc_prio;
+	prio   = aioc->aioc_prio;
 #endif
 	aiocbp = aioc_decant(aioc);
 
-	/* Perform the fsync using u.aioc_filep */
+	/* Perform the fsync using aioc_filep */
 
-	ret = file_fsync(aioc->u.aioc_filep);
+	ret = file_fsync(aioc->aioc_filep);
 	if (ret < 0) {
-		int errcode = get_errno();
-		fdbg("ERROR: fsync failed: %d\n", errcode);
-		DEBUGASSERT(errcode > 0);
-		aiocbp->aio_result = -errcode;
+		ferr("ERROR: file_fsync failed: %d\n", ret);
+		aiocbp->aio_result = ret;
 	} else {
 		aiocbp->aio_result = OK;
 	}
 
 	/* Signal the client */
 
-	(void)aio_signal(pid, aiocbp);
+	aio_signal(pid, aiocbp);
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	/* Restore the low priority worker thread default priority */
@@ -197,17 +166,18 @@ static void aio_fsync_worker(FAR void *arg)
  *   referenced by aiocbp becomes an illegal address prior to asynchronous
  *   I/O completion, then the behavior is undefined.
  *
- *   If the aio_fsync() function fails or aiocbp indicates an error condition,
- *   data is not guaranteed to have been successfully transferred.
+ *   If the aio_fsync() function fails or aiocbp indicates an error
+ *   condition, data is not guaranteed to have been successfully transferred.
  *
  * Input Parameters:
- *   op     - Should be either O_SYNC or O_DSYNC.  Ignored in this implementation.
+ *   op     - Should be either O_SYNC or O_DSYNC.  Ignored in this
+ *            implementation.
  *   aiocbp - A pointer to an instance of struct aiocb
  *
  * Returned Value:
  *   The aio_fsync() function will return the value 0 if the I/O operation is
- *   successfully queued; otherwise, the function will return the value -1 and
- *   set errno to indicate the error.
+ *   successfully queued; otherwise, the function will return the value -1
+ *   and set errno to indicate the error.
  *
  *   The aio_fsync() function will fail if:
  *
@@ -225,8 +195,8 @@ static void aio_fsync_worker(FAR void *arg)
  *   operation, which can be retrieved using aio_error().
  *
  * POSIX Compliance
- * - TinyAra does not currently make any distinction between O_DYSNC and O_SYNC.
- *   Hence, the 'op' argument is ignored altogether.
+ * - NuttX does not currently make any distinction between O_DYSNC and
+ *   O_SYNC. Hence, the 'op' argument is ignored altogether.
  * - Most errors required in the standard are not detected at this point.
  *   There are no pre-queuing checks for the validity of the operation.
  *
@@ -237,13 +207,18 @@ int aio_fsync(int op, FAR struct aiocb *aiocbp)
 	FAR struct aio_container_s *aioc;
 	int ret;
 
-	DEBUGASSERT(op == O_SYNC /* || op == O_DSYNC */);
+	if (op != O_SYNC) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
 	DEBUGASSERT(aiocbp);
 
 	/* The result -EINPROGRESS means that the transfer has not yet completed */
 
+	sigwork_init(&aiocbp->aio_sigwork);
 	aiocbp->aio_result = -EINPROGRESS;
-	aiocbp->aio_priv = NULL;
+	aiocbp->aio_priv   = NULL;
 
 	/* Create a container for the AIO control block.  This may cause us to
 	 * block if there are insufficient resources to satisfy the request.
@@ -263,10 +238,11 @@ int aio_fsync(int op, FAR struct aiocb *aiocbp)
 	if (ret < 0) {
 		/* The result and the errno have already been set */
 
+		aioc_decant(aioc);
 		return ERROR;
 	}
 
 	return OK;
 }
 
-#endif							/* CONFIG_FS_AIO */
+#endif /* CONFIG_FS_AIO */

@@ -18,36 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_ioctl.c
  *
- *   Copyright (C) 2007-2010, 2012-2014, 2016-2017 Gregory Nutt. All rights
- *     reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,15 +46,172 @@
 #include <sys/ioctl.h>
 #include <sched.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <assert.h>
 
-#include <net/if.h>
+#include "inode/inode.h"
+#include "vfs.h"
 
-#ifdef CONFIG_NET
-#include <tinyara/net/net.h>
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_vioctl
+ ****************************************************************************/
+
+static int file_vioctl(FAR struct file *filep, int req, va_list ap)
+{
+	FAR struct inode *inode;
+	unsigned long arg;
+	int ret = -ENOTTY;
+
+	DEBUGASSERT(filep != NULL);
+
+	arg = va_arg(ap, unsigned long);
+
+	/* Is a driver opened? */
+
+	inode = filep->f_inode;
+	if (!inode) {
+		return -EBADF;
+	}
+
+	/* Does the driver support the ioctl method? */
+
+	if (inode->u.i_ops != NULL && inode->u.i_ops->ioctl != NULL) {
+		/* Yes on both accounts.  Let the driver perform the ioctl command */
+
+		ret = inode->u.i_ops->ioctl(filep, req, arg);
+	}
+
+	switch (req) {
+	case FIONBIO:
+		if (ret == OK || ret == -ENOTTY) {
+			FAR int *nonblock = (FAR int *)(uintptr_t) arg;
+			if (nonblock && *nonblock) {
+				filep->f_oflags |= O_NONBLOCK;
+			} else {
+				filep->f_oflags &= ~O_NONBLOCK;
+			}
+
+			ret = OK;
+		}
+		break;
+
+	case FIOC_FILEPATH:
+		if (ret == -ENOTTY && !INODE_IS_MOUNTPT(inode)) {
+			ret = inode_getpath(inode, (FAR char *)(uintptr_t) arg, PATH_MAX);
+		}
+		break;
+
+	case FIOC_GETLK:
+		if (ret == -ENOTTY) {
+			ret = file_getlk(filep, (FAR struct flock *)(uintptr_t) arg);
+		}
+		break;
+
+	case FIOC_SETLK:
+		if (ret == -ENOTTY) {
+			ret = file_setlk(filep, (FAR struct flock *)(uintptr_t) arg,
+			                 true);
+		}
+		break;
+
+	case FIOC_SETLKW:
+		if (ret == -ENOTTY) {
+			ret = file_setlk(filep, (FAR struct flock *)(uintptr_t) arg,
+			                 false);
+		}
+		break;
+
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+	case BIOC_BLKSSZGET:
+		if (ret == -ENOTTY && inode->u.i_ops != NULL &&
+		    inode->u.i_ops->ioctl != NULL) {
+			struct geometry geo;
+			ret = inode->u.i_ops->ioctl(filep, BIOC_GEOMETRY,
+			                            (unsigned long)(uintptr_t) & geo);
+			if (ret >= 0) {
+				*(FAR blksize_t *)(uintptr_t) arg = geo.geo_sectorsize;
+			}
+		}
+		break;
+
+	case BIOC_BLKGETSIZE:
+		if (ret == -ENOTTY && inode->u.i_ops != NULL &&
+		    inode->u.i_ops->ioctl != NULL) {
+			struct geometry geo;
+			ret = inode->u.i_ops->ioctl(filep, BIOC_GEOMETRY,
+			                            (unsigned long)(uintptr_t) & geo);
+			if (ret >= 0) {
+				*(FAR blkcnt_t *)(uintptr_t) arg = geo.geo_nsectors;
+			}
+		}
+		break;
+
+#endif
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: nx_vioctl
+ ****************************************************************************/
+
+static int nx_vioctl(int fd, int req, va_list ap)
+{
+	FAR struct file *filep;
+	FAR struct fd *fdp;
+	int ret;
+
+	ret = file_get2(fd, &filep, &fdp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	switch (req) {
+	case FIOCLEX:
+		fdp->f_cloexec = true;
+		break;
+
+	case FIONCLEX:
+		fdp->f_cloexec = false;
+		break;
+
+	case FIOGCLEX:
+		*va_arg(ap, FAR int *) = fdp->f_cloexec ? FD_CLOEXEC : 0;
+		break;
+
+#ifdef CONFIG_FDSAN
+	case FIOC_SETTAG_FDSAN:
+		fdp->f_tag_fdsan = *va_arg(ap, FAR uint64_t *);
+		break;
+
+	case FIOC_GETTAG_FDSAN:
+		*va_arg(ap, FAR uint64_t *) = fdp->f_tag_fdsan;
+		break;
 #endif
 
-#include "inode/inode.h"
+#ifdef CONFIG_FDCHECK
+	case FIOC_SETTAG_FDCHECK:
+		fdp->f_tag_fdcheck = *va_arg(ap, FAR uint8_t *);
+		break;
+
+	case FIOC_GETTAG_FDCHECK:
+		*va_arg(ap, FAR uint8_t *) = fdp->f_tag_fdcheck;
+		break;
+#endif
+
+	default:
+		ret = file_vioctl(filep, req, ap);
+		break;
+	}
+
+	file_put(filep);
+	return ret;
+}
 
 /****************************************************************************
  * Public Functions
@@ -83,7 +226,7 @@
  * Input Parameters:
  *   file     File structure instance
  *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
+ *   ap       The argument of the ioctl cmd
  *
  * Returned Value:
  *   Returns a non-negative number on success;  A negated errno value is
@@ -92,32 +235,22 @@
  *
  ****************************************************************************/
 
-int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
+int file_ioctl(FAR struct file *filep, int req, ...)
 {
-	FAR struct inode *inode;
+	va_list ap;
+	int ret;
 
-	DEBUGASSERT(filep != NULL);
+	/* Let file_vioctl() do the real work. */
 
-	/* Is a driver opened? */
+	va_start(ap, req);
+	ret = file_vioctl(filep, req, ap);
+	va_end(ap);
 
-	inode = filep->f_inode;
-	if (!inode) {
-		return -EBADF;
-	}
-
-	/* Does the driver support the ioctl method? */
-
-	if (inode->u.i_ops == NULL || inode->u.i_ops->ioctl == NULL) {
-		return -ENOTTY;
-	}
-
-	/* Yes on both accounts.  Let the driver perform the ioctl command */
-
-	return (int)inode->u.i_ops->ioctl(filep, req, arg);
+	return ret;
 }
 
 /****************************************************************************
- * Name: ioctl/fs_ioctl
+ * Name: ioctl
  *
  * Description:
  *   Perform device specific operations.
@@ -125,7 +258,6 @@ int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
  * Input Parameters:
  *   fd       File/socket descriptor of device
  *   req      The ioctl command
- *   arg      The argument of the ioctl cmd
  *
  * Returned Value:
  *   >=0 on success (positive non-zero values are cmd-specific)
@@ -145,61 +277,22 @@ int file_ioctl(FAR struct file *filep, int req, unsigned long arg)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_LIBC_IOCTL_VARIADIC
-int fs_ioctl(int fd, int req, unsigned long arg)
-#else
-int ioctl(int fd, int req, unsigned long arg)
-#endif
+int ioctl(int fd, int req, ...)
 {
-	int errcode;
-	FAR struct file *filep;
+	va_list ap;
 	int ret;
 
-	/* Did we get a valid file descriptor? */
+	va_start(ap, req);
 
-	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS) {
-		/* Perform the socket ioctl */
+	/* Let nx_vioctl() do the real work. */
 
-#ifdef CONFIG_NET
-		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			ret = net_ioctl(fd, req, arg);
-			if (ret < 0) {
-				errcode = -ret;
-				goto errout;
-			}
-
-			return ret;
-		} else
-#endif
-		{
-			errcode = EBADF;
-			goto errout;
-		}
-	}
-
-	/* Get the file structure corresponding to the file descriptor. */
-
-	ret = fs_getfilep(fd, &filep);
+	ret = nx_vioctl(fd, req, ap);
 	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
+		set_errno(-ret);
+		ret = ERROR;
 	}
 
-	DEBUGASSERT(filep != NULL);
-
-	/* Perform the file ioctl.  If file_ioctl() fails, it will set the errno
-	 * value appropriately.
-	 */
-
-	ret = file_ioctl(filep, req, arg);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout;
-	}
+	va_end(ap);
 
 	return ret;
-
-errout:
-	set_errno(errcode);
-	return ERROR;
 }

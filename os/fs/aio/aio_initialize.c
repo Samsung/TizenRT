@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/aio/aio_initialize.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,24 +43,16 @@
 
 #include <tinyara/config.h>
 
-#include <semaphore.h>
 #include <assert.h>
 #include <errno.h>
-#include <queue.h>
 
 #include <tinyara/sched.h>
+#include <tinyara/mutex.h>
+#include <tinyara/queue.h>
 
 #include "aio/aio.h"
 
 #ifdef CONFIG_FS_AIO
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
 
 /****************************************************************************
  * Private Data
@@ -89,20 +68,19 @@ static dq_queue_t g_aioc_free;
 
 /* This counting semaphore tracks the number of free AIO containers */
 
-static sem_t g_aioc_freesem;
+static sem_t g_aioc_freesem = SEM_INITIALIZER(CONFIG_FS_NAIOC);
 
-/* This binary semaphore supports exclusive access to the list of pending
+/* This binary lock supports exclusive access to the list of pending
  * asynchronous I/O.  g_aio_holder and a_aio_count support the reentrant
  * lock.
  */
 
-static sem_t g_aio_exclsem;
-static pid_t g_aio_holder;
-static uint16_t g_aio_count;
+static rmutex_t g_aio_lock = NXRMUTEX_INITIALIZER;
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
+
 /* This is a list of pending asynchronous I/O.  The user must hold the
  * lock on this list in order to access the list.
  */
@@ -110,12 +88,9 @@ static uint16_t g_aio_count;
 dq_queue_t g_aio_pending;
 
 /****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: aio_initialize
  *
@@ -133,18 +108,6 @@ dq_queue_t g_aio_pending;
 void aio_initialize(void)
 {
 	int i;
-
-	/* Initialize counting semaphores */
-
-	(void)sem_init(&g_aioc_freesem, 0, CONFIG_FS_NAIOC);
-	(void)sem_init(&g_aio_exclsem, 0, 1);
-
-	g_aio_holder = INVALID_PROCESS_ID;
-
-	/* Initialize the container queues */
-
-	dq_init(&g_aioc_free);
-	dq_init(&g_aio_pending);
 
 	/* Add all of the pre-allocated AIO containers to the free list */
 
@@ -165,52 +128,18 @@ void aio_initialize(void)
  *   None
  *
  * Returned Value:
- *   None
+ *   aio_lock() return -ECANCELED if the calling thread is canceled.
  *
  ****************************************************************************/
 
-void aio_lock(void)
+int aio_lock(void)
 {
-	pid_t me = getpid();
-
-	/* Does this thread already hold the semaphore? */
-
-	if (g_aio_holder == me) {
-		/* Yes, just increment the counts held */
-
-		DEBUGASSERT(g_aio_count > 0 && g_aio_count < UINT16_MAX);
-		g_aio_count++;
-	} else {
-		/* No.. take the semaphore */
-
-		while (sem_wait(&g_aio_exclsem) < 0) {
-			DEBUGASSERT(get_errno() == EINTR);
-		}
-
-		/* And mark it as ours */
-
-		g_aio_holder = me;
-		g_aio_count = 1;
-	}
+	return nxrmutex_lock(&g_aio_lock);
 }
 
 void aio_unlock(void)
 {
-	DEBUGASSERT(g_aio_holder == getpid() && g_aio_count > 0);
-
-	/* Would decrementing the count release the lock? */
-
-	if (g_aio_count <= 1) {
-		/* Yes.. that we will no longer be the holder */
-
-		g_aio_holder = INVALID_PROCESS_ID;
-		g_aio_count = 0;
-		sem_post(&g_aio_exclsem);
-	} else {
-		/* Otherwise, just decrement the count.  We still hold the lock. */
-
-		g_aio_count--;
-	}
+	nxrmutex_unlock(&g_aio_lock);
 }
 
 /****************************************************************************
@@ -234,23 +163,28 @@ void aio_unlock(void)
 
 FAR struct aio_container_s *aioc_alloc(void)
 {
-	FAR struct aio_container_s *aioc;
+	FAR struct aio_container_s *aioc = NULL;
+	int ret;
 
 	/* Take a count from semaphore, thus guaranteeing that we have an AIO
 	 * container set aside for us.
 	 */
 
-	while (sem_wait(&g_aioc_freesem) < 0) {
-		DEBUGASSERT(get_errno() == EINTR);
+	ret = nxsem_wait_uninterruptible(&g_aioc_freesem);
+	if (ret < 0) {
+		return NULL;
 	}
 
 	/* Get our AIO container */
 
-	aio_lock();
-	aioc = (FAR struct aio_container_s *)dq_remfirst(&g_aioc_free);
-	aio_unlock();
+	ret = aio_lock();
+	if (ret >= 0) {
+		aioc = (FAR struct aio_container_s *)dq_remfirst(&g_aioc_free);
+		aio_unlock();
 
-	DEBUGASSERT(aioc);
+		DEBUGASSERT(aioc);
+	}
+
 	return aioc;
 }
 
@@ -271,11 +205,22 @@ FAR struct aio_container_s *aioc_alloc(void)
 
 void aioc_free(FAR struct aio_container_s *aioc)
 {
+	int ret;
+
 	DEBUGASSERT(aioc);
 
 	/* Return the container to the free list */
 
-	aio_lock();
+	do {
+		ret = aio_lock();
+
+		/* The only possible error should be if we were awakened only by
+		 * thread cancellation.
+		 */
+
+		DEBUGASSERT(ret == OK || ret == -ECANCELED);
+	} while (ret < 0);
+
 	dq_addlast(&aioc->aioc_link, &g_aioc_free);
 	aio_unlock();
 
@@ -283,7 +228,7 @@ void aioc_free(FAR struct aio_container_s *aioc)
 	 * free AIO container.
 	 */
 
-	sem_post(&g_aioc_freesem);
+	nxsem_post(&g_aioc_freesem);
 }
 
-#endif							/* CONFIG_FS_AIO */
+#endif /* CONFIG_FS_AIO */

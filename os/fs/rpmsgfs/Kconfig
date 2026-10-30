@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_RPMSGFS
+	bool "RPMSG File System"
+	default n
+	depends on RPMSG
+	---help---
+		Use RPMSG file system to mount remote directories to local.
+		This the method for user to use remote file like own core.
+
+config FS_RPMSGFS_SERVER
+	bool "RPMSG File Server"
+	default n
+	depends on RPMSG
+	---help---
+		Initialize RPMSG file system server automatically.

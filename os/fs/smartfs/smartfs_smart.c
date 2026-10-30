@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/smartfs/smartfs_smart.c
  *
- *   Copyright (C) 2013 Ken Pettit. All rights reserved.
- *   Author: Ken Pettit <pettitkd@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,68 +50,101 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <semaphore.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <debug.h>
 
 #include <tinyara/kmalloc.h>
+#include <tinyara/mutex.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/fs/dirent.h>
+#include <tinyara/fs/fat.h>
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 #include <tinyara/fs/smart.h>
 
+#include "inode/inode.h"
 #include "smartfs.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#include "fs_heap.h"
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
+struct smartfs_dir_s {
+	struct fs_dirent_s fs_base; /* VFS directory structure */
+	uint16_t fs_firstsector;    /* First sector of directory list */
+	uint16_t fs_currsector;     /* Current sector of directory list */
+	uint16_t fs_curroffset;     /* Current offset within current sector */
+};
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags, mode_t mode);
-static int smartfs_close(FAR struct file *filep);
-static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen);
-static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t buflen);
-static off_t smartfs_seek(FAR struct file *filep, off_t offset, int whence);
-static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static int     smartfs_open(FAR struct file *filep, FAR const char *relpath,
+                        int oflags, mode_t mode);
+static int     smartfs_close(FAR struct file *filep);
+static ssize_t smartfs_read(FAR struct file *filep, FAR char *buffer,
+                        size_t buflen);
+static ssize_t smartfs_write(FAR struct file *filep, FAR const char *buffer,
+                        size_t buflen);
+static off_t   smartfs_seek(FAR struct file *filep, off_t offset,
+                        int whence);
+static int     smartfs_ioctl(FAR struct file *filep, int cmd,
+                        unsigned long arg);
 
-static int smartfs_sync(FAR struct file *filep);
-static int smartfs_dup(FAR const struct file *oldp, FAR struct file *newp);
-static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf);
-static int smartfs_truncate(FAR struct file *filep, off_t length);
-static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs_dirent_s *dir);
-static int smartfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir);
-static int smartfs_rewinddir(struct inode *mountpt, struct fs_dirent_s *dir);
+static int     smartfs_sync(FAR struct file *filep);
+static int     smartfs_dup(FAR const struct file *oldp,
+                        FAR struct file *newp);
+static int     smartfs_fstat(FAR const struct file *filep,
+                        FAR struct stat *buf);
+static int     smartfs_truncate(FAR struct file *filep, off_t length);
 
-static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **handle);
-static int smartfs_unbind(void *handle, FAR struct inode **blkdriver);
-static int smartfs_statfs(struct inode *mountpt, struct statfs *buf);
+static int     smartfs_opendir(FAR struct inode *mountpt,
+                        FAR const char *relpath,
+                        FAR struct fs_dirent_s **dir);
+static int     smartfs_closedir(FAR struct inode *mountpt,
+                        FAR struct fs_dirent_s *dir);
+static int     smartfs_readdir(FAR struct inode *mountpt,
+                        FAR struct fs_dirent_s *dir,
+                        FAR struct dirent *dentry);
+static int     smartfs_rewinddir(FAR struct inode *mountpt,
+                        FAR struct fs_dirent_s *dir);
 
-static int smartfs_unlink(struct inode *mountpt, const char *relpath);
-static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode);
-static int smartfs_rmdir(struct inode *mountpt, const char *relpath);
-static int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *newrelpath);
-static void smartfs_stat_common(FAR struct smartfs_mountpt_s *fs, FAR struct smartfs_entry_s *entry, FAR struct stat *buf);
-static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat *buf);
+static int     smartfs_bind(FAR struct inode *blkdriver,
+                        FAR const void *data,
+                        FAR void **handle);
+static int     smartfs_unbind(FAR void *handle, FAR struct inode **blkdriver,
+                        unsigned int flags);
+static int     smartfs_statfs(FAR struct inode *mountpt,
+                        FAR struct statfs *buf);
+
+static int     smartfs_unlink(FAR struct inode *mountpt,
+                        FAR const char *relpath);
+static int     smartfs_mkdir(FAR struct inode *mountpt,
+                        FAR const char *relpath,
+                        mode_t mode);
+static int     smartfs_rmdir(FAR struct inode *mountpt,
+                        FAR const char *relpath);
+static int     smartfs_rename(FAR struct inode *mountpt,
+                        FAR const char *oldrelpath,
+                        FAR const char *newrelpath);
+static void    smartfs_stat_common(FAR struct smartfs_mountpt_s *fs,
+                        FAR struct smartfs_entry_s *entry,
+                        FAR struct stat *buf);
+static int     smartfs_stat(FAR struct inode *mountpt,
+                        FAR const char *relpath,
+                        FAR struct stat *buf);
 
 /****************************************************************************
- * Private Variables
+ * Private Data
  ****************************************************************************/
 
-static uint8_t g_seminitialized = FALSE;
-static sem_t g_sem;
+static mutex_t g_lock = NXMUTEX_INITIALIZER;
 
 /****************************************************************************
- * Public Variables
+ * Public Data
  ****************************************************************************/
 
 /* See fs_mount.c -- this structure is explicitly externed there.
@@ -132,33 +152,40 @@ static sem_t g_sem;
  * with any compiler.
  */
 
-const struct mountpt_operations smartfs_operations = {
-	smartfs_open,				/* open */
-	smartfs_close,				/* close */
-	smartfs_read,				/* read */
-	smartfs_write,				/* write */
-	smartfs_seek,				/* seek */
-	smartfs_ioctl,				/* ioctl */
+const struct mountpt_operations g_smartfs_operations =
+{
+  smartfs_open,          /* open */
+  smartfs_close,         /* close */
+  smartfs_read,          /* read */
+  smartfs_write,         /* write */
+  smartfs_seek,          /* seek */
+  smartfs_ioctl,         /* ioctl */
+  NULL,                  /* mmap */
+  smartfs_truncate,      /* truncate */
+  NULL,                  /* poll */
+  NULL,                  /* readv */
+  NULL,                  /* writev */
 
-	smartfs_sync,				/* sync */
-	smartfs_dup,				/* dup */
-	smartfs_fstat,				/* fstat */
-	smartfs_truncate,			/* truncate */
+  smartfs_sync,          /* sync */
+  smartfs_dup,           /* dup */
+  smartfs_fstat,         /* fstat */
+  NULL,                  /* fchstat */
 
-	smartfs_opendir,			/* opendir */
-	NULL,						/* closedir */
-	smartfs_readdir,			/* readdir */
-	smartfs_rewinddir,			/* rewinddir */
+  smartfs_opendir,       /* opendir */
+  smartfs_closedir,      /* closedir */
+  smartfs_readdir,       /* readdir */
+  smartfs_rewinddir,     /* rewinddir */
 
-	smartfs_bind,				/* bind */
-	smartfs_unbind,				/* unbind */
-	smartfs_statfs,				/* statfs */
+  smartfs_bind,          /* bind */
+  smartfs_unbind,        /* unbind */
+  smartfs_statfs,        /* statfs */
 
-	smartfs_unlink,				/* unlink */
-	smartfs_mkdir,				/* mkdir */
-	smartfs_rmdir,				/* rmdir */
-	smartfs_rename,				/* rename */
-	smartfs_stat				/* stat */
+  smartfs_unlink,        /* unlink */
+  smartfs_mkdir,         /* mkdir */
+  smartfs_rmdir,         /* rmdir */
+  smartfs_rename,        /* rename */
+  smartfs_stat,          /* stat */
+  NULL                   /* chstat */
 };
 
 /****************************************************************************
@@ -169,14 +196,18 @@ const struct mountpt_operations smartfs_operations = {
  * Name: smartfs_open
  ****************************************************************************/
 
-static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags, mode_t mode)
+static int smartfs_open(FAR struct file *filep, FAR const char *relpath,
+                        int oflags, mode_t mode)
 {
-	struct inode *inode;
-	struct smartfs_mountpt_s *fs;
-	int ret;
-	struct smartfs_ofile_s *sf;
+	FAR struct inode             *inode;
+	FAR struct smartfs_mountpt_s *fs;
+	int                           ret;
+	uint16_t                      parentdirsector;
+	size_t                        pathlen;
+	FAR const char               *filename;
+	FAR struct smartfs_ofile_s   *sf;
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	struct smart_read_write_s readwrite;
+	struct smart_read_write_s     readwrite;
 #endif
 
 	/* Sanity checks */
@@ -188,39 +219,50 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	 */
 
 	inode = filep->f_inode;
-	fs = inode->i_private;
+	fs    = inode->i_private;
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Locate the directory entry for this path */
 
-	sf = (struct smartfs_ofile_s *)kmm_zalloc(sizeof(struct smartfs_ofile_s));
+	pathlen = strlen(relpath) + 1;
+	sf = fs_heap_malloc(sizeof(*sf) + pathlen - 1);
 	if (sf == NULL) {
 		ret = -ENOMEM;
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
+
+	/* Save the full path to smartfs_ofile_s stuctrue. This is needed
+	 * to FIOC_FILEPATH ioctlc all support.
+	 */
+
+	memcpy(sf->path, relpath, pathlen);
 
 	/* Allocate a sector buffer if CRC enabled in the MTD layer */
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	sf->buffer = (uint8_t *)kmm_malloc(fs->fs_llformat.availbytes);
+	sf->buffer = fs_heap_malloc(fs->fs_llformat.availbytes);
 	if (sf->buffer == NULL) {
 		/* Error ... no memory */
 
-		kmm_free(sf);
+		fs_heap_free(sf);
 		ret = -ENOMEM;
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
-	sf->bflags = SMARTFS_BFLAG_UNMOD;
-#endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+	sf->bflags = 0;
+#endif /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 
 	sf->entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &sf->entry, relpath);
+	ret = smartfs_finddirentry(fs, &sf->entry, relpath, &parentdirsector,
+	                           &filename);
 
 	/* Three possibilities: (1) a node exists for the relpath and
 	 * dirinfo describes the directory entry of the entity, (2) the
@@ -228,7 +270,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	 */
 
 	if (ret == OK) {
-		/* The name exists -- but is is a file or a directory ? */
+		/* The name exists -- but is is a file or a directory? */
 
 		if (sf->entry.flags & SMARTFS_DIRENT_TYPE_DIR) {
 			/* Can't open a dir as a file! */
@@ -246,26 +288,16 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			goto errout_with_buffer;
 		}
 
-		/* If the file is being opened in a mode other than "READ ONLY", we will need the length of the file */
-		if ((oflags & O_ACCMODE) != O_RDONLY) {
-			ret = smartfs_get_datalen(fs, sf->entry.firstsector, &sf->entry.datalen);
-			if (ret < 0) {
-				fdbg("ERROR, Could not get the length of the file, ret : %d\n", ret);
-				goto errout_with_buffer;
-			}
-		}
+		/* TODO: Test open mode based on the file mode */
 
-		/* The file exists already.
-		 * If the file has been requested to be opened in TRUNCATE mode, then shrink the file.
-		 * However, if APPEND mode has also been requested, do not shrink the file to 0.
+		/* If O_TRUNC is specified and the file is opened for writing,
+		 * then truncate the file.  This operation requires that the file
+		 * is writeable. O_TRUNC without write access is ignored.
 		 */
 
-		/* TODO: This method for checking the open modes is not in full accordance with POSIX standard.
-		 *       POSIX standard truncates the file i.e. shrinks to 0 irrespective of other included flags.
-		 */
+		if ((oflags & (O_TRUNC | O_WROK)) == (O_TRUNC | O_WROK)) {
+			/* Truncate the file as part of the open */
 
-		if (((oflags & O_TRUNC) != 0) && ((oflags & O_APPEND) == 0)) {
-			/* Truncate the file to length 0 as part of the open */
 			ret = smartfs_shrinkfile(fs, sf, 0);
 			if (ret < 0) {
 				goto errout_with_buffer;
@@ -273,6 +305,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		}
 	} else if (ret == -ENOENT) {
 		/* The file does not exist.  Were we asked to create it? */
+
 		if ((oflags & O_CREAT) == 0) {
 			/* No.. then we fail with -ENOENT */
 
@@ -281,33 +314,14 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		}
 
 		/* Yes... test if the parent directory is valid */
-		if (sf->entry.dsector != 0xFFFF) {
+
+		if (parentdirsector != 0xffff) {
 			/* We can create in the given parent directory */
-			/* First we allocate a new data sector for the file */
-			ret = smartfs_alloc_firstsector(fs, &sf->entry.firstsector, SMARTFS_DIRENT_TYPE_FILE, sf);
-			if (ret != OK) {
-				fdbg("Unable to allocate data sector for new entry, ret : %d\n", ret);
-				goto errout_with_buffer;
-			}
 
-			/* First try to find an invalid or empty entry available in one of the chained parent sectors */
-			ret = smartfs_find_availableentry(fs, &sf->entry);
+			ret = smartfs_createentry(fs, parentdirsector, filename,
+			                          SMARTFS_DIRENT_TYPE_FILE, mode,
+			                          &sf->entry, 0xffff, sf);
 			if (ret != OK) {
-				/* find_availableentry encountered a problem with lower layer operations, return error */
-				fdbg("Unable to find space for writing new entry, ret : %d\n", ret);
-				goto errout_with_buffer;
-			}
-
-			sf->entry.flags = SMARTFS_ERASEDSTATE_16BIT;
-#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
-			smartfs_wrle16(&sf->entry.flags, (uint16_t)(mode & SMARTFS_DIRENT_MODE));
-#else
-			sf->entry.flags = (uint16_t)(mode & SMARTFS_DIRENT_MODE);
-#endif
-			/* At this point, either an available entry was found or a new one has been created */
-			ret = smartfs_writeentry(fs, sf->entry, SMARTFS_DIRENT_TYPE_FILE, mode);
-			if (ret != OK) {
-				fdbg("Unable to write entry, ret : %d\n", ret);
 				goto errout_with_buffer;
 			}
 		} else {
@@ -322,30 +336,31 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 
 	/* Now perform the "open" on the file in direntry */
 
-	sf->oflags = oflags;
-	sf->crefs = 1;
-	sf->filepos = 0;
-	sf->curroffset = sizeof(struct smartfs_chain_header_s);
-	sf->currsector = sf->entry.firstsector;
+	sf->oflags       = oflags;
+	sf->crefs        = 1;
+	sf->filepos      = 0;
+	sf->curroffset   = sizeof(struct smartfs_chain_header_s);
+	sf->currsector   = sf->entry.firstsector;
 	sf->byteswritten = 0;
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	if ((sf->bflags & SMARTFS_BFLAG_DIRTY) == 0) {
-		/* When using sector buffering, current sector with its header should
-		 * always be present in sf->buffer. Otherwise data corruption may arise
-		 * when writing.
-		 */
 
-		if (sf->currsector != SMARTFS_ERASEDSTATE_16BIT) {
-			/* For truncate, we already read header and set data in sf->buffer */
-			if (((oflags & (O_CREAT | O_TRUNC)) == 0) || (oflags & O_APPEND)) {
-				smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
-				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long) &readwrite);
-				if (ret < 0) {
-					fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
-					goto errout_with_buffer;
-				}
-			}
+	/* When using sector buffering, current sector with its header should
+	 * always be present in sf->buffer. Otherwise data corruption may arise
+	 * when writing.
+	 */
+
+	if (sf->currsector != SMARTFS_ERASEDSTATE_16BIT) {
+		readwrite.logsector = sf->currsector;
+		readwrite.offset    = 0;
+		readwrite.count     = fs->fs_llformat.availbytes;
+		readwrite.buffer    = (FAR uint8_t *)sf->buffer;
+
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			ferr("ERROR: Error %d reading sector %d header\n",
+			     ret, sf->currsector);
+			goto errout_with_buffer;
 		}
 	}
 #endif
@@ -374,26 +389,23 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	fs->fs_head = sf;
 
 	ret = OK;
-	goto errout_with_semaphore;
+	goto errout_with_lock;
 
 errout_with_buffer:
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	if (sf->buffer != NULL) {
-		kmm_free(sf->buffer);
-		sf->buffer = NULL;
-	}
-#endif
 	if (sf->entry.name != NULL) {
 		/* Free the space for the name too */
 
-		kmm_free(sf->entry.name);
+		fs_heap_free(sf->entry.name);
 		sf->entry.name = NULL;
 	}
 
-	kmm_free(sf);
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	fs_heap_free(sf->buffer);
+#endif /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+	fs_heap_free(sf);
 
-errout_with_semaphore:
-	smartfs_semgive(fs);
+errout_with_lock:
+	nxmutex_unlock(&g_lock);
 	if (ret == -EINVAL) {
 		ret = -EIO;
 	}
@@ -407,36 +419,42 @@ errout_with_semaphore:
 
 static int smartfs_close(FAR struct file *filep)
 {
-	struct inode *inode;
-	struct smartfs_mountpt_s *fs;
-	struct smartfs_ofile_s *sf;
-	struct smartfs_ofile_s *nextfile;
-	struct smartfs_ofile_s *prevfile;
+	FAR struct inode             *inode;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_ofile_s   *sf;
+	FAR struct smartfs_ofile_s   *nextfile;
+	FAR struct smartfs_ofile_s   *prevfile;
+	int ret;
 
 	/* Sanity checks */
 
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(filep->f_priv != NULL);
 
 	/* Recover our private data from the struct file instance */
 
 	inode = filep->f_inode;
-	fs = inode->i_private;
-	sf = filep->f_priv;
+	fs    = inode->i_private;
+	sf    = filep->f_priv;
 
 	/* Sync the file */
 
 	smartfs_sync(filep);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Check if we are the last one with a reference to the file and
-	 * only close if we are. */
+	 * only close if we are.
+	 */
 
 	if (sf->crefs > 1) {
 		/* The file is opened more than once.  Just decrement the
-		 * reference count and return. */
+		 * reference count and return.
+		 */
 
 		sf->crefs--;
 		goto okout;
@@ -469,24 +487,24 @@ static int smartfs_close(FAR struct file *filep)
 
 	/* Now free the pointer */
 
-	filep->f_priv = NULL;;
+	filep->f_priv = NULL;
 	if (sf->entry.name != NULL) {
 		/* Free the space for the name too */
 
-		kmm_free(sf->entry.name);
+		fs_heap_free(sf->entry.name);
 		sf->entry.name = NULL;
 	}
+
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
 	if (sf->buffer) {
-		kmm_free(sf->buffer);
+		fs_heap_free(sf->buffer);
 	}
 #endif
 
-	kmm_free(sf);
-	filep->f_priv = NULL;
+	fs_heap_free(sf);
 
 okout:
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return OK;
 }
 
@@ -494,33 +512,37 @@ okout:
  * Name: smartfs_read
  ****************************************************************************/
 
-static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
+static ssize_t smartfs_read(FAR struct file *filep, FAR char *buffer,
+                            size_t buflen)
 {
-	struct inode *inode;
-	struct smartfs_mountpt_s *fs;
-	struct smartfs_ofile_s *sf;
-	struct smart_read_write_s readwrite;
-	struct smartfs_chain_header_s *header;
-	int ret = OK;
-	uint32_t bytesread;
-	uint16_t bytestoread;
-	uint16_t bytesinsector;
+	FAR struct inode                  *inode;
+	FAR struct smartfs_mountpt_s      *fs;
+	FAR struct smartfs_ofile_s        *sf;
+	struct smart_read_write_s          readwrite;
+	FAR struct smartfs_chain_header_s *header;
+	int                                ret = OK;
+	uint32_t                           bytesread;
+	uint16_t                           bytestoread;
+	uint16_t                           bytesinsector;
 
 	/* Sanity checks */
 
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(filep->f_priv != NULL);
 
 	/* Recover our private data from the struct file instance */
 
-	sf = filep->f_priv;
+	sf    = filep->f_priv;
 	inode = filep->f_inode;
-	fs = inode->i_private;
+	fs    = inode->i_private;
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return (ssize_t)ret;
+	}
 
 	/* Loop until all byte read or error */
 
@@ -534,48 +556,38 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 			break;
 		}
 
-		/* Read the curent sector into our buffer */
+		/* Read the current sector into our buffer */
 
-		smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
+		readwrite.logsector = sf->currsector;
+		readwrite.offset = 0;
+		readwrite.buffer = (FAR uint8_t *)fs->fs_rwbuffer;
+		readwrite.count = fs->fs_llformat.availbytes;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error reading sector %d data, ret : %d\n", readwrite.logsector, ret);
-			goto errout_with_semaphore;
+			ferr("ERROR: Error %d reading sector %d data\n",
+			     ret, sf->currsector);
+			goto errout_with_lock;
 		}
-
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-		/* Sync data to prevent commit old data in sf->bflags.
-		 * Ex. Read->append->sync will commit wrong value of chain header.
-		 */
-		if (sf->bflags & SMARTFS_BFLAG_DIRTY) {
-			/* This must not be happened! */
-			fdbg("BUG!!! Flag is dirty!!\n", sf->currsector);
-		} else {
-			memcpy(sf->buffer, fs->fs_rwbuffer, fs->fs_llformat.availbytes);
-		}
-#endif
 
 		/* Point header to the read data to get used byte count */
 
-		header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+		header = (FAR struct smartfs_chain_header_s *)fs->fs_rwbuffer;
 
 		/* Get number of used bytes in this sector */
-#ifdef CONFIG_SMARTFS_DYNAMIC_HEADER
-		bytesinsector = get_leftover_used_byte_count((uint8_t *)readwrite.buffer, get_used_byte_count((uint8_t *)header->used));
-#else
-		bytesinsector = SMARTFS_USED(header);
 
+		bytesinsector = SMARTFS_USED(header);
 		if (bytesinsector == SMARTFS_ERASEDSTATE_16BIT) {
 			/* No bytes to read from this sector */
 
 			bytesinsector = 0;
 		}
-#endif
+
 		/* Calculate the number of bytes to read into the buffer */
 
-		bytestoread = bytesinsector - (sf->curroffset - (uint16_t)sizeof(struct smartfs_chain_header_s));
+		bytestoread = bytesinsector - (sf->curroffset -
+		    sizeof(struct smartfs_chain_header_s));
 		if (bytestoread + bytesread > buflen) {
-			/* Truncate bytesto read based on buffer len */
+			/* Truncate bytes to read based on buffer len */
 
 			bytestoread = buflen - bytesread;
 		}
@@ -585,7 +597,8 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 		if (bytestoread > 0) {
 			/* Do incremental copy from this sector */
 
-			memcpy(&buffer[bytesread], &fs->fs_rwbuffer[sf->curroffset], bytestoread);
+			memcpy(&buffer[bytesread], &fs->fs_rwbuffer[sf->curroffset],
+			       bytestoread);
 			bytesread += bytestoread;
 			sf->filepos += bytestoread;
 			sf->curroffset += bytestoread;
@@ -593,16 +606,20 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 
 		/* Test if we are at the end of the data in this sector */
 
-		if ((bytestoread == 0) || (sf->curroffset == fs->fs_llformat.availbytes)) {
-			/* Do not read anymore */
-			if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
-				break;
-			}
-
+		if ((bytestoread == 0) ||
+		    (sf->curroffset == fs->fs_llformat.availbytes)) {
 			/* Set the next sector as the current sector */
+
 			sf->currsector = SMARTFS_NEXTSECTOR(header);
 			sf->curroffset = sizeof(struct smartfs_chain_header_s);
 
+			/* Test if at end of data */
+
+			if (sf->currsector == SMARTFS_ERASEDSTATE_16BIT) {
+				/* No more data!  Return what we have */
+
+				break;
+			}
 		}
 	}
 
@@ -610,8 +627,8 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 
 	ret = bytesread;
 
-errout_with_semaphore:
-	smartfs_semgive(fs);
+errout_with_lock:
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -619,183 +636,299 @@ errout_with_semaphore:
  * Name: smartfs_write
  ****************************************************************************/
 
-static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t buflen)
+static ssize_t smartfs_write(FAR struct file *filep, FAR const char *buffer,
+                             size_t buflen)
 {
-	struct inode *inode;
-	struct smartfs_mountpt_s *fs;
-	struct smartfs_ofile_s *sf;
-	struct smart_read_write_s readwrite;
-	struct smartfs_chain_header_s *header;
-	size_t byteswritten;
-	uint16_t bytes;
-	size_t size = sizeof(struct smartfs_chain_header_s);
-	int ret;
+	FAR struct inode                  *inode;
+	FAR struct smartfs_mountpt_s      *fs;
+	FAR struct smartfs_ofile_s        *sf;
+	struct smart_read_write_s          readwrite;
+	FAR struct smartfs_chain_header_s *header;
+	size_t                             byteswritten;
+	int                                ret;
 
-	/* Sanity checks.  I have seen the following assertion misfire if
-	 * CONFIG_DEBUG_MM is enabled while re-directing output to a
-	 * file.  In this case, the debug output can get generated while
-	 * the file is being opened,  FAT data structures are being allocated,
-	 * and things are generally in a perverse state.
-	 */
-
-#ifdef CONFIG_DEBUG_MM
-	if (filep->f_priv == NULL || filep->f_inode == NULL) {
-		return -ENXIO;
-	}
-#else
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
-#endif
+	DEBUGASSERT(filep->f_priv != NULL);
 
 	/* Recover our private data from the struct file instance */
 
-	sf = filep->f_priv;
+	sf    = filep->f_priv;
 	inode = filep->f_inode;
-	fs = inode->i_private;
+	fs    = inode->i_private;
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return (ssize_t)ret;
+	}
 
-	/* Test the permissions. Only allow write if the file was opened with write flags */
+	/* Test the permissions.  Only allow write if the file was opened with
+	 * write flags.
+	 */
 
 	if ((sf->oflags & O_WROK) == 0) {
 		ret = -EACCES;
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
-	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-	byteswritten = 0;
-
-	/* First, check if we are overwriting the existing file data or appending more
-	 * As long as the current file pointer position for writing is less than
-	 * the total data length in the file, we are doing an overwrite operation.
-	 * When the file pointer's position surpasses the file's data length,
-	 * it becomes an append operation which will be handled by a separate function
+	/* Test if we opened for APPEND mode.  If we did, then seek to the
+	 * end of the file.
 	 */
-	while ((sf->filepos < sf->entry.datalen) && (buflen > 0)) {
-		/* We will write data up to the current end-of-file and then break,
-		 * allowing the append operation to write the additional data to the end of the file.
+
+	if (sf->oflags & O_APPEND) {
+		ret = smartfs_seek_internal(fs, sf, 0, SEEK_END);
+		if (ret < 0) {
+			ret = -EIO;
+			goto errout_with_lock;
+		}
+	}
+
+	/* First test if we are overwriting an existing location or writing to
+	 * a new one.
+	 */
+
+	header = (FAR struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+	byteswritten = 0;
+	while ((sf->filepos < sf->entry.datlen) && (buflen > 0)) {
+		/* Overwriting data caused by a seek, etc.  In this case, we need
+		 * to check if the write causes the file length to be extended
+		 * or not and update it accordingly.  We will write data up to
+		 * the current end-of-file and then break, allowing the next while
+		 * loop below to write the additional data to the end of the file.
 		 */
 
-		fvdbg("Datalen : %d, sector : %d, offset : %d\nFilepos : %d, bytes written : %d, buflen : %d\n",\
-			 sf->entry.datalen, sf->currsector, sf->curroffset, sf->filepos, byteswritten, buflen);
-		bytes = fs->fs_llformat.availbytes - sf->curroffset;
+		readwrite.offset = sf->curroffset;
+		readwrite.logsector = sf->currsector;
+		readwrite.buffer = (FAR uint8_t *)&buffer[byteswritten];
+		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
 
 		/* Limit the write based on available data to write */
-		if (bytes > buflen) {
-			bytes = buflen;
+
+		if (readwrite.count > buflen) {
+			readwrite.count = buflen;
 		}
 
 		/* Limit the write based on current file length */
-		if (bytes > sf->entry.datalen - sf->filepos) {
-			bytes = sf->entry.datalen - sf->filepos;
+
+		if (readwrite.count > sf->entry.datlen - sf->filepos) {
+			/* Limit the write length so we write to the current EOF. */
+
+			readwrite.count = sf->entry.datlen - sf->filepos;
 		}
 
 		/* Now perform the write. */
-		if (bytes > 0) {
 
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-			/* If sector buffer is enabled and it is full with data, overwrite right now.
-			 * Otherwise, it will be written by sync_internal
-			 */
-			memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], bytes);
-			sf->bflags |= SMARTFS_BFLAG_DIRTY;
-
-			if (sf->curroffset + bytes == fs->fs_llformat.availbytes)
-#endif				
-			{
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				smartfs_setbuffer(&readwrite, sf->currsector, size,\
-					 fs->fs_llformat.availbytes - size, (uint8_t *)&sf->buffer[size]);
-#else
-				smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset,\
-					 fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
-#endif
-				/* Only the data bytes of the sector are written,
-				 * we do not re-write/overwrite the header bytes.
-				 */
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-				if (ret < 0) {
-					fdbg("Error writing sector %d data, ret : %d\n", readwrite.logsector, ret);
-					goto errout_with_semaphore;
-				}
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				/* Clear the flags, no longer dirty if the buffer content is written to flash */
-				sf->bflags = SMARTFS_BFLAG_UNMOD;
-#endif
+		if (readwrite.count > 0) {
+			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				ferr("ERROR: Error %d writing sector %d data\n",
+				     ret, sf->currsector);
+				goto errout_with_lock;
 			}
 
 			/* Update our control variables */
-			sf->filepos += bytes;
-			sf->curroffset += bytes;
-			buflen -= bytes;
-			byteswritten += bytes;
+
+			sf->filepos += readwrite.count;
+			sf->curroffset += readwrite.count;
+			buflen -= readwrite.count;
+			byteswritten += readwrite.count;
 		}
 
 		/* Test if we wrote to the end of the current sector */
+
 		if (sf->curroffset == fs->fs_llformat.availbytes) {
-			/* Wrote to the end of the sector. Update to point to the
-			 * next sector for additional writes. Read header to get the sector chain info.
+			/* Wrote to the end of the sector.  Update to point to the
+			 * next sector for additional writes.  First read the sector
+			 * header to get the sector chain info.
 			 */
-			smartfs_setbuffer(&readwrite, sf->currsector, 0, size, (uint8_t *)fs->fs_rwbuffer);
+
+			readwrite.offset = 0;
+			readwrite.buffer = (FAR uint8_t *)fs->fs_rwbuffer;
+			readwrite.count = sizeof(struct smartfs_chain_header_s);
 			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 			if (ret < 0) {
-				fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
-				goto errout_with_semaphore;
+				ferr("ERROR: Error %d reading sector %d header\n",
+				     ret, sf->currsector);
+				goto errout_with_lock;
 			}
 
-			/* If file is modified and more data remains to be appended to file,
-			 * but no next sector is available, do not update sf->currsector and curroffset.
-			 * This will be handled when buffer data is synced.
-			 */
-			if (SMARTFS_NEXTSECTOR(header) != 0xFFFF) {
-				/* Now get the chained sector info and reset the offset */
-				sf->currsector = SMARTFS_NEXTSECTOR(header);
-				sf->curroffset = size;
+			/* Now get the chained sector info and reset the offset */
 
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				/* Read the next sector's data if we have reached the end of the current sector
-				 * AND more data is left to be written.
-				 * The header of the current sector will be read later if required.
-				 */
-				if (buflen > 0) {
-					smartfs_setbuffer(&readwrite, sf->currsector, size,\
-						 fs->fs_llformat.availbytes - size, (uint8_t *)&sf->buffer[size]);
-					ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-					if (ret < 0) {
-						fdbg("Error %d reading sector %d\n", ret, sf->currsector);
-						goto errout_with_semaphore;
-					}
-				}
-#endif
-			}
+			sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			sf->currsector = SMARTFS_NEXTSECTOR(header);
 		}
 	}
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	/* If there is unsynced data in the sf->buffer and the control is now leaving the
-	 * scope of this function, the correct header should also be present in sf->buffer
-	 * for smartfs_append_data or smartfs_sync_internal. Hence we read the header now.
+
+	/* If data is written to a forward position using seek, the sector
+	 * buffer must be updated because it may be referenced later.
 	 */
-	if (sf->bflags & SMARTFS_BFLAG_DIRTY && byteswritten > 0) {
-		smartfs_setbuffer(&readwrite, sf->currsector, 0, size, (uint8_t*)sf->buffer);
+
+	if (byteswritten > 0) {
+		readwrite.logsector = sf->currsector;
+		readwrite.offset = 0;
+		readwrite.count = fs->fs_llformat.availbytes;
+		readwrite.buffer = (FAR uint8_t *)sf->buffer;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
-			goto errout_with_semaphore;
+			ferr("ERROR: Error %d reading sector %d\n", ret, sf->currsector);
+			goto errout_with_lock;
 		}
 	}
-#endif
-	/* Now append any remaining data to end of the file. */
-	if (buflen > 0) {
-		byteswritten = smartfs_append_data(fs, sf, buffer, byteswritten, buflen);
+
+#endif /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+
+	/* Now append data to end of the file. */
+
+	while (buflen > 0) {
+		/* We will fill up the current sector. Write data to
+		 * the current sector first.
+		 */
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
+		if (readwrite.count > buflen) {
+			readwrite.count = buflen;
+		}
+
+		memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten],
+		       readwrite.count);
+		sf->bflags |= SMARTFS_BFLAG_DIRTY;
+
+#else  /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+		readwrite.offset = sf->curroffset;
+		readwrite.logsector = sf->currsector;
+		readwrite.buffer = (FAR uint8_t *)&buffer[byteswritten];
+		readwrite.count = fs->fs_llformat.availbytes - sf->curroffset;
+		if (readwrite.count > buflen) {
+			/* Limit the write base on remaining bytes to write */
+
+			readwrite.count = buflen;
+		}
+
+		/* Perform the write */
+
+		if (readwrite.count > 0) {
+			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				ferr("ERROR: Error %d writing sector %d data\n",
+				     ret, sf->currsector);
+				goto errout_with_lock;
+			}
+		}
+
+#endif /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+
+		/* Update our control variables */
+
+		sf->entry.datlen += readwrite.count;
+		sf->byteswritten += readwrite.count;
+		sf->filepos += readwrite.count;
+		sf->curroffset += readwrite.count;
+		buflen -= readwrite.count;
+		byteswritten += readwrite.count;
+
+		/* Test if we wrote a full sector of data */
+
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		if (sf->curroffset == fs->fs_llformat.availbytes && buflen) {
+			/* First get a new chained sector */
+
+			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xffff);
+			if (ret < 0) {
+				ferr("ERROR: Error %d allocating new sector\n", ret);
+				goto errout_with_lock;
+			}
+
+			/* Copy the new sector to the old one and chain it */
+
+			header = (FAR struct smartfs_chain_header_s *)sf->buffer;
+			SMARTFS_SET_NEXTSECTOR(header, ret);
+
+			/* Now sync the file to write this sector out */
+
+			ret = smartfs_sync_internal(fs, sf);
+			if (ret != OK) {
+				goto errout_with_lock;
+			}
+
+			/* Record the new sector in our tracking variables and
+			 * reset the offset to "zero".
+			 */
+
+			if (sf->currsector == SMARTFS_NEXTSECTOR(header)) {
+				/* Error allocating logical sector! */
+
+				ferr("ERROR: Duplicate logical sector %d\n", sf->currsector);
+			}
+
+			sf->bflags = SMARTFS_BFLAG_DIRTY;
+			sf->currsector = SMARTFS_NEXTSECTOR(header);
+			sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			memset(sf->buffer, CONFIG_SMARTFS_ERASEDSTATE,
+			       fs->fs_llformat.availbytes);
+			header->type = SMARTFS_DIRENT_TYPE_FILE;
+		}
+#else  /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
+
+		if (sf->curroffset == fs->fs_llformat.availbytes) {
+			/* Sync the file to write this sector out */
+
+			ret = smartfs_sync_internal(fs, sf);
+			if (ret != OK) {
+				goto errout_with_lock;
+			}
+
+			/* Allocate a new sector if needed */
+
+			if (buflen > 0) {
+				/* Allocate a new sector */
+
+				ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xffff);
+				if (ret < 0) {
+					ferr("ERROR: Error %d allocating new sector\n", ret);
+					goto errout_with_lock;
+				}
+
+				/* Copy the new sector to the old one and chain it */
+
+				header = (FAR struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+				SMARTFS_SET_NEXTSECTOR(header, ret);
+				readwrite.offset = offsetof(struct smartfs_chain_header_s,
+				  nextsector);
+				readwrite.buffer = (FAR uint8_t *)header->nextsector;
+				readwrite.count = sizeof(uint16_t);
+				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+				if (ret < 0) {
+					ferr("ERROR: Error %d writing next sector\n", ret);
+					goto errout_with_lock;
+				}
+
+				/* Record the new sector in our tracking variables and
+				 * reset the offset to "zero".
+				 */
+
+				if (sf->currsector == SMARTFS_NEXTSECTOR(header)) {
+					/* Error allocating logical sector! */
+
+					ferr("ERROR: Duplicate logical sector %d\n",
+					      sf->currsector);
+				}
+
+				sf->currsector = SMARTFS_NEXTSECTOR(header);
+				sf->curroffset = sizeof(struct smartfs_chain_header_s);
+			}
+		}
+#endif /* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 	}
+
 	ret = byteswritten;
 
-errout_with_semaphore:
-	smartfs_semgive(fs);
+errout_with_lock:
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -805,36 +938,38 @@ errout_with_semaphore:
 
 static off_t smartfs_seek(FAR struct file *filep, off_t offset, int whence)
 {
-	struct inode *inode;
-	struct smartfs_mountpt_s *fs;
-	struct smartfs_ofile_s *sf;
-	int ret;
+	FAR struct inode             *inode;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_ofile_s   *sf;
+	int                           ret;
 
 	/* Sanity checks */
 
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(filep->f_priv != NULL);
 
 	/* Recover our private data from the struct file instance */
 
-	sf = filep->f_priv;
+	sf    = filep->f_priv;
 	inode = filep->f_inode;
-	fs = inode->i_private;
+	fs    = inode->i_private;
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return (off_t)ret;
+	}
 
 	/* Call our internal routine to perform the seek */
 
 	ret = smartfs_seek_internal(fs, sf, offset, whence);
-
 	if (ret >= 0) {
 		filep->f_pos = ret;
 	}
 
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -844,9 +979,36 @@ static off_t smartfs_seek(FAR struct file *filep, off_t offset, int whence)
 
 static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	/* We don't use any ioctls */
+	FAR struct smartfs_ofile_s *priv;
+	FAR struct inode *inode;
+	int ret;
 
-	return -ENOSYS;
+	/* Recover our private data from the struct file instance */
+
+	priv  = filep->f_priv;
+	inode = filep->f_inode;
+
+	switch (cmd) {
+	case FIOC_FILEPATH:
+	{
+		FAR char *path = (FAR char *)(uintptr_t) arg;
+		ret = inode_getpath(inode, path, PATH_MAX);
+		if (ret >= 0) {
+			size_t len = strlen(path);
+			if (path[len - 1] != '/') {
+				path[len++] = '/';
+			}
+
+			strlcat(path, priv->path, PATH_MAX - len);
+		}
+	}
+	break;
+	default:
+		ret = -ENOTTY;
+		break;
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -859,30 +1021,33 @@ static int smartfs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 static int smartfs_sync(FAR struct file *filep)
 {
-	struct inode *inode;
-	struct smartfs_mountpt_s *fs;
-	struct smartfs_ofile_s *sf;
-	int ret;
+	FAR struct inode             *inode;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_ofile_s   *sf;
+	int                           ret;
 
 	/* Sanity checks */
 
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(filep->f_priv != NULL);
 
 	/* Recover our private data from the struct file instance */
 
-	sf = filep->f_priv;
+	sf    = filep->f_priv;
 	inode = filep->f_inode;
-	fs = inode->i_private;
+	fs    = inode->i_private;
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = smartfs_sync_internal(fs, sf);
 
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -895,24 +1060,26 @@ static int smartfs_sync(FAR struct file *filep)
 
 static int smartfs_dup(FAR const struct file *oldp, FAR struct file *newp)
 {
-	struct smartfs_ofile_s *sf;
+	FAR struct smartfs_ofile_s *sf;
 
-	fvdbg("Dup %p->%p\n", oldp, newp);
+	finfo("Dup %p->%p\n", oldp, newp);
 
 	/* Sanity checks */
 
-	DEBUGASSERT(oldp->f_priv != NULL && newp->f_priv == NULL && newp->f_inode != NULL);
+	DEBUGASSERT(oldp->f_priv != NULL &&
+	            newp->f_priv == NULL &&
+	            newp->f_inode != NULL);
 
 	/* Recover our private data from the struct file instance */
 
-	sf = oldp->f_priv;
+	sf    = oldp->f_priv;
 
 	DEBUGASSERT(sf != NULL);
 
 	/* Just increment the reference count on the ofile */
 
 	sf->crefs++;
-	newp->f_priv = (FAR void *)sf;
+	newp->f_priv = sf;
 
 	return OK;
 }
@@ -931,23 +1098,30 @@ static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
 	FAR struct inode *inode;
 	FAR struct smartfs_mountpt_s *fs;
 	FAR struct smartfs_ofile_s *sf;
+	int ret;
 
-	DEBUGASSERT(filep != NULL);
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
 	DEBUGASSERT(buf != NULL);
 
 	/* Recover our private data from the struct file instance */
-	sf = filep->f_priv;
+
+	DEBUGASSERT(filep->f_priv != NULL);
+	sf    = filep->f_priv;
 	inode = filep->f_inode;
 
-	fs = inode->i_private;
+	fs    = inode->i_private;
+	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
-	smartfs_semtake(fs);
+	/* Take the lock */
+
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Return information about the directory entry in the stat structure */
+
 	smartfs_stat_common(fs, &sf->entry, buf);
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return OK;
 }
 
@@ -958,28 +1132,17 @@ static int smartfs_fstat(FAR const struct file *filep, FAR struct stat *buf)
  *   Set the length of the open, regular file associated with the file
  *   structure 'filep' to 'length'.
  *
- * NOTE:- This function deviates slightly from the POSIX standard as implemented in Linux.
- *        The file position pointer in Linux is not reset to the new data length. If a write
- *        operation is requested after truncate, new data is written starting at the old file
- *        position pointer. The extra space in between gets filled up with '0's.
- *        Our smartfs_shrinkfile function will reset the file pointer to the position of 'length'
- *        as requested in the truncate operation. New data is written starting at this position.
- *        Smartfs_extendfile will simply restore the file position pointer to its old location.
- *        Any conflicts/issues arising due to this deviation will be taken care of.
- *
  ****************************************************************************/
 
 static int smartfs_truncate(FAR struct file *filep, off_t length)
 {
-
 	FAR struct inode *inode;
 	FAR struct smartfs_mountpt_s *fs;
 	FAR struct smartfs_ofile_s *sf;
 	off_t oldsize;
 	int ret;
-	uint16_t oldfilepos = 0;
 
-	DEBUGASSERT(filep->f_priv != NULL && filep->f_inode != NULL);
+	DEBUGASSERT(filep->f_priv != NULL);
 
 	/* Recover our private data from the struct file instance */
 
@@ -989,9 +1152,12 @@ static int smartfs_truncate(FAR struct file *filep, off_t length)
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Test the permissions.  Only allow truncation if the file was opened with
 	 * write flags.
@@ -999,46 +1165,34 @@ static int smartfs_truncate(FAR struct file *filep, off_t length)
 
 	if ((sf->oflags & O_WROK) == 0) {
 		ret = -EACCES;
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
-	/* Save old file position here */
-	oldfilepos = sf->filepos;
-
 	/* Are we shrinking the file?  Or extending it? */
-	/* Seek till point 'length' of the file, file pointer lies at position of requested 'length' now */
-	oldsize = sf->entry.datalen;
+
+	oldsize = sf->entry.datlen;
 	if (oldsize == length) {
 		/* Let's not and say we did */
+
 		ret = OK;
 	} else if (oldsize > length) {
 		/* We are shrinking the file */
+
 		ret = smartfs_shrinkfile(fs, sf, length);
-		if (ret != OK) {
-			goto errout_with_semaphore;
-		}
 	} else {
 		/* Otherwise we are extending the file.  This is essentially the same
-		 * as a write except that (1) we write NULL characters and (2) we don't
-		 * update the file position.
+		 * as a write except that (1) we write zeros and (2) we don't update
+		 * the file position.
 		 */
+
 		ret = smartfs_extendfile(fs, sf, length);
-		if (ret != OK) {
-			goto errout_with_semaphore;
-		}
 	}
 
-	ret = OK;
-errout_with_semaphore:
-	/* TODO As we commented, this is violdation of POSIX, we'll see it..but fail case? */
-	if (sf->entry.datalen < oldfilepos) {
-		smartfs_seek_internal(fs, sf, 0, SEEK_END);
-	} else {
-		smartfs_seek_internal(fs, sf, oldfilepos, SEEK_SET);
-	}
+errout_with_lock:
 
 	/* Relinquish exclusive access */
-	smartfs_semgive(fs);
+
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1049,11 +1203,16 @@ errout_with_semaphore:
  *
  ****************************************************************************/
 
-static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs_dirent_s *dir)
+static int smartfs_opendir(FAR struct inode *mountpt,
+                           FAR const char *relpath,
+                           FAR struct fs_dirent_s **dir)
 {
-	struct smartfs_mountpt_s *fs;
-	int ret;
-	struct smartfs_entry_s entry;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_dir_s     *sdir;
+	int                           ret;
+	struct smartfs_entry_s        entry;
+	uint16_t                      parentdirsector;
+	FAR const char               *filename;
 
 	/* Sanity checks */
 
@@ -1062,37 +1221,66 @@ static int smartfs_opendir(struct inode *mountpt, const char *relpath, struct fs
 	/* Recover our private data from the inode instance */
 
 	fs = mountpt->i_private;
+	sdir = fs_heap_zalloc(sizeof(*sdir));
+	if (sdir == NULL) {
+		return -ENOMEM;
+	}
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		goto errout_with_sdir;
+	}
 
 	/* Search for the path on the volume */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath);
+	ret = smartfs_finddirentry(fs, &entry, relpath, &parentdirsector,
+	                           &filename);
 	if (ret < 0) {
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
 	/* Populate our private data in the fs_dirent_s struct */
 
-	dir->u.smartfs.fs_firstsector = entry.firstsector;
-	dir->u.smartfs.fs_currsector = entry.firstsector;
-	dir->u.smartfs.fs_curroffset = sizeof(struct smartfs_chain_header_s);
+	sdir->fs_firstsector = entry.firstsector;
+	sdir->fs_currsector = entry.firstsector;
+	sdir->fs_curroffset = sizeof(struct smartfs_chain_header_s);
 
-	ret = OK;
+	*dir = &sdir->fs_base;
+	nxmutex_unlock(&g_lock);
+	return OK;
 
-errout_with_semaphore:
+errout_with_lock:
+
 	/* If space for the entry name was allocated, then free it */
 
 	if (entry.name != NULL) {
-		kmm_free(entry.name);
+		fs_heap_free(entry.name);
 		entry.name = NULL;
 	}
 
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
+
+errout_with_sdir:
+	fs_heap_free(sdir);
 	return ret;
+}
+
+/****************************************************************************
+ * Name: smartfs_closedir
+ *
+ * Description: Close directory
+ *
+ ****************************************************************************/
+
+static int smartfs_closedir(FAR struct inode *mountpt,
+                            FAR struct fs_dirent_s *dir)
+{
+	DEBUGASSERT(dir);
+	fs_heap_free(dir);
+	return 0;
 }
 
 /****************************************************************************
@@ -1102,15 +1290,17 @@ errout_with_semaphore:
  *
  ****************************************************************************/
 
-static int smartfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir)
+static int smartfs_readdir(FAR struct inode *mountpt,
+                           FAR struct fs_dirent_s *dir,
+                           FAR struct dirent *dentry)
 {
-	struct smartfs_mountpt_s *fs;
-	int ret;
-	uint16_t entrysize;
-	uint16_t namelen;
-	struct smartfs_chain_header_s *header;
+	FAR struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_dir_s *sdir;
+	FAR struct smartfs_chain_header_s *header;
 	struct smart_read_write_s readwrite;
-	struct smartfs_entry_header_s *entry;
+	FAR struct smartfs_entry_header_s *entry;
+	uint16_t entrysize;
+	int ret;
 
 	/* Sanity checks */
 
@@ -1119,72 +1309,102 @@ static int smartfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir)
 	/* Recover our private data from the inode instance */
 
 	fs = mountpt->i_private;
+	sdir = (FAR struct smartfs_dir_s *)dir;
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Read sectors and search entries until one found or no more */
 
-	entrysize = sizeof(struct smartfs_entry_header_s) + fs->fs_llformat.namesize;
-	while (dir->u.smartfs.fs_currsector != SMARTFS_ERASEDSTATE_16BIT) {
+	entrysize = sizeof(struct smartfs_entry_header_s) +
+	  fs->fs_llformat.namesize;
+
+	while (sdir->fs_currsector != SMARTFS_ERASEDSTATE_16BIT) {
 		/* Read the logical sector */
 
-		smartfs_setbuffer(&readwrite, dir->u.smartfs.fs_currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)fs->fs_rwbuffer);
+		readwrite.logsector = sdir->fs_currsector;
+		readwrite.count = fs->fs_llformat.availbytes;
+		readwrite.buffer = (FAR uint8_t *)fs->fs_rwbuffer;
+		readwrite.offset = 0;
 		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
 		/* Now search for entries, starting at curroffset */
 
-		while (dir->u.smartfs.fs_curroffset < ret) {
+		/* Note: directories don't use the header's used field
+		 *       so we search all possilble directory entries.
+		 */
+
+		while (sdir->fs_curroffset + entrysize < ret) {
 			/* Point to next entry */
 
-			entry = (struct smartfs_entry_header_s *)&fs->fs_rwbuffer[dir->u.smartfs.fs_curroffset];
+			entry = (FAR struct smartfs_entry_header_s *)&fs->fs_rwbuffer[
+			  sdir->fs_curroffset];
 
 			/* Test if this entry is valid and active */
 
-			if (((entry->flags & SMARTFS_DIRENT_EMPTY) == (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) || ((entry->flags & SMARTFS_DIRENT_ACTIVE) != (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE))) {
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+			if (((smartfs_rdle16(&entry->flags)
+			      & SMARTFS_DIRENT_EMPTY) ==
+			    (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) ||
+			    ((smartfs_rdle16(&entry->flags)
+			      & SMARTFS_DIRENT_ACTIVE) !=
+			    (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE)))
+#else
+			if (((entry->flags & SMARTFS_DIRENT_EMPTY) ==
+			    (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_EMPTY)) ||
+			    ((entry->flags & SMARTFS_DIRENT_ACTIVE) !=
+			    (SMARTFS_ERASEDSTATE_16BIT & SMARTFS_DIRENT_ACTIVE)))
+#endif
+			{
 				/* This entry isn't valid, skip it */
 
-				dir->u.smartfs.fs_curroffset += entrysize;
+				sdir->fs_curroffset += entrysize;
 				continue;
 			}
 
 			/* Entry found!  Report it */
 
-			if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
-				dir->fd_dir.d_type = DTYPE_DIRECTORY;
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+			if ((smartfs_rdle16(&entry->flags) & SMARTFS_DIRENT_TYPE) ==
+			    SMARTFS_DIRENT_TYPE_DIR)
+#else
+			if ((entry->flags & SMARTFS_DIRENT_TYPE) ==
+			    SMARTFS_DIRENT_TYPE_DIR)
+#endif
+			{
+				dentry->d_type = DTYPE_DIRECTORY;
 			} else {
-				dir->fd_dir.d_type = DTYPE_FILE;
+				dentry->d_type = DTYPE_FILE;
 			}
 
 			/* Copy the entry name to dirent */
 
-			namelen = fs->fs_llformat.namesize;
-			if (namelen > NAME_MAX) {
-				namelen = NAME_MAX;
-			}
-
-			memset(dir->fd_dir.d_name, 0, namelen);
-			strncpy(dir->fd_dir.d_name, entry->name, namelen);
+			strlcpy(dentry->d_name, entry->name, sizeof(dentry->d_name));
 
 			/* Now advance to the next entry */
 
-			dir->u.smartfs.fs_curroffset += entrysize;
-			if (dir->u.smartfs.fs_curroffset + entrysize >= fs->fs_llformat.availbytes) {
+			sdir->fs_curroffset += entrysize;
+			if (sdir->fs_curroffset + entrysize >=
+			      fs->fs_llformat.availbytes) {
 				/* We advanced past the end of the sector.  Go to next sector */
 
-				dir->u.smartfs.fs_curroffset = sizeof(struct smartfs_chain_header_s);
-				header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-				dir->u.smartfs.fs_currsector = SMARTFS_NEXTSECTOR(header);
+				sdir->fs_curroffset =
+				  sizeof(struct smartfs_chain_header_s);
+				header = (FAR struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+				sdir->fs_currsector = SMARTFS_NEXTSECTOR(header);
 			}
 
 			/* Now exit */
 
 			ret = OK;
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
 		/* No more entries in this sector.  Move on to next sector and
@@ -1192,17 +1412,17 @@ static int smartfs_readdir(struct inode *mountpt, struct fs_dirent_s *dir)
 		 * done and will report ENOENT.
 		 */
 
-		header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
-		dir->u.smartfs.fs_curroffset = sizeof(struct smartfs_chain_header_s);
-		dir->u.smartfs.fs_currsector = SMARTFS_NEXTSECTOR(header);
+		header = (FAR struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+		sdir->fs_curroffset = sizeof(struct smartfs_chain_header_s);
+		sdir->fs_currsector = SMARTFS_NEXTSECTOR(header);
 	}
 
 	/* If we arrive here, then there are no more entries */
 
 	ret = -ENOENT;
 
-errout_with_semaphore:
-	smartfs_semgive(fs);
+errout_with_lock:
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1213,9 +1433,10 @@ errout_with_semaphore:
  *
  ****************************************************************************/
 
-static int smartfs_rewinddir(struct inode *mountpt, struct fs_dirent_s *dir)
+static int smartfs_rewinddir(FAR struct inode *mountpt,
+                             FAR struct fs_dirent_s *dir)
 {
-	int ret = OK;
+	FAR struct smartfs_dir_s *sdir = (FAR struct smartfs_dir_s *)dir;
 
 	/* Sanity checks */
 
@@ -1223,10 +1444,10 @@ static int smartfs_rewinddir(struct inode *mountpt, struct fs_dirent_s *dir)
 
 	/* Reset the directory to the first entry */
 
-	dir->u.smartfs.fs_currsector = dir->u.smartfs.fs_firstsector;
-	dir->u.smartfs.fs_curroffset = sizeof(struct smartfs_chain_header_s);
+	sdir->fs_currsector = sdir->fs_firstsector;
+	sdir->fs_curroffset = sizeof(struct smartfs_chain_header_s);
 
-	return ret;
+	return 0;
 }
 
 /****************************************************************************
@@ -1240,9 +1461,10 @@ static int smartfs_rewinddir(struct inode *mountpt, struct fs_dirent_s *dir)
  *
  ****************************************************************************/
 
-static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **handle)
+static int smartfs_bind(FAR struct inode *blkdriver, FAR const void *data,
+                        FAR void **handle)
 {
-	struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_mountpt_s *fs;
 	int ret;
 
 	/* Open the block driver */
@@ -1251,64 +1473,45 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 		return -ENODEV;
 	}
 
-	if (blkdriver->u.i_bops->open && blkdriver->u.i_bops->open(blkdriver) != OK) {
+	if (blkdriver->u.i_bops->open &&
+	    blkdriver->u.i_bops->open(blkdriver) != OK) {
 		return -ENODEV;
 	}
 
 	/* Create an instance of the mountpt state structure */
 
-	fs = (struct smartfs_mountpt_s *)kmm_zalloc(sizeof(struct smartfs_mountpt_s));
+	fs = (FAR struct smartfs_mountpt_s *)
+	  fs_heap_zalloc(sizeof(struct smartfs_mountpt_s));
 	if (!fs) {
 		return -ENOMEM;
 	}
 
-	/* If the global semaphore hasn't been initialized, then
-	 * initialize it now. */
-
-	fs->fs_sem = &g_sem;
-	if (!g_seminitialized) {
-		sem_init(&g_sem, 0, 1);	/* Initialize the semaphore that controls access */
-		g_seminitialized = TRUE;
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		fs_heap_free(fs);
+		return ret;
 	}
 
-	/* Take the semaphore for the mount.  The semaphore is always taken
-	 * through smartfs_semtake() so that take and give stay strictly
-	 * paired and the holder's cancel state is saved and restored.
-	 */
-
-	smartfs_semtake(fs);
-
 	/* Initialize the allocated mountpt state structure.  The filesystem is
-	 * responsible for one reference on the blkdriver inode and does not
+	 * responsible for one reference ont the blkdriver inode and does not
 	 * have to addref() here (but does have to release in ubind().
 	 */
 
-	fs->fs_blkdriver = blkdriver;	/* Save the block driver reference */
+	fs->fs_blkdriver = blkdriver;  /* Save the block driver reference */
 	fs->fs_head = NULL;
 
 	/* Now perform the mount.  */
 
 	ret = smartfs_mount(fs, true);
 	if (ret != 0) {
-		goto error_with_semaphore;
+		nxmutex_unlock(&g_lock);
+		fs_heap_free(fs);
+		return ret;
 	}
 
-	*handle = (void *)fs;
-
-#ifndef NXFUSE_HOST_BUILD
-	ret = smartfs_sector_recovery(fs);
-	if (ret != 0) {
-		goto error_with_semaphore;
-	}
-#endif
-
-	smartfs_semgive(fs);
-	return ret;
-
-error_with_semaphore:
-	smartfs_semgive(fs);
-	kmm_free(fs);
-	return ret;
+	*handle = fs;
+	nxmutex_unlock(&g_lock);
+	return OK;
 }
 
 /****************************************************************************
@@ -1319,9 +1522,10 @@ error_with_semaphore:
  *
  ****************************************************************************/
 
-static int smartfs_unbind(void *handle, FAR struct inode **blkdriver)
+static int smartfs_unbind(FAR void *handle, FAR struct inode **blkdriver,
+                          unsigned int flags)
 {
-	struct smartfs_mountpt_s *fs = (struct smartfs_mountpt_s *)handle;
+	FAR struct smartfs_mountpt_s *fs = (FAR struct smartfs_mountpt_s *)handle;
 	int ret;
 
 	if (!fs) {
@@ -1330,19 +1534,31 @@ static int smartfs_unbind(void *handle, FAR struct inode **blkdriver)
 
 	/* Check if there are sill any files opened on the filesystem. */
 
-	ret = OK;					/* Assume success */
-	smartfs_semtake(fs);
+	ret = OK; /* Assume success */
+
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (fs->fs_head != NULL) {
 		/* We cannot unmount now.. there are open files */
 
-		smartfs_semgive(fs);
-		return -EBUSY;
-	}
-	/* Unmount ... close the block driver */
-	ret = smartfs_unmount(fs);
-	smartfs_semgive(fs);
-	kmm_free(fs);
+		nxmutex_unlock(&g_lock);
 
+		/* This implementation currently only supports unmounting if there are
+		 * no open file references.
+		 */
+
+		return (flags != 0) ? -ENOSYS : -EBUSY;
+	} else {
+		/* Unmount ... close the block driver */
+
+		ret = smartfs_unmount(fs);
+	}
+
+	nxmutex_unlock(&g_lock);
+	fs_heap_free(fs);
 	return ret;
 }
 
@@ -1353,9 +1569,9 @@ static int smartfs_unbind(void *handle, FAR struct inode **blkdriver)
  *
  ****************************************************************************/
 
-static int smartfs_statfs(struct inode *mountpt, struct statfs *buf)
+static int smartfs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
 {
-	struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_mountpt_s *fs;
 	int ret;
 
 	/* Sanity checks */
@@ -1366,11 +1582,13 @@ static int smartfs_statfs(struct inode *mountpt, struct statfs *buf)
 
 	fs = mountpt->i_private;
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Implement the logic!! */
 
-	memset(buf, 0, sizeof(struct statfs));
 	buf->f_type = SMARTFS_MAGIC;
 
 	/* Re-request the low-level format info to update free blocks */
@@ -1389,7 +1607,7 @@ static int smartfs_statfs(struct inode *mountpt, struct statfs *buf)
 	buf->f_files = 0;
 	buf->f_ffree = fs->fs_llformat.nfreesectors;
 
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1400,11 +1618,13 @@ static int smartfs_statfs(struct inode *mountpt, struct statfs *buf)
  *
  ****************************************************************************/
 
-static int smartfs_unlink(struct inode *mountpt, const char *relpath)
+static int smartfs_unlink(FAR struct inode *mountpt, FAR const char *relpath)
 {
-	struct smartfs_mountpt_s *fs;
-	int ret;
-	struct smartfs_entry_s entry;
+	FAR struct smartfs_mountpt_s *fs;
+	int                           ret;
+	struct smartfs_entry_s        entry;
+	FAR const char               *filename;
+	uint16_t                      parentdirsector;
 
 	/* Sanity checks */
 
@@ -1414,39 +1634,46 @@ static int smartfs_unlink(struct inode *mountpt, const char *relpath)
 
 	fs = mountpt->i_private;
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Locate the directory entry for this path */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath);
+	ret = smartfs_finddirentry(fs, &entry, relpath, &parentdirsector,
+	                           &filename);
+
 	if (ret == OK) {
 		/* The name exists -- validate it is a file, not a dir */
 
 		if ((entry.flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
 			ret = -EISDIR;
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
 		/* TODO:  Need to check permissions?  */
 
-		/* Okay, we are clear to delete the file.  Use the deleteentry routine. */
+		/* Okay, we are clear to delete the file.  Use the deleteentry
+		 * routine.
+		 */
 
 		smartfs_deleteentry(fs, &entry);
-
 	} else {
 		/* Just report the error */
 
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
 	ret = OK;
 
-errout_with_semaphore:
+errout_with_lock:
 	if (entry.name != NULL) {
-		kmm_free(entry.name);
+		fs_heap_free(entry.name);
 	}
-	smartfs_semgive(fs);
+
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1457,11 +1684,14 @@ errout_with_semaphore:
  *
  ****************************************************************************/
 
-static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode)
+static int smartfs_mkdir(FAR struct inode *mountpt, FAR const char *relpath,
+                         mode_t mode)
 {
-	struct smartfs_mountpt_s *fs;
-	int ret;
-	struct smartfs_entry_s entry;
+	FAR struct smartfs_mountpt_s *fs;
+	int                           ret;
+	struct smartfs_entry_s        entry;
+	uint16_t                      parentdirsector;
+	FAR const char               *filename;
 
 	/* Sanity checks */
 
@@ -1471,12 +1701,17 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 
 	fs = mountpt->i_private;
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Locate the directory entry for this path */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath);
+	ret = smartfs_finddirentry(fs, &entry, relpath, &parentdirsector,
+	                           &filename);
+
 	/* Three possibililities: (1) a node exists for the relpath and
 	 * dirinfo describes the directory entry of the entity, (2) the
 	 * node does not exist, or (3) some error occurred.
@@ -1486,43 +1721,40 @@ static int smartfs_mkdir(struct inode *mountpt, const char *relpath, mode_t mode
 		/* The name exists -- can't create */
 
 		ret = -EEXIST;
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	} else if (ret == -ENOENT) {
-
 		/* It doesn't exist ... we can create it, but only if we have
-		 * the right permissions and if the previous parent is valid. */
+		 * the right permissions and if the parentdirsector is valid.
+		 */
 
-		if (entry.dsector == 0xFFFF) {
-			fdbg("Invalid parent directory sector\n");
-			/* Invalid entry in the path (non-existant dir segment) */
-			goto errout_with_semaphore;
+		if (parentdirsector == 0xffff) {
+			/* Invalid entry in the path (non-existent dir segment) */
+
+			goto errout_with_lock;
 		}
+
+		/* Check mode */
+
 		/* Create the directory */
-		/* Allocate new data sector for entry */
-		ret = smartfs_alloc_firstsector(fs, &entry.firstsector, SMARTFS_DIRENT_TYPE_DIR, NULL);
+
+		ret = smartfs_createentry(fs, parentdirsector, filename,
+		    SMARTFS_DIRENT_TYPE_DIR, mode, &entry, 0xffff, NULL);
 		if (ret != OK) {
-			fdbg("Unable to allocate data sector for new entry, ret : %d\n", ret);
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
-		/* Try to find empty/invalid entry available in one of he chained parent sectors */
-		ret = smartfs_find_availableentry(fs, &entry);
-		if (ret != OK) {
-			fdbg("Unable to find space for writing new entry, ret : %d\n", ret);
-			goto errout_with_semaphore;
-		}
-		/* Now we have an entry allocated for writing, write new entry to sector */
-		ret = smartfs_writeentry(fs, entry, SMARTFS_DIRENT_TYPE_DIR, mode);
-		if (ret != OK) {
-			fdbg("Unable to write new entry, ret : %d\n", ret);
-			goto errout_with_semaphore;
-		}
+
+		ret = OK;
 	}
 
-errout_with_semaphore:
+errout_with_lock:
 	if (entry.name != NULL) {
-		kmm_free(entry.name);
+		/* Free the filename space allocation */
+
+		fs_heap_free(entry.name);
+		entry.name = NULL;
 	}
-	smartfs_semgive(fs);
+
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1533,11 +1765,13 @@ errout_with_semaphore:
  *
  ****************************************************************************/
 
-int smartfs_rmdir(struct inode *mountpt, const char *relpath)
+int smartfs_rmdir(FAR struct inode *mountpt, FAR const char *relpath)
 {
-	struct smartfs_mountpt_s *fs;
-	int ret;
-	struct smartfs_entry_s entry;
+	FAR struct smartfs_mountpt_s *fs;
+	int                           ret;
+	struct smartfs_entry_s        entry;
+	FAR const char               *filename;
+	uint16_t                      parentdirsector;
 
 	/* Sanity checks */
 
@@ -1547,57 +1781,65 @@ int smartfs_rmdir(struct inode *mountpt, const char *relpath)
 
 	fs = mountpt->i_private;
 
-	/* Take the semaphore */
+	/* Take the lock */
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Locate the directory entry for this path */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath);
+	ret = smartfs_finddirentry(fs, &entry, relpath, &parentdirsector,
+	                           &filename);
+
 	if (ret == OK) {
 		/* The name exists -- validate it is a dir, not a file */
 
 		if ((entry.flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_FILE) {
 			ret = -ENOTDIR;
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
 		/* TODO:  Need to check permissions?  */
 
-		/* Check if the directory is emtpy */
+		/* Check if the directory is empty */
 
 		ret = smartfs_countdirentries(fs, &entry);
 		if (ret < 0) {
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
 		/* Only continue if there are zero entries in the directory */
 
 		if (ret != 0) {
 			ret = -ENOTEMPTY;
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
-		/* Okay, we are clear to delete the directory.  Use the deleteentry routine. */
+		/* Okay, we are clear to delete the directory.  Use the deleteentry
+		 * routine.
+		 */
 
 		ret = smartfs_deleteentry(fs, &entry);
 		if (ret < 0) {
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 	} else {
 		/* Just report the error */
 
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
 	ret = OK;
 
-errout_with_semaphore:
+errout_with_lock:
 	if (entry.name != NULL) {
-		kmm_free(entry.name);
+		fs_heap_free(entry.name);
 	}
-	smartfs_semgive(fs);
+
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1608,17 +1850,21 @@ errout_with_semaphore:
  *
  ****************************************************************************/
 
-int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *newrelpath)
+int smartfs_rename(FAR struct inode *mountpt, FAR const char *oldrelpath,
+                   FAR const char *newrelpath)
 {
-	int ret;
-	struct smartfs_mountpt_s *fs;
-	struct smartfs_entry_s oldentry;
-	struct smartfs_entry_s newentry;
-	mode_t mode;
-	uint16_t type;
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	struct smart_read_write_s readwrite;
-#endif
+	FAR struct smartfs_mountpt_s      *fs;
+	int                                ret;
+	struct smartfs_entry_s             oldentry;
+	uint16_t                           oldparentdirsector;
+	FAR const char                    *oldfilename;
+	struct smartfs_entry_s             newentry;
+	uint16_t                           newparentdirsector;
+	FAR const char                    *newfilename;
+	mode_t                             mode;
+	uint16_t                           type;
+	FAR struct smartfs_entry_header_s *direntry;
+	struct smart_read_write_s          readwrite;
 
 	/* Sanity checks */
 
@@ -1628,90 +1874,114 @@ int smartfs_rename(struct inode *mountpt, const char *oldrelpath, const char *ne
 
 	fs = mountpt->i_private;
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Search for old entry to validate it exists */
 
 	oldentry.name = NULL;
 	newentry.name = NULL;
-	ret = smartfs_finddirentry(fs, &oldentry, oldrelpath);
-	if (ret != OK) {
-		fdbg("Old entry doesn't exist\n");
-		goto errout_with_semaphore;
+	ret = smartfs_finddirentry(fs, &oldentry, oldrelpath, &oldparentdirsector,
+	                           &oldfilename);
+	if (ret < 0) {
+		goto errout_with_lock;
 	}
 
-	/* Search for the new entry and validate it DOESN'T exist */
-	ret = smartfs_finddirentry(fs, &newentry, newrelpath);
+	/* Search for the new entry and validate it DOESN'T exist. */
+
+	ret = smartfs_finddirentry(fs, &newentry, newrelpath, &newparentdirsector,
+	                           &newfilename);
 	if (ret == OK) {
-		/* The entry to be created after rename already exists, cannot complete rename request */
+		/* It is an error if the directory entry at newrelpath already
+		 * exists.  The necessary steps to avoid this case should have been
+		 * handled by higher level logic in the VFS.
+		 */
+
 		ret = -EEXIST;
-		goto errout_with_semaphore;
-	}
-	if (ret != -ENOENT) {
-		fdbg("Cannot rename entry, ret : %d\n", ret);
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
 	/* Test if the new parent directory is valid */
-	if (newentry.dsector != SMARTFS_ERASEDSTATE_16BIT) {
+
+	if (newparentdirsector != 0xffff) {
 		/* We can move to the given parent directory */
 
 		mode = oldentry.flags & SMARTFS_DIRENT_MODE;
 		type = oldentry.flags & SMARTFS_DIRENT_TYPE;
-
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-		if (oldentry.dfirst == newentry.dsector) {
-			/* We will not use any new entry found, we will overwrite the existing entry but with a new name */
-			smartfs_setbuffer(&readwrite, oldentry.dsector, oldentry.doffset + offsetof(struct smartfs_entry_header_s, name), fs->fs_llformat.namesize, (uint8_t *)newentry.name);
-			ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-			if (ret != OK) {
-				fdbg("Error writing new entry to sector %d, ret : %d\n", readwrite.logsector, ret);
-			}
-			/* Old entry doesn't have to be invalidated, directly go to end */
-			goto errout_with_semaphore;
-		}
-#endif
-		/* Find an available invalid/empty entry to write the new entry */
-		ret = smartfs_find_availableentry(fs, &newentry);
+		ret = smartfs_createentry(fs, newparentdirsector, newfilename,
+		                          type, mode, &newentry, oldentry.firstsector,
+		                          NULL);
 		if (ret != OK) {
-			fdbg("Unable to find space for writing new entry, ret : %d\n", ret);
-			goto errout_with_semaphore;
-		}
-
-		newentry.firstsector = oldentry.firstsector;
-		ret = smartfs_writeentry(fs, newentry, type, mode);
-		if (ret != OK) {
-			fdbg("Unable to write new entry, ret : %d\n", ret);
-			goto errout_with_semaphore;
+			goto errout_with_lock;
 		}
 
 		/* Now mark the old entry as inactive */
-		ret = smartfs_invalidateentry(fs, oldentry.dsector, oldentry.doffset);
-		if (ret != OK) {
-			fdbg("Unable to invalidate old entry, ret : %d\n", ret);
-			goto errout_with_semaphore;
+
+		readwrite.logsector = oldentry.dsector;
+		readwrite.offset = 0;
+		readwrite.count = fs->fs_llformat.availbytes;
+		readwrite.buffer = (FAR uint8_t *)fs->fs_rwbuffer;
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			ferr("ERROR: Error %d reading sector %d data\n",
+			     ret, oldentry.dsector);
+			goto errout_with_lock;
+		}
+
+		direntry = (FAR struct smartfs_entry_header_s *)
+		  &fs->fs_rwbuffer[oldentry.doffset];
+#if CONFIG_SMARTFS_ERASEDSTATE == 0xff
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+		smartfs_wrle16(&direntry->flags,
+		               smartfs_rdle16(&direntry->flags)
+		               & ~SMARTFS_DIRENT_ACTIVE);
+#else
+		direntry->flags &= ~SMARTFS_DIRENT_ACTIVE;
+#endif
+#else /* CONFIG_SMARTFS_ERASEDSTATE == 0xff */
+#ifdef CONFIG_SMARTFS_ALIGNED_ACCESS
+		smartfs_wrle16(&direntry->flags,
+		               smartfs_rdle16(&direntry->flags)
+		               | SMARTFS_DIRENT_ACTIVE);
+#else
+		direntry->flags |= SMARTFS_DIRENT_ACTIVE;
+#endif
+#endif /* CONFIG_SMARTFS_ERASEDSTATE == 0xff */
+
+		/* Now write the updated flags back to the device */
+
+		readwrite.offset = oldentry.doffset;
+		readwrite.count = sizeof(direntry->flags);
+		readwrite.buffer = (FAR uint8_t *)&direntry->flags;
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			ferr("ERROR: Error %d writing flag bytes for sector %d\n",
+			     ret, readwrite.logsector);
+			goto errout_with_lock;
 		}
 	} else {
 		/* Trying to create in a directory that doesn't exist */
 
 		ret = -ENOENT;
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
 	ret = OK;
 
-errout_with_semaphore:
+errout_with_lock:
 	if (oldentry.name != NULL) {
-		kmm_free(oldentry.name);
+		fs_heap_free(oldentry.name);
 		oldentry.name = NULL;
 	}
 
 	if (newentry.name != NULL) {
-		kmm_free(newentry.name);
+		fs_heap_free(newentry.name);
 		newentry.name = NULL;
 	}
 
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 
@@ -1724,81 +1994,88 @@ errout_with_semaphore:
  ****************************************************************************/
 
 static void smartfs_stat_common(FAR struct smartfs_mountpt_s *fs,
-								FAR struct smartfs_entry_s *entry,
-								FAR struct stat *buf)
+                                FAR struct smartfs_entry_s *entry,
+                                FAR struct stat *buf)
 {
 	/* Initialize the stat structure */
+
 	memset(buf, 0, sizeof(struct stat));
 	if (entry->firstsector == fs->fs_rootsector) {
 		/* It's directory name of the mount point */
+
 		buf->st_mode = S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR | S_IWOTH |
-					   S_IWGRP | S_IWUSR;
+		               S_IWGRP | S_IWUSR;
 	} else {
-		buf->st_mode = entry->flags & 0xFFF;
+		/* Mask out the file type */
+
+		buf->st_mode = entry->flags & ~S_IFMT;
+
+		/* Add the file type based on the SmartFS entry flags */
+
 		if ((entry->flags & SMARTFS_DIRENT_TYPE) == SMARTFS_DIRENT_TYPE_DIR) {
 			buf->st_mode |= S_IFDIR;
 		} else {
 			buf->st_mode |= S_IFREG;
 		}
+
+		buf->st_size    = entry->datlen;
+		buf->st_blksize = fs->fs_llformat.availbytes;
+		buf->st_blocks  = (buf->st_size + buf->st_blksize - 1) /
+		                  buf->st_blksize;
 	}
-	buf->st_size = entry->datalen;
-	buf->st_blksize = SMARTFS_AVAIL_DATABYTES(fs);
-	buf->st_blocks = (buf->st_size + buf->st_blksize - 1) / buf->st_blksize;
-	buf->st_atime = 0;
-	buf->st_ctime = 0;
 }
 
 /****************************************************************************
  * Name: smartfs_stat
  *
- * Description: Return information about a file or directory
+ * Description:
+ *   Return information about a file or directory
  *
  ****************************************************************************/
 
-static int smartfs_stat(struct inode *mountpt, const char *relpath, struct stat *buf)
+static int smartfs_stat(FAR struct inode *mountpt, FAR const char *relpath,
+                        FAR struct stat *buf)
 {
-	struct smartfs_mountpt_s *fs;
+	FAR struct smartfs_mountpt_s *fs;
 	struct smartfs_entry_s entry;
+	FAR const char *filename;
+	uint16_t parentdirsector;
 	int ret;
 
 	/* Sanity checks */
 
 	DEBUGASSERT(mountpt && mountpt->i_private);
-	DEBUGASSERT(buf != NULL);
 
 	/* Get the mountpoint private data from the inode structure */
 
 	fs = mountpt->i_private;
 
-	smartfs_semtake(fs);
+	ret = nxmutex_lock(&g_lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Find the directory entry corresponding to relpath */
 
 	entry.name = NULL;
-	ret = smartfs_finddirentry(fs, &entry, relpath);
+	ret = smartfs_finddirentry(fs, &entry, relpath, &parentdirsector,
+	                           &filename);
 	if (ret < 0) {
-		goto errout_with_semaphore;
+		goto errout_with_lock;
 	}
 
-	/* We need to know the data length of the file too */
-	ret = smartfs_get_datalen(fs, entry.firstsector, &entry.datalen);
-	if (ret < 0) {
-		fdbg("ERROR, Could not get the length of the file, ret : %d\n", ret);
-		goto errout_with_semaphore;
-	}
+	/* Return information about the directory entry in the stat structure */
 
-	/* Initialize the stat structure */
 	smartfs_stat_common(fs, &entry, buf);
-
 	ret = OK;
 
-errout_with_semaphore:
+errout_with_lock:
 	if (entry.name != NULL) {
-		kmm_free(entry.name);
+		fs_heap_free(entry.name);
 		entry.name = NULL;
 	}
 
-	smartfs_semgive(fs);
+	nxmutex_unlock(&g_lock);
 	return ret;
 }
 

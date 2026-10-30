@@ -5,10 +5,16 @@
 
 if !DISABLE_MQUEUE
 
-config FS_MQUEUE_MPATH
-    string "Path to message queuee"
-    default "/var/mqueue"
-    ---help---
-        The path to where POSIX message queues will exist in the VFS namespace.
-    
+config FS_MQUEUE_VFS_PATH
+	string "Path to message queue"
+	default "/var/mqueue"
+	---help---
+		The path to where POSIX message queues will exist in the VFS namespace.
+
+config FS_MQUEUE_NPOLLWAITERS
+	int "Maximum number of poll waiters"
+	default 4
+	---help---
+		The maximum number of waiters for the poll operation.
+
 endif # !DISABLE_MQUEUE
