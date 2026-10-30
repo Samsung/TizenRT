@@ -30,6 +30,7 @@
 #include "driver/flash.h"
 #include "flash.h"
 #include "tfm_ns_interface.h"
+#include "tfm_otp_nsc.h"
 
 #define FIRMWARE_SIGNATURE_MAGIC    0x5349474E  /* 'SIGN' in ASCII */
 #define SHA256_HASH_SIZE            (32)
@@ -150,6 +151,7 @@ enum {
     VERIFY_HASH_CHECK_FAIL,
     VERIFY_SIGNATURE_VERIFY_FAIL,
     VERIFY_BUFFER_MALLOC_FAIL,
+    VERIFY_INVALID_KEY,
 };
 
 static void print_hex(const char *label, const uint8_t *data, size_t size)
@@ -243,6 +245,89 @@ static int verify_signature(const uint8_t *hash, const uint8_t *signature, const
     return status;
 }
 
+/* Data size of the OTP_BL2_BOOT_PUBLIC_KEY_HASH slot */
+#define OTP_PUBLIC_KEY_HASH_SIZE    SHA256_HASH_SIZE
+
+/* Build the DER SubjectPublicKeyInfo of an ECDSA P-256 key from 0x04||x||y */
+static void raw_key_to_der(const uint8_t *raw_key, uint8_t *der_key)
+{
+    static const uint8_t p256_spki_prefix[] = {
+        0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce,
+        0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d,
+        0x03, 0x01, 0x07, 0x03, 0x42, 0x00
+    };
+
+    memcpy(der_key, p256_spki_prefix, sizeof(p256_spki_prefix));
+    memcpy(der_key + sizeof(p256_spki_prefix), raw_key, ECDSA_PUBLIC_KEY_SIZE + 1);
+}
+
+/* Calculate the SHA256 hash of an in-memory buffer */
+static psa_status_t calculate_sha256_buffer(const uint8_t *data, size_t size, uint8_t *hash)
+{
+    psa_status_t status;
+    size_t hash_length;
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+
+    status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_hash_update(&operation, data, size);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&operation);
+        return status;
+    }
+
+    status = psa_hash_finish(&operation, hash, SHA256_HASH_SIZE, &hash_length);
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&operation);
+    }
+
+    return status;
+}
+
+/*
+ * Compare a public key hash against the hardware-trusted hash burned in
+ * OTP_BL2_BOOT_PUBLIC_KEY_HASH. The OTP stores SHA256 of the DER encoded
+ * SubjectPublicKeyInfo, which is the same digest TF-M BL2 computes when it
+ * validates the public key TLV for MCUBOOT_HW_KEY images. The comparison is
+ * done in the secure side through an NSC call so that the OTP stays
+ * inaccessible to the non-secure firmware.
+ */
+static int is_trusted_keyhash(const uint8_t *keyhash)
+{
+    int32_t rc;
+
+    int _tfm_lock_st = tfm_ns_interface_lock();
+    if (_tfm_lock_st != PSA_SUCCESS) {
+        dbg("failed to acquire NSC interface lock, st=%d\r\n", _tfm_lock_st);
+        return 0;
+    }
+    rc = bk_otp_verify_pubkey_hash_nsc(keyhash, OTP_PUBLIC_KEY_HASH_SIZE);
+
+    tfm_ns_interface_unlock();
+
+    if (rc != 0) {
+        dbg("public key is not the hardware-trusted key, rc=%d\r\n", rc);
+        return 0;
+    }
+
+    return 1;
+}
+
+static int is_trusted_der_public_key(const uint8_t *der_key, size_t der_len)
+{
+    uint8_t keyhash[OTP_PUBLIC_KEY_HASH_SIZE];
+
+    if (calculate_sha256_buffer(der_key, der_len, keyhash) != PSA_SUCCESS) {
+        dbg("failed to calculate public key hash\r\n");
+        return 0;
+    }
+
+    return is_trusted_keyhash(keyhash);
+}
+
 static int verify_firmware_signature(uint32_t address)
 {
     firmware_signature_t sig = {0};
@@ -276,6 +361,14 @@ static int verify_firmware_signature(uint32_t address)
         return VERIFY_HASH_CHECK_FAIL;
     }
     memcpy(&pub_key[1], sig.public_key, ECDSA_PUBLIC_KEY_SIZE);
+    {
+        uint8_t der_key[ECDSA_PUBKEY_DER_SIZE];
+
+        raw_key_to_der(pub_key, der_key);
+        if (!is_trusted_der_public_key(der_key, sizeof(der_key))) {
+            return VERIFY_INVALID_KEY;
+        }
+    }
     result = verify_signature(sig.firmware_hash, sig.signature, pub_key);
     if (result != PSA_SUCCESS) {
         dbg("app signature verify fail, line %d result %d\r\n", __LINE__, result);
@@ -541,6 +634,8 @@ int up_verify_kernelsignature(uint32_t address)
     int signature_found = 0;
     int rc;
     uint32_t flag = 0;
+    uint8_t keyhash_buf[SHA256_HASH_SIZE];
+    int keyhash_found = 0;
     psa_status_t status;
 
     dbg("starting verification at address 0x%x\r\n", address);
@@ -659,6 +754,20 @@ int up_verify_kernelsignature(uint32_t address)
             dbg("found signature, len=%d\r\n", sig_len);
             break;
 
+        case IMAGE_TLV_KEYHASH:
+            /* Record the key hash so it can be compared with the OTP */
+            if (tlv.it_len != SHA256_HASH_SIZE) {
+                dbg("invalid KEYHASH TLV length %d\r\n", tlv.it_len);
+                return SIGNATURE_INVALID;
+            }
+            rc = bk_security_flash_read_instruction(tlv_off, keyhash_buf,
+                                                    SHA256_HASH_SIZE, flag);
+            if (rc != 0) {
+                return SIGNATURE_INVALID;
+            }
+            keyhash_found = 1;
+            dbg("found key hash\r\n");
+            break;
         default:
             /* Skip unknown TLV types */
             break;
@@ -675,6 +784,26 @@ int up_verify_kernelsignature(uint32_t address)
     if (!pubkey_found || !signature_found) {
         dbg("missing public key or signature\r\n");
         return SIGNATURE_INVALID;
+    }
+
+    /*
+     * The public key is read from the image being verified, so it must be
+     * proven to be the hardware-trusted key before it is used.
+     */
+    {
+        uint8_t img_keyhash[SHA256_HASH_SIZE];
+
+        if (calculate_sha256_buffer(pubkey_buf, pubkey_len, img_keyhash) != PSA_SUCCESS) {
+            dbg("failed to calculate public key hash\r\n");
+            return SIGNATURE_INVALID;
+        }
+        if (keyhash_found && memcmp(img_keyhash, keyhash_buf, SHA256_HASH_SIZE) != 0) {
+            dbg("KEYHASH TLV does not match public key\r\n");
+            return SIGNATURE_INVALID;
+        }
+        if (!is_trusted_keyhash(img_keyhash)) {
+            return SIGNATURE_INVALID;
+        }
     }
 
     status = kernel_verify_ecdsa_signature(calc_hash, sig_buf, sig_len, 
