@@ -832,6 +832,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                     disconnected_dev->conn_handle = (trble_conn_handle) conn_id;
                     disconnected_dev->cause = disc_cause;
                     if (ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, disconnected_dev) == false) {
+                        os_mem_free(disconnected_dev);
                         debug_print("callback msg send fail \n");
                     }
                 } else {
@@ -1852,6 +1853,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                             debug_print("callback msg send fail \n");
                         }
                     } else {
+                        os_mem_free(indicate_result);
                         debug_print("Memory allocation failed \n");
                     }
                 }
@@ -1883,6 +1885,7 @@ T_APP_RESULT ble_tizenrt_scatternet_gcs_client_callback(T_CLIENT_ID client_id, u
                             debug_print("callback msg send fail \n");
                         }
                     } else {
+                        os_mem_free(notify_result);
                         debug_print("Memory allocation failed \n");
                     }
                 }
