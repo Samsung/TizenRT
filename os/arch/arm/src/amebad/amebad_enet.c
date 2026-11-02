@@ -111,12 +111,14 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 
 int rtk_set_multicast_packet_filters(int dev_index, const u8 *addr){
 	u8 mask[MASK_SIZE]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+	u8 pattern[MASK_SIZE];
 	int ret = 0;
-	
+
 	rtw_packet_filter_pattern_t packet_filter;
 	rtw_packet_filter_rule_t rule;
 
-	RTK_ETHER_COPY(packet_filter.pattern, addr);
+	RTK_ETHER_COPY(pattern, addr);
+	packet_filter.pattern = pattern;
 
 	packet_filter.offset = 0;
 	packet_filter.mask_size = MASK_SIZE;
@@ -195,8 +197,14 @@ struct netdev* amebad_register_dev(int sizeof_priv)
 	}
 	config.priv = priv;
 
-	return netdev_register(&config);
-}	
+	struct netdev *dev = netdev_register(&config);
+	if (dev == NULL) {
+		kmm_free(priv);
+		return NULL;
+	}
+
+	return dev;
+}
 
 void up_netinitialize(void)
 {
