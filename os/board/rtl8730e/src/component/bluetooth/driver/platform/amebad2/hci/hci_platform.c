@@ -1230,6 +1230,9 @@ uint8_t hci_platform_get_ble_mac_address(uint8_t *ble_addr){
 	pbuf = osif_mem_alloc(RAM_TYPE_DATA_ON, 6);
 	if (!pbuf || _FAIL == OTP_LogicalMap_Read(pbuf, 0x1B4, 6)) {
 		HCI_ERR("BT MAC address read failed");
+		if (pbuf) {
+			osif_mem_free(pbuf);
+		}
 		return HCI_FAIL;
 	}
 
