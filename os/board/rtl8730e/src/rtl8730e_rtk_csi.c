@@ -36,8 +36,9 @@
 #define RTK_CSI_AVAILABLE_MINOR_MIN	0
 #define RTK_CSI_AVAILABLE_MINOR_MAX	25
 
-/* This function is defined in rtk_wifi_csi.c */
+/* These functions are defined in rtk_wifi_csi.c */
 struct wifi_csi_lowerhalf_s *rtk_csi_initialize(void);
+void rtk_csi_deinitialize(void);
 
 /****************************************************************************
  * Public Functions
@@ -64,7 +65,7 @@ int rtl8730e_rtk_csi_initialize(int minor)
 	FAR struct wifi_csi_lowerhalf_s *rtkcsi;
 	static bool initialized = false;
 	char devname[12];
-	int ret;
+	int ret = 0;
 
 	csivdbg("minor %d\n", minor);
 	DEBUGASSERT(minor >= RTK_CSI_AVAILABLE_MINOR_MIN && minor <= RTK_CSI_AVAILABLE_MINOR_MAX);
@@ -88,8 +89,7 @@ int rtl8730e_rtk_csi_initialize(int minor)
 		
 		if(ret != 0) {
 			csidbg("wifi_csi_register failed \n");
-			/* We should free rtkcsi->priv (wifi_csi_upperhalf_s) also here */
-			rtk_csi_deinitialize(rtkcsi);
+			rtk_csi_deinitialize();
 			return ret;
 		}
 		initialized = true;
