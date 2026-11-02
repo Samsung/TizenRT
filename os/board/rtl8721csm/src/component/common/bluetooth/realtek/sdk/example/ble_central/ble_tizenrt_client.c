@@ -502,6 +502,7 @@ trble_result_e rtw_ble_client_conn_param_update(trble_conn_handle *conn_handle, 
             return TRBLE_FAIL;
         }
     } else {
+        os_mem_free(update_param);
         debug_print("Invaild conn handle %d \n", *conn_handle);
         return TRBLE_FAIL;
     }
@@ -612,6 +613,7 @@ trble_result_e rtw_ble_client_disconnect(trble_conn_handle conn_handle)
             return TRBLE_FAIL;
         }
     } else {
+        os_mem_free(conn_id);
         debug_print("Invaild conn handle %d \n", conn_handle);
         return TRBLE_FAIL;
     }
@@ -620,22 +622,23 @@ trble_result_e rtw_ble_client_disconnect(trble_conn_handle conn_handle)
 
 trble_result_e rtw_ble_client_disconnect_all(void)
 {
-    trble_conn_handle *conn_id = os_mem_alloc(0, sizeof(trble_conn_handle));
-    if(conn_id == NULL)
-    {
-        debug_print("\n[%s] Memory allocation failed \n");
-        return TRBLE_FAIL;
-    }
+    trble_conn_handle *conn_id;
 
     for(uint16_t i = 0; i < ble_app_link_table_size; i++)
     {
         if(ble_app_link_table[i].conn_state == GAP_CONN_STATE_CONNECTED)
         {
+            conn_id = os_mem_alloc(0, sizeof(trble_conn_handle));
+            if(conn_id == NULL)
+            {
+                debug_print("Memory allocation failed\n");
+                return TRBLE_FAIL;
+            }
             *conn_id = i;
             if(ble_tizenrt_client_send_msg(BLE_TIZENRT_DISCONNECT, conn_id) == false)
             {
                 os_mem_free(conn_id);
-                debug_print("msg send fail \n");
+                dbg("msg send fail, conn_id: %d\n", i);
                 return TRBLE_FAIL;
             }
         }
