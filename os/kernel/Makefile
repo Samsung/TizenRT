@@ -58,6 +58,7 @@ DEPPATH = --dep-path .
 VPATH = .
 
 include addrenv/Make.defs
+include binary_manager/Make.defs
 include clock/Make.defs
 include environ/Make.defs
 include event/Make.defs
