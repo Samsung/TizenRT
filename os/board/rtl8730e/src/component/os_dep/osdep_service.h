@@ -26,6 +26,10 @@
 #endif
 #else
 #include "platform_autoconf.h"
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+/* The NuttX sys/types.h has no u8, u16, u32 (the TizenRT one had them) */
+#include <basic_types.h>
+#endif
 #endif
 
 #define OSDEP_DBG(x, ...) do {} while(0)
@@ -45,7 +49,7 @@ extern "C" {
 /////////////////////////////////////////////////////////////TizenRT service header start
 #include "dlist.h"
 
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <sched.h>
 #include <semaphore.h>
 #include <signal.h>
@@ -60,7 +64,7 @@ extern "C" {
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/time.h>
+#include <time.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -159,12 +163,16 @@ typedef void thread_return;
 typedef void *thread_context;
 
 #if !defined(CONFIG_PLATFORM_8710C)
+/* atomic_t is the NuttX type of <tinyara/atomic.h> */
+
 typedef struct {
 	volatile int counter;
-} atomic_t;
-#endif
+} osdep_atomic_t;
 
+#define ATOMIC_T osdep_atomic_t
+#else
 #define ATOMIC_T atomic_t
+#endif
 #define HZ TICK_PER_SEC
 
 #define TMR_NAME_SIZE 16

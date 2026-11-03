@@ -64,8 +64,6 @@
 #include <tinyara/arch.h>
 #include <tinyara/rtc.h>
 
-#include "up_arch.h"
-
 #include "chip.h"
 #include "amebasmart_rtc.h"
 #include "rtc_api.h"

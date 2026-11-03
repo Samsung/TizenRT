@@ -45,6 +45,13 @@
 
 #define CHIP_MPCORE_VBASE AMEBASMART_GIC_VBASE
 
+/* The GIC-400 of the Cortex-A32 has its CPU interface at offset 0x2000
+ * (distributor at 0x1000).  The NuttX armv7-a mpcore.h uses 0x2000 only
+ * for the Cortex-A7 and 0x0100 (Cortex-A9 private region) otherwise.
+ */
+
+#define MPCORE_ICC_OFFSET 0x2000
+
 /* arch/arm/src/armv7-a/l2cc_pl310.h includes this file and expects it
  * to provide the address of the L2CC-PL310 implementation.
  */

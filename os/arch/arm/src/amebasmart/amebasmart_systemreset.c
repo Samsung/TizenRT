@@ -59,7 +59,7 @@
 
 #include <tinyara/board.h>
 
-#include "up_arch.h"
+#include "chip.h"
 
 /****************************************************************************
  * Name: up_systemreset
@@ -68,7 +68,7 @@
  *   Internal, reset logic.
  *
  ****************************************************************************/
-static void up_systemreset(void)
+void up_systemreset(void)
 {
 	sys_reset();
 

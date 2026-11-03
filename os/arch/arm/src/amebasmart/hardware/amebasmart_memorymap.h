@@ -190,19 +190,19 @@
 #    error CONFIG_AMEBASMART_BOOT_NOR=y, but no bootable NOR flash defined
 #  endif
 
-  /* Set up the NOR FLASH region as the TIZENRT .text region */
+  /* Set up the NOR FLASH region as the NuttX .text region */
 
-#  define TIZENRT_TEXT_VADDR       (CONFIG_FLASH_VSTART & 0xfff00000)
-#  define TIZENRT_TEXT_PADDR       (CONFIG_FLASH_START_ADDR & 0xfff00000)
-#  define TIZENRT_TEXT_PEND        ((CONFIG_FLASH_END + 0x000fffff) & 0xfff00000)
-#  define TIZENRT_TEXT_SIZE        (TIZENRT_TEXT_PEND - TIZENRT_TEXT_PADDR)
+#  define NUTTX_TEXT_VADDR         (CONFIG_FLASH_VSTART & 0xfff00000)
+#  define NUTTX_TEXT_PADDR         (CONFIG_FLASH_START_ADDR & 0xfff00000)
+#  define NUTTX_TEXT_PEND          ((CONFIG_FLASH_END + 0x000fffff) & 0xfff00000)
+#  define NUTTX_TEXT_SIZE          (NUTTX_TEXT_PEND - NUTTX_TEXT_PADDR)
 
   /* The "primary" RAM is the DRAM or SRAM used for .bss and .data */
 
-#  define TIZENRT_RAM_VADDR        (CONFIG_RAM_VSTART & 0xfff00000)
-#  define TIZENRT_RAM_PADDR        (CONFIG_RAM_START & 0xfff00000)
-#  define TIZENRT_RAM_PEND         ((CONFIG_RAM_END + 0x000fffff) & 0xfff00000)
-#  define TIZENRT_RAM_SIZE         (TIZENRT_RAM_PEND - TIZENRT_RAM_PADDR)
+#  define NUTTX_RAM_VADDR          (CONFIG_RAM_VSTART & 0xfff00000)
+#  define NUTTX_RAM_PADDR          (CONFIG_RAM_START & 0xfff00000)
+#  define NUTTX_RAM_PEND           ((CONFIG_RAM_END + 0x000fffff) & 0xfff00000)
+#  define NUTTX_RAM_SIZE           (NUTTX_RAM_PEND - NUTTX_RAM_PADDR)
 
 #else /* CONFIG_AMEBASMART_BOOT_NOR */
 
@@ -212,13 +212,13 @@
    */
 
   /* Otherwise we are running from some kind of RAM (SRAM, DRAM).
-   * Setup the RAM region as the TIZENRT .txt, .bss, and .data region.
+   * Setup the RAM region as the NuttX .text, .bss, and .data region.
    */
 
-#  define TIZENRT_TEXT_VADDR       (CONFIG_RAM_VSTART & 0xfff00000)
-#  define TIZENRT_TEXT_PADDR       (CONFIG_RAM_START & 0xfff00000)
-#  define TIZENRT_TEXT_PEND        ((CONFIG_RAM_END + 0x000fffff) & 0xfff00000)
-#  define TIZENRT_TEXT_SIZE        (TIZENRT_TEXT_PEND - TIZENRT_TEXT_PADDR)
+#  define NUTTX_TEXT_VADDR         (CONFIG_RAM_VSTART & 0xfff00000)
+#  define NUTTX_TEXT_PADDR         (CONFIG_RAM_START & 0xfff00000)
+#  define NUTTX_TEXT_PEND          ((CONFIG_RAM_END + 0x000fffff) & 0xfff00000)
+#  define NUTTX_TEXT_SIZE          (NUTTX_TEXT_PEND - NUTTX_TEXT_PADDR)
 
 #endif /* CONFIG_AMEBASMART_BOOT_NOR */
 
@@ -299,10 +299,10 @@
 
 #  if defined(CONFIG_BOOT_RUNFROMFLASH)
   /* If we are running from FLASH, then the primary memory region is
-   * given by TIZENRT_RAM_PADDR.
+   * given by NUTTX_RAM_PADDR.
    */
 
-#    if TIZENRT_RAM_PADDR != SAM_OCRAM_PSECTION
+#    if NUTTX_RAM_PADDR != SAM_OCRAM_PSECTION
 #      define ARMV7A_PGTABLE_MAPPING 1
 #    endif
 
@@ -337,6 +337,12 @@
 #    define IDLE_STACK_VBASE      (PGTABLE_BASE_VADDR + ALL_PGTABLE_SIZE)
 
 #endif /* !PGTABLE_BASE_PADDR || !PGTABLE_BASE_VADDR */
+
+/* The IDLE stack of the NuttX armv7-a arm_head.S (g_idle_topstack) lies
+ * next to the page table, not after .bss.
+ */
+
+#define IDLE_STACK_BASE           IDLE_STACK_VBASE
 
 /* Level 2 Page table start addresses.
  *

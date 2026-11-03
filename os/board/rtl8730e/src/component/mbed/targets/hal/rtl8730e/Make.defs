@@ -35,8 +35,12 @@ CSRCS += flash_api.c \
 		wdt_api.c \
 		us_ticker_api.c \
 		rtc_api.c \
-		captouch_api.c \
-		i2s_api.c \
+		captouch_api.c
+
+# i2s_api.c needs the TizenRT audio driver headers
+ifeq ($(CONFIG_AMEBASMART_I2S),y)
+CSRCS += i2s_api.c
+endif
 
 DEPPATH += --dep-path component/mbed/targets/hal/rtl8730e
 VPATH += :component/mbed/targets/hal/rtl8730e

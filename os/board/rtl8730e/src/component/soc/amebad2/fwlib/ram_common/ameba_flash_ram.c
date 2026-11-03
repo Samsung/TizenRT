@@ -16,7 +16,7 @@
   */
 
 #include "ameba_soc.h"
-#include "barriers.h"
+#include <arch/barriers.h>
 
 FLASH_InitTypeDef flash_init_para;
 static uint32_t PrevIrqStatus;
@@ -426,8 +426,8 @@ void FLASH_UserMode_Enter(void)
 
 	while ((!up_is_cpu_paused(ulCoreID)) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
 #endif
-	ARM_DSB();
-	ARM_ISB();
+	UP_DSB();
+	UP_ISB();
 	FLASH_WaitBusy_InUserMode(WAIT_SPIC_BUSY);
 	spi_flash->CTRLR0 |= BIT_USER_MODE;
 
@@ -442,7 +442,7 @@ void FLASH_UserMode_Exit(void)
 	spi_flash->CTRLR0 &= ~BIT_USER_MODE;
 
 	while (spi_flash->CTRLR0 & BIT_USER_MODE);
-	ARM_ISB();
+	UP_ISB();
 }
 
 /**

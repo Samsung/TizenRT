@@ -4,10 +4,16 @@
  * Author: PSP Software Group
  */
 
+#include <tinyara/config.h>
+
+#include <assert.h>
+#include <debug.h>
+
 #include "sheipa.h"
 #include "ameba_soc.h"
-#include "barriers.h"
+#include "psci.h"
 #include "smp.h"
+#include "amebasmart_smp.h"
 #include <errno.h>
 
 #define SECONDARY_CORE_ID     1
@@ -115,8 +121,11 @@ int cpu_core_poweron(int cpu)
 	rtk_core1_power_on();
 	DelayUs(50);
 
-	/* renable scu and invalidate tags on all processors */
-	arm_enable_smp(0);
+	/* The Cortex-A32 has no SCU to re-enable.  The old arm_enable_smp(0)
+	 * call here only invalidated the L1 data cache of the running CPU0,
+	 * which can drop dirty lines; CPU0 takes part in the coherency since
+	 * amebasmart_enable_smp(0) at boot.
+	 */
 
 	return OK;
 }
@@ -171,6 +180,12 @@ int vPortSecondaryBoot(int cpu)
 	return OK;
 }
 
+/* CPU hot-plug of the old TizenRT (CONFIG_CPU_HOTPLUG, selected with SMP and
+ * PM).  NuttX 12.13.0 has no such option and no up_cpu_up/down/die(); keep
+ * the code for the PM port.
+ */
+
+#ifdef CONFIG_CPU_HOTPLUG
 /****************************************************************************
  * Name: cpu_core_powerdown
  *
@@ -350,3 +365,4 @@ int up_cpu_up(int cpu)
 	smpllvdbg("Secondary core booted successfully\n");
 	return OK;
 }
+#endif /* CONFIG_CPU_HOTPLUG */

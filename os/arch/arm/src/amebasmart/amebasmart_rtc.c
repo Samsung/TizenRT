@@ -68,7 +68,7 @@
 
 #include <arch/board/board.h>
 
-#include "up_arch.h"
+#include "chip.h"
 
 #ifdef CONFIG_RTC
 

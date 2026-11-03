@@ -23,6 +23,19 @@
 #endif
 #endif
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+/* The NuttX <tinyara/list.h> (included by <tinyara/wdog.h>) has macros with
+ * the names of these Linux list functions.  Include it first, so that it
+ * cannot define them again after this file.
+ */
+
+#include <tinyara/list.h>
+
+#undef list_add_tail
+#undef list_entry
+#undef list_first_entry
+#endif
+
 /* This file is from Linux Kernel (include/linux/list.h)
  * and modified by simply removing hardware prefetching of list items.
  * Here by copyright, credits attributed to wherever they belong.
