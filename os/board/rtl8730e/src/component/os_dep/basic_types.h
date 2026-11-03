@@ -143,6 +143,9 @@ typedef     u32 dma_addr_t;
 typedef     void (*proc_t)(void *);
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 typedef     unsigned int __kernel_size_t;
+#else
+/* The NuttX sys/types.h has no __kernel_size_t (TizenRT had unsigned long) */
+typedef     unsigned long __kernel_size_t;
 #endif
 typedef     int __kernel_ssize_t;
 

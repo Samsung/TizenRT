@@ -75,12 +75,11 @@
 #include <termios.h>
 #endif
 
-#include <arch/serial.h>
+#include <tinyara/fs/ioctl.h>
 #include <arch/board/board.h>
 
 #include "chip.h"
-#include "up_arch.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 #include "serial_api.h"
 #include "PinNames.h"
@@ -243,13 +242,14 @@ volatile spinlock_t g_loguart_ier_lock = SP_UNLOCKED;
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
+int up_lowgetc(void);	/* TizenRT interface, not in the NuttX arch.h */
 static int rtl8730e_log_uart_irq(void *Data);
 static int rtl8730e_log_up_setup(struct uart_dev_s *dev);
 static void rtl8730e_log_up_shutdown(struct uart_dev_s *dev);
 static int rtl8730e_log_up_attach(struct uart_dev_s *dev);
 static void rtl8730e_log_up_detach(struct uart_dev_s *dev);
 static int rtl8730e_log_up_interrupt(int irq, void *context, FAR void *arg);
-static int rtl8730e_log_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
+static int rtl8730e_log_up_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int rtl8730e_log_up_receive(struct uart_dev_s *dev, unsigned int *status);
 static void rtl8730e_log_up_rxint(struct uart_dev_s *dev, bool enable);
 static bool rtl8730e_log_up_rxavailable(struct uart_dev_s *dev);
@@ -262,7 +262,7 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev);
 static void rtl8730e_up_shutdown(struct uart_dev_s *dev);
 static int rtl8730e_up_attach(struct uart_dev_s *dev);
 static void rtl8730e_up_detach(struct uart_dev_s *dev);
-static int rtl8730e_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg);
+static int rtl8730e_up_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 static int rtl8730e_up_receive(struct uart_dev_s *dev, unsigned int*status);
 static void rtl8730e_up_rxint(struct uart_dev_s *dev, bool enable);
 static bool rtl8730e_up_rxavailable(struct uart_dev_s *dev);
@@ -612,10 +612,11 @@ static void rtl8730e_log_up_detach(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int rtl8730e_log_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
+static int rtl8730e_log_up_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 #if defined(CONFIG_SERIAL_TERMIOS)
 
+	FAR struct uart_dev_s *dev = filep->f_inode->i_private;
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	int ret = OK;
 	struct termios *termiosp = (struct termios *)arg;
@@ -962,9 +963,10 @@ static void rtl8730e_up_detach(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int rtl8730e_up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
+static int rtl8730e_up_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 #if defined(CONFIG_SERIAL_TERMIOS)
+	FAR struct uart_dev_s *dev = filep->f_inode->i_private;
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	int ret = OK;
 	struct termios *termiosp = (struct termios *)arg;
@@ -1235,15 +1237,15 @@ static uint32_t rtk_uart_resume(uint32_t expected_idle_time, void *param)
 
 #ifdef USE_SERIALDRIVER
 /****************************************************************************
- * Name: up_serialinit
+ * Name: arm_serialinit
  *
  * Description:
- *   Register serial console and serial ports.  This assumes
- *   that up_earlyserialinit was called previously.
+ *   Register serial console and serial ports.  The console (LOGUART) is
+ *   already running from the boot loader.
  *
  ****************************************************************************/
 
-void up_serialinit(void)
+void arm_serialinit(void)
 {
 #ifdef CONSOLE_DEV
 	CONSOLE_DEV.isconsole = true;
@@ -1313,7 +1315,7 @@ void *up_get_console_dev(void)
  *   None
  *
  ****************************************************************************/
-void up_lowputc(char ch)
+void up_lowputc(int ch)
 {
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
 	u32 CounterIndex = 0;
@@ -1380,21 +1382,14 @@ int up_lowgetc(void)
  *   ch - chatacter to output
  *
  * Returned Value:
- *  sent character
+ *   None
+ *
+ *   The NuttX syslog adds the CR before LF (CONFIG_SYSLOG_CRLF).
  *
  ****************************************************************************/
-int up_putc(int ch)
+void up_putc(int ch)
 {
-	/* Check for LF */
-
-	if (ch == '\n') {
-		/* Add CR */
-
-		up_lowputc('\r');
-	}
-
 	up_lowputc(ch);
-	return ch;
 }
 
 /****************************************************************************
@@ -1428,21 +1423,14 @@ int up_getc(void)
  *   ch - chatacter to output
  *
  * Returned Value:
- *  sent character
+ *   None
+ *
+ *   The NuttX syslog adds the CR before LF (CONFIG_SYSLOG_CRLF).
  *
  ****************************************************************************/
-int up_putc(int ch)
+void up_putc(int ch)
 {
-	/* Check for LF */
-
-	if (ch == '\n') {
-		/* Add CR */
-
-		up_lowputc('\r');
-	}
 	up_lowputc(ch);
-
-	return ch;
 }
 
 /****************************************************************************

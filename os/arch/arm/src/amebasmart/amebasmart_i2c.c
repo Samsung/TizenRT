@@ -43,7 +43,7 @@
 #include "PinNames.h"
 #include "board_pins.h"
 
-#include "up_arch.h"
+#include "chip.h"
 #include "ameba_i2c.h"
 
 /************************************************************************************

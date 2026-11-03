@@ -12,11 +12,11 @@ choice
 
 config ARCH_CHIP_RTL8730E
 	bool "RTL8730E"
+	select ARCH_ARMV7A
 	select ARCH_CORTEXA32
 	select ARCH_HAVE_MULTICPU
 	select ARMV7A_HAVE_GICv2
 	select ARCH_HAVE_FPU
-	select AMEBASMART_WIFI
 
 endchoice
 
@@ -70,35 +70,35 @@ config RTL8730E_UART0
 	bool "UART 0"
 	default n
 	select RTL8730E_UART
-	select ARCH_HAVE_UART0
+	select UART0_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config RTL8730E_UART1
 	bool "UART 1"
 	default n
 	select RTL8730E_UART
-	select ARCH_HAVE_UART1
+	select UART1_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config RTL8730E_UART2
 	bool "UART 2"
 	default n
 	select RTL8730E_UART
-	select ARCH_HAVE_UART2
+	select UART2_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config RTL8730E_UART3
 	bool "UART 3"
 	default n
 	select RTL8730E_UART
-	select ARCH_HAVE_UART3
+	select UART3_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config RTL8730E_UART4
 	bool "UART 4"
 	default n
 	select RTL8730E_UART
-	select ARCH_HAVE_UART4
+	select UART4_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 	select SERIAL_CONSOLE
 

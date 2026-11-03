@@ -26,41 +26,28 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
+#ifdef CONFIG_SCHED_INSTRUMENTATION
+#  include <tinyara/sched_note.h>
+#endif
 #include <arch/irq.h>
 
-#include "up_internal.h"
+#include "init/init.h"
+#include "sched/sched.h"
+
+#include "arm_internal.h"
 #include "sctlr.h"
 #include "smp.h"
 #include "scu.h"
 #include "gic.h"
+#include "amebasmart_enablesmp.h"
+#include "amebasmart_smp.h"
 #include "mmu.h"
-#include "barriers.h"
 
 #ifdef CONFIG_SMP
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-typedef void (*cpu_start_t)(void);
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/* Symbols defined via the linker script */
-
-extern uint8_t _vector_start[]; /* Beginning of vector block */
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -71,12 +58,12 @@ extern uint8_t _vector_start[]; /* Beginning of vector block */
  *
  * Description:
  *   Continues the C-level initialization started by the assembly language
- *   __cpu[n]_start function.  At a minimum, this function needs to
- *   initialize interrupt handling and, perhaps, wait on WFI for
- *   arm_cpu_start() to issue an SGI.
- *
- *   This function must be provided by the each ARMv7-A MCU and implement
- *   MCU-specific initialization logic.
+ *   __cpu[n]_start function (NuttX armv7-a arm_cpuhead.S).  CPU0 starts
+ *   CPUn with up_cpu_start() (amebasmart_smp.c: power-on and PSCI CPU_ON
+ *   at __cpu1_start).  Like the NuttX qemu chip, this function enables the
+ *   cache coherency, the FPU and the GIC CPU interface of CPUn, then enters
+ *   the IDLE task of CPUn with nx_idle_trampoline().  The system tick stays
+ *   on CPU0.
  *
  * Input Parameters:
  *   cpu - The CPU index.  This is the same value that would be obtained by
@@ -89,53 +76,77 @@ extern uint8_t _vector_start[]; /* Beginning of vector block */
 
 void arm_cpu_boot(int cpu)
 {
-  /* Enable SMP cache coherency for the CPU */
+  /* Enable SMP cache coherency for the CPU (no SCU on the Cortex-A32) */
 
-  arm_enable_smp(cpu);
+  amebasmart_enable_smp(cpu);
 
   /* Initialize the FPU */
 
   arm_fpuconfig();
 
-  /* Initialize the Generic Interrupt Controller (GIC) for CPUn (n != 0) */
-
-  arm_gic_initialize();
-
-#ifdef CONFIG_ARCH_LOWVECTORS
-  /* If CONFIG_ARCH_LOWVECTORS is defined, then the vectors located at the
-   * beginning of the .text region must appear at address at the address
-   * specified in the VBAR.  There are two ways to accomplish this:
-   *
-   *   1. By explicitly mapping the beginning of .text region with a page
-   *      table entry so that the virtual address zero maps to the beginning
-   *      of the .text region.  VBAR == 0x0000:0000.
-   *
-   *   2. Set the Cortex-A5 VBAR register so that the vector table address
-   *      is moved to a location other than 0x0000:0000.
-   *
-   *  The second method is used by this logic.
+  /* Initialize the Generic Interrupt Controller (GIC) for CPUn (n != 0),
+   * set VBAR and enable the interrupts.
    */
 
-  /* Set the VBAR register to the address of the vector table */
+  up_irqinitialize();
 
-  DEBUGASSERT((((uintptr_t)_vector_start) & ~VBAR_MASK) == 0);
-  cp15_wrvbar((uint32_t)_vector_start);
-#endif /* CONFIG_ARCH_LOWVECTORS */
+  /* Then transfer control to the IDLE task */
 
-#ifndef CONFIG_SUPPRESS_INTERRUPTS
-  /* And finally, enable interrupts */
+  nx_idle_trampoline();
+}
 
-  up_irq_enable();
+/****************************************************************************
+ * Name: up_cpu_start
+ *
+ * Description:
+ *   Start CPUn (called by nx_smp_start() on CPU0).  This overrides the weak
+ *   SGI version of the NuttX armv7-a arm_cpustart.c, like the NuttX qemu
+ *   chip does in qemu_boot.c.  CPU1 is powered off at cold boot: power it
+ *   on and start it at __cpu1_start (NuttX armv7-a arm_cpuhead.S) with the
+ *   PSCI CPU_ON of the secure firmware (amebasmart_smp.c).  __cpu1_start
+ *   continues with arm_cpu_boot() above.
+ *
+ *   It lives in this file and not in amebasmart_smp.c because this object
+ *   is always linked (arm_cpuhead.S calls arm_cpu_boot()); a strong
+ *   definition in an archive member that nothing else pulls in would lose
+ *   against the weak one of arm_cpustart.o.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being started (1 .. CONFIG_SMP_NCPUS-1)
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_AMEBASMART_TRUSTZONE
+int up_cpu_start(int cpu)
+{
+  int ret;
+
+  DEBUGASSERT(cpu > 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION
+  /* Notify of the start event */
+
+  sched_note_cpu_start(this_task(), cpu);
 #endif
 
-  /* The next thing that we expect to happen is for logic running on CPU0
-   * to call up_cpu_on() which generate an SGI and a context switch to
-   * the configured NuttX IDLE task.
-   */
-
-  for (; ; )
+  ret = cpu_core_poweron(cpu);
+  if (ret < 0)
     {
-      asm("WFI");
+      smplldbg("Failed to power on CPU%d: %d\n", cpu, ret);
+      return ret;
     }
+
+  ret = vPortSecondaryBoot(cpu);
+  if (ret < 0)
+    {
+      smplldbg("Failed to boot CPU%d: %d\n", cpu, ret);
+    }
+
+  return ret;
 }
+#endif /* CONFIG_AMEBASMART_TRUSTZONE */
+
 #endif /* CONFIG_SMP */

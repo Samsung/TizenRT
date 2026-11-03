@@ -49,11 +49,16 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_AMEBASMART_WIFI),y)
 CSRCS += lwip_intf_tizenrt.c \
        ethernetif_tizenrt.c
 
-CSRCS += rtk_blemgr.c \
-	 rtk_netmgr.c \
+CSRCS += rtk_netmgr.c
+endif
+
+ifeq ($(CONFIG_AMEBASMART_BLE),y)
+CSRCS += rtk_blemgr.c
+endif
 
 ifeq ($(CONFIG_WIFI_CSI),y)
 CSRCS += rtk_wifi_csi.c

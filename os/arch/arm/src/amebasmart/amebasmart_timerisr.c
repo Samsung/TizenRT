@@ -31,7 +31,7 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "gic.h"
 #include "arch_timer.h"
 
@@ -48,7 +48,7 @@
  *
  ****************************************************************************/
 
-int up_timerisr(int irq, uint32_t *regs)
+static int up_timerisr(int irq, void *context, void *arg)
 {
     /* Clear interrupt */
     uint32_t delta_ticks;
@@ -62,10 +62,10 @@ int up_timerisr(int irq, uint32_t *regs)
       delta_ticks = (uint32_t)((arm_arch_timer_count() - last_cycle) / pdTICKS_TO_CNT) + 1;
     }
 
-    u32 ticks_to_process = delta_ticks;
+    uint32_t ticks_to_process = delta_ticks;
     while (ticks_to_process > 0) {
       /* process missing ticks */
-      sched_process_timer();
+      nxsched_process_timer();
       ticks_to_process--;
     }
 
@@ -92,7 +92,7 @@ void up_timer_initialize(void)
   up_disable_irq(ARM_ARCH_TIMER_IRQ);
 
   /* Attach the timer interrupt vector */
-  irq_attach(ARM_ARCH_TIMER_IRQ, (xcpt_t)up_timerisr, NULL);
+  irq_attach(ARM_ARCH_TIMER_IRQ, up_timerisr, NULL);
 
   /* Only enable the timer for CPU0 */
   if (up_cpu_index() == 0) {
