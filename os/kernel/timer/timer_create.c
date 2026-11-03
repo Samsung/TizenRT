@@ -227,7 +227,10 @@ int timer_create(clockid_t clockid, FAR struct sigevent *evp, FAR timer_t *timer
 	ret->pt_crefs = 1;
 	ret->pt_owner = getpid();
 	ret->pt_delay = 0;
+	ret->pt_overrun = 0;
+	ret->pt_expected = 0;
 	ret->pt_wdog = wdog;
+
 
 	if (evp) {
 		ret->pt_signo = evp->sigev_signo;
