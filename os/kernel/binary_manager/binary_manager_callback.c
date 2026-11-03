@@ -25,7 +25,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <sys/types.h>
 
 #include <tinyara/mm/mm.h>
@@ -78,7 +78,7 @@ void binary_manager_unregister_statecb(int pid)
 		goto send_result;
 	}
 
-	tcb = sched_gettcb(pid);
+	tcb = nxsched_get_tcb(pid);
 
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binidx < 0) {
 		bmdbg("Fail to get tcb of pid %d\n", pid);
@@ -132,7 +132,7 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 		goto send_result;
 	}
 
-	tcb = sched_gettcb(pid);
+	tcb = nxsched_get_tcb(pid);
 	if (tcb == NULL || tcb->group == NULL || tcb->group->tg_binidx < 0) {
 		bmdbg("Fail to get tcb of pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;

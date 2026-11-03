@@ -30,7 +30,7 @@
 #include <dirent.h>
 #include <stdint.h>
 #include <string.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <stdbool.h>
 #include <semaphore.h>
 #include <sys/types.h>
@@ -369,7 +369,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	need_recovery = false;
 
 	binid = BIN_ID(bin_idx);
-	btcb = (struct tcb_s *)sched_gettcb(binid);
+	btcb = (struct tcb_s *)nxsched_get_tcb(binid);
 	if (btcb == NULL) {
 		bmdbg("Fail to get main task of binary %d\n", binid);
 		return BINMGR_OPERATION_FAIL;

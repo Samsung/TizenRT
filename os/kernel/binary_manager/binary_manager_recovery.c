@@ -24,7 +24,7 @@
 #include <debug.h>
 #include <stdlib.h>
 #include <string.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <errno.h>
 #include <semaphore.h>
 #include <sys/types.h>
@@ -261,7 +261,7 @@ void binary_manager_recover_userfault(void)
  ****************************************************************************/
 void binary_manager_set_faultmsg_sender(pid_t pid)
 {
-	g_faultmsg_sender = sched_gettcb(pid);
+	g_faultmsg_sender = nxsched_get_tcb(pid);
 }
 
 /****************************************************************************

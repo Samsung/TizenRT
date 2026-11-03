@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <string.h>
 #ifdef CONFIG_APP_BINARY_SEPARATION
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <stdint.h>
 #ifdef CONFIG_VERSION_STRING
 #include <stdlib.h>
@@ -773,7 +773,7 @@ void binary_manager_update_running_state(int bin_id)
 	int bin_idx;
 	struct tcb_s *tcb;
 
-	tcb = sched_gettcb(bin_id);
+	tcb = nxsched_get_tcb(bin_id);
 	if (tcb && tcb->group && tcb->group->tg_binidx > 0) {
 		bin_idx = tcb->group->tg_binidx;
 		BIN_STATE(bin_idx) = BINARY_RUNNING;
@@ -880,7 +880,7 @@ void binary_manager_clear_bindata(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct tcb_s *tcb;
 
-	tcb = sched_gettcb(BIN_ID(bin_idx));
+	tcb = nxsched_get_tcb(BIN_ID(bin_idx));
 	/* If 'reload' flag is true, a binary manager uses loading data 'bininfo' when loading the binary later.
 	 * So clear BIN_LOADINFO which points loading data if flag is false.
 	 */
