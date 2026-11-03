@@ -191,6 +191,14 @@
 
 #define SIGIOT          SIGABRT
 
+/* SIGBM_STATE is a TizenRT extension: the binary manager notifies state
+ * changes of a binary with this signal.  The pre-sync TizenRT signal.h
+ * assigned 15 through CONFIG_SIG_SIGBM_STATE, but 15 is SIGTERM in the
+ * NuttX numbering, so 16, which the NuttX signals do not use, is taken.
+ */
+
+#define SIGBM_STATE     16
+
 /* sigprocmask() "how" definitions.
  * Only one of the following can be specified:
  */
