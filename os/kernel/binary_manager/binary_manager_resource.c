@@ -26,7 +26,7 @@
 
 #include <tinyara/binary_manager.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 
 #ifdef CONFIG_RESOURCE_BINARY_SIGNING
 #include <tinyara/signature.h>
