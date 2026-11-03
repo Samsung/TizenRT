@@ -60,10 +60,13 @@
 #include <mqueue.h>
 #include <assert.h>
 #include <debug.h>
+#include <stdio.h>
+#include <errno.h>
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/sched.h>
 #include <tinyara/mqueue.h>
+#include <tinyara/arch.h>
 
 #include "inode/inode.h"
 #include "mqueue/mqueue.h"
@@ -71,6 +74,52 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/************************************************************************
+ * Name: mq_desc_in_grouplist
+ *
+ * Description:
+ *   This function checks if a message queue descriptor is present in the
+ *   calling task's group list of mq des.
+ *
+ * Parameters:
+ *   mqdes - Message queue descriptor
+ *
+ * Return Value:
+ *   OK - if mqdes is present in the calling task group list of mqdes
+ *   EBADF - if mqdes is not present in the calling task group of mqdes
+ *
+ ************************************************************************/
+
+int mq_desc_in_grouplist(mqd_t mqdes)
+{
+	int ret = -EBADF;
+    	mqd_t mqdes_ptr;
+
+	/* If we are in irq hanlder, then we must NOT perform this check.
+	 * Because in irq handler, we will not be able to find which task or
+	 * task's group opened the current mqdes */
+	if (up_interrupt_context()) {
+		return OK;
+	}
+
+	FAR struct task_group_s *group = sched_self()->group;
+
+	DEBUGASSERT(mqdes != NULL && group != NULL);
+
+    	sched_lock();
+    	mqdes_ptr = (mqd_t)sq_peek(&group->tg_msgdesq);
+    	while (mqdes_ptr) {
+        	if (mqdes_ptr == mqdes) {
+            		ret = OK;
+            		break;
+        	}
+        	mqdes_ptr = (mqd_t)sq_next(mqdes_ptr);
+    	}
+    	sched_unlock();
+
+	return ret;
+}
 
 /****************************************************************************
  * Name: mq_close_group
@@ -96,7 +145,6 @@ int mq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
 	int ret = OK;
 	FAR struct mqueue_inode_s *msgq;
 	FAR struct inode *inode;
-	mqd_t mqdes_ptr;
 
 	DEBUGASSERT(mqdes != NULL && group != NULL);
 
@@ -105,17 +153,8 @@ int mq_close_group(mqd_t mqdes, FAR struct task_group_s *group)
 	if (mqdes) {
 		sched_lock();
 
-		/* Check that mqdes is in one's group */
-		mqdes_ptr = (mqd_t)sq_peek(&group->tg_msgdesq);
-		while (mqdes_ptr) {
-			if (mqdes_ptr == mqdes) {
-				break;
-			}
-			mqdes_ptr = (mqd_t)sq_next(mqdes_ptr);
-		}
-
 		/* If there is no mqdes in one's group, skip to desclose and inode release. */
-		if (mqdes_ptr != NULL) {
+		if (mq_desc_in_grouplist(mqdes) == OK) {
 
 			/* Find the message queue associated with the message descriptor */
 

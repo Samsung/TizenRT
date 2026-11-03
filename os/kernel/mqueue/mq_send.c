@@ -124,6 +124,7 @@
  *   EAGAIN   The queue was empty, and the O_NONBLOCK flag was set for the
  *            message queue description referred to by mqdes.
  *   EINVAL   Either msg or mqdes is NULL or the value of prio is invalid.
+ *   EBADF    Mqdes is not present in calling task group's mq list.
  *   EPERM    Message queue opened not opened for writing.
  *   EMSGSIZE 'msglen' was greater than the maxmsgsize attribute of the
  *            message queue.
@@ -148,6 +149,12 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 
 	/* mq_send() is a cancellation point */
 	(void)enter_cancellation_point();
+
+	if (mq_desc_in_grouplist(mqdes) != OK) {
+		leave_cancellation_point();
+		set_errno(EBADF);
+		return ERROR;
+	}
 
 	if (mq_verifysend(mqdes, msg, msglen, prio) != OK) {
 		leave_cancellation_point();
