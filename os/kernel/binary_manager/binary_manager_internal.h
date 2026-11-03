@@ -24,7 +24,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <stdint.h>
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <mqueue.h>

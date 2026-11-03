@@ -21,14 +21,15 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <fcntl.h>
-#include <crc32.h>
+#include <tinyara/crc32.h>
 #include <stdlib.h>
+#include <malloc.h>
 #include <errno.h>
 
 #ifdef CONFIG_BINARY_SIGNING
 #include <tinyara/signature.h>
 #endif
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
 
@@ -223,7 +224,14 @@ int binary_manager_read_header(int type, char *devpath, uint32_t part_addr, void
 			bin_size = RESOURCE_HEADER_SIZE - header_size + ((resource_binary_header_t *)header_data)->bin_size;
 			crc_hash = ((resource_binary_header_t *)header_data)->crc_hash;
 		}
+#ifdef CONFIG_MM_KERNEL_HEAP
 		size_t max_bufsize = kmm_get_largest_freenode_size() / 2;
+#else
+		/* Without a kernel heap, kmm_malloc() maps to malloc(), so take the
+		 * largest free chunk of the common heap from mallinfo().
+		 */
+		size_t max_bufsize = (size_t)mallinfo().mxordblk / 2;
+#endif
 		crc_bufsize = crc_bufsize < max_bufsize ? crc_bufsize : max_bufsize;
 		crc_buffer = (uint8_t *)kmm_malloc(crc_bufsize);
 		if (!crc_buffer) {
