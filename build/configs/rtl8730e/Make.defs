@@ -52,6 +52,11 @@
 include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+
+# The armv7-a Toolchain.defs of NuttX 12.13.0 does not know the Cortex-A32;
+# select the CPU here.  Toolchain.defs adds the FPU and Thumb flags.
+
+ARCHCPUFLAGS += -mcpu=cortex-a32
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
 ifeq ($(CONFIG_RAM_DDR),y)
