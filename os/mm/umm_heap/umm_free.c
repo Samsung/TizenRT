@@ -56,11 +56,23 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/prctl.h>
 #include <tinyara/mm/mm.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+#if (CONFIG_TASK_NAME_SIZE > 0)
+#define GET_TASK_NAME_BY_PID(name_buf, pid) \
+	do { \
+		if (prctl(PR_GET_NAME_BYPID, (name_buf), (pid)) < 0) { \
+			strncpy((name_buf), "UNKNOWN", CONFIG_TASK_NAME_SIZE); \
+			(name_buf)[CONFIG_TASK_NAME_SIZE] = '\0'; \
+		} \
+	} while (0)
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -82,6 +94,10 @@
 void free(FAR void *mem)
 {
 	struct mm_heap_s *heap;
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	char task_name[CONFIG_TASK_NAME_SIZE + 1];
+	pid_t caller_pid;
+#endif
 
 	if (!mem) {
 		return;
@@ -93,6 +109,12 @@ void free(FAR void *mem)
 		return;
 	}
 
-	mdbg("Failed to free address 0x%x\n", mem);
+#if (CONFIG_TASK_NAME_SIZE > 0)
+	caller_pid = getpid();
+	GET_TASK_NAME_BY_PID(task_name, caller_pid);
+	mdbg("Failed to free address 0x%x by %s (%d) at addr 0x%08x\n", mem, task_name, caller_pid, __builtin_return_address(0));
+#else
+	mdbg("Failed to free address 0x%x by %d at addr 0x%08x\n", mem, getpid(), __builtin_return_address(0));
+#endif
 }
 
