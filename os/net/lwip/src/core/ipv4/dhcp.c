@@ -707,6 +707,12 @@ void dhcp_cleanup(struct netif *netif)
 		mem_free(netif_dhcp_data(netif));
 		netif_set_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP, NULL);
 	}
+#if LWIP_NETIF_HOSTNAME
+	if (netif->hostname) {
+		kmm_free(netif->hostname);
+		netif->hostname = NULL;
+	}
+#endif
 }
 
 #if LWIP_DHCP_HOSTNAME
@@ -1389,12 +1395,6 @@ void dhcp_stop(struct netif *netif)
 			dhcp->pcb_allocated = 0;
 		}
 	}
-#if LWIP_NETIF_HOSTNAME
-	if (netif->hostname) {
-		kmm_free(netif->hostname);
-		netif->hostname = NULL;
-	}
-#endif
 }
 
 /*
