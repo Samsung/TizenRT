@@ -9,6 +9,31 @@ config EXAMPLES_HEAP_PERFORMANCE_TEST
 	---help---
 		Measure the elapsed time while simply repeating memory allocation and release.
 
+config EXAMPLES_HEAP_BENCH_TEST
+	bool "Heap bench test"
+	default n
+	---help---
+		Allocate memory blocks of various sizes, free a configurable percentage,
+		and optionally invoke the memory leak checker to verify that the
+		remaining blocks are detected as leaks.
+
+		Also supports stress test modes (fill, perf, frag) for heap performance
+		and fragmentation measurement. All modes work independently of
+		CONFIG_MEM_LEAK_CHECKER; the leak checker is only invoked when
+		explicitly requested in basic mode (run_checker=1) or fill mode, and
+		only if CONFIG_MEM_LEAK_CHECKER is enabled. Perf and frag modes never
+		call the leak checker.
+
+config EXAMPLES_HEAP_STRESS_MAX_BLOCKS
+	int "Maximum blocks for heap stress test"
+	default 3000
+	depends on EXAMPLES_HEAP_BENCH_TEST
+	---help---
+		Maximum number of memory blocks the heap stress test (fill, perf,
+		frag modes) will track. This is independent of the memory leak
+		checker's CONFIG_MEM_LEAK_CHECKER_MAX_BLOCKS.
+
 config USER_ENTRYPOINT
 	string
 	default "heaptest_main" if ENTRY_HEAP_PERFORMANCE_TEST
+	default "heapbench_main" if ENTRY_HEAP_BENCH_TEST
