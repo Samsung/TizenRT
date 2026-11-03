@@ -31,7 +31,7 @@ import struct
 
 file_path  = sys.argv[1]
 
-with open(file_path, 'r') as fp:
+with open(file_path, 'rb') as fp:
     # binary data copy to 'data'.
     data = fp.read()
     fp.close()
@@ -39,7 +39,7 @@ with open(file_path, 'r') as fp:
     # hash to binary data by crc32.
     hash_data = zlib.crc32(data) & 0xFFFFFFFF
 
-    fp = open(file_path, 'w')
+    fp = open(file_path, 'wb')
     fp.write(struct.pack('I', hash_data))
     fp.write(data)
     
