@@ -65,8 +65,7 @@
 #include <debug.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/fs/mtd.h>
-#include "up_arch.h"
+#include <tinyara/mtd/mtd.h>
 #include "chip.h"
 #include "flash_api.h"
 #include "device_lock.h"
@@ -323,7 +322,7 @@ static int amebasmart_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long ar
 	}
 	break;
 
-	case MTDIOC_XIPBASE:
+	case BIOC_XIPBASE:
 	default:
 		ret = -ENOTTY;			/* Bad command */
 		break;

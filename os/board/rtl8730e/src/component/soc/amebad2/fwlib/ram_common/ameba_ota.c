@@ -16,6 +16,8 @@
   */
 
 
+/* u8, u16 and u32 (no longer in the NuttX sys/types.h) */
+#include "basic_types.h"
 #include "rtl_se_crypto_function.h"
 #include "bootloader_hp.h"
 #define TIZENRT_KERNEL_HEADER_LEN 0x10

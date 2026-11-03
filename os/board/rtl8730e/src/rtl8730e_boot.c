@@ -54,20 +54,21 @@
  ************************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/fs/mtd.h>
 #include <../include/debug.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mount.h>
 
+#ifdef CONFIG_FS_SMARTFS
 #include <tinyara/fs/mksmartfs.h>
+#endif
 #include <tinyara/board.h>
 #ifdef CONFIG_BINARY_MANAGER
 #include <tinyara/binary_manager.h>
 #endif
 #ifdef CONFIG_FLASH_PARTITION
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 #endif
 #ifdef CONFIG_PRODCONFIG
 #include <tinyara/prodconfig.h>
@@ -83,7 +84,7 @@
 #endif
 
 #include "board_pins.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 #include "ameba_soc.h"
 #include "osdep_service.h"
@@ -282,6 +283,7 @@ void board_gpio_initialize(void)
 #endif
 }
 
+#ifdef CONFIG_FLASH_PARTITION
 void amebasmart_mount_partitions(void)
 {
 	int ret;
@@ -339,6 +341,7 @@ void amebasmart_mount_partitions(void)
 	binary_manager_early_initialize();
 #endif
 }
+#endif /* CONFIG_FLASH_PARTITION */
 
 #ifdef CONFIG_FTL_ENABLED
 extern u8 ftl_phy_page_num;
@@ -363,19 +366,19 @@ void app_ftl_init(void)
 #endif
 
 /****************************************************************************
- * Name: board_initialize
+ * Name: board_late_initialize
  *
  * Description:
- *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
+ *   If CONFIG_BOARD_LATE_INITIALIZE is selected, then an additional
  *   initialization call will be performed in the boot-up sequence to a
- *   function called board_initialize().  board_initialize() will be
+ *   function called board_late_initialize(). board_late_initialize() will be
  *   called immediately after up_initialize() is called and just before the
  *   initial application is started.  This additional initialization phase
  *   may be used, for example, to initialize board-specific device drivers.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BOARD_INITIALIZE
+#ifdef CONFIG_BOARD_LATE_INITIALIZE
 
 static gtimer_t g_timer_np_lp;
 
@@ -395,7 +398,7 @@ static void init_np_lp_status_timer(void)
 	gtimer_start_periodical(&g_timer_np_lp, CONFIG_AMEBASMART_NP_LP_CHECK_INTERVAL, (void *)np_lp_status_timer_hdl, (uint32_t)&g_timer_np_lp);
 }
 
-void board_initialize(void)
+void board_late_initialize(void)
 {
 
 	/* Create task here */
@@ -411,14 +414,20 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_USBDEVICE
 	usb_initialize();
 #endif
+#ifdef CONFIG_AMEBASMART_BLE
+	/* The KM4 log task uses the queues of the BLE OS layer (osif) */
+
 	rtl8730e_km4_logtask_initialize();
+#endif
 
 	/* init console */
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
 #endif
 	board_spi_initialize();
+#ifdef CONFIG_FLASH_PARTITION
 	amebasmart_mount_partitions();
+#endif
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_i2s_initialize();
@@ -476,8 +485,10 @@ void board_initialize(void)
 	}
 #endif	
 
+#ifdef CONFIG_AMEBASMART_WIFI
 	/* Enable IPC buffered print */
 	inic_ipc_buffered_printf_set_np_enable(1);
+#endif
 
 #ifdef CONFIG_AUDIO_ALC1019
 	if (rtl8730e_alc1019_initialize(0) != 0) {
@@ -517,11 +528,12 @@ void board_initialize(void)
 	up_print_iwdg_status();
 }
 #else
-#error "CONFIG_BOARD_INITIALIZE MUST ENABLE"
+#error "CONFIG_BOARD_LATE_INITIALIZE MUST ENABLE"
 #endif
 
-int board_app_initialize(void)
+int board_app_initialize(uintptr_t arg)
 {
+	UNUSED(arg);
 	return OK;
 }
 

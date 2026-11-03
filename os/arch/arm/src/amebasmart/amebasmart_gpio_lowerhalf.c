@@ -62,7 +62,7 @@
 #include <arch/irq.h>
 #include <tinyara/gpio.h>
 
-#include "up_arch.h"
+#include "chip.h"
 #include "gpio_api.h"
 #include "tinyara/gpio.h"
 

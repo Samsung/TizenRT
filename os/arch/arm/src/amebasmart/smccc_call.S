@@ -28,6 +28,14 @@
  *		  unsigned long a6, unsigned long a7, struct arm_smccc_res *res,
  *		  struct arm_smccc_quirk *quirk)
  */
+	/* The SMC above is emitted as the ARM encoding (__inst_arm), so this
+	 * code must be assembled in the ARM state.  The NuttX toolchain flags
+	 * add -Wa,-mthumb with CONFIG_ARM_THUMB; the old TizenRT flags did not.
+	 */
+
+	.syntax	unified
+	.arm
+
 	.section	.vectors, "ax"
 	.globl __arm_smccc_smc
 	.type __arm_smccc_smc, %function
