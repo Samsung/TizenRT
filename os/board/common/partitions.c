@@ -46,7 +46,7 @@
 #include <tinyara/fs/mksmartfs.h>
 #endif
 
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 #include <tinyara/fs/ioctl.h>
 
 #ifdef CONFIG_BINARY_MANAGER
@@ -71,6 +71,10 @@
 #endif /* CONFIG_AUTOMOUNT_USERFS */
 
 #ifdef CONFIG_FLASH_PARTITION
+
+/* MTD_PARTNAME_LEN was defined in the removed tinyara/fs/mtd.h */
+
+#define MTD_PARTNAME_LEN	15
 
 struct partition_data_s {
 	uint32_t start_addr;
@@ -132,7 +136,6 @@ FAR struct mtd_dev_s *mtd_initialize(void)
 
 static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, const char *types, partition_info_t *partinfo)
 {
-	int tagno = MTD_NONE;
 #ifdef CONFIG_FS_ROMFS
 	bool save_romfs_partno = false;
 #endif
@@ -148,7 +151,6 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 #ifdef CONFIG_MTD_FTL
 	bool do_ftlinit = false;
 	if (!strncmp(types, "ftl,", 4)) {
-		tagno = MTD_FTL;
 		do_ftlinit = true;
 	}
 #ifdef CONFIG_BINARY_MANAGER
@@ -167,21 +169,18 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 #ifndef CONFIG_RESOURCE_FS
 		do_ftlinit = true;
 #endif
-		tagno = MTD_ROMFS;
 		save_romfs_partno = true;
 	}
 #endif
 #ifdef CONFIG_LIBC_ZONEINFO_ROMFS
 	else if (!strncmp(types, "timezone,", 9)) {
 		do_ftlinit = true;
-		tagno = MTD_ROMFS;
 		save_timezone_partno = true;
 	}
 #endif
 #ifdef CONFIG_RESOURCE_FS
 	else if (!strncmp(types, "resource,", 9)) {
 		do_ftlinit = true;
-		tagno = MTD_FTL;
 	}
 #endif
 #endif
@@ -203,7 +202,6 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 			return ERROR;
 		}
 		partinfo->smartfs_partno = g_partno;
-		mtd_setpartitiontagno(mtd_part, MTD_FS);
 	}
 #endif
 
@@ -222,7 +220,6 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 #else
 		return ERROR;
 #endif
-	mtd_setpartitiontagno(mtd_part, MTD_FS);
 	/* If you want to use a FTL other than dhara, you can add it with config. */
 
 	if (partinfo->littlefs_partno == -1) {
@@ -254,7 +251,6 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 			return ERROR;
 		}
 #endif
-		mtd_setpartitiontagno(mtd_part, tagno);
 #ifdef CONFIG_FS_ROMFS
 		if (save_romfs_partno) {
 			partinfo->romfs_partno = g_partno;
@@ -394,7 +390,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 			printf("ERROR: Partition size is not multiple of erasesize partsize : %d erasesize : %d\n", partsize, geo.erasesize);
 			return ERROR;
 		}
-		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize, g_partno);
+		mtd_part = mtd_partition(mtd, partoffset, partsize / geo.blocksize);
 
 		if (!mtd_part) {
 			printf("ERROR: failed to create partition.\n");
