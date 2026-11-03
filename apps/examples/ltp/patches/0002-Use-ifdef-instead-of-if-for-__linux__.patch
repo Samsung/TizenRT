@@ -1,0 +1,43 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+From 1482d59fc2f5ed935e8201704305684cf129fbae Mon Sep 17 00:00:00 2001
+From: Brennan Ashton <bashton@brennanashton.com>
+Date: Sun, 11 Apr 2021 00:12:06 -0700
+Subject: [PATCH 2/2] Use #ifdef instead of #if for __linux__
+
+---
+ .../conformance/interfaces/sem_timedwait/3-1.c                  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/sem_timedwait/3-1.c b/testcases/open_posix_testsuite/conformance/interfaces/sem_timedwait/3-1.c
+index fb6f2e6cb..739fe86a5 100644
+--- a/testcases/open_posix_testsuite/conformance/interfaces/sem_timedwait/3-1.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/sem_timedwait/3-1.c
+@@ -15,7 +15,7 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <fcntl.h>
+-#if __linux__
++#ifdef __linux__
+ #include <features.h>
+ #endif
+ #include <semaphore.h>
+-- 
+2.30.2
+

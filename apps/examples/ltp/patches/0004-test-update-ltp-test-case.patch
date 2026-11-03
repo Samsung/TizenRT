@@ -1,0 +1,56 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+From b4547e5b68ac33f00c5298874024ad2934b75184 Mon Sep 17 00:00:00 2001
+From: nietingting <nietingting@xiaomi.com>
+Date: Thu, 11 Nov 2021 18:52:03 +0800
+Subject: [PATCH 08/21] test: update ltp test case
+
+N/A
+
+Signed-off-by: nietingting <nietingting@xiaomi.com>
+Change-Id: Ib57a56725b21ecbc06b60eb81a685bfae404c03b
+---
+ .../open_posix_testsuite/functional/mqueues/send_rev_2.c      | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/testcases/open_posix_testsuite/functional/mqueues/send_rev_2.c b/testcases/open_posix_testsuite/functional/mqueues/send_rev_2.c
+index a0a49d159..22ecbb224 100644
+--- a/testcases/open_posix_testsuite/functional/mqueues/send_rev_2.c
++++ b/testcases/open_posix_testsuite/functional/mqueues/send_rev_2.c
+@@ -43,7 +43,7 @@ static int *send_1(void *mq)
+ 
+ 	printf("Enter into send_1 \n");
+ 	for (i = 0; i < MAX_MSG; i++) {
+-		if (-1 == mq_send(mq1, s_msg_ptr[i], MSG_SIZE, i)) {
++		if (-1 == mq_send(mq1, s_msg_ptr[i], strlen(s_msg_ptr[i]) + 1, i)) {
+ 			perror("mq_send doesn't return success \n");
+ 			pthread_exit((void *)1);
+ 		}
+@@ -61,7 +61,7 @@ static int *send_2(void *mq)
+ 
+ 	printf("Enter into send_2 \n");
+ 	for (i = 0; i < MAX_MSG; i++) {
+-		if (-1 == mq_send(mq2, s_msg_ptr[i], MSG_SIZE, i)) {
++		if (-1 == mq_send(mq2, s_msg_ptr[i], strlen(s_msg_ptr[i]) + 1, i)) {
+ 			perror("mq_send doesn't return success \n");
+ 			pthread_exit((void *)1);
+ 		}
+-- 
+2.40.1
+

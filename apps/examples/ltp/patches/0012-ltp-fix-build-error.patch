@@ -1,0 +1,50 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+From 9606a31fbff78592352bcccf667ab0eb7a26ef5a Mon Sep 17 00:00:00 2001
+From: fangxinyong <fangxinyong@xiaomi.com>
+Date: Tue, 29 Aug 2023 19:03:51 +0800
+Subject: [PATCH] ltp: fix build error
+
+VELAPLATFO-8233
+
+ltp/testcases/open_posix_testsuite/conformance/interfaces/pthread_sigmask/18-1.c:171: error: "NSIG" redefined [-Werror]
+  171 | #define NSIG (sizeof(signals)/sizeof(int))
+In file included from /home/work/ssd1/workspace/MiRTOS-CI/nuttx/include/pthread.h:35,
+                 from ltp/testcases/open_posix_testsuite/conformance/interfaces/pthread_sigmask/18-1.c:31:
+/home/work/ssd1/workspace/MiRTOS-CI/nuttx/include/signal.h:53: note: this is the location of the previous definition
+   53 | #define NSIG            _NSIG           /* _NSIG variant commonly used */
+
+Change-Id: I5a7d695612dd8f17ad735a369a9b904ee71f70ee
+Signed-off-by: fangxinyong <fangxinyong@xiaomi.com>
+
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/pthread_sigmask/18-1.c b/testcases/open_posix_testsuite/conformance/interfaces/pthread_sigmask/18-1.c
+index 0617210bf..dda0c3a09 100644
+--- a/testcases/open_posix_testsuite/conformance/interfaces/pthread_sigmask/18-1.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/pthread_sigmask/18-1.c
+@@ -168,6 +168,7 @@ static void *test(void *arg LTP_ATTRIBUTE_UNUSED)
+ 	sigset_t set;
+ 	int i, j = 0;
+ 	int signals[] = { SIGBUS, SIGKILL, SIGABRT, SIGCHLD, SIGHUP };
++#undef NSIG
+ #define NSIG (sizeof(signals)/sizeof(int))
+ 	int operation[] = { SIG_SETMASK, SIG_BLOCK, SIG_UNBLOCK };
+ 
+-- 
+2.45.1
+
