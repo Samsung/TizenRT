@@ -66,10 +66,6 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-#include <tinyara/mm/mm.h>
-#endif
-
 #include "up_vfork.h"
 #include "up_internal.h"
 #include "sched/sched.h"
@@ -81,6 +77,57 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+#ifndef CONFIG_ARCH_ARMV7A_FAMILY
+
+/****************************************************************************
+ * Name: up_vfork_archprepare
+ *
+ * Description:
+ *   Prepare the child stack for the ARM families that keep the register
+ *   context in the TCB.  ARMv7-A supplies an architecture-specific Adapter
+ *   because its register context is stored in the child stack itself.
+ *
+ ****************************************************************************/
+
+int up_vfork_archprepare(struct tcb_s *parent, struct task_tcb_s *child, const struct vfork_s *context, struct up_vfork_stack_s *stack)
+{
+	uint32_t newsp;
+	uint32_t newfp;
+	uint32_t stackutil;
+
+	/* How much of the parent's stack was utilized?  The ARM uses a
+	 * push-down stack so that the current stack pointer should be lower
+	 * than the initial, adjusted stack pointer.
+	 */
+
+	DEBUGASSERT((uint32_t)parent->adj_stack_ptr > context->sp);
+	stackutil = (uint32_t)parent->adj_stack_ptr - context->sp;
+
+	svdbg("Parent: stacksize:%d stackutil:%d\n", parent->adj_stack_size, stackutil);
+
+	/* Preserve the active portion of the parent's stack in the child. */
+	newsp = (uint32_t)child->cmn.adj_stack_ptr - stackutil;
+	memcpy((void *)newsp, (const void *)context->sp, stackutil);
+
+	/* Was there a frame pointer in place before? */
+	if (context->fp <= (uint32_t)parent->adj_stack_ptr && context->fp >= (uint32_t)parent->adj_stack_ptr - parent->adj_stack_size) {
+		uint32_t frameutil = (uint32_t)parent->adj_stack_ptr - context->fp;
+		newfp = (uint32_t)child->cmn.adj_stack_ptr - frameutil;
+	} else {
+		newfp = context->fp;
+	}
+
+	svdbg("Parent: stack base:%08x SP:%08x FP:%08x\n", (uint32_t)parent->adj_stack_ptr, context->sp, context->fp);
+	svdbg("Child:  stack base:%08x SP:%08x FP:%08x\n", (uint32_t)child->cmn.adj_stack_ptr, newsp, newfp);
+
+	stack->newsp = newsp;
+	stack->newfp = newfp;
+	stack->parent_sp = 0;
+	return OK;
+}
+
+#endif /* !CONFIG_ARCH_ARMV7A_FAMILY */
 
 /****************************************************************************
  * Public Functions
@@ -100,17 +147,17 @@
  *   The overall sequence is:
  *
  *   1) User code calls vfork().  vfork() collects context information and
- *      transfers control up up_vfork().
- *   2) up_vfork()and calls task_vforksetup().
- *   3) task_vforksetup() allocates and configures the child task's TCB.  This
- *      consists of:
+ *      transfers control to up_vfork().
+ *   2) up_vfork() calls task_vforksetup().
+ *   3) task_vforksetup() allocates and configures the child task's TCB.
+ *      This consists of:
  *      - Allocation of the child task's TCB.
  *      - Initialization of file descriptors and streams
  *      - Configuration of environment variables
- *      - Setup the input parameters for the task.
- *      - Initialization of the TCB (including call to up_initial_state()
- *   4) up_vfork() provides any additional operating context. up_vfork must:
  *      - Allocate and initialize the stack
+ *      - Setup the input parameters for the task.
+ *      - Initialization of the TCB (including call to up_initial_state())
+ *   4) up_vfork() provides any additional operating context. up_vfork must:
  *      - Initialize special values in any CPU registers that were not
  *        already configured by up_initial_state()
  *   5) up_vfork() then calls task_vforkstart()
@@ -133,10 +180,7 @@ pid_t up_vfork(const struct vfork_s *context)
 {
 	struct tcb_s *parent = this_task();
 	struct task_tcb_s *child;
-	size_t stacksize;
-	uint32_t newsp;
-	uint32_t newfp;
-	uint32_t stackutil;
+	struct up_vfork_stack_s stack;
 	int ret;
 
 	svdbg("vfork context [%p]:\n", context);
@@ -154,79 +198,30 @@ pid_t up_vfork(const struct vfork_s *context)
 
 	svdbg("TCBs: Parent=%p Child=%p\n", parent, child);
 
-	/* Get the size of the parent task's stack.  Due to alignment operations,
-	 * the adjusted stack size may be smaller than the stack size originally
-	 * requested.
-	 */
-
-	stacksize = parent->adj_stack_size + STACK_ALIGNMENT - 1;
-
-	/* Allocate the stack for the TCB */
-
-	ret = up_create_stack((FAR struct tcb_s *)child, stacksize, parent->flags & TCB_FLAG_TTYPE_MASK);
-	if (ret != OK) {
-		sdbg("ERROR: up_create_stack failed: %d\n", ret);
+	ret = up_vfork_archprepare(parent, child, context, &stack);
+	if (ret < 0) {
 		task_vforkabort(child, -ret);
 		return (pid_t)ERROR;
 	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Exclude a stack node from heap usages of current thread.
-	 * This will be shown separately as stack usages.
-	 */
-	heapinfo_exclude_stacksize(child->cmn.stack_alloc_ptr);
-	/* Update the pid information to set a stack node */
-	heapinfo_set_stack_node(child->cmn.stack_alloc_ptr, child->cmn.pid);
-#endif
 
-	/* How much of the parent's stack was utilized?  The ARM uses
-	 * a push-down stack so that the current stack pointer should
-	 * be lower than the initial, adjusted stack pointer.  The
-	 * stack usage should be the difference between those two.
+	/* The architecture hook may relocate the register-save area (as it does
+	 * on ARMv7-A), so populate the inherited registers only after it returns.
 	 */
 
-	DEBUGASSERT((uint32_t)parent->adj_stack_ptr > context->sp);
-	stackutil = (uint32_t)parent->adj_stack_ptr - context->sp;
-
-	svdbg("Parent: stacksize:%d stackutil:%d\n", stacksize, stackutil);
-
-	/* Make some feeble effort to preserve the stack contents.  This is
-	 * feeble because the stack surely contains invalid pointers and other
-	 * content that will not work in the child context.  However, if the
-	 * user follows all of the caveats of vfork() usage, even this feeble
-	 * effort is overkill.
+	/* Update the volatile registers, frame pointer, and stack pointer.  The
+	 * child TCB was initialized by up_initial_state(), so R0 remains zero and
+	 * indicates the child return path.
 	 */
 
-	newsp = (uint32_t)child->cmn.adj_stack_ptr - stackutil;
-	memcpy((void *)newsp, (const void *)context->sp, stackutil);
-
-	/* Was there a frame pointer in place before? */
-
-	if (context->fp <= (uint32_t)parent->adj_stack_ptr && context->fp >= (uint32_t)parent->adj_stack_ptr - stacksize) {
-		uint32_t frameutil = (uint32_t)parent->adj_stack_ptr - context->fp;
-		newfp = (uint32_t)child->cmn.adj_stack_ptr - frameutil;
-	} else {
-		newfp = context->fp;
-	}
-
-	svdbg("Parent: stack base:%08x SP:%08x FP:%08x\n", parent->adj_stack_ptr, context->sp, context->fp);
-	svdbg("Child:  stack base:%08x SP:%08x FP:%08x\n", child->cmn.adj_stack_ptr, newsp, newfp);
-
-	/* Update the stack pointer, frame pointer, and volatile registers.  When
-	 * the child TCB was initialized, all of the values were set to zero.
-	 * up_initial_state() altered a few values, but the return value in R0
-	 * should be cleared to zero, providing the indication to the newly started
-	 * child thread.
-	 */
-
-	child->cmn.xcp.regs[REG_R4] = context->r4;	/* Volatile register r4 */
-	child->cmn.xcp.regs[REG_R5] = context->r5;	/* Volatile register r5 */
-	child->cmn.xcp.regs[REG_R6] = context->r6;	/* Volatile register r6 */
-	child->cmn.xcp.regs[REG_R7] = context->r7;	/* Volatile register r7 */
-	child->cmn.xcp.regs[REG_R8] = context->r8;	/* Volatile register r8 */
-	child->cmn.xcp.regs[REG_R9] = context->r9;	/* Volatile register r9 */
-	child->cmn.xcp.regs[REG_R10] = context->r10;	/* Volatile register r10 */
-	child->cmn.xcp.regs[REG_FP] = newfp;	/* Frame pointer */
-	child->cmn.xcp.regs[REG_SP] = newsp;	/* Stack pointer */
+	child->cmn.xcp.regs[REG_R4] = context->r4;
+	child->cmn.xcp.regs[REG_R5] = context->r5;
+	child->cmn.xcp.regs[REG_R6] = context->r6;
+	child->cmn.xcp.regs[REG_R7] = context->r7;
+	child->cmn.xcp.regs[REG_R8] = context->r8;
+	child->cmn.xcp.regs[REG_R9] = context->r9;
+	child->cmn.xcp.regs[REG_R10] = context->r10;
+	child->cmn.xcp.regs[REG_FP] = stack.newfp;
+	child->cmn.xcp.regs[REG_SP] = stack.newsp;
 
 #ifdef CONFIG_LIB_SYSCALL
 	/* If we got here via a syscall, then we are going to have to setup some
@@ -240,11 +235,12 @@ pid_t up_vfork(const struct vfork_s *context)
 
 			/* REVISIT:  This logic is *not* common. */
 
-#if (defined(CONFIG_ARCH_CORTEXA5) || defined(CONFIG_ARCH_CORTEXA8)) && \
-	 defined(CONFIG_BUILD_KERNEL)
+#if defined(CONFIG_ARCH_ARMV7A_FAMILY)
+#ifdef CONFIG_BUILD_PROTECTED
 
 			child->cmn.xcp.syscall[index].cpsr = parent->xcp.syscall[index].cpsr;
 
+#endif
 #elif defined(CONFIG_ARCH_CORTEXR4) || defined(CONFIG_ARCH_CORTEXR4F)
 #ifdef CONFIG_BUILD_PROTECTED
 
@@ -269,5 +265,5 @@ pid_t up_vfork(const struct vfork_s *context)
 	 * will discard the TCB by calling task_vforkabort().
 	 */
 
-	return task_vforkstart(child);
+	return task_vforkstart(child, stack.parent_sp);
 }
