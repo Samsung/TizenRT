@@ -74,6 +74,15 @@ config ARCH_HAVE_TESTSET
 	bool
 	default n
 
+config ARCH_HAVE_BACKTRACE
+	bool
+	default n
+	---help---
+		Selected by an architecture that provides a working up_backtrace()
+		implementation.  When it is not selected, CONFIG_MM_BACKTRACE either
+		uses the libc EHABI unwinder (CONFIG_SCHED_BACKTRACE) or falls back to
+		the weak no-op stub in os/mm/mm_heap/mm_backtrace.c.
+
 config ARCH_HAVE_VFORK
 	bool
 	default n
