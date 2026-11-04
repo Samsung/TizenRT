@@ -130,6 +130,7 @@
 #define _1WIREBASE      (0x4500) /* 1WIRE ioctl commands */
 #define _EEPIOCBASE     (0x4600) /* EEPROM driver ioctl commands */
 #define _PTPBASE        (0x4700) /* PTP ioctl commands */
+#define _PMBASE         (0x4800) /* TizenRT pm driver ioctl commands */
 #define _WLIOCBASE      (0x8b00) /* Wireless modules ioctl network commands */
 
 /* boardctl() commands share the same number space */
@@ -823,6 +824,23 @@
 
 #define _PTPIOCVALID(c)       (_IOC_TYPE(c)==_PTPBASE)
 #define _PTPIOC(nr)           _IOC(_PTPBASE,nr)
+
+/* TizenRT pm driver ioctl definitions **************************************/
+
+/* see tinyara/pm/pm.h */
+
+#define _PMIOCVALID(c)        (_IOC_TYPE(c)==_PMBASE)
+#define _PMIOC(nr)            _IOC(_PMBASE,nr)
+
+#define PMIOC_SUSPEND         _PMIOC(0x0001)
+#define PMIOC_RESUME          _PMIOC(0x0002)
+#define PMIOC_SLEEP           _PMIOC(0x0003)
+#define PMIOC_TIMEDSUSPEND    _PMIOC(0x0004)
+#define PMIOC_DOMAIN_REGISTER _PMIOC(0x0005)
+#define PMIOC_TUNEFREQ        _PMIOC(0x0006)
+#define PMIOC_METRICS         _PMIOC(0x0007)
+#define PMIOC_SUSPEND_COUNT   _PMIOC(0x0008)
+#define PMIOC_START           _PMIOC(0x0009)
 
 /****************************************************************************
  * Public Type Definitions
