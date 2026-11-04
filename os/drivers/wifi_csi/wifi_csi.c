@@ -533,6 +533,7 @@ int wifi_csi_register(FAR const char *name, FAR struct wifi_csi_lowerhalf_s *dev
 {
 	FAR struct wifi_csi_upperhalf_s *upper;
 	char* path;
+	int ret;
 #ifndef CONFIG_WIFICSI_CUSTOM_DEV_PATH
 	path = "/dev/wificsi";
 #else
@@ -555,6 +556,14 @@ int wifi_csi_register(FAR const char *name, FAR struct wifi_csi_lowerhalf_s *dev
 	dev->priv = upper;
 
 	csidbg("Registering %s\n", path);
-	return register_driver(path, &g_wifi_csiops, 0666, upper);
+	ret = register_driver(path, &g_wifi_csiops, 0666, upper);
+	if (ret < 0) {
+		dev->upper_cb = NULL;
+		dev->priv = NULL;
+		sem_destroy(&upper->exclsem);
+		kmm_free(upper);
+	}
+
+	return ret;
 }
 

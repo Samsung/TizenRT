@@ -606,11 +606,11 @@ int wifi_connect(
 	int 				key_id,
 	void 				*semaphore)
 {
-	_sema join_semaphore;
+	_sema join_semaphore = NULL;
 	rtw_result_t result = RTW_SUCCESS;
 	u8 wep_hex = 0;
 	u8 wep_pwd[14] = {0};
-#if defined(CONFIG_PLATFORM_TIZENRT_OS)			
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 	rtk_reason_t reason;
 #endif
 	if(rtw_join_status & JOIN_CONNECTING){
@@ -688,8 +688,8 @@ int wifi_connect(
 	}
 
 	join_result->network_info.ssid.len = ssid_len > 32 ? 32 : ssid_len;
-	rtw_memcpy(join_result->network_info.ssid.val, ssid, ssid_len);
-    
+	rtw_memcpy(join_result->network_info.ssid.val, ssid, join_result->network_info.ssid.len);
+
 	join_result->network_info.password_len = password_len;
 	if(password_len) {
 		/* add \0 to the end */
@@ -738,7 +738,7 @@ int wifi_connect(
 #if CONFIG_WIFI_IND_USE_THREAD
 	if(disconnect_sema != NULL){
 		rtw_down_timeout_sema(&disconnect_sema, 50);
-		rtw_free_sema( &disconnect_sema);
+		rtw_free_sema(&disconnect_sema);
 	}
 #endif
 
@@ -750,9 +750,6 @@ int wifi_connect(
 		if(get_eap_phase()){
 			if(rtw_down_timeout_sema( &join_result->join_sema, 60000 ) == RTW_FALSE) {
 				RTW_API_INFO("RTW API: Join bss timeout\r\n");
-				if(password_len) {
-					rtw_free(join_result->network_info.password);
-				}
 				result = RTW_TIMEOUT;
 				goto error;
 			} else {
@@ -766,11 +763,8 @@ int wifi_connect(
 #endif
 		if(rtw_down_timeout_sema( &join_result->join_sema, RTW_JOIN_TIMEOUT ) == RTW_FALSE) {
 			RTW_API_INFO("RTW API: Join bss timeout\r\n");
-			if(password_len) {
-				rtw_free(join_result->network_info.password);
-			}
 			result = RTW_TIMEOUT;
-#if defined(CONFIG_PLATFORM_TIZENRT_OS)			
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
 				memset(&reason, 0, sizeof(rtk_reason_t));
 				switch (error_flag) {
 				case RTW_NONE_NETWORK:
@@ -796,9 +790,6 @@ int wifi_connect(
 #endif
 			goto error;
 		} else {
-			if(join_result->network_info.password_len) {
-				rtw_free(join_result->network_info.password);
-			}
 			if(wifi_is_connected_to_ap( ) != RTW_SUCCESS) {
 				result = RTW_ERROR;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
@@ -838,10 +829,13 @@ int wifi_connect(
 #endif
 
 error:
-	if(semaphore == NULL){		
-		rtw_free_sema( &join_semaphore);
-	}
 	join_user_data = NULL;
+	if(join_semaphore) {
+		rtw_free_sema(&join_semaphore);
+	}
+	if(join_result->network_info.password) {
+		rtw_free(join_result->network_info.password);
+	}
 	rtw_free((u8*)join_result);
 	wifi_unreg_event_handler(WIFI_EVENT_CONNECT, wifi_connected_hdl);
 	wifi_unreg_event_handler(WIFI_EVENT_NO_NETWORK,wifi_no_network_hdl);
@@ -861,7 +855,7 @@ int wifi_connect_bssid(
 	int 				key_id,
 	void 				*semaphore)
 {
-	_sema join_semaphore;
+	_sema join_semaphore = NULL;
 	rtw_result_t result = RTW_SUCCESS;
 	u8 wep_hex = 0;
 	u8 wep_pwd[14] = {0};
@@ -882,16 +876,6 @@ int wifi_connect_bssid(
 
 	error_flag = RTW_UNKNOWN;//clear for last connect status
 	rtw_memset(ap_bssid, 0, ETH_ALEN);
-	internal_join_result_t *join_result = (internal_join_result_t *)rtw_zmalloc(sizeof(internal_join_result_t));
-	if(!join_result) {
-		return RTW_NOMEM;
-	}
-	if(ssid_len && ssid){
-		join_result->network_info.ssid.len = ssid_len > 32 ? 32 : ssid_len;
-		rtw_memcpy(join_result->network_info.ssid.val, ssid, ssid_len);
-	}
-	rtw_memcpy(join_result->network_info.bssid.octet, bssid, bssid_len);
-
 	if ( ( ( ( password_len >  RTW_MAX_PSK_LEN ) ||
              ( password_len <  RTW_MIN_PSK_LEN ) ) &&
            ( ( security_type == RTW_SECURITY_WPA_TKIP_PSK ) ||
@@ -937,12 +921,23 @@ int wifi_connect_bssid(
 		}
 	}
 	
+	internal_join_result_t *join_result = (internal_join_result_t *)rtw_zmalloc(sizeof(internal_join_result_t));
+	if(!join_result) {
+		return RTW_NOMEM;
+	}
+	if(ssid_len && ssid){
+		join_result->network_info.ssid.len = ssid_len > 32 ? 32 : ssid_len;
+		rtw_memcpy(join_result->network_info.ssid.val, ssid, join_result->network_info.ssid.len);
+	}
+	rtw_memcpy(join_result->network_info.bssid.octet, bssid, bssid_len);
+
 	join_result->network_info.password_len = password_len;
 	if(password_len) {
 		/* add \0 to the end */
 		join_result->network_info.password = rtw_zmalloc(password_len + 1);
 		if(!join_result->network_info.password) {
-			return RTW_NOMEM;
+			result = RTW_NOMEM;
+			goto error;
 		}
 		if (0 == wep_hex)
 			rtw_memcpy(join_result->network_info.password, password, password_len);
@@ -956,7 +951,8 @@ int wifi_connect_bssid(
 	if(semaphore == NULL) {
 		rtw_init_sema( &join_result->join_sema, 0 );
 		if(!join_result->join_sema){
-		    return RTW_NORESOURCE;
+			result = RTW_NORESOURCE;
+			goto error;
 		}
 		join_semaphore = join_result->join_sema;
 	} else {
@@ -975,19 +971,9 @@ int wifi_connect_bssid(
 	if(semaphore == NULL) {
 		if(rtw_down_timeout_sema( &join_result->join_sema, RTW_JOIN_TIMEOUT ) == RTW_FALSE) {
 			RTW_API_INFO("RTW API: Join bss timeout\r\n");
-			if(password_len) {
-				rtw_free(join_result->network_info.password);
-			}
-			rtw_free((u8*)join_result);
-			rtw_free_sema( &join_semaphore);
 			result = RTW_TIMEOUT;
 			goto error;
 		} else {
-			rtw_free_sema( &join_semaphore );
-			if(join_result->network_info.password_len) {
-				rtw_free(join_result->network_info.password);
-			}
-			rtw_free((u8*)join_result);
 			if( wifi_is_connected_to_ap( ) != RTW_SUCCESS) {
 				result = RTW_ERROR;
 				goto error;
@@ -1003,6 +989,13 @@ int wifi_connect_bssid(
 
 error:
 	join_user_data = NULL;
+	if(join_semaphore) {
+		rtw_free_sema(&join_semaphore);
+	}
+	if(join_result->network_info.password) {
+		rtw_free(join_result->network_info.password);
+	}
+	rtw_free((u8*)join_result);
 	wifi_unreg_event_handler(WIFI_EVENT_CONNECT, wifi_connected_hdl);
 	wifi_unreg_event_handler(WIFI_EVENT_NO_NETWORK,wifi_no_network_hdl);
 	wifi_unreg_event_handler(WIFI_EVENT_FOURWAY_HANDSHAKE_DONE, wifi_handshake_done_hdl);
