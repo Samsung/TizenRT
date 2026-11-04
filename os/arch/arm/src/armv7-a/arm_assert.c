@@ -437,6 +437,8 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 #endif
 
 }
+#else
+#define up_dumpstate(fault_tcb, asserted_location)
 #endif							/* CONFIG_ARCH_STACKDUMP */
 
 /****************************************************************************
@@ -561,6 +563,8 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 #endif
 #endif							/* defined(CONFIG_DEBUG_WORKQUEUE) */
 	up_dumpstate(fault_tcb, asserted_location);
+
+	sem_showinfo();
 
 	/* Dump the state of all tasks (if available) */
 	task_show_alivetask_list();
