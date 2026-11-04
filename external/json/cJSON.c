@@ -1070,10 +1070,13 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
     if (hooks->reallocate != NULL)
     {
         printed = (unsigned char*) hooks->reallocate(buffer->buffer, buffer->length);
-        buffer->buffer = NULL;
         if (printed == NULL) {
+            /* realloc failed: the original block is still valid and still
+             * referenced by buffer->buffer, so the fail path frees it. */
             goto fail;
         }
+        /* ownership moved to printed */
+        buffer->buffer = NULL;
     }
     else /* otherwise copy the JSON over to a new buffer */
     {
