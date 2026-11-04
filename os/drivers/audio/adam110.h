@@ -62,7 +62,8 @@
 
 #define ADAM110_MIC_GAIN_MAX		255
 #define ADAM110_MIC_GAIN_DEFAULT	64  /* The default ADAM110 setting at 95 dB SPL is 0x40. This value corresponds to -12 dB and may need to be adjusted depending on the board configuration. */
-#define ADAM110_DEFAULT_SENSITIVITY	0xAAAA
+#define ADAM110_DEFAULT_SENSITIVITY	0xAAAA	/* > ADAM110_SENSITIVITY_MAX : not set by upper layer, keep FW default */
+#define ADAM110_SENSITIVITY_MAX		32767	/* FW thd max (FW compare value as is, FW clamps 0 ~ 32767) */
 #define ADAM110_DEFAULT_SAMPLE_SIZE 3840
 
 #define ADMA110_DIS_OFF				0x00
@@ -90,6 +91,7 @@
 #define ADAM110_FW_WRITE_WAITTIME   (4 * 1000) /* Min 4ms */
 #define ADAM110_FW_CHKSUM_WAITTIME  (100 * 1000) /* Min 100ms */
 #define ADAM110_ALIVENESS_CHECK_PERIOD_US	(3 * 1000 * 1000) /* 3 sec */
+#define ADAM110_XSOSC_WAIT_MAX_CNT			5	/* 0x07 x 5 (4 periods, 12 sec > FW XSOSC check 10 sec) : reset and reload */
 #define ADAM110_FW_BOOT_MODE_OK		0xB004C0DE
 #define ADAM110_FW_CHKSUM_FAIL		0xDE
 #define ADAM110_FW_DATA_HEADER		2
@@ -164,6 +166,12 @@
 #define RSLT_CHKSUM_ERR				0x04 /* Checksum Error */
 #define RSLT_SYNC_ERR				0x05 /* Sync Byte Error */
 #define RSLT_INTERNAL_ERR			0x06 /* Internal Error */
+#define RSLT_SYS_WAIT_STABLE		0x07 /* XSOSC(32.768kHz) not ready yet */
+#define RSLT_BUSY					0x09 /* Busy now (DM_ENTER_LP_MODE : wake session open), retry later. 0x08 reserved */
+
+/* Keep alive flags (parm3) */
+#define KA_FLAG_WAIT_STABLE			(1u << 0) /* XSOSC wait for ready */
+#define KA_FLAG_MODEL_NONE			(1u << 3) /* model not loaded */
 
 typedef struct {
 	uint8_t header;
