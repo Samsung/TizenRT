@@ -262,6 +262,12 @@ int binary_manager_send_statecb_msg(int recv_binidx, char *bin_name, uint8_t sta
 				goto errout;
 			}
 		}
+
+		/* All responses have been received. Close the descriptor so that
+		 * it is not leaked on every successful call. The queue itself is
+		 * kept and reused by the next call, so it is not unlinked here.
+		 */
+		mq_close(recv_mq);
 	}
 
 	return OK;
