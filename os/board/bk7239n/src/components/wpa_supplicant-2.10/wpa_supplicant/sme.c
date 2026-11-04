@@ -1297,8 +1297,12 @@ void sme_external_auth_trigger(struct wpa_supplicant *wpa_s,
 					      WLAN_STATUS_UNSPECIFIED_FAILURE);
 #if BK_SUPPLICANT
 		else
+#ifdef CONFIG_QUICK_TRACK
 			/* Timeout for receiving the first SAE Commit packet */
+			wpa_supplicant_req_external_auth_timeout(wpa_s, 10, 0);
+#else
 			wpa_supplicant_req_external_auth_timeout(wpa_s, 3, 0);
+#endif
 #endif
 	} else if (data->external_auth.action == EXT_AUTH_ABORT) {
 		/* Report failure to driver for the wrong trigger */
@@ -1352,8 +1356,13 @@ void sme_external_auth_mgmt_rx(struct wpa_supplicant *wpa_s,
 	auth_length = IEEE80211_HDRLEN + sizeof(header->u.auth);
 
 #if BK_SUPPLICANT
+#ifdef CONFIG_QUICK_TRACK
+	/* Timeout for receiving the next SAE Commit packet */
+	wpa_supplicant_req_external_auth_timeout(wpa_s, 10, 0);
+#else
 	/* Timeout for receiving the next SAE Commit packet */
 	wpa_supplicant_req_external_auth_timeout(wpa_s, 3, 0);
+#endif
 #endif
 
 	if (len < auth_length) {
@@ -1586,6 +1595,31 @@ static int sme_sae_auth(struct wpa_supplicant *wpa_s, u16 auth_transaction,
 			" auth_type=%u auth_transaction=%u status_code=%u",
 			MAC2STR(bssid), WLAN_AUTH_SAE,
 			auth_transaction, status_code);
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+		if (auth_transaction == 1 &&
+		    (status_code == WLAN_STATUS_NOT_SUPPORTED_AUTH_ALG ||
+		     status_code == WLAN_STATUS_UNSPECIFIED_FAILURE)) {
+			struct os_reltime now;
+
+			/*
+			 * The AP advertises SAE in its RSNE but rejects SAE
+			 * authentication (e.g., authentication algorithm not
+			 * supported). Fall back to PSK for this BSS for a
+			 * limited time so the connection can still be
+			 * established with a supported AKM.
+			 */
+			os_get_reltime(&now);
+			os_memcpy(wpa_s->sae_psk_fallback_bssid, bssid,
+				  ETH_ALEN);
+			wpa_s->sae_psk_fallback_until.sec = now.sec + 60;
+			wpa_s->sae_psk_fallback_until.usec = now.usec;
+			wpa_s->sae_psk_fallback = 1;
+			wpa_printf(MSG_INFO,
+				   "SME: SAE rejected (status %u) - enable PSK fallback for "
+				   MACSTR " (60 seconds)",
+				   status_code, MAC2STR(bssid));
+		}
+#endif /* CONFIG_QUICK_TRACK */
 		return -1;
 	}
 

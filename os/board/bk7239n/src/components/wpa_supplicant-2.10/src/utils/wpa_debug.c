@@ -76,6 +76,9 @@ void wpa_dbg(void *ctx, int level, const char *fmt, ...)
 static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 			 size_t len, int show)
 {
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	return;
+#endif
 	size_t i;
 
 	if (level < wpa_debug_level)
@@ -106,6 +109,9 @@ void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len)
 static void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 			       size_t len, int show)
 {
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	return;
+#endif
 	size_t i, llen;
 	const u8 *pos = buf;
 	const size_t line_len = 16;

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <os/os.h>
-#include "cli.h"
+#include "../cli.h"
 #include "tfm_secure_storage.h"
 #include <tinyara/security_hal.h>
 

@@ -507,6 +507,7 @@ void mhdr_connect_ind(void *msg, UINT32 len)
 	if (!ind->status_code) {
 		RWNX_LOGD("connect ok\n");
 
+		g_rwnx_hw.associated = true;
 		bk7011_default_rxsens_setting();
 
 #if NX_VERSION > NX_VERSION_PACK(6, 22, 0, 0)
@@ -515,8 +516,10 @@ void mhdr_connect_ind(void *msg, UINT32 len)
 
 		if (wlan_connect_user_cb.cb)
 			(*wlan_connect_user_cb.cb)(wlan_connect_user_cb.ctxt_arg, 0);
-	} else
+	} else {
 		RWNX_LOGD("connect fail\n");
+		g_rwnx_hw.associated = false;
+	}
 
 	/* Send to wpa_supplicant */
 	/* ind->assoc_ie_buf is a flexible array */
@@ -1593,26 +1596,27 @@ void rwnx_handle_recv_msg(struct ke_msg *rx_msg)
 		ind = (struct sm_disconnect_ind *)msg_ptr->param;
 
 		RWNX_LOGD("disconnect\r\n");
+		g_rwnx_hw.associated = false;
 
 #if defined(CONFIG_IEEE80211R) || defined(CONFIG_WNM)
-				if (!ind->reassoc)
+		if (!ind->reassoc)
 #endif
-				{
+		{
 #if NX_VERSION > NX_VERSION_PACK(6, 22, 0, 0)
-					rwnx_misc_disconnect_ind(ind);
+			rwnx_misc_disconnect_ind(ind);
 #endif
 #if CONFIG_WIFI_REGDOMAIN
-					regulatory_hint_disconnect();
+			regulatory_hint_disconnect();
 #endif
-					wpa_ctrl_event_copy(WPA_CTRL_EVENT_DISCONNECT_IND, ind, sizeof(*ind));
+			wpa_ctrl_event_copy(WPA_CTRL_EVENT_DISCONNECT_IND, ind, sizeof(*ind));
 
 #if (!CONFIG_SOC_BK7271)
-					extern UINT32 rwnx_sys_is_enable_hw_tpc(void);
-					if (rwnx_sys_is_enable_hw_tpc() == 0)
-						rwnx_cal_set_txpwr(20, 11);
+			extern UINT32 rwnx_sys_is_enable_hw_tpc(void);
+			if (rwnx_sys_is_enable_hw_tpc() == 0)
+				rwnx_cal_set_txpwr(20, 11);
 #endif
-				}
-			}	break;
+		}
+		}	break;
 
 	case SM_BEACON_LOSE_IND: {
 		/* when beacon loss, umac will start disconnect procedure, and another ke_msg will uploaded */

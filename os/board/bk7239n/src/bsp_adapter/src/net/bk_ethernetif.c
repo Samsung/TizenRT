@@ -101,6 +101,12 @@ extern struct netdev *armino_dev_wlan1;
 #else
 volatile int g_bk_wifi_current_vif = 0;
 #endif
+#ifdef CONFIG_QUICK_TRACK
+extern volatile int g_qt_loopback_fast_echo_enabled;
+extern volatile unsigned short g_qt_loopback_fast_echo_port;
+extern volatile unsigned char *g_qt_loopback_fast_echo_buf;
+extern volatile unsigned short g_qt_loopback_fast_echo_buf_len;
+#endif
 
 int get_idx_from_dev(struct netdev *dev)
 {
@@ -112,7 +118,14 @@ int get_idx_from_dev(struct netdev *dev)
 	else
 		return -1;
 #else
+#ifdef CONFIG_QUICK_TRACK
+	if (dev && !strcmp("wlan1", dev->ifname))
+		return 1;
+	if (dev && !strcmp("wlan0", dev->ifname))
+		return 0;
+#else
 	(void)dev;
+#endif
 	return g_bk_wifi_current_vif;
 #endif
 }
@@ -220,6 +233,11 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 
     vif_idx = get_idx_from_dev(dev);
     ret = bk_wlan_txdata_send(data, dlen, vif_idx);
+#ifdef CONFIG_QUICK_TRACK
+    if (ret != ERR_OK) {
+        err = ERR_TIMEOUT;
+    }
+#endif
 
     return err;
 }
@@ -261,6 +279,190 @@ static inline int is_broacast_mac_addr(const u8 *a)
     return (a[0] & a[1] & a[2] & a[3] & a[4] & a[5]) == 0xff;
 }
 
+#if defined(CONFIG_NET_NETMGR) && defined(CONFIG_QUICK_TRACK)
+static void qt_fast_arp_reply(struct netdev *dev, struct netif *netif, const uint8_t *req, uint16_t len)
+{
+    const uint8_t *arp;
+    const ip4_addr_t *own_ip;
+    uint8_t reply[42];
+    err_t err;
+
+    if (!g_qt_loopback_fast_echo_enabled) {
+        return;
+    }
+    if (!dev || !netif || !req || len < sizeof(reply)) {
+        return;
+    }
+    if (req[12] != 0x08 || req[13] != 0x06) {
+        return;
+    }
+
+    arp = req + 14;
+    if (arp[6] != 0x00 || arp[7] != 0x01) {
+        return;
+    }
+
+    own_ip = netif_ip4_addr(netif);
+    if (arp[24] != ip4_addr1(own_ip) || arp[25] != ip4_addr2(own_ip) ||
+        arp[26] != ip4_addr3(own_ip) || arp[27] != ip4_addr4(own_ip)) {
+        return;
+    }
+    if (arp[14] == ip4_addr1(own_ip) && arp[15] == ip4_addr2(own_ip) &&
+        arp[16] == ip4_addr3(own_ip) && arp[17] == ip4_addr4(own_ip)) {
+        return;
+    }
+
+    memcpy(reply, req, sizeof(reply));
+    memcpy(reply, req + 6, 6);
+    memcpy(reply + 6, netif->hwaddr, 6);
+
+    reply[20] = 0x00;
+    reply[21] = 0x02;
+    memcpy(reply + 22, netif->hwaddr, 6);
+    reply[28] = ip4_addr1(own_ip);
+    reply[29] = ip4_addr2(own_ip);
+    reply[30] = ip4_addr3(own_ip);
+    reply[31] = ip4_addr4(own_ip);
+    memcpy(reply + 32, req + 22, 6);
+    memcpy(reply + 38, req + 28, 4);
+
+#ifdef CONFIG_NET_NETMGR_ZEROCOPY
+    {
+        struct pbuf out;
+
+        memset(&out, 0, sizeof(out));
+        out.payload = reply;
+        out.len = sizeof(reply);
+        out.tot_len = sizeof(reply);
+        err = low_level_output(dev, (uint8_t *)&out, 0);
+    }
+#else
+    err = low_level_output(dev, reply, sizeof(reply));
+#endif
+    (void)err;
+}
+
+static uint16_t qt_ipv4_checksum(const uint8_t *data, uint8_t len)
+{
+    uint32_t sum = 0;
+    uint8_t i;
+
+    for (i = 0; i + 1 < len; i += 2) {
+        sum += ((uint16_t)data[i] << 8) | data[i + 1];
+    }
+    if (len & 1) {
+        sum += (uint16_t)data[len - 1] << 8;
+    }
+    while (sum >> 16) {
+        sum = (sum & 0xffff) + (sum >> 16);
+    }
+
+    return (uint16_t)~sum;
+}
+
+static int qt_fast_udp_echo(struct netdev *dev, struct netif *netif, const uint8_t *req, uint16_t len)
+{
+    const ip4_addr_t *own_ip;
+    const uint8_t *ip;
+    const uint8_t *udp;
+    uint8_t *reply = (uint8_t *)g_qt_loopback_fast_echo_buf;
+    uint16_t total_len;
+    uint16_t frame_len;
+    uint16_t sport;
+    uint16_t dport;
+    uint16_t csum;
+    uint8_t ihl;
+    err_t err;
+
+    if (!g_qt_loopback_fast_echo_enabled || !g_qt_loopback_fast_echo_port) {
+        return 0;
+    }
+    if (!reply || !g_qt_loopback_fast_echo_buf_len) {
+        return 0;
+    }
+    if (!dev || !netif || !req || len < 42) {
+        return 0;
+    }
+    if (req[12] != 0x08 || req[13] != 0x00) {
+        return 0;
+    }
+
+    ip = req + 14;
+    if ((ip[0] >> 4) != 4 || ip[9] != 17) {
+        return 0;
+    }
+
+    ihl = (ip[0] & 0x0f) * 4;
+    if (ihl < 20 || len < 14 + ihl + 8) {
+        return 0;
+    }
+
+    own_ip = netif_ip4_addr(netif);
+    if (ip[16] != ip4_addr1(own_ip) || ip[17] != ip4_addr2(own_ip) ||
+        ip[18] != ip4_addr3(own_ip) || ip[19] != ip4_addr4(own_ip)) {
+        return 0;
+    }
+
+    udp = ip + ihl;
+    sport = ((uint16_t)udp[0] << 8) | udp[1];
+    dport = ((uint16_t)udp[2] << 8) | udp[3];
+    if (dport != g_qt_loopback_fast_echo_port) {
+        return 0;
+    }
+
+    total_len = ((uint16_t)ip[2] << 8) | ip[3];
+    frame_len = total_len + 14;
+    if (frame_len > len || frame_len > g_qt_loopback_fast_echo_buf_len) {
+        return 0;
+    }
+
+    memcpy(reply, req, frame_len);
+    memcpy(reply, req + 6, 6);
+    memcpy(reply + 6, netif->hwaddr, 6);
+
+    reply[26] = ip4_addr1(own_ip);
+    reply[27] = ip4_addr2(own_ip);
+    reply[28] = ip4_addr3(own_ip);
+    reply[29] = ip4_addr4(own_ip);
+    reply[30] = ip[12];
+    reply[31] = ip[13];
+    reply[32] = ip[14];
+    reply[33] = ip[15];
+
+    reply[14 + ihl] = (uint8_t)(dport >> 8);
+    reply[15 + ihl] = (uint8_t)dport;
+    reply[16 + ihl] = (uint8_t)(sport >> 8);
+    reply[17 + ihl] = (uint8_t)sport;
+    reply[24] = 0;
+    reply[25] = 0;
+    csum = qt_ipv4_checksum(reply + 14, ihl);
+    reply[24] = (uint8_t)(csum >> 8);
+    reply[25] = (uint8_t)csum;
+
+    reply[20 + ihl] = 0;
+    reply[21 + ihl] = 0;
+
+#ifdef CONFIG_NET_NETMGR_ZEROCOPY
+    {
+        struct pbuf out;
+
+        memset(&out, 0, sizeof(out));
+        out.payload = reply;
+        out.len = frame_len;
+        out.tot_len = frame_len;
+        err = low_level_output(dev, (uint8_t *)&out, 0);
+    }
+#else
+    err = low_level_output(dev, reply, frame_len);
+#endif
+    if (err != ERR_OK) {
+        return 0;
+    }
+
+    return 1;
+}
+#endif
+
 /**
  * This function should be called when a packet is ready to be read
  * from the interface. It uses the function low_level_input() that
@@ -296,6 +498,13 @@ ethernetif_input(int iface, struct pbuf *p)
 
     /* points to packet payload, which starts with an Ethernet header */
     ethhdr = p->payload;
+#if defined(CONFIG_NET_NETMGR) && defined(CONFIG_QUICK_TRACK)
+    qt_fast_arp_reply(dev_tmp, netif, (const uint8_t *)p->payload, p->len);
+    if (qt_fast_udp_echo(dev_tmp, netif, (const uint8_t *)p->payload, p->len)) {
+        pbuf_free(p);
+        return;
+    }
+#endif
 
     if( (memcmp(netif->hwaddr,ethhdr->src.addr,NETIF_MAX_HWADDR_LEN)==0) && (htons(ethhdr->type) !=ETHTYPE_ARP) )
     {

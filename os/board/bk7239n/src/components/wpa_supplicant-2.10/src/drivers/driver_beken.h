@@ -18,6 +18,8 @@ typedef void * c_addr_t;
 
 #if CONFIG_WPA2_ENTERPRISE
 #define TMP_BUF_LEN    (1500)
+#elif defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+#define TMP_BUF_LEN    (1024)
 #else
 #define TMP_BUF_LEN    (512)
 #endif

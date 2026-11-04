@@ -887,3 +887,8 @@ uint8_t rwnx_get_rx_ampdu_num(void)
 {
 	return (rwnx_mod_params.rx_agg_num);
 }
+
+bool rwnx_mod_param_get_use_2040()
+{
+	return rwnx_mod_params.use_2040;
+}
