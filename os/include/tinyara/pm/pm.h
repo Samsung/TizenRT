@@ -75,7 +75,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <tinyara/clock.h>
 #include <tinyara/wdog.h>
@@ -277,7 +277,7 @@ struct pm_domain_s {
 	uint16_t suspend_count;
 
 	/* Watchdog timer for timed suspend operations */
-	WDOG_ID wdog;
+	FAR struct wdog_s *wdog;
 
 #ifdef CONFIG_PM_METRICS
 	/* Domain-specific metrics data */
