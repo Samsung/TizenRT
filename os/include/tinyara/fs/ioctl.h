@@ -106,6 +106,9 @@
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
 #define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
 #define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
+#ifdef CONFIG_QUICK_TRACK
+#define _QTIOCBASE      (0x3c00) 	/* QuickTrack agent ioctl commands */
+#endif
 
 
 /* boardctl() commands share the same number space */
@@ -397,6 +400,16 @@
 
 #define _SILENTRBIOCVALID(c)       (_IOC_TYPE(c) == _SILENTRBCBASE)
 #define _SILENTRBIOC(nr)           _IOC(_SILENTRBCBASE, nr)
+
+/* QuickTrack agent driver ioctl definitions **********************************/
+/* (see /dev/quicktrack, board side controlappc component) */
+
+#ifdef CONFIG_QUICK_TRACK
+#define _QTIOCVALID(c)             (_IOC_TYPE(c) == _QTIOCBASE)
+#define _QTIOC(nr)                 _IOC(_QTIOCBASE, nr)
+
+#define QTIOC_START                _QTIOC(0x0001)
+#endif
 
 #define SILENTRBIOC_LOCK           _SILENTRBIOC(0x0001)
 #define SILENTRBIOC_UNLOCK         _SILENTRBIOC(0x0002)

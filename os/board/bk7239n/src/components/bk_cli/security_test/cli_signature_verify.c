@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <os/os.h>
-#include "cli.h"
+#include "../cli.h"
 #include "driver/flash.h"
 
 #if CONFIG_APP_BINARY_SEPARATION && CONFIG_BINARY_SIGNING

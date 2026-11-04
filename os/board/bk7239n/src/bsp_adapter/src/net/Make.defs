@@ -55,6 +55,9 @@ CSRCS += bk_netmgr.c \
          bk_ethernetif.c \
          bk_lwipif_tizenrt.c
 
+ifeq ($(CONFIG_QUICK_TRACK),y)
+CSRCS += bk_netif_addr.c
+endif
 
 ifeq ($(CONFIG_BK_WIFI_CSI_ADAPTER),y)
 # csi adapter

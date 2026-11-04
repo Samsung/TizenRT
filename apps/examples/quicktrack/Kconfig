@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_QUICKTRACK
+	bool "WFA QuickTrack DUT agent (TASH quicktrack_test)"
+	default n
+	depends on QUICK_TRACK
+	depends on WIFI_MANAGER
+	depends on TASH
+	depends on BUILTIN_APPS
+	---help---
+		Register TASH command "quicktrack_test". It brings up wifi_manager
+		if needed and starts the WFA QuickTrack DUT agent (controlappc).

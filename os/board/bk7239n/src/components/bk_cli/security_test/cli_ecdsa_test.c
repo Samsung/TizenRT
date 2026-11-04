@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <os/os.h>
-#include "cli.h"
+#include "../cli.h"
 #include <tinyara/security_hal.h>
 
 extern int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign);

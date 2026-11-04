@@ -163,6 +163,10 @@ menu "modules::wpa_supplicant-2.10"
 			bool "Enable WiFi OCV"
 			default n
 
+		config MBO
+			bool "ENABLE MBO"
+			default n
+
 		config MINIMUM_SCAN_RESULTS
 			bool "Enable minimum scan results"
 			default n
@@ -235,6 +239,10 @@ menu "modules::wpa_supplicant-2.10"
 	
 	config AP_STATYPE_LIMIT
 		bool "Enable Ap mode Sta Type Limit num"
+		default n
+
+	config QUICK_MBO
+		bool "wi-fi agile multiband"
 		default n
 
 endmenu

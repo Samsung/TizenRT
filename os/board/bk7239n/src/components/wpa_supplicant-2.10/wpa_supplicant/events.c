@@ -1280,7 +1280,7 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 	int res;
 	bool wpa, check_ssid, osen, rsn_osen = false;
 	struct wpa_ie_data data;
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 	const u8 *assoc_disallow;
 #endif /* CONFIG_MBO */
 #ifdef CONFIG_SAE
@@ -1394,7 +1394,9 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 			MAC2STR(ssid->bssid), wpa_ssid_txt(ssid->ssid, ssid->ssid_len));
 
 		if (!wpa) {
+#if !CONFIG_QUICK_TRACK
 			wpa_config_set_none(ssid);
+#endif
 		} else {
 			size_t psk_len = 0;
 			u8 *psk = 0;
@@ -1603,7 +1605,7 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 				(unsigned int) diff.usec);
 		return false;
 	}
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 #ifdef CONFIG_TESTING_OPTIONS
 	if (wpa_s->ignore_assoc_disallow)
 		goto skip_assoc_disallow;
@@ -1616,13 +1618,14 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 				assoc_disallow[2]);
 		return false;
 	}
-
+#ifdef CONFIG_MBO
 	if (wpa_is_bss_tmp_disallowed(wpa_s, bss)) {
 		if (debug_print)
 			wpa_dbg(wpa_s, MSG_DEBUG,
 				"   skip - AP temporarily disallowed");
 		return false;
 	}
+#endif
 #ifdef CONFIG_TESTING_OPTIONS
 skip_assoc_disallow:
 #endif /* CONFIG_TESTING_OPTIONS */
@@ -1740,7 +1743,7 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 		return NULL;
 	}
 
-#ifdef CONFIG_FULL_SUPPLICANT
+#ifdef CONFIG_QUICK_MBO
 	if (disallowed_bssid(wpa_s, bss->bssid)) {
 		if (debug_print)
 			wpa_dbg(wpa_s, MSG_DEBUG, "   skip - BSSID disallowed");
@@ -4683,6 +4686,16 @@ static void wpas_event_disassoc(struct wpa_supplicant *wpa_s,
 	}
 #endif /* CONFIG_P2P */
 
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	/* 与 wpas_event_deauth() 相同：BTM 切换窗口内忽略旧 BSS 的 disassoc */
+	if (wpa_s->wpa_state == WPA_ASSOCIATING && wpa_s->connect_work) {
+		wpa_dbg(wpa_s, MSG_DEBUG,
+			"Ignore inbound disassoc (reason %u) while connecting to "
+			MACSTR, reason_code, MAC2STR(wpa_s->pending_bssid));
+		return;
+	}
+#endif /* CONFIG_QUICK_TRACK */
+
 	if (wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME)
 		sme_event_disassoc(wpa_s, info);
 
@@ -4720,6 +4733,21 @@ static void wpas_event_deauth(struct wpa_supplicant *wpa_s,
 	}
 
 	wpa_reset_ft_completed(wpa_s->wpa);
+
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	/*
+	 * BTM 切换场景：正在向 pending_bssid 发起认证时，旧 BSS 因
+	 * disassociation timer 到期发来的 deauth 不应终止新连接，否则
+	 * current_ssid 被清空，后续 SAE EXTERNAL_AUTH 事件会被丢弃。
+	 * 新连接自身的认证超时 / ASSOC_REJECT 路径不受影响。
+	 */
+	if (wpa_s->wpa_state == WPA_ASSOCIATING && wpa_s->connect_work) {
+		wpa_dbg(wpa_s, MSG_DEBUG,
+			"Ignore inbound deauth (reason %u) while connecting to "
+			MACSTR, reason_code, MAC2STR(wpa_s->pending_bssid));
+		return;
+	}
+#endif /* CONFIG_QUICK_TRACK */
 
 	wpas_event_disconnect(wpa_s, addr, reason_code,
 			      locally_generated, ie, ie_len, 1);
@@ -5594,10 +5622,12 @@ void wpa_supplicant_event_sta(void *ctx, enum wpa_event_type event,
 		radio_work_check_next(wpa_s);
 		break;
 #endif /* CONFIG_NO_SCAN_PROCESSING */
-#ifdef CONFIG_FULL_SUPPLICANT
+#ifdef CONFIG_QUICK_MBO
 	case EVENT_ASSOCINFO:
 		wpa_supplicant_event_associnfo(wpa_s, data);
 		break;
+#endif
+#ifdef CONFIG_FULL_SUPPLICANT
 	case EVENT_INTERFACE_STATUS:
 		wpa_supplicant_event_interface_status(wpa_s, data);
 		break;

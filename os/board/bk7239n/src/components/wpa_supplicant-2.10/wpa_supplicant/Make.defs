@@ -66,6 +66,9 @@ CSRCS += \
 	wpas_glue.c \
 	wnm_sta.c
 
+ifeq ($(CONFIG_QUICK_TRACK),y)
+CSRCS += mbo.c
+endif
 
 CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src
 CFLAGS += -I$(TOPDIR)$(DELIM)$(EXTDIR)$(DELIM)wpa_supplicant$(DELIM)src$(DELIM)utils

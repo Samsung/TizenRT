@@ -29,7 +29,11 @@ void handle_dummy_read(int sock, void *eloop_ctx, void *sock_ctx)
     unsigned char *buf;
 
 #ifndef TMP_BUF_LEN
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+#define TMP_BUF_LEN    (1024)
+#else
 #define TMP_BUF_LEN    (512)
+#endif
 #endif
 
     buf = os_malloc(TMP_BUF_LEN);

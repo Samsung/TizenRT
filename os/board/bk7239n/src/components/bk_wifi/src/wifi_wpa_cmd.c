@@ -120,6 +120,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <common/sys_config.h>
 #include "bk_wifi_types.h"
 #include "dragonfly.h"
@@ -231,9 +232,12 @@ static int cmd_wpas_parse_int(const char *value, int min, int max, int *dst)
 	return 0;
 }
 
-static int cmd_wpas_parse_key_mgmt(const char *value)
+int cmd_wpas_parse_key_mgmt(const char *value)
 {
-	int val = 0, last, errors = 0;
+	int val = 0, last;
+#if !defined(CONFIG_QUICK_TRACK) || !CONFIG_QUICK_TRACK
+	int errors = 0;
+#endif
 	char *start, *end, *buf;
 
 	buf = os_strdup(value);
@@ -253,6 +257,8 @@ static int cmd_wpas_parse_key_mgmt(const char *value)
 		*end = '\0';
 		if (os_strcmp(start, "WPA-PSK") == 0)
 			val |= WPA_KEY_MGMT_PSK;
+		else if (os_strcmp(start, "WPA-PSK-SHA256") == 0)
+			val |= WPA_KEY_MGMT_PSK_SHA256;
 		else if (os_strcmp(start, "WPA-EAP") == 0)
 			val |= WPA_KEY_MGMT_IEEE8021X;
 		else if (os_strcmp(start, "IEEE8021X") == 0)
@@ -263,11 +269,24 @@ static int cmd_wpas_parse_key_mgmt(const char *value)
 			val |= WPA_KEY_MGMT_WPA_NONE;
 		else if (os_strcmp(start, "SAE") == 0)
 			val |= WPA_KEY_MGMT_SAE;
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+		/*
+		 * The WFA QuickTrack test tool sends "SAE-EXT-KEY" (AKM 24) in
+		 * the WPA3 profile. wpa_supplicant 2.10 does not support this
+		 * AKM; the connection still uses SAE (AKM 8, which an AP with
+		 * SAE-EXT-KEY enabled always advertises as well). Map it to
+		 * SAE to avoid a parse failure.
+		 */
+		else if (os_strcmp(start, "SAE-EXT-KEY") == 0)
+			val |= WPA_KEY_MGMT_SAE;
+#endif
 		else if (os_strcmp(start, "OWE") == 0)
 			val |= WPA_KEY_MGMT_OWE;
 		else {
 			BK_WIFI_LOGE(TAG, "Invalid key_mgmt '%s'", start);
+#if !defined(CONFIG_QUICK_TRACK) || !CONFIG_QUICK_TRACK
 			errors++;
+#endif
 		}
 
 		if (last)
@@ -278,14 +297,27 @@ static int cmd_wpas_parse_key_mgmt(const char *value)
 
 	if (val == 0) {
 		BK_WIFI_LOGE(TAG, "No key_mgmt values configured\n");
+#if !defined(CONFIG_QUICK_TRACK) || !CONFIG_QUICK_TRACK
 		errors++;
+#endif
 	}
 
 	BK_WIFI_LOGI(TAG, "key_mgmt: 0x%x\n", val);
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	/*
+	 * Return the parsed value instead of -1 on partial parse failure.
+	 * -1 (0xFFFFFFFF) would be written into the network profile by the
+	 * caller; it sets WPA_KEY_MGMT_OSEN, which makes wpa_supplicant
+	 * reject every normal network in BSS selection with
+	 * "skip - non-OSEN network not allowed" and never connect.
+	 */
+	return val;
+#else
 	return errors ? -1 : val;
+#endif
 }
 
-static int cmd_wpas_parse_cipher(const char *value)
+int cmd_wpas_parse_cipher(const char *value)
 {
 	int val = 0, last;
 	char *start, *end, *buf;
@@ -324,8 +356,17 @@ static int cmd_wpas_parse_cipher(const char *value)
 		else if (os_strcmp(start, "GTK_NOT_USED") == 0)
 			val |= WPA_CIPHER_GTK_NOT_USED;
 		else {
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+			/*
+			 * skip an unknown cipher token instead of failing the whole
+			 * parse, so the caller never gets -1 (0xFFFFFFFF) and
+			 * never writes it into the network profile.
+			 */
+			BK_WIFI_LOGE(TAG, "Unknown cipher '%s', skip it\n", start);
+#else
 			os_free(buf);
 			return -1;
+#endif
 		}
 
 		if (last)
@@ -337,9 +378,12 @@ static int cmd_wpas_parse_cipher(const char *value)
 	return val;
 }
 
-static int cmd_wpas_parse_proto(const char *value)
+int cmd_wpas_parse_proto(const char *value)
 {
-	int val = 0, last, errors = 0;
+	int val = 0, last;
+#if !defined(CONFIG_QUICK_TRACK) || !CONFIG_QUICK_TRACK
+	int errors = 0;
+#endif
 	char *start, *end, *buf;
 
 	buf = os_strdup(value);
@@ -373,7 +417,9 @@ static int cmd_wpas_parse_proto(const char *value)
 			val |= WPA_PROTO_OSEN;
 		else {
 			BK_WIFI_LOGE(TAG, "Invalid proto '%s'\n", start);
+#if !defined(CONFIG_QUICK_TRACK) || !CONFIG_QUICK_TRACK
 			errors++;
+#endif
 		}
 
 		if (last)
@@ -391,7 +437,16 @@ static int cmd_wpas_parse_proto(const char *value)
 #endif
 
 	BK_WIFI_LOGI(TAG, "proto: 0x%x\n", val);
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	/*
+	 * return the parsed value
+	 * instead of -1 when some token failed to parse, so the caller never
+	 * writes -1 (0xFFFFFFFF) into the network profile.
+	 */
+	return val;
+#else
 	return errors ? -1 : val;
+#endif
 }
 
 static int cmd_wpas_parse_auth_alg(const char *value)
@@ -469,9 +524,11 @@ int cmd_wlan_sta_set(char *cmd)
 	wlan_sta_config_t config;
 
 	value = os_strchr(cmd, ' ');
-	if (value == NULL)
-		return -2;
-	*value++ = '\0';
+	if (value == NULL) {
+		value = "";
+	} else {
+		*value++ = '\0';
+	}
 
 	config.field = WLAN_STA_FIELD_NUM;
 
@@ -484,10 +541,13 @@ int cmd_wlan_sta_set(char *cmd)
 			os_memcpy(g_sta_param_ptr->ssid.array, value, ssid_len);
 			g_sta_param_ptr->ssid.length = ssid_len;
 		}
+	} else if (os_strcmp(cmd, "bssid") == 0) {
+		config.field = WLAN_STA_FIELD_BSSID;
+		os_memcpy(config.u.bssid, value, ETH_ALEN);
 	} else if (os_strcmp(cmd, "psk") == 0 || os_strcmp(cmd, "PSK") == 0) {
 		uint8_t psk_len = os_strlen(value);
 		uint8_t psk_max_len = 64;
-#if CONFIG_WFA_CERT
+#if CONFIG_QUICK_TRACK
 		psk_max_len = 63;
 #endif
 		if (psk_len >= 8 && psk_len <= psk_max_len) {
@@ -496,6 +556,23 @@ int cmd_wlan_sta_set(char *cmd)
 			os_strlcpy((char *)(g_sta_param_ptr->key), value, sizeof(config.u.psk));
 			g_sta_param_ptr->key_len = os_strlen(value);
 		}
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK && CONFIG_QUICK_MBO
+	} else if (os_strcmp(cmd, "wnm_bss_query") == 0) {
+		int query_reason;
+		if (cmd_wpas_parse_int(value, 0, 255, &query_reason) == 0) {
+			config.field = WLAN_STA_FIELD_SET_QUERY_REASON;
+			config.u.query_reason = query_reason;
+		}
+	} else if (os_strcmp(cmd, "mbo_cell_capa") == 0) {
+		int mbo_cell_capa;
+		if (cmd_wpas_parse_int(value, 0, 255, &mbo_cell_capa) == 0) {
+			config.field = WLAN_SET_FIELD_SET_MBO_CELL_CAPA;
+			config.u.mbo_cell_capa = mbo_cell_capa;
+		}
+	} else if (os_strcmp(cmd, "non_pref_chan") == 0) {
+		config.field = WLAN_STA_FIELD_SET_NON_PREF_CHAN;
+		os_strlcpy((char *)config.u.non_pre_chan, value, sizeof(config.u.non_pre_chan));
+#endif
 	} else if (os_strcmp(cmd, "wep_key0") == 0) {
 		config.field = WLAN_STA_FIELD_WEP_KEY0;
 		os_strlcpy((char *)config.u.wep_key, value, sizeof(config.u.wep_key));
@@ -600,6 +677,9 @@ int cmd_wlan_sta_set(char *cmd)
 		config.field = WLAN_STA_FIELD_PHASE1;
 		os_strcpy(config.u.phase1, value);
 #endif
+	} else if (os_strcmp(cmd, "sae_pwe") == 0) {
+		config.field = WLAN_STA_FIELD_SAE_PWE;
+		config.u.sae_pwe = atoi(value);
 	} else if (os_strcmp(cmd, "ieee80211w") == 0) {
 		int mfp;
 		if (cmd_wpas_parse_int(value, 0, 2, &mfp) == 0) {
@@ -710,7 +790,7 @@ static int cmd_wlan_sta_get(char *cmd)
 	return 0;
 }
 
-int cmd_wlan_sta_exec(char *cmd)
+static int __cmd_wlan_sta_exec(char *cmd)
 {
 	int ret = 0;
 
@@ -720,7 +800,11 @@ int cmd_wlan_sta_exec(char *cmd)
 			ret = -2;
 			goto out;
 		}
-		ret = wlan_sta_set((uint8_t *)argv[0], os_strlen(argv[0]), (uint8_t *)argv[1]);
+		ret = wlan_sta_set(
+#if CONFIG_QUICK_TRACK
+		NULL,
+#endif
+		(uint8_t *)argv[0], os_strlen(argv[0]), (uint8_t *)argv[1]);
 	} else if (os_strncmp(cmd, "set ", 4) == 0 || os_strncmp(cmd, "SET_", 4) == 0)
 		ret = cmd_wlan_sta_set(cmd + 4);
 	else if (os_strncmp(cmd, "get ", 4) == 0)
@@ -828,6 +912,8 @@ int cmd_wlan_sta_exec(char *cmd)
 
 		rtos_delay_milliseconds(500);
 
+	} else if (os_strcmp(cmd, "reassociate") == 0) {
+		ret = wlan_sta_reassoicate();
 	} else if (os_strcmp(cmd, "state") == 0) {
 		wlan_sta_states_t state;
 		ret = wlan_sta_state(&state);
@@ -950,6 +1036,31 @@ out:
 	}
 
 	return ret;
+}
+
+int cmd_wlan_sta_exec(const char *fmt, ...)
+{
+	char cmd[128];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(cmd, sizeof(cmd) - 1, fmt, ap);
+	va_end(ap);
+
+	/* strip tail spaces */
+	char *p = cmd + os_strlen(cmd);
+	if (p != cmd) {
+		p--;
+		while (p > cmd) {
+			if (*p == ' ') {
+				*p-- = 0;
+			} else {
+				break;
+			}
+		}
+	}
+
+	return __cmd_wlan_sta_exec(cmd);
 }
 
 #if CONFIG_P2P

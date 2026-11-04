@@ -770,7 +770,7 @@ struct wpa_supplicant {
 	void *drv_priv; /* private data used by driver_ops */
 	void *global_drv_priv;
 
-#ifdef CONFIG_FULL_SUPPLICANT
+#ifdef CONFIG_QUICK_MBO
 	u8 *bssid_filter;
 	size_t bssid_filter_count;
 
@@ -861,6 +861,17 @@ struct wpa_supplicant {
 
 	/* Number of connection failures since last successful connection */
 	unsigned int consecutive_conn_failures;
+
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	/*
+	 * SAE-to-PSK fallback state: the AP advertises SAE in RSNE but
+	 * rejected SAE authentication (e.g., authentication algorithm not
+	 * supported). Retry this BSS with PSK for a limited time.
+	 */
+	int sae_psk_fallback;
+	u8 sae_psk_fallback_bssid[ETH_ALEN];
+	struct os_reltime sae_psk_fallback_until;
+#endif /* CONFIG_QUICK_TRACK */
 
 	/**
 	 * scan_req - Type of the scan request
@@ -1371,10 +1382,10 @@ struct wpa_supplicant {
 	u8 coloc_intf_dialog_token;
 	u8 coloc_intf_auto_report;
 	u8 coloc_intf_timeout;
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 	unsigned int wnm_mbo_trans_reason_present:1;
 	u8 wnm_mbo_transition_reason;
-#endif /* CONFIG_MBO */
+#endif /* CONFIG_QUICK_MBO */
 
 #ifdef CONFIG_TESTING_GET_GTK
 	u8 last_gtk[32];
@@ -1440,7 +1451,7 @@ struct wpa_supplicant {
 	struct wpabuf *received_mb_ies;
 #endif /* CONFIG_FST */
 
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 	/* Multiband operation non-preferred channel */
 	struct wpa_mbo_non_pref_channel {
 		enum mbo_non_pref_chan_reason reason;
