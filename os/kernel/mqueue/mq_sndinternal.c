@@ -189,13 +189,14 @@ FAR struct mqueue_msg_s *mq_msgalloc(void)
 
 	if (up_interrupt_context()) {
 		/* Try the general free list */
-
+		saved_state = enter_critical_section();
 		mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfree);
 		if (!mqmsg) {
 			/* Try the free list reserved for interrupt handlers */
 
 			mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfreeirq);
 		}
+		leave_critical_section(saved_state);
 		if (!mqmsg) {
 			set_errno(EBUSY);
 		}
