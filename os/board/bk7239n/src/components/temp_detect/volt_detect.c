@@ -49,6 +49,9 @@
 
 #define VOLT_FIFO_MAX    3
 
+#define IOLDO_THRE_LOW   3.60
+#define IOLDO_THRE_HIGH  3.70
+
 typedef struct {
 	uint16_t last_detect_val;
 	uint16_t detect_interval;
@@ -83,7 +86,7 @@ static int _volt_detect_init_adc_buffer(void)
 }
 
 #if CONFIG_SDMADC_TEMP
-static int _volt_detect_get_adc_data(sdmadc_chan_t adc_chan, uint16_t *adc_buf)
+static int _volt_detect_get_adc_data(sdmadc_chan_t adc_chan, uint16_t *adc_buf, UINT8 buf_size)
 {
 	sdmadc_config_t config = {0};
 	int err = BK_OK;
@@ -110,7 +113,7 @@ static int _volt_detect_get_adc_data(sdmadc_chan_t adc_chan, uint16_t *adc_buf)
 	if (BK_OK != err)
 		goto _release_adc;
 
-	err = bk_sdmadc_read_raw(adc_buf, ADC_TEMP_BUFFER_SIZE);
+	err = bk_sdmadc_read_raw(adc_buf, buf_size);
 
 _release_adc:
 	bk_sdmadc_deinit();
@@ -119,7 +122,7 @@ _release_adc:
 	return err;
 }
 #else
-static int _volt_detect_get_adc_data(adc_chan_t adc_chan, uint16_t *adc_buf)
+static int _volt_detect_get_adc_data(adc_chan_t adc_chan, uint16_t *adc_buf, UINT8 buf_size)
 {
 	adc_config_t config = {0};
 	int err = BK_OK;
@@ -157,9 +160,10 @@ static int _volt_detect_get_adc_data(adc_chan_t adc_chan, uint16_t *adc_buf)
 	if (BK_OK != err)
 		goto _release_adc;
 
-	err = bk_adc_read_raw(adc_buf, ADC_TEMP_BUFFER_SIZE,
-				ADC_READ_SEMAPHORE_WAIT_TIME);
-	if (BK_OK != err) {
+    err = bk_adc_read_raw(adc_buf, buf_size,
+            ADC_READ_SEMAPHORE_WAIT_TIME);
+    if (BK_OK != err)
+    {
 		err = BK_ERR_TEMPD_SAMPLE_NO_DATA;
 		goto _release_adc;
 	}
@@ -172,47 +176,33 @@ _release_adc:
 }
 #endif
 
-static uint16_t _volt_detect_calculate_voltage(uint16_t *raw_voltage_data)
+static uint16_t _volt_detect_calculate_voltage(uint16_t *raw_voltage_data, UINT8 buf_size)
 {
-#if (CONFIG_SOC_BK7231N) || (CONFIG_SOC_BK7236A) || (CONFIG_SOC_BK7236XX) || (CONFIG_SOC_BK7239XX) || (CONFIG_SOC_BK7286XX) || (CONFIG_SOC_BK7236XX)
 	uint32_t sum = 0, index, count = 0;
+	uint32_t start_index;
 
-	for (index = 5; index < ADC_TEMP_BUFFER_SIZE; index++) {
+	if ((!raw_voltage_data) || (buf_size == 0)) {
+		return 0;
+	}
+
+	start_index = (buf_size % 2) ? (buf_size / 2 + 1) : (buf_size / 2);
+	for (index = start_index; index < buf_size; index++)
+	{
 		/* 0 is invalid, but saradc may return 0 in power save mode */
-		if ((0 != raw_voltage_data[index]) && (2048 != raw_voltage_data[index])) {
-			#if CONFIG_SDMADC_TEMP
-			sum += (int16_t)raw_voltage_data[index] + CFG_SDMADC_OFFSET; //offset half of 2^16 to be positive
-			#else
+		if ((0 != raw_voltage_data[index]) && (2048 != raw_voltage_data[index]))
+		{
 			sum += raw_voltage_data[index];
-			#endif
 			count++;
 		}
 	}
 
 	if (count == 0)
 		raw_voltage_data[0] = 0;
-	else {
+	else
+	{
 		sum = sum / count;
 		raw_voltage_data[0] = sum;
 	}
-#elif (CONFIG_SOC_BK7256XX)
-	uint32_t sum = 0, sum1, sum2;
-
-	sum1 = raw_voltage_data[1] + raw_voltage_data[2];
-	sum2 = raw_voltage_data[3] + raw_voltage_data[4];
-	sum = sum1 / 2 + sum2 / 2;
-	sum = sum / 2;
-	raw_voltage_data[0] = sum;
-
-#else
-	uint32_t sum = 0, sum1, sum2;
-
-	sum1 = raw_voltage_data[1] + raw_voltage_data[2];
-	sum2 = raw_voltage_data[3] + raw_voltage_data[4];
-	sum = sum1 / 2 + sum2 / 2;
-	sum = sum / 2;
-	raw_voltage_data[0] = sum;
-#endif
 
 	return raw_voltage_data[0];
 }
@@ -304,7 +294,7 @@ void volt_daemon_polling_handler(void)
 
 	result = _volt_detect_init_adc_buffer();
 	if (BK_OK == result) {
-		result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_raw_voltage_data);
+		result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_raw_voltage_data, ADC_TEMP_BUFFER_SIZE);
 	}
 	if (BK_OK != result) {
 		TEMPD_LOGW("vdetect failed(%d), retry\n", result);
@@ -314,7 +304,7 @@ void volt_daemon_polling_handler(void)
 		return; //TODO is that correct?
 	}
 
-    volt_adc = _volt_detect_calculate_voltage(s_raw_voltage_data);
+    volt_adc = _volt_detect_calculate_voltage(s_raw_voltage_data, ADC_TEMP_BUFFER_SIZE);
 	TEMPD_LOGD("cnt=%d, interval=%d, last=%d, cur=%d, thr=%d\r\n",
 		s_voltd.detect_cnt, s_voltd.detect_interval, s_voltd.last_detect_val,
 		volt_adc, s_voltd.detect_threshold);
@@ -420,13 +410,13 @@ int volt_single_get_current_voltage(UINT32 *volt_value)
     *volt_value = 0;
 
     for (; retry_count > 0; retry_count--) {
-		result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_raw_voltage_data);
+        result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_raw_voltage_data, ADC_TEMP_BUFFER_SIZE);
 		if (BK_OK != result) {
 			TEMPD_LOGW("get volt_single failed(%d), retry\n", result);
             continue;
 		}
 
-        *volt_value = _volt_detect_calculate_voltage(s_raw_voltage_data);
+        *volt_value = _volt_detect_calculate_voltage(s_raw_voltage_data, ADC_TEMP_BUFFER_SIZE);
         if ((ADC_TEMP_VAL_MIN < *volt_value)/* && (*volt_value < ADC_TEMP_VAL_MAX)*/) {
             break;
         }
@@ -442,33 +432,40 @@ void volt_single_get_vbat_voltage(void)
     int retry_count = 3;
     UINT32 volt_adc = 0;
     float volt = 0.0;
-
-    if (_volt_detect_init_adc_buffer() != BK_OK) {
-        return;
-    }
+    int valid_sample = 0;
+    static uint16_t s_voltage_data[32] = {0};
+    UINT8 buf_size = 32;
 
     for (; retry_count > 0; retry_count--)
     {
-        result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_raw_voltage_data);
+        result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_voltage_data, buf_size);
         if (BK_OK != result)
         {
             TEMPD_LOGW("get volt_single failed(%d), retry\n", result);
             continue;
         }
 
-        volt_adc = _volt_detect_calculate_voltage(s_raw_voltage_data);
+        volt_adc = _volt_detect_calculate_voltage(s_voltage_data, buf_size);
         if ((ADC_TEMP_VAL_MIN < volt_adc)/* && (*volt_value < ADC_TEMP_VAL_MAX)*/)
         {
+            valid_sample = 1;
             break;
         }
     }
-    volt = volt_detect_calc_voltage(volt_adc);
 
-    if(volt < 3.5)
+    if (!valid_sample)
+    {
+        TEMPD_LOGW("get vbat voltage failed, skip iobypass update\n");
+        return;
+    }
+
+    volt = bk_adc_data_calculate(volt_adc, ADC_VOLT_SENSER_CHANNEL);
+    //TEMPD_LOGD("vbat voltage in components_init=%f\r\n", volt);
+    if(volt < IOLDO_THRE_LOW)
     {
         sys_drv_set_iobypassen_by_volt_detect(1);
     }
-    else if(volt >= 3.6)
+    else if(volt >= IOLDO_THRE_HIGH)
     {
         sys_drv_set_iobypassen_by_volt_detect(0);
     }
