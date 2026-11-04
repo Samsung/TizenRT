@@ -89,6 +89,8 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+void sem_showinfo(void);
+
 /* Common semaphore logic */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
