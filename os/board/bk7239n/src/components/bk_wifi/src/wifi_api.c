@@ -233,6 +233,13 @@ int demo_sta_app_init(char *oob_ssid, char *connect_key)
 		os_strlcpy(sta_config.password, connect_key, sizeof(sta_config.password));
 
 	BK_WIFI_LOGI(TAG, "ssid:%s key:%s\r\n", sta_config.ssid, sta_config.password);
+#if CONFIG_QUICK_TRACK
+	sta_config.key_mgmt = BIT(1) | BIT(10);  // PSK & SAE		  WPA_KEY_MGMT_PSK WPA_KEY_MGMT_SAE
+	sta_config.proto = BIT(0) | BIT(1); // WPA & RSN			  WPA_PROTO_WPA & WPA_PROTO_RSN
+	sta_config.pairwise_cipher = BIT(3) | BIT(4); // TKIP & CCMP  WPA_CIPHER_CCMP WPA_CIPHER_TKIP
+	sta_config.group_cipher = BIT(3) | BIT(4); // TKIP & CCMP	  WPA_CIPHER_CCMP WPA_CIPHER_TKIP
+	sta_config.ieee80211w = 1; // MFP Optional
+#endif
 	BK_LOG_ON_ERR(bk_wifi_sta_set_config(&sta_config));
 	BK_LOG_ON_ERR(bk_wifi_sta_start());
 	return BK_OK;

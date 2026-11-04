@@ -31,6 +31,9 @@
 #include <bk_wifi_adapter.h>
 #include <bk_wifi.h>
 #include <components/log.h>
+#ifdef CONFIG_QUICK_TRACK
+#include <bk_netif_addr.h>
+#endif
 
 /* Wi-Fi CONFIG ---------------------------------------------------------------*/
 #define BK_OK          0                    /*!< BK_err_t value indicating success (no error) */
@@ -938,6 +941,11 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         auth_fail_cnt = 0;
         // set ap info start
 		g_sta_is_start = 1;
+#ifdef CONFIG_QUICK_TRACK
+		if (bk_sta_cipher_is_open()) {
+			sta_ip_start();
+		}
+#endif
 #if 0
         os_memset(&ap_info, 0, sizeof(struct wlm_connected_apinfo));
         os_memcpy(ap_info.bssid, sta_connected->bssid, WIFI_BSSID_LEN);
