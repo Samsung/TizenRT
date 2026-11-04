@@ -242,8 +242,10 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_SET_INTR(dev, data, enable, rx_ptr) \
     adam110_send_cmd(dev, AUD_INT_EN, (uint8_t)(data), (uint8_t)(enable), 0, 0, rx_ptr, false)
 
-#define ADAM110_AI_SET_THD(dev, model, h_thd_level, l_thd_level, rx_ptr) \
-    adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(model), (uint8_t)(h_thd_level), (uint8_t)(l_thd_level), 0, rx_ptr, false)
+/* thd : FW compare value as is (0 ~ 32767, converted by app) -> parm2 = high, parm3 = low */
+#define ADAM110_AI_SET_THD(dev, model, thd, rx_ptr) \
+    adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(model), (uint8_t)(((thd) >> 8) & 0xFF), (uint8_t)((thd) & 0xFF), 0, \
+                     rx_ptr, false)
 
 #define ADAM110_AI_GET_THD(dev, model, rx_ptr) \
     adam110_send_cmd(dev, AC_GET_THD, (uint8_t)(model), 0, 0, 0, rx_ptr, false)
@@ -364,6 +366,10 @@ static int get_spi_command_error(int errcode)
 		return -EDOM;
 	case RSLT_SYNC_ERR:
 		return -ESTRPIPE;
+	case RSLT_SYS_WAIT_STABLE:
+		return -EAGAIN;
+	case RSLT_BUSY:
+		return -EBUSY;
 	default:
 		break;
 	}
@@ -391,7 +397,7 @@ static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *
 	}
 
 	if (rxpkt->op != RSLT_SUCCESS) {
-		if (rxpkt->op != RSLT_BUF_FULL) {
+		if ((rxpkt->op != RSLT_BUF_FULL) && (rxpkt->op != RSLT_SYS_WAIT_STABLE)) {
 			auddbg("[E] operation failed rxpkt->op : %d\n", rxpkt->op);
 		}
 		return get_spi_command_error(rxpkt->op);
@@ -779,9 +785,76 @@ errout:
 	return ret;
 }
 
+static int adam110_restore_state(FAR struct adam110_dev_s *priv)
+{
+	t_proto_pkt rxpkt;
+	int ret = OK;
+
+	if ((priv->kd_num >= AI_MODEL_HIBIXBY) && (priv->kd_num < AI_MODEL_MAX)) {
+		ret = ADAM110_AI_SET_INTR(priv, priv->kd_num, true, &rxpkt);
+		if (ret != OK) {
+			auddbg("[E] restore KD intr failed. kd_num : %d\n", priv->kd_num);
+		}
+		if (priv->sensitivity <= ADAM110_SENSITIVITY_MAX) {
+			ADAM110_AI_SET_THD(priv, priv->kd_num, priv->sensitivity, &rxpkt);
+		}
+	}
+
+	if (!priv->mute) {
+		if (priv->kd_enabled) {
+			ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
+			if (ret != OK) {
+				auddbg("[E] restore seamless intr failed\n");
+			}
+		}
+		if (priv->recording) {
+			ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, true, &rxpkt);
+			if (ret != OK) {
+				auddbg("[E] restore audio intr failed\n");
+			}
+		}
+	}
+
+	auddbg("[I] state restored kd_num:%d kd_en:%d rec:%d mute:%d\n",
+		   priv->kd_num, priv->kd_enabled, priv->recording, priv->mute);
+	return ret;
+}
+
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
+/* re-download model only (FW alive, model none after ADAM110 reboot) */
+static int adam110_reload_model(FAR struct adam110_dev_s *priv)
+{
+	int ret = OK;
+	t_proto_pkt rxpkt;
+
+	auddbg("[I] model none, reload model\n");
+	priv->lower->irq_enable(false);
+
+	ret = ADAM110_SET_MIC_CLK(priv, PDM_CLOCK_PDM_RATE, &rxpkt);
+	if (ret != OK) {
+		auddbg("[E] PDM clock set failed ret : %d\n", ret);
+		return ret;
+	}
+
+	ret = ADAM110_SET_MODEL(priv);
+	if (ret != OK) {
+		auddbg("[E] Model send fail!\n");
+		return ret;
+	}
+	priv->lower->irq_enable(true);
+
+	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
+	if (ret != OK) {
+		auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
+	}
+
+	adam110_restore_state(priv);
+	return ret;
+}
+
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
+	static int wait_stable_cnt = 0;
 	int ret = OK;
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
@@ -796,6 +869,22 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 		if (ret == OK) {
 			break;
 		}
+		/* XSOSC not ready : FW alive, do not download model yet. check next period */
+		if (ret == -EAGAIN) {
+			/* FW gives up XSOSC check after 10s and keeps 0x07 : reset and reload after ADAM110_XSOSC_WAIT_MAX_CNT */
+			if (++wait_stable_cnt < ADAM110_XSOSC_WAIT_MAX_CNT) {
+				auddbg("[I] XSOSC wait stable (%d), skip model download\n", wait_stable_cnt);
+				return OK;
+			}
+			auddbg("[E] XSOSC not stable (%d), reset and reload\n", wait_stable_cnt);
+			break;
+		}
+	}
+	wait_stable_cnt = 0;
+
+	/* XSOSC ready but model none (ADAM110 rebooted) : download model */
+	if ((ret == OK) && (rxpkt.parm3 & KA_FLAG_MODEL_NONE)) {
+		return adam110_reload_model(priv);
 	}
 
 	/* if aliveness failed, then load firmware again */
@@ -803,6 +892,8 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 		ret = adam110_load_firmware(priv);
 		if (ret != OK) {
 			auddbg("FW update failed.\n");
+		} else {
+			adam110_restore_state(priv);
 		}
 	}
 	return ret;
@@ -1320,12 +1411,15 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			 * ADAM110 (Low/Mid/High)
 			 */
 			adam110_takesem(&priv->devsem);
-
+			
 			/* 1:Hi bixby, 2:Bixby, 3:Alexa, 4:WWD_CUSTOM_MODEL1 */
-			if (priv->kd_num >= WWD_CUSTOM_MODEL1) {
-				sensitivity = (uint16_t)(((uint32_t)sensitivity * 32768) / 1000);				
-			}			
-			ADAM110_AI_SET_THD(priv, priv->kd_num + 1, (sensitivity >> 8) & 0xff, sensitivity & 0xff, &rxpkt);
+			/* sensitivity : FW compare value as is, converted by app
+			 *   Hi-Bixby/Bixby/Alexa : logit x 128,      ex) 99.9634% -> 1012
+			 *   others               : probability x 32768, ex) 99.9634% -> 32757 */
+			if (sensitivity > ADAM110_SENSITIVITY_MAX) {
+				sensitivity = ADAM110_SENSITIVITY_MAX;
+			}
+			ADAM110_AI_SET_THD(priv, priv->kd_num, sensitivity, &rxpkt);
 
 			priv->sensitivity = sensitivity;
 			adam110_givesem(&priv->devsem);
