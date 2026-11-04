@@ -49,7 +49,11 @@ int bk_wlan_ps_disable_send_msg(void);
 void bk_wlan_sta_init(network_InitTypeDef_st *inNetworkInitPara);
 bk_err_t bk_wlan_start_sta(network_InitTypeDef_st *inNetworkInitPara);
 
-int wlan_sta_set(const uint8_t *ssid, uint8_t ssid_len, const uint8_t *psk);
+#if CONFIG_QUICK_TRACK
+int wlan_sta_set(network_InitTypeDef_st *network, uint8_t *ssid, uint8_t ssid_len, uint8_t *psk);
+#else
+int wlan_sta_set(uint8_t *ssid, uint8_t ssid_len, uint8_t *psk);
+#endif
 int wlan_sta_set_config(wlan_sta_config_t *config);
 int wlan_sta_get_config(wlan_sta_config_t *config);
 int wlan_sta_set_autoreconnect(wlan_auto_reconnect_t *config);

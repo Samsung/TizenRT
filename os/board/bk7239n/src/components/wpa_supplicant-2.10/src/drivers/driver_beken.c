@@ -1434,6 +1434,10 @@ static struct hostapd_hw_modes *hostap_get_hw_feature_data(void *priv,
 					 | HT_CAP_INFO_TX_STBC
 					 | HT_CAP_INFO_RX_STBC_1
 					 | HT_CAP_INFO_MAX_AMSDU_SIZE;
+
+	// If 40M supported
+	if (rwnx_mod_param_get_use_2040())
+		mode->ht_capab |= HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET;
 #endif // CONFIG_AP_HT_IE
 
 	return modes;

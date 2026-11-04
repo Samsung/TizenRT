@@ -688,7 +688,11 @@ bk_err_t bk_wlan_start_sta(network_InitTypeDef_st *inNetworkInitPara)
 	}
 
 	/* set network parameters: ssid, passphase */
-	wlan_sta_set((uint8_t *)inNetworkInitPara->wifi_ssid, os_strlen(inNetworkInitPara->wifi_ssid), (uint8_t *)inNetworkInitPara->wifi_key);
+	wlan_sta_set(
+#if CONFIG_QUICK_TRACK
+	inNetworkInitPara,
+#endif
+	(uint8_t *)inNetworkInitPara->wifi_ssid, os_strlen(inNetworkInitPara->wifi_ssid), (uint8_t *)inNetworkInitPara->wifi_key);
 
 	if (bk_feature_bssid_connect_enable()) {
 		/* set bssid */
@@ -867,7 +871,11 @@ void bk_wlan_phy_show_cca(void)
  * @note This way is only adapted to join an OPEN, WPA-PSK, WPA2-PSK or
  *       WPA-PSK/WPA2-PSK network.
  */
-int wlan_sta_set(const uint8_t *ssid, uint8_t ssid_len, const uint8_t *psk)
+int wlan_sta_set(
+#if CONFIG_QUICK_TRACK
+	network_InitTypeDef_st *network,
+#endif
+	uint8_t *ssid, uint8_t ssid_len, uint8_t *psk)
 {
 	if ((!bk_feature_bssid_connect_enable() && (ssid == NULL || ssid_len == 0)) || ssid_len > WLAN_SSID_MAX_LEN) {
 		WPA_LOGE("invalid ssid (%p, %u)\n", ssid, ssid_len);
@@ -896,6 +904,11 @@ int wlan_sta_set(const uint8_t *ssid, uint8_t ssid_len, const uint8_t *psk)
 
 		/* key_mgmt: PSK */
 		config.field = WLAN_STA_FIELD_KEY_MGMT;
+#if CONFIG_QUICK_TRACK
+		if (network) {
+			config.u.key_mgmt = network->key_mgmt;
+		} else {
+#endif /* CONFIG_QUICK_TRACK */
 		config.u.key_mgmt = WPA_KEY_MGMT_PSK;
 #ifdef CONFIG_IEEE80211W
 		config.u.key_mgmt |= WPA_KEY_MGMT_PSK_SHA256;
@@ -909,24 +922,53 @@ int wlan_sta_set(const uint8_t *ssid, uint8_t ssid_len, const uint8_t *psk)
 #ifdef CONFIG_OWE
 		config.u.key_mgmt |= WPA_KEY_MGMT_OWE;
 #endif
-
+#if CONFIG_QUICK_TRACK
+		}
+#endif /* CONFIG_QUICK_TRACK */
 		BK_RETURN_ON_ERR(wpa_ctrl_request(WPA_CTRL_CMD_STA_SET, &config));
 
 		/* proto: WPA | RSN */
 		config.field = WLAN_STA_FIELD_PROTO;
+#if CONFIG_QUICK_TRACK
+		if (network) {
+			config.u.proto = network->proto;
+		} else {
+#endif
 		config.u.proto = WPA_PROTO_WPA | WPA_PROTO_RSN;
+#ifdef CONFIG_WAPI_SUPPORT
+		config.u.proto |= WPA_PROTO_WAPI;
+#endif
+#if CONFIG_QUICK_TRACK
+		}
+#endif /* CONFIG_QUICK_TRACK */
 		BK_RETURN_ON_ERR(wpa_ctrl_request(WPA_CTRL_CMD_STA_SET, &config));
 
 		/* pairwise: CCMP | TKIP */
 		config.field = WLAN_STA_FIELD_PAIRWISE_CIPHER;
+#if CONFIG_QUICK_TRACK
+		if (network) {
+			config.u.pairwise_cipher = network->pairwise_cipher;
+		} else {
+#endif
 		config.u.pairwise_cipher = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP
 								   | WPA_CIPHER_CCMP_256;
+#if CONFIG_QUICK_TRACK
+		}
+#endif /* CONFIG_QUICK_TRACK */
 		BK_RETURN_ON_ERR(wpa_ctrl_request(WPA_CTRL_CMD_STA_SET, &config));
 
 		/* group: CCMP | TKIP | WEP40 | WEP104 */
 		config.field = WLAN_STA_FIELD_GROUP_CIPHER;
+#if CONFIG_QUICK_TRACK
+		if (network) {
+			config.u.pairwise_cipher = network->pairwise_cipher;
+		} else {
+#endif
 		config.u.pairwise_cipher = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP
 								   | WPA_CIPHER_WEP40 | WPA_CIPHER_WEP104;
+#if CONFIG_QUICK_TRACK
+		}
+#endif /* CONFIG_QUICK_TRACK */
 		BK_RETURN_ON_ERR(wpa_ctrl_request(WPA_CTRL_CMD_STA_SET, &config));
 	}
 
@@ -934,6 +976,15 @@ int wlan_sta_set(const uint8_t *ssid, uint8_t ssid_len, const uint8_t *psk)
 	config.field = WLAN_STA_FIELD_SCAN_SSID;
 	config.u.scan_ssid = ssid && ssid_len;
 	BK_RETURN_ON_ERR(wpa_ctrl_request(WPA_CTRL_CMD_STA_SET, &config));
+
+#if CONFIG_QUICK_TRACK
+	config.field = WLAN_STA_FIELD_MFP;
+	if (network)
+		config.u.ieee80211w = network->ieee80211w;
+	else
+		config.u.ieee80211w = MGMT_FRAME_PROTECTION_OPTIONAL;
+	BK_RETURN_ON_ERR(wpa_ctrl_request(WPA_CTRL_CMD_STA_SET, &config));
+#endif
 
 	return BK_OK;
 }
@@ -1150,6 +1201,11 @@ int wlan_sta_connect(int chan)
 int wlan_sta_disconnect(void)
 {
 	return wpa_ctrl_request(WPA_CTRL_CMD_STA_DISCONNECT, NULL);
+}
+
+int wlan_sta_reassoicate(void)
+{
+	return wpa_ctrl_request(WPA_CTRL_CMD_STA_REASSOCIATE, NULL);
 }
 
 /**
@@ -2107,7 +2163,11 @@ bk_err_t bk_wifi_sta_start(void)
 // #endif
 
 	/* set network parameters: ssid, passphase */
-	ret = wlan_sta_set((uint8_t *)sta_config.ssid, os_strlen(sta_config.ssid), (uint8_t *)sta_config.password);
+	ret = wlan_sta_set(
+#if CONFIG_QUICK_TRACK
+		NULL,
+#endif
+		(uint8_t *)sta_config.ssid, os_strlen(sta_config.ssid), (uint8_t *)sta_config.password);
 	if (ret != BK_OK) {
 		WIFI_LOGE("wlan_sta_set fail, ret = %d\n", ret);
 		return BK_FAIL;
@@ -2512,7 +2572,11 @@ static int wifi_sta_set_wpa_config(const wifi_sta_config_t *config)
 	wpa_psk_request(g_sta_param_ptr->ssid.array, g_sta_param_ptr->ssid.length,
 						(char *)g_sta_param_ptr->key, NULL, 0);
 
-	wlan_sta_set((uint8_t *)config->ssid, os_strlen(config->ssid), (uint8_t *)config->password);
+	wlan_sta_set(
+#if CONFIG_QUICK_TRACK
+		NULL,
+#endif
+		(uint8_t *)config->ssid, os_strlen(config->ssid), (uint8_t *)config->password);
 
 #if CONFIG_STA_VSIE
 	if (bk_feature_sta_vsie_enable()) {

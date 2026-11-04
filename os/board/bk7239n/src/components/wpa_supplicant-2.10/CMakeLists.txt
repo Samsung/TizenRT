@@ -194,6 +194,11 @@ if (CONFIG_P2P)
 		"wpa_supplicant/wps_supplicant.c"
 		)
 endif()
+if (CONFIG_MBO OR CONFIG_QUICK_MBO)
+	list(APPEND srcs
+		"wpa_supplicant/mbo.c"
+		)
+endif()
 if (CONFIG_WPA3)
 	list(APPEND srcs
 		"src/common/dragonfly.c"

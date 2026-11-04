@@ -1301,12 +1301,39 @@ static void wnm_set_scan_freqs(struct wpa_supplicant *wpa_s)
 				   "WNM: Unknown neighbor operating frequency for "
 				   MACSTR " - scan all channels",
 				   MAC2STR(nei->bssid));
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+			/*
+			 * The candidate does not include Operating Class/Channel
+			 * Number. A full-channel scan may take longer than the AP's
+			 * disassociation timer, which would disassociate the STA
+			 * before the transition completes. Skip this candidate and
+			 * continue with the known frequencies.
+			 */
+			continue;
+#else
 			os_free(freqs);
 			return;
+#endif
 		}
 		if (chan_supported(wpa_s, nei->freq))
 			add_freq(freqs, &num_freqs, nei->freq);
 	}
+
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	if (num_freqs == 0 && wpa_s->assoc_freq > 0 &&
+	    chan_supported(wpa_s, wpa_s->assoc_freq)) {
+		/*
+		 * If all candidate frequencies are unknown, fall back to scanning
+		 * the current associated channel (the BTM target is usually on the
+		 * same channel as the current BSS) to avoid a full-channel scan
+		 * exceeding the disassociation timer.
+		 */
+		add_freq(freqs, &num_freqs, wpa_s->assoc_freq);
+		wpa_printf(MSG_DEBUG,
+			   "WNM: Scan current freq %d MHz as BTM candidate freq is unknown",
+			   wpa_s->assoc_freq);
+	}
+#endif
 
 	if (num_freqs == 0) {
 		os_free(freqs);

@@ -1334,6 +1334,9 @@ int hapd_intf_ke_rx_handle(int dummy)
 		rwm_transfer_mgmt_node(node);
 #else /* CONFIG_RWNX_SW_TXQ */
 		struct sk_buff *skb;
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+		struct ieee80211_hdr *hdr;
+#endif
 
 		// get the payload size that want to send to umac
 		payload_size = ke_mgmt_peek_rxed_next_payload_size(type_ptr->vif_index);
@@ -1352,7 +1355,16 @@ int hapd_intf_ke_rx_handle(int dummy)
 		// TODO: BK7236, avoid memcpy. copy payload from socket to MSDU
 		ke_mgmt_packet_rx(skb->msdu_ptr, payload_size, type_ptr->vif_index);
 
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+		hdr = (struct ieee80211_hdr *)skb->msdu_ptr;
+		// If not associated, use 0xff as sta_idx to use unknown txq
+		if (g_rwnx_hw.associated)
+			skb->sta_idx = rwm_mgmt_tx_get_staidx(type_ptr->vif_index, hdr->addr1);  // RA
+		else
+			skb->sta_idx = 0xFF;
+#else
 		skb->sta_idx = 0xFF;  // FIXME BK7236
+#endif
 		skb->vif_idx = type_ptr->vif_index;
 		skb->cb = hapd_intf_mgmt_tx_cb;
 		skb->args = skb; // cb args
