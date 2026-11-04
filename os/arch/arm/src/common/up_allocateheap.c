@@ -141,10 +141,18 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 		*heap_start = (void *)KREGION_START;
 	}
 
+	/* CONFIG_WDOG_MMU_PROTECT: No heap adjustment needed.
+	 * The wdog pool is statically allocated within the heap's address range
+	 * but is never registered as a free heap block, so the allocator will
+	 * never hand out its addresses. Removing the board-specific
+	 * __wdog_pool_end__ reference keeps this file portable across all ARM
+	 * targets. */
+
 	*heap_size = (void *)KREGION_END - *heap_start;
 
 	lldbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
 }
+
 
 /****************************************************************************
  * Name: up_add_kregion

@@ -326,6 +326,22 @@ SECTIONS
 		_psram_heap_start = ABSOLUTE(.);
 	} > CA32_BL3_DRAM_NS
 
+	/* Watchdog pool — placed at a 1MB-aligned address that does NOT overlap
+	 * with the FIP DRAM region (0x60200000-0x60400000).  The FIP contains
+	 * BL2+BL32+BL33 secure monitor code, and setting its L1 section to
+	 * Read-Only would break secure monitor operations.
+	 *
+	 * We place .wdog_pool at 0x60400000 (just after the FIP region) so it
+	 * has its own 1MB L1 section.  The watchdog MMU protection modifies
+	 * the L1 section entry's AP bits directly (no L2 split). */
+	.wdog_pool 0x60400000 (NOLOAD):
+	{
+		__wdog_pool_start__ = .;
+		*(.wdog_pool)
+		. = ALIGN(0x100000);
+		__wdog_pool_end__ = .;
+	} > CA32_BL3_DRAM_NS
+
 	.bluetooth_trace.text :
 	{
 		__btrace_start__ = .;
@@ -352,4 +368,6 @@ SECTIONS
 ASSERT(__flash_text_start__ == ORIGIN(CA32_IMG2_XIP), "__flash_text_start__ is changed.")
 ASSERT((__dram_text_start__ & 4095) == 0, "__dram_text_start__ is not 4KB aligned.")
 ASSERT((__dram_text_end__ & 4095) == 0, "__dram_text_end__ is not 4KB aligned.")
+/* Full heap range — the wdog pool is statically allocated within this range
+ * but is never handed out by the heap allocator (not a free heap block). */
 __psram_heap_buffer_size__ = ORIGIN(CA32_BL3_DRAM_NS) + LENGTH(CA32_BL3_DRAM_NS) - __psram_heap_buffer_start__;
