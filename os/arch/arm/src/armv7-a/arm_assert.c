@@ -162,36 +162,7 @@ static int state = NORMAL_STATE;
  * Private Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Name: up_stackdump
- ****************************************************************************/
-
 #ifdef CONFIG_ARCH_STACKDUMP
-static void up_stackdump(uint32_t sp, uint32_t stack_base)
-{
-	uint32_t stack = sp & ~0x1f;
-	uint32_t *ptr = (uint32_t *)stack;
-	uint8_t i;
-	lldbg("%08x:", stack);
-	for (i = 0; i < 8; i++) {	// Print first 8 values for sp located
-		if (stack < sp) {
-			/* If stack pointer(sp) is aligned(sp & 0x1f) to an address outside allocated stack */
-			/* Then, for stack addresses outside allocated stack, print 'xxxxxxxx' */
-			lldbg_noarg(" xxxxxxxx");
-		} else {
-			/* For remaining stack addresses inside allocated stack, print proper stack address values */
-			lldbg_noarg(" %08x", ptr[i]);
-		}
-		stack += 4;
-	}
-	lldbg_noarg("\n");
-
-	for (; stack < stack_base; stack += 32) {	// Print remaining stack values from 9th value to end
-		ptr = (uint32_t *) stack;
-		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n", stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
-	}
-}
-
 /****************************************************************************
  * Name: arm_registerdump
  ****************************************************************************/
@@ -201,7 +172,7 @@ static void arm_registerdump(volatile uint32_t *regs)
 	if (regs) {
 		/* Dump the interrupt registers */
 		lldbg_noarg("===========================================================\n");
-		lldbg_noarg("Asserted task's register dump\n");
+		lldbg_noarg("Task register dump\n");
 		lldbg_noarg("===========================================================\n");
 		lldbg("R0: %08x %08x %08x %08x", regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3]);
 #ifdef CONFIG_ARM_THUMB
@@ -574,6 +545,56 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+#ifdef CONFIG_ARCH_STACKDUMP
+/****************************************************************************
+ * Name: up_stackdump
+ ****************************************************************************/
+
+void up_stackdump(uintptr_t sp, uintptr_t stack_base)
+{
+	uint32_t stack = sp & ~0x1f;
+	uint32_t *ptr = (uint32_t *)stack;
+	uint8_t i;
+	lldbg("%08x:", stack);
+	for (i = 0; i < 8; i++) {	// Print first 8 values for sp located
+		if (stack < sp) {
+			/* If stack pointer(sp) is aligned(sp & 0x1f) to an address outside allocated stack */
+			/* Then, for stack addresses outside allocated stack, print 'xxxxxxxx' */
+			lldbg_noarg(" xxxxxxxx");
+		} else {
+			/* For remaining stack addresses inside allocated stack, print proper stack address values */
+			lldbg_noarg(" %08x", ptr[i]);
+		}
+		stack += 4;
+	}
+	lldbg_noarg("\n");
+
+	for (; stack < stack_base; stack += 32) {	// Print remaining stack values from 9th value to end
+		ptr = (uint32_t *) stack;
+		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n", stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+	}
+}
+
+volatile void *up_get_task_registers(struct tcb_s *tcb)
+{
+	if (tcb == this_task()) {
+		return CURRENT_REGS;
+	}
+
+	return tcb->xcp.regs;
+}
+
+uintptr_t up_get_task_stack_end(struct tcb_s *tcb)
+{
+	return (uintptr_t)tcb->adj_stack_ptr;
+}
+
+void up_registerdump(volatile void *regs)
+{
+	arm_registerdump(regs);
+}
+#endif /* CONFIG_ARCH_STACKDUMP */
 
 /****************************************************************************
  * Name: up_assert
