@@ -57,9 +57,15 @@ struct health_monitor_snapshot_s {
 #endif
 };
 
-struct health_monitor_timeout_s {
+enum health_monitor_failure_type_e {
+	HEALTH_MONITOR_FAILURE_TIMEOUT,
+	HEALTH_MONITOR_FAILURE_UNEXPECTED_EXIT
+};
+
+struct health_monitor_failure_s {
 	struct health_monitor_snapshot_s task;
 	clock_t detected_at;
+	enum health_monitor_failure_type_e type;
 };
 
 /****************************************************************************
