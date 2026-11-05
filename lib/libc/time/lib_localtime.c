@@ -600,7 +600,7 @@ static int tzload(FAR const char *name, FAR struct state_s *const sp, const int 
 				if (timecnt && attime <= sp->ats[timecnt - 1]) {
 					if (attime < sp->ats[timecnt - 1]) {
 						set_errno(EINVAL);
-						return -1;
+						goto oops;
 					}
 				sp->types[i - 1] = 0;
 				timecnt--;
