@@ -22,6 +22,8 @@
 #include <tinyara/signature.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
+#include <errno.h>
 #include <psa/crypto.h>
 #include <psa/crypto_extra.h>
 #include <os/os.h>
@@ -109,10 +111,14 @@ static int signature_read_instruction(uint32_t address, uint8_t *user_buf, uint3
 	int ret;
 	int32_t locked = tfm_ns_interface_lock();
 
-	ret = bk_security_flash_read_instruction(address, user_buf, size, offset_flag);
-	if (locked == BK_OK) {
-		(void)tfm_ns_interface_unlock();
+	DEBUGASSERT(locked == BK_OK);
+	if (locked != BK_OK) {
+		lowsyslog(LOG_ERR, "%s: ns_lock failed (%d)\n", __func__, locked);
+		return -EBUSY;
 	}
+
+	ret = bk_security_flash_read_instruction(address, user_buf, size, offset_flag);
+	(void)tfm_ns_interface_unlock();
 
 	return ret;
 }
@@ -122,10 +128,14 @@ static int signature_read_app_or_common(uint32_t address, uint8_t *user_buf, uin
 	int ret;
 	int32_t locked = tfm_ns_interface_lock();
 
-	ret = bk_instruction_read_app_or_common(address, user_buf, size);
-	if (locked == BK_OK) {
-		(void)tfm_ns_interface_unlock();
+	DEBUGASSERT(locked == BK_OK);
+	if (locked != BK_OK) {
+		lowsyslog(LOG_ERR, "%s: ns_lock failed (%d)\n", __func__, locked);
+		return -EBUSY;
 	}
+
+	ret = bk_instruction_read_app_or_common(address, user_buf, size);
+	(void)tfm_ns_interface_unlock();
 
 	return ret;
 }
