@@ -645,6 +645,48 @@ void up_schedyield(void);
 /* Prototype is in assert.h */
 
 /****************************************************************************
+ * Name: up_getusrsp
+ *
+ * Description:
+ *   Extract the stack pointer from a non-NULL saved register context.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_ARM
+uintptr_t up_getusrsp(const volatile void *regs);
+#else
+#define up_getusrsp(regs) ((uintptr_t)0)
+#endif
+
+/****************************************************************************
+ * Name: up_get_task_registers / up_get_task_stack_end
+ *
+ * Description:
+ *   Return a stopped task's saved register context, or its interrupt context
+ *   for the current task, and the exclusive end of its usable stack. Return
+ *   NULL when there is no available register context.
+ *   The caller protects the TCB lifetime and stops other CPUs on SMP.
+ *   up_getusrsp() extracts SP from the context.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_STACKDUMP) && (defined(CONFIG_ARCH_ARMV7A_FAMILY) || defined(CONFIG_ARCH_ARMV8M_FAMILY))
+volatile void *up_get_task_registers(FAR struct tcb_s *tcb);
+uintptr_t up_get_task_stack_end(FAR struct tcb_s *tcb);
+void up_registerdump(volatile void *regs);
+void up_stackdump(uintptr_t sp, uintptr_t stack_end);
+#define up_task_getusrsp(regs) up_getusrsp(regs)
+#define up_task_registerdump(regs) up_registerdump(regs)
+#define up_task_stackdump(sp, stack_end) up_stackdump(sp, stack_end)
+#else
+#define up_get_task_registers(tcb) ((void)(tcb), (volatile void *)0)
+#define up_get_task_stack_end(tcb) ((void)(tcb), (uintptr_t)0)
+#define up_task_getusrsp(regs) ((void)(regs), (uintptr_t)0)
+#define up_task_registerdump(regs) ((void)(regs))
+#define up_task_stackdump(sp, stack_end) ((void)(sp), (void)(stack_end))
+#endif
+
+/****************************************************************************
  * Name: up_schedule_sigaction
  *
  * Description:
