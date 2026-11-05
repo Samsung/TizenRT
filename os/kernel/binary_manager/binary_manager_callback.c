@@ -72,6 +72,7 @@ void binary_manager_unregister_statecb(int pid)
 	binmgr_statecb_response_t response_msg;
 	char q_name[BIN_PRIVMQ_LEN];
 
+	memset(&response_msg, 0, sizeof(binmgr_statecb_response_t));
 	if (pid < 0) {
 		bmdbg("Invalid pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
@@ -126,6 +127,7 @@ void binary_manager_register_statecb(int pid, binmgr_cb_t *cb_info)
 	char q_name[BIN_PRIVMQ_LEN];
 	binmgr_statecb_response_t response_msg;
 
+	memset(&response_msg, 0, sizeof(binmgr_statecb_response_t));
 	if (pid < 0 || cb_info == NULL) {
 		bmdbg("Invalid pid %d\n", pid);
 		response_msg.result = BINMGR_INVALID_PARAM;
