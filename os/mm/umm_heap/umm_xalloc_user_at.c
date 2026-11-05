@@ -26,6 +26,10 @@
 
 void free_user_at(struct mm_heap_s *heap, void *mem)
 {
+	if (!mem) {
+		return;
+	}
+
 	mm_free(heap, mem);
 }
 
