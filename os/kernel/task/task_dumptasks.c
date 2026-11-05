@@ -142,6 +142,14 @@ static void task_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 #endif
 }
 
+static void task_stackdump(FAR struct tcb_s *tcb, FAR void *arg)
+{
+	(void)arg;
+	if (tcb != sched_self()) {
+		up_dump_task(tcb);
+	}
+}
+
 /****************************************************************************
  * Name: task_show_alivetask_list
  * 
@@ -161,5 +169,11 @@ void task_show_alivetask_list(void)
 
 	sched_foreach(task_taskdump, NULL);
 	lldbg_noarg("-------------------------------------------------------------------------------------------------------------------\n");
+
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("All tasks: register and stack dump\n");
+	lldbg_noarg("===========================================================\n");
+	sched_foreach(task_stackdump, NULL);
+	lldbg_noarg("===========================================================\n");
 
 }

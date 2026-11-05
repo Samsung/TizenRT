@@ -645,6 +645,26 @@ void up_schedyield(void);
 /* Prototype is in assert.h */
 
 /****************************************************************************
+ * Name: up_dump_task_registers / up_dump_task
+ *
+ * Description:
+ *   Print a task's register context, or its registers and usable stack, without
+ *   changing the running task or its context. The caller must keep the TCB and
+ *   stack alive, hold a critical section, and stop other CPUs on SMP. The
+ *   current task uses its interrupt context when available; other tasks use
+ *   their saved context. An unavailable context is reported without fallback.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_STACKDUMP) && (defined(CONFIG_ARCH_ARMV8M_FAMILY) || defined(CONFIG_ARCH_ARMV7A_FAMILY))
+void up_dump_task_registers(FAR struct tcb_s *tcb);
+void up_dump_task(FAR struct tcb_s *tcb);
+#else
+#define up_dump_task_registers(tcb) ((void)0)
+#define up_dump_task(tcb) ((void)0)
+#endif
+
+/****************************************************************************
  * Name: up_schedule_sigaction
  *
  * Description:

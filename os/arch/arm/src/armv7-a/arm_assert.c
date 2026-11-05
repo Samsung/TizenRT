@@ -197,12 +197,12 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
  * Name: arm_registerdump
  ****************************************************************************/
 
-static void arm_registerdump(volatile uint32_t *regs)
+static void arm_registerdump(const volatile uint32_t *regs)
 {
 	if (regs) {
 		/* Dump the interrupt registers */
 		lldbg_noarg("===========================================================\n");
-		lldbg_noarg("Asserted task's register dump\n");
+		lldbg_noarg("Task register dump\n");
 		lldbg_noarg("===========================================================\n");
 		lldbg("R0: %08x %08x %08x %08x", regs[REG_R0], regs[REG_R1], regs[REG_R2], regs[REG_R3]);
 #ifdef CONFIG_ARM_THUMB
@@ -575,6 +575,93 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_dump_task_registers
+ *
+ * Description:
+ *   Dump a stopped task's registers without reading its stack or changing context.
+ *   The caller protects the TCB lifetime and stops other CPUs before calling.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_STACKDUMP
+void up_dump_task_registers(FAR struct tcb_s *tcb)
+{
+	const volatile uint32_t *regs;
+
+	DEBUGASSERT(tcb != NULL);
+	if (IS_SECURE_STATE()) {
+		return;
+	}
+
+	if (tcb == this_task()) {
+		regs = CURRENT_REGS;
+	} else {
+		regs = tcb->xcp.regs;
+	}
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg_noarg("\nTask pid=%d name=%s\n", (int)tcb->pid, tcb->name);
+#else
+	lldbg_noarg("\nTask pid=%d\n", (int)tcb->pid);
+#endif
+	if (regs) {
+		arm_registerdump(regs);
+	} else {
+		lldbg_noarg("register context unavailable\n");
+	}
+}
+
+/****************************************************************************
+ * Name: up_dump_task
+ *
+ * Description:
+ *   Dump a stopped task's registers and usable stack without changing context.
+ *   The caller protects the TCB lifetime and stops other CPUs before calling.
+ *
+ ****************************************************************************/
+
+void up_dump_task(FAR struct tcb_s *tcb)
+{
+	const volatile uint32_t *regs;
+	uint32_t stack_end;
+	uint32_t stack_start;
+	uint32_t stack_size;
+	uint32_t sp;
+
+	DEBUGASSERT(tcb != NULL);
+	if (IS_SECURE_STATE()) {
+		return;
+	}
+
+	if (tcb == this_task()) {
+		regs = CURRENT_REGS;
+	} else {
+		regs = tcb->xcp.regs;
+	}
+	up_dump_task_registers(tcb);
+	if (regs == NULL) {
+		lldbg_noarg("Stack pointer unavailable; stack dump skipped\n");
+		return;
+	}
+	sp = regs[REG_R13];
+
+	/* ARMv7-A adj_stack_ptr is the exclusive end of the usable stack. */
+	stack_end = (uint32_t)(uintptr_t)tcb->adj_stack_ptr;
+	stack_size = tcb->adj_stack_size;
+	if (!tcb->stack_alloc_ptr || stack_size == 0 || stack_size > stack_end ||
+		stack_end - stack_size < (uint32_t)(uintptr_t)tcb->stack_alloc_ptr) {
+		lldbg("Task stack bounds unavailable\n");
+		return;
+	}
+	stack_start = stack_end - stack_size;
+	if ((sp & 3) != 0 || sp < stack_start || sp >= stack_end) {
+		lldbg_noarg("SP outside usable stack; stack dump skipped\n");
+		return;
+	}
+	up_stackdump(sp, stack_end);
+}
+#endif
 
 /****************************************************************************
  * Name: up_assert
