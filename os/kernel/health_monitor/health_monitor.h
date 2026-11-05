@@ -40,29 +40,6 @@
 #define HEALTH_MONITOR_HEAP_CAPACITY     CONFIG_MAX_TASKS
 
 /****************************************************************************
- * Public Types
- ****************************************************************************/
-
-struct health_monitor_snapshot_s {
-	uintptr_t tcb_address;
-	pid_t pid;
-	clock_t deadline;
-	uint32_t timeout;
-	uint8_t task_state;
-	uint8_t priority;
-	uint8_t cpu;
-	bool kernel_task;
-#if CONFIG_TASK_NAME_SIZE > 0
-	char name[CONFIG_TASK_NAME_SIZE + 1];
-#endif
-};
-
-struct health_monitor_timeout_s {
-	struct health_monitor_snapshot_s task;
-	clock_t detected_at;
-};
-
-/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
