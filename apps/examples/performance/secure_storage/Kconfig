@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SS_PERFORMANCE_TEST
+	bool "Secure storage performance test"
+	default n
+	depends on SE
+	---help---
+		Measure secure storage read, write, erase, and composite operation times.
+
+config USER_ENTRYPOINT
+	string
+	default "ss_performance_test" if ENTRY_SS_PERFORMANCE_TEST
