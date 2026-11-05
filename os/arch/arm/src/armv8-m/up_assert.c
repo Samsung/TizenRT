@@ -559,6 +559,8 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 
 	up_dumpstate();
 
+	sem_showinfo();
+
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	elf_show_all_bin_section_addr();
 #endif

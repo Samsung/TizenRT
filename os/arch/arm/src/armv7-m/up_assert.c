@@ -110,6 +110,7 @@
 
 #include "irq/irq.h"
 #include "task/task.h"
+#include "semaphore/semaphore.h"
 
 #include "up_arch.h"
 #include "up_internal.h"
@@ -447,6 +448,7 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 	lldbg("*******************************************\n");
 
 	task_show_tcbinfo(fault_tcb);
+	sem_showinfo();
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
 	board_crashdump(up_getsp(), fault_tcb, (uint8_t *)filename, lineno);
