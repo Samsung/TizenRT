@@ -368,6 +368,7 @@ int binary_manager_mount_resource(void)
 #ifdef CONFIG_USE_BP
 			/* If resource binary is invalid */
 			/* Scan all binaries and set valid binary set in bootparam */
+			binary_manager_set_bp_recovery_reason(BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE);
 			ret = binary_manager_recover_bootparam_set();
 			if (ret != BINMGR_OK) {
 				bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
@@ -427,6 +428,7 @@ int binary_manager_mount_resource(void)
 #ifdef CONFIG_USE_BP
 		/* If resource binary is invalid */
 		/* Scan all binaries and set valid binary set in bootparam */
+		binary_manager_set_bp_recovery_reason(BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE);
 		ret = binary_manager_recover_bootparam_set();
 		if (ret != BINMGR_OK) {
 			bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
