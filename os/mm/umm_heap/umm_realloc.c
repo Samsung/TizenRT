@@ -100,7 +100,9 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 	}
 
 	if (size == 0) {
-		mm_free(&BASE_HEAP[heap_index], oldmem);
+		if (oldmem) {
+			mm_free(&BASE_HEAP[heap_index], oldmem);
+		}
 		return NULL;
 	}
 
@@ -141,7 +143,9 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	if (size == 0) {
-		free(oldmem);
+		if (oldmem) {
+			free(oldmem);
+		}
 		return NULL;
 	}	
 	/* User supports a single heap on app separation */
@@ -159,7 +163,9 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	}
 
 	if (size == 0) {
-		mm_free(&BASE_HEAP[heap_idx], oldmem);
+		if (oldmem) {
+			mm_free(&BASE_HEAP[heap_idx], oldmem);
+		}
 		return NULL;
 	}
 
@@ -176,7 +182,9 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
 		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
 		if (ret != NULL) {
-			mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
+			if (oldmem) {
+				mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
+			}
 			return ret;
 		}
 	}

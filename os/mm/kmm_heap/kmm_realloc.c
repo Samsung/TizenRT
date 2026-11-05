@@ -102,7 +102,9 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 	kheap = kmm_get_baseheap();
 
 	if (size == 0) {
-		mm_free(&kheap[heap_index], oldmem);
+		if (oldmem) {
+			mm_free(&kheap[heap_index], oldmem);
+		}
 		return NULL;
 	}
 
@@ -165,7 +167,9 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);
 		if (ret != NULL) {
-			kmm_free(oldmem);
+			if (oldmem) {
+				kmm_free(oldmem);
+			}
 			return ret;
 		}
 	}
