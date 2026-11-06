@@ -89,7 +89,7 @@ static void wm_sta_connected(wifi_manager_cb_msg_s msg, void *arg)
 	sem_post(&sem);
 }
 
-static void wm_sta_disconnected((wifi_manager_cb_msg_s msg, void *arg)
+static void wm_sta_disconnected(wifi_manager_cb_msg_s msg, void *arg)
 {
 	sleep(2);
 	printf(" T%d --> %s\n", getpid(), __FUNCTION__);
