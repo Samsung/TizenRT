@@ -311,6 +311,7 @@ int utils_heapinfo(int argc, char **args)
 		return ERROR;		
 	}
 	/* If heapinfo runs without specifying a binary, print both kernel and application heap statistics. */
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	if (!bin_selected) {
 #ifdef CONFIG_APP1_INFO
 		options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
@@ -339,6 +340,7 @@ int utils_heapinfo(int argc, char **args)
 		}
 #endif
 	}
+#endif /* CONFIG_APP_BINARY_SEPARATION */
 	close(heapinfo_fd);
 
 	if (options.mode != HEAPINFO_DUMP_HEAP) {
