@@ -17,6 +17,7 @@
 
 
 #pragma once
+#include <stdint.h>
 #include <soc/soc.h>
 #include "hal_port.h"
 #include "system_hw.h"
@@ -65,6 +66,22 @@ bk_err_t bk_otp_read_swd_nsc(bool *swd_enabled);
 
 
 bk_err_t bk_otp_read_download_nsc(bool *download_enabled);
+
+/**
+ * @brief Verify a SHA256 public key hash against OTP_BL2_BOOT_PUBLIC_KEY_HASH.
+ *
+ * The comparison is performed in the secure side: the trusted hash is read
+ * from OTP and never handed to the non-secure firmware.
+ *
+ * @param[in] hash  SHA256 digest of the DER encoded SubjectPublicKeyInfo.
+ * @param[in] size  Size of @p hash in bytes, must be 32.
+ *
+ * @return TFM_OTP_PUBKEY_HASH_MATCH      hash matches the trusted OTP value
+ *         TFM_OTP_PUBKEY_HASH_MISMATCH   hash does not match
+ *         TFM_OTP_PUBKEY_HASH_READ_FAIL  OTP read failed
+ *         TFM_OTP_PUBKEY_HASH_BAD_ARG    invalid argument
+ */
+int32_t bk_otp_verify_pubkey_hash_nsc(const uint8_t *hash, uint32_t size);
 
 #ifdef __cplusplus
 }
