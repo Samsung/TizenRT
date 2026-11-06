@@ -1,0 +1,113 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+name: Build Test comment
+
+on:
+  workflow_run:
+    workflows: [Build Test]
+    types: [completed]
+
+permissions:
+  actions: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    concurrency:
+      group: build-test-comment-${{ github.event.workflow_run.head_repository.id }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    steps:
+      # This workflow never checks out or executes code from the PR.
+      - name: Find build report
+        id: report
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              ...context.repo, run_id: run.id, per_page: 100,
+            });
+            const artifact = artifacts.find(item =>
+              item.name === `build-test-report-${run.run_attempt}` && !item.expired);
+            if (artifact && artifact.size_in_bytes <= 1024 * 1024) {
+              core.setOutput('artifact_id', artifact.id);
+            }
+      - name: Download build report
+        id: download
+        if: steps.report.outputs.artifact_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ steps.report.outputs.artifact_id }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/build-test-comment
+      - name: Update PR comment
+        uses: actions/github-script@v9
+        env:
+          REPORT_DOWNLOADED: ${{ steps.download.outcome == 'success' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const run = context.payload.workflow_run;
+            if (run.path?.split('@')[0] !== '.github/workflows/defconfig-build.yml') return;
+            const head = run.head_repository;
+            if (!head) return;
+            // Resolve fork PRs from GitHub metadata, not from artifact contents.
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              ...context.repo, state: 'open',
+              head: `${head.owner.login}:${run.head_branch}`, per_page: 100,
+            });
+            const pr = pulls.find(item => item.head.repo?.id === head.id &&
+              item.head.sha === run.head_sha && item.base.repo.id === context.payload.repository.id);
+            if (!pr) return;
+            const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+              ...context.repo, workflow_id: run.workflow_id, event: 'pull_request',
+              branch: run.head_branch, head_sha: run.head_sha, per_page: 100,
+            });
+            const latest = runs.filter(item => item.head_repository?.id === head.id)
+              .sort((a, b) => b.id - a.id)[0];
+            if (!latest || latest.id !== run.id || latest.run_attempt !== run.run_attempt ||
+                latest.status !== 'completed') return;
+
+            const reportPath = path.join(process.env.RUNNER_TEMP, 'build-test-comment', 'report.md');
+            let report = `## Build Test\n\nResult: ${run.conclusion}\n\n[Workflow run](${run.html_url})\n\nBuild report unavailable.\n`;
+            if (process.env.REPORT_DOWNLOADED === 'true' && fs.existsSync(reportPath)) {
+              const stat = fs.lstatSync(reportPath);
+              if (!stat.isFile() || stat.size > 60000) throw new Error('Invalid build report');
+              report = fs.readFileSync(reportPath, 'utf8');
+            }
+            const marker = '<!-- build-test -->';
+            const body = `${marker}\n${report}`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number: pr.number, per_page: 100,
+            });
+            const previous = comments.find(item => item.user?.login === 'github-actions[bot]' &&
+              item.body?.startsWith(marker));
+            if (previous) {
+              if (previous.body !== body) {
+                await github.rest.issues.updateComment({...context.repo, comment_id: previous.id, body});
+              }
+            } else {
+              await github.rest.issues.createComment({...context.repo, issue_number: pr.number, body});
+            }
