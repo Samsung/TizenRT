@@ -860,7 +860,11 @@ int tash_reboot(int argc, char **argv)
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	WRITE_REBOOT_REASON(REBOOT_SYSTEM_USER_INTENDED);
 #endif
+#ifdef CONFIG_BOARDCTL_RESET
 	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+#else
+	printf("CONFIG_BOARDCTL_RESET is not set. Fail to reset board.\n");
+#endif
 
 	/*
 	 * boarctl() will not return in this case.  It if does, it means that
