@@ -753,7 +753,7 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	ret = ADAM110_SET_MIC_CLK(priv, PDM_CLOCK_PDM_RATE, &rxpkt);
 	if (ret != 0) {
 		auddbg("Adam110 PDM clock %s Hz failed ret : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz") ,ret);
-		return ret;
+		goto errout;
 	} else {
 		auddbg("Set Adam110 PDM clock %s Hz : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz"), ret);
 	}
@@ -761,15 +761,36 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	ret = ADAM110_SET_MODEL(priv);
 	if (ret != OK) {
 	    auddbg("[E] Model send fail!\n");
-	} else {
-		priv->lower->irq_enable(true);
+		goto errout;
 	}
 
-	//enable AI_MODEL_CUSTOM1 interrupt
+	/* Restore the selected model interrupt after an ADAM110 reset.
+	 * No model has been selected yet during the initial firmware load.
+	 */
+	if ((priv->kd_num >= AI_MODEL_HIBIXBY) && (priv->kd_num < AI_MODEL_MAX)) {
+		ret = ADAM110_AI_SET_INTR(priv, priv->kd_num, true, &rxpkt);
+		if (ret != OK) {
+			auddbg("Restore KD model interrupt failed. kd_num : %d ret : %d\n", priv->kd_num, ret);
+			goto errout;
+		}
+	}
+
+	/* Enable the custom model interrupt. */
 	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
 	if (ret != OK) {
-		auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
+		auddbg("Enable custom model interrupt failed. ret : %d\n", ret);
+		goto errout;
 	}
+
+	/* Host KD state survives the reset; apply it to the device again. */
+	ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R,
+						   priv->kd_enabled && !priv->mute, &rxpkt);
+	if (ret != OK) {
+		auddbg("Restore KD seamless interrupt failed. ret : %d\n", ret);
+		goto errout;
+	}
+
+	priv->lower->irq_enable(true);
 errout:
 	/* Regardless result, set fw_loaded as true for next check */
 	priv->fw_loaded = true;
