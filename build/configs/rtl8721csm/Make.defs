@@ -179,7 +179,7 @@ CFLAGS   += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
 endif
 
 ifeq ($(CONFIG_EXTERNAL_CMSIS_DSP),y)
-CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_dsp
+CXXFLAGS += -I$(TOPDIR)/../external/include/cmsis_dsp/Include
 CMSIS_DSP_DIR_NAME_UNQUOTATED = ${shell echo $(CONFIG_ARCH_BOARD)}
 ifeq ($(CONFIG_ARCH_FPU),y)
 CMSIS_DSP_LIB = lib_cmsis_dsp_fpu
@@ -191,7 +191,7 @@ endif
 endif
 
 ifeq ($(CONFIG_EXTERNAL_CMSIS_NN),y)
-CXXFLAGS += -I$(TOPDIR)/../os/arch/arm/include/amebad/cmsis_nn
+CXXFLAGS += -I$(TOPDIR)/../external/include/cmsis_nn
 CMSIS_NN_DIR_NAME_UNQUOTATED = ${shell echo $(CONFIG_ARCH_BOARD)}
 ifeq ($(CONFIG_ARCH_FPU),y)
 CMSIS_NN_LIB = lib_cmsis_nn_fpu
