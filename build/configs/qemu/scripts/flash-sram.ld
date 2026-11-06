@@ -50,13 +50,13 @@
  *
  ****************************************************************************/
 
-/* The LM3S6965 has 256KB of FLASH beginning at address 0x0000:0000 and 64KB
- * of SRAM beginning at 0x2000:0000.
+/* Use 128MiB of Flash for the expanded QEMU model while retaining the
+ * LM3S6965's 64KiB of SRAM beginning at address 0x2000:0000.
  */
 
 MEMORY
 {
-    flash (rx) : ORIGIN = 0x00000000, LENGTH = 256K
+    flash (rx) : ORIGIN = 0x00000000, LENGTH = 128M
     sram (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
 

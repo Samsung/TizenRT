@@ -14,7 +14,7 @@ Targets Supported:
 
   - 1MB RAM requirement which can be run on QEMU only with the [qemu-2.12.0-rc1_1m_ram_size.patch](https://github.com/Samsung/TizenRT/blob/master/build/configs/qemu/qemu-2.12.0-rc1_1m_ram_size.patch)
 
-  - 16MB RAM requirement which can be run on QEMU only with the [qemu-2.12.0-rc1_16m_ram_size.patch](https://github.com/Samsung/TizenRT/blob/master/build/configs/qemu/qemu-2.12.0-rc1_16m_ram_size.patch)
+  - 16MB RAM requirement which can be run on QEMU only with the [qemu-2.12.0-rc1_16m_ram_size.patch](https://github.com/Samsung/TizenRT/blob/master/build/configs/qemu/qemu-2.12.0-rc1_16m_ram_size.patch). This patch also provides 128 MiB writable Flash for the current configurations.
 
 ## Environment Set-up
 This section covers board-specific environment set-up.  
@@ -86,9 +86,6 @@ arm-none-eabi-gdb
 ## Configuration Sets
 ### tc_64k
 for running tc under 256KB flash and 64KB sram
-
-### tc_1m
-for running tc under 32MB flash and 1MB sram
 
 ### tc_16m
 for running tc under 128MB flash and 16MB sram
