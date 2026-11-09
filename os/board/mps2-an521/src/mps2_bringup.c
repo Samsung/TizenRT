@@ -68,7 +68,7 @@ static int mps2_bringup(void)
 {
 	int ret = 0;
 
-#ifdef CONFIG_FS_PROCFS
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 
 	/* Mount the procfs file system */
 
