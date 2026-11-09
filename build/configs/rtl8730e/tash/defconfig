@@ -1627,3 +1627,8 @@ CONFIG_BINMGR_UPDATE_SAME_VERSION=y
 # Security Framework
 #
 # CONFIG_SECURITY_API is not set
+#
+# TASH test / reboot utilities
+#
+CONFIG_EXAMPLES_MTDTEST=y
+CONFIG_TASH_REBOOT=y
