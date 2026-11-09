@@ -96,6 +96,7 @@
 #endif
 #ifdef CONFIG_BINARY_MANAGER
 #include "binary_manager/binary_manager_internal.h"
+#include <tinyara/reboot_reason.h>
 #endif
 #ifdef CONFIG_MESSAGING_IPC
 #include "messaging/message_ctrl.h"
@@ -247,7 +248,7 @@ static inline void os_workqueues(void)
 #endif							/* CONFIG_SCHED_WORKQUEUE */
 
 /****************************************************************************
- * Name: os_start_application
+ * Name: os_do_appstart
  *
  * Description:
  *   Execute the board initialization function (if so configured) and start
@@ -265,6 +266,9 @@ static inline void os_workqueues(void)
 static inline void os_do_appstart(void)
 {
 	int pid;
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_USE_BP)
+	int ret;
+#endif
 
 #ifdef CONFIG_SILENT_REBOOT
 	silent_reboot_initialize();
@@ -277,6 +281,13 @@ static inline void os_do_appstart(void)
 	 */
 
 	board_initialize();
+#endif
+
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_USE_BP)
+	ret = binary_manager_trial_boot_start();
+	if (ret != BINMGR_OK) {
+		bmdbg("Failed to start boot trial: %d\n", ret);
+	}
 #endif
 
 #ifdef CONFIG_SE
@@ -329,6 +340,16 @@ static inline void os_do_appstart(void)
 	pid = kernel_thread(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
 	if (pid < 0) {
 		sdbg("Failed to start log dump");
+	}
+#endif
+
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_USE_BP)
+	/* Use this point as the OS initialization checkpoint, before creating
+	 * appinit, the binary manager (which loads separated apps), or appmain.
+	 */
+	ret = binary_manager_trial_boot_confirm();
+	if (ret != BINMGR_OK) {
+		bmdbg("Failed to confirm boot trial: %d\n", ret);
 	}
 #endif
 

@@ -81,6 +81,8 @@
 #define BOOTPARAM_FORMAT_VERSION_1       1
 #define BOOTPARAM_FORMAT_VERSION_2       2
 #define BOOTPARAM_FORMAT_VERSION_LATEST  BOOTPARAM_FORMAT_VERSION_2
+#define BOOTPARAM_TRIAL_MAX              5
+#define BOOTPARAM_TRIAL_UNINITIALIZED    0xff
 
 #define CHECKSUM_SIZE              4
 
@@ -197,9 +199,9 @@ enum bp_update_reason_e {
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_USER = 10,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE = 11,
 	BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT = 12,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 13,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 14,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_3 = 15,
+	BP_UPDATE_BINARY_MANAGER_ROLLBACK = 13,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 14,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 15,
 	BP_UPDATE_UNKNOWN = 16
 };
 
@@ -222,7 +224,11 @@ typedef struct binmgr_bpdata_head_s binmgr_bpdata_head_t;
 
 /* Boot parameter tail data, stored at the end of each BP. */
 struct binmgr_bpdata_tail_s {
-	/* future field should be added here */
+	/* Offset 4094: 0 means no active trial; an update sets 1. Trial start
+	 * saves 2..6 before continuing each of the five initialization attempts.
+	 */
+	uint8_t try_count;
+	/* Keep the existing reason at offset 4095 for the unchanged bootloader. */
 	uint8_t bp_update_reason;						/* Added on format version 2 */
 } __attribute__((__packed__));
 typedef struct binmgr_bpdata_tail_s binmgr_bpdata_tail_t;
@@ -236,6 +242,7 @@ typedef struct binmgr_bpdata_s binmgr_bpdata_t;
 
 /* Compile-time assertion: serialized head and tail must fit in one BP. */
 static_assert(sizeof(binmgr_bpdata_t) <= BOOTPARAM_SIZE, "binmgr_bpdata_t size exceeds BOOTPARAM_SIZE");
+static_assert(sizeof(binmgr_bpdata_tail_t) == 2, "BP tail must contain only try_count and bp_update_reason");
 
 struct binmgr_bpinfo_s {
 	uint8_t inuse_idx;
@@ -342,13 +349,18 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
-void binary_manager_dump_bpdata(void);
+void binary_manager_dump_all_bpdata(void);
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
+int binary_manager_update_bpinfo(void);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
 binmgr_bpdata_t *binary_manager_get_slot_bpdata(uint8_t bp_idx);
 bool binary_manager_get_slot_bpvalid(uint8_t bp_idx);
 int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data);
 int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data);
+int binary_manager_commit_bootparam(binmgr_bpdata_t *bp_data);
+int binary_manager_trial_rollback(binmgr_bpdata_t *bp_data);
+int binary_manager_trial_boot_start(void);
+int binary_manager_trial_boot_confirm(void);
 int binary_manager_get_inactive_path(int requester_pid, char *bin_name);
 void binary_manager_update_bootparam(int requester_pid, uint8_t type);
 void binary_manager_reset_board(int reboot_reason);

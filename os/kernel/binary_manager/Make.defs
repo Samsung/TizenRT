@@ -24,7 +24,7 @@ CSRCS += binary_manager.c binary_manager_getinfo.c binary_manager_response.c
 CSRCS += binary_manager_data.c binary_manager_verify.c
 
 ifeq ($(CONFIG_USE_BP),y)
-CSRCS += binary_manager_bootparam.c
+CSRCS += binary_manager_bootparam.c binary_manager_boot_trial.c
 endif
 
 ifeq ($(CONFIG_RESOURCE_FS),y)
