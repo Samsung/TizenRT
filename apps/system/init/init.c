@@ -45,7 +45,7 @@
 #ifdef CONFIG_PREFERENCE
 #include <tinyara/preference.h>
 #endif
-#ifdef CONFIG_HAVE_CXXINITIALIZE
+#if defined(CONFIG_HAVE_CXXINITIALIZE) && CONFIG_LIBC_MAX_EXITFUNS > 0
 #include <semaphore.h>
 #include <errno.h>
 #endif
@@ -115,11 +115,9 @@ int preapp_start(int argc, char *argv[])
 	int ret;
 #endif
 
-#ifdef CONFIG_HAVE_CXXINITIALIZE
+#if defined(CONFIG_HAVE_CXXINITIALIZE) && CONFIG_LIBC_MAX_EXITFUNS > 0
 	sem_t	sem;
 	sem_init(&sem, 0, 0);
-
-	up_cxxinitialize();
 #endif
 #ifdef CONFIG_LIBCXX_EXCEPTION
 	register_cxx_terminate_handler();
@@ -172,12 +170,18 @@ int preapp_start(int argc, char *argv[])
 #endif
 
 /***********************************************************************************
- *	current preapp_start does the up_cxxinitialize which initializes the
- *	static constructors. All the tasks and threads created by preapp refer to
- *	these constructors. To make sure that c++ test cases from tash runs properly,
- *	we need to keep preapp/constructor initializations alive with below changes.
+ *	the task startup runs the static constructors in the context of
+ *	preapp_start before this entry point (lib_cxx_initialize() of
+ *	nxtask_startup(), crt0 in the kernel build), and __cxa_atexit()
+ *	registers their destructors as the exit functions of this task.
+ *	Unlike nsh_main of NuttX, which runs the shell loop in the init task
+ *	and never returns, preapp_start starts tash as another task and
+ *	returns, and exit() would then destroy the static objects that tash
+ *	and the other tasks still use. So keep preapp_start alive. Without
+ *	exit functions (CONFIG_LIBC_MAX_EXITFUNS=0) no destructor is registered
+ *	and preapp_start returns.
  **********************************************************************************/
-#ifdef CONFIG_HAVE_CXXINITIALIZE
+#if defined(CONFIG_HAVE_CXXINITIALIZE) && CONFIG_LIBC_MAX_EXITFUNS > 0
 	while (sem_wait(&sem) != 0) {
 		/* The only case that an error should occur here is if the wait was
 		 * awakened by a signal.

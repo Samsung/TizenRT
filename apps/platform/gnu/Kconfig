@@ -11,5 +11,5 @@ config HAVE_CXXINITIALIZE
 	---help---
 		The platform-specific logic includes support for initialization
 		of static C++ instances for this architecture and for the selected
-		toolchain (via up_cxxinitialize()).
+		toolchain.
 
