@@ -1315,7 +1315,7 @@ void *up_get_console_dev(void)
  *   None
  *
  ****************************************************************************/
-void up_lowputc(int ch)
+static void amebasmart_lowputc_raw(int ch)
 {
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
 	u32 CounterIndex = 0;
@@ -1332,6 +1332,25 @@ void up_lowputc(int ch)
 		return;
 	rtl8730e_up_send(&CONSOLE_DEV, ch);
 #endif
+}
+
+void up_lowputc(int ch)
+{
+	/* The low-level console stream (lowsyslog()/lib_lowoutstream)
+	 * writes bare '\n' straight through this path.  NuttX injects
+	 * CR before LF only in the buffered syslog channel
+	 * (CONFIG_SYSLOG_CRLF, see drivers/syslog/syslog_write.c), so
+	 * without a CR here every low-console line starts at the column
+	 * where the previous line ended (staircase output, and long
+	 * lines pushed off the terminal edge).  Emit the CR here.
+	 * Callers that already send CRLF (direct syslog via up_putc)
+	 * produce "\r\r\n", which terminals render as a plain newline.
+	 */
+	if (ch == '\n') {
+		amebasmart_lowputc_raw('\r');
+	}
+
+	amebasmart_lowputc_raw(ch);
 }
 
 /****************************************************************************
