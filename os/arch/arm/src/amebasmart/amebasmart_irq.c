@@ -30,6 +30,7 @@
 
 #include "arm_internal.h"
 #include "arm_cpupause.h"
+#include "amebasmart_enablesmp.h"
 #include "sctlr.h"
 #include "gic.h"
 
@@ -160,6 +161,14 @@ void up_irqinitialize(void)
   DEBUGASSERT((((uintptr_t)_vector_start) & ~VBAR_MASK) == 0);
   cp15_wrvbar((uint32_t)_vector_start);
 #endif /* CONFIG_ARCH_LOWVECTORS */
+
+  /* Enable the generic timer event stream for this CPU: every WFE in
+   * the kernel (spin_lock_notrace wait, CPU pause stage-5 wait) then
+   * wakes within a bounded time even if an SEV is lost.  Runs after
+   * the GIC and VBAR are set up and attaches the pause SGI handler.
+   */
+
+  amebasmart_enable_evtstrm((int)up_cpu_index());
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 
