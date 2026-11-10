@@ -42,5 +42,18 @@
 void amebasmart_enable_smp(int cpu);
 #endif
 
+/****************************************************************************
+ * Name: amebasmart_enable_evtstrm
+ *
+ * Description:
+ *   Enable the generic timer event stream on the current CPU so that
+ *   every WFE (spin_lock_notrace wait, CPU pause stage-5 wait) is
+ *   guaranteed to wake within a bounded time even if an SEV is lost.
+ *   Called once per CPU from up_irqinitialize().
+ *
+ ****************************************************************************/
+
+void amebasmart_enable_evtstrm(int cpu);
+
 #endif /* __ASSEMBLY__ */
 #endif /* __ARCH_ARM_SRC_AMEBASMART_AMEBASMART_ENABLESMP_H */
