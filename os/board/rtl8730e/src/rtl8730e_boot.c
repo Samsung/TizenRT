@@ -335,21 +335,8 @@ void amebasmart_mount_partitions(void)
 #endif
 #endif /* end of CONFIG_SECOND_FLASH_PARTITION */
 
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_USE_BP)
-	ret = binary_manager_check_bootparam_set();
-	if (ret != OK) {
-		ret = binary_manager_recover_bootparam_set();
-		if (ret != OK) {
-			lldbg("ERROR: Failed to recover bootparam set mismatch, ret %d\n", ret);
-			return;
-		}
-	}
-#endif
-
-#ifdef CONFIG_RESOURCE_FS
-	if (binary_manager_mount_resource() != OK) {
-		lldbg("ERROR: Failed to mount resource\n");
-	}
+#ifdef CONFIG_BINARY_MANAGER
+	binary_manager_early_initialize();
 #endif
 }
 

@@ -307,6 +307,7 @@ void binary_manager_register_kpart(int part_num, int part_size, uint32_t part_ad
 void binary_manager_register_bppart(int part_num, int part_size);
 void binary_manager_register_upart(char *name, int part_num, int part_size, uint32_t part_addr);
 void binary_manager_register_respart(int part_num, int part_size, uint32_t part_addr);
+void binary_manager_early_initialize(void);
 int binary_manager_mount_resource(void);
 #ifdef CONFIG_USE_BP
 int binary_manager_check_bootparam_set(void);
