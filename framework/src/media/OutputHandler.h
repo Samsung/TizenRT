@@ -24,6 +24,7 @@
 
 #include "StreamHandler.h"
 #include "Encoder.h"
+#include "Resampler.h"
 
 namespace media {
 class MediaRecorderImpl;
@@ -36,6 +37,7 @@ public:
 	ssize_t write(unsigned char *buf, size_t size);
 	bool stop() override;
 	void flush();
+	bool startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t outputPeriodBytes);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;
@@ -63,6 +65,9 @@ private:
 	std::condition_variable mFlushCondv;
 
 	std::weak_ptr<MediaRecorderImpl> mRecorder;
+	std::unique_ptr<unsigned char[]> mResampleBuffer;
+	size_t mResampleBufferSize;
+	std::unique_ptr<Resampler> mResampler;
 };
 } // namespace stream
 } // namespace media

@@ -1440,16 +1440,18 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
 	return ret;
 }
 
-void mergeChannel(void *dataL, void *dataR, unsigned int frames)
+void mergeChannel(void *dataL, unsigned int *framesL, void *dataR, unsigned int *framesR)
 {
 	int16_t *main = (int16_t *)dataL;
 	int16_t *sub = (int16_t *)dataR;
+	unsigned int maxFrames = (*framesL > *framesR) ? *framesL : *framesR;
 
-	for(int32_t i = frames - 1; i >= 0; i--)
+	for(int32_t i = (int32_t)maxFrames - 1; i >= 0; i--)
 	{
-		main[2 * i] = main[i];
-		main[2 * i + 1] = sub[i];
+		main[2 * i] = ((unsigned int)i < *framesL) ? main[i] : 0;
+		main[2 * i + 1] = ((unsigned int)i < *framesR) ? sub[i] : 0;
 	}
+	*framesL = maxFrames;
 }
 
 float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *index, ...)

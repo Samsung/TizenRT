@@ -41,6 +41,7 @@ public:
 	virtual bool close();
 	virtual bool start();
 	virtual bool stop();
+	virtual bool prepare(size_t buffSize);
 
 	std::shared_ptr<DataSource> getDataSource()
 	{
