@@ -60,7 +60,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mount.h>
-
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 #include <tinyara/fs/mksmartfs.h>
 #include <tinyara/board.h>
 #ifdef CONFIG_FLASH_PARTITION
@@ -256,6 +258,10 @@ void armino_mount_partitions(void)
 
 #ifdef CONFIG_AUTOMOUNT
 	automount_fs_partition(&partinfo);
+#endif
+
+#ifdef CONFIG_BINARY_MANAGER
+	binary_manager_early_initialize();
 #endif
 
 #endif /* CONFIG_FLASH_PARTITION */
