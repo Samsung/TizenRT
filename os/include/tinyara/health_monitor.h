@@ -32,7 +32,6 @@
  ****************************************************************************/
 
 #define HEALTH_MONITOR_DEVPATH        "/dev/health_monitor"
-#define HEALTH_MONITOR_MIN_TIMEOUT_MS 1U
 
 /****************************************************************************
  * Public Types

@@ -18,7 +18,11 @@
 
 ifeq ($(CONFIG_HEALTH_MONITOR),y)
 
-CSRCS += health_monitor.c
+CSRCS += health_monitor_min_heap.c health_monitor_fail.c
+CSRCS += health_monitor_get_next_check_time.c
+CSRCS += health_monitor_init_task.c health_monitor_deinit_task.c
+CSRCS += health_monitor_start.c health_monitor_kick.c health_monitor_stop.c
+CSRCS += health_monitor_initialize.c health_monitor_timer.c
 
 DEPPATH += --dep-path health_monitor
 VPATH += :health_monitor

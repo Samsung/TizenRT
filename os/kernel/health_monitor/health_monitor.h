@@ -24,12 +24,14 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <tinyara/compiler.h>
 #include <tinyara/health_monitor.h>
 #include <tinyara/sched.h>
+#include <tinyara/spinlock.h>
 
 #ifdef CONFIG_HEALTH_MONITOR
 
@@ -69,15 +71,113 @@ struct health_monitor_failure_s {
 };
 
 /****************************************************************************
- * Public Function Prototypes
+ * Public Variables
  ****************************************************************************/
 
-bool health_monitor_is_tick_before(clock_t lhs, clock_t rhs);
+extern struct tcb_s *g_health_heap[HEALTH_MONITOR_HEAP_CAPACITY];
+extern uint32_t g_health_count;
+extern volatile uint32_t g_health_sequence;
+extern volatile uint32_t g_health_next_count;
+extern volatile clock_t g_health_next_tick;
+extern spinlock_t g_health_lock;
+extern bool g_health_watchdog_started;
+
+/****************************************************************************
+ * Inline Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: health_monitor_get_state
+ *
+ * Description:
+ *   Return the health monitor state embedded in a TCB.
+ *
+ * Inputs:
+ *   tcb - Target TCB.
+ *
+ * Return Value:
+ *   Pointer to the TCB's health monitor state.
+ *
+ * Assumptions:
+ *   Caller must protect TCB lifetime and serialize access to its state.
+ *
+ ****************************************************************************/
+
+static inline struct health_monitor_s *health_monitor_get_state(struct tcb_s *tcb)
+{
+	DEBUGASSERT(tcb != NULL);
+	return &tcb->health_monitor;
+}
+
+/****************************************************************************
+ * Name: health_monitor_earlier
+ *
+ * Description:
+ *   Return whether lhs is an earlier deadline than rhs relative to now.
+ *
+ * Inputs:
+ *   lhs  - First deadline tick.
+ *   rhs  - Second deadline tick.
+ *   now  - Reference tick for comparison.
+ *
+ * Return Value:
+ *   True if lhs is earlier than rhs; false otherwise.
+ *
+ * Assumptions:
+ *   Ticks must be within the supported half-range of now.
+ *
+ ****************************************************************************/
+
+static inline bool health_monitor_earlier(clock_t lhs, clock_t rhs, clock_t now)
+{
+#ifdef CONFIG_SYSTEM_TIME64
+	return (int64_t)(lhs - now) < (int64_t)(rhs - now);
+#else
+	return (int32_t)(lhs - now) < (int32_t)(rhs - now);
+#endif
+}
+
+/****************************************************************************
+ * Name: health_monitor_is_tick_before
+ *
+ * Description:
+ *   Return whether lhs tick is before rhs tick.
+ *
+ * Inputs:
+ *   lhs - First tick.
+ *   rhs - Second tick.
+ *
+ * Return Value:
+ *   True if lhs is before rhs; false otherwise.
+ *
+ * Assumptions:
+ *   Separation must be less than half the clock range.
+ *
+ ****************************************************************************/
+
+static inline bool health_monitor_is_tick_before(clock_t lhs, clock_t rhs)
+{
+#ifdef CONFIG_SYSTEM_TIME64
+	return (int64_t)(lhs - rhs) < 0;
+#else
+	return (int32_t)(lhs - rhs) < 0;
+#endif
+}
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 void health_monitor_timer(void);
 int health_monitor_get_next_check_time(clock_t *check_at);
 void health_monitor_init_task(struct tcb_s *tcb);
 void health_monitor_deinit_task(struct tcb_s *tcb);
+
+void health_monitor_snapshot(struct tcb_s *tcb, struct health_monitor_snapshot_s *info);
+void health_monitor_fail(const struct health_monitor_failure_s *failure);
+void health_monitor_publish(void);
+void health_monitor_sift_up(uint32_t index, clock_t now);
+void health_monitor_sift_down(uint32_t index, clock_t now);
 
 #endif /* CONFIG_HEALTH_MONITOR */
 #endif /* __KERNEL_HEALTH_MONITOR_H */
