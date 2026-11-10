@@ -115,6 +115,43 @@ _SPLICE_RE = re.compile(r'\\[ \t\r]*\n')
 _NUM_RE = re.compile(r'\.?\d[\w.]*(?:[eEpP][+-][\w.]*)?')
 
 
+def _directive_end(text, i):
+    """End of the preprocessor directive starting at text[i].  It ends
+    at the first newline that is neither escaped by a backslash nor
+    inside a block comment: comments are replaced before directives are
+    processed (C translation phase 3), so a comment opened on the
+    directive line continues the directive until it is closed."""
+    n = len(text)
+    j = i
+    while j < n:
+        c = text[j]
+        if c == '\n':
+            if text[i:j].rstrip(' \t\r').endswith('\\'):
+                i = j + 1                   # line splice
+                j += 1
+                continue
+            return j
+        if text.startswith('/*', j):
+            k = text.find('*/', j + 2)
+            if k == -1:
+                return n
+            j = k + 2
+        elif text.startswith('//', j):
+            k = text.find('\n', j)
+            j = n if k == -1 else k
+        elif c == '"' or c == "'":
+            j += 1
+            while j < n and text[j] != c and text[j] != '\n':
+                if text[j] == '\\':
+                    j += 1
+                j += 1
+            if j < n and text[j] == c:
+                j += 1
+        else:
+            j += 1
+    return n
+
+
 def tokenize(text):
     """Split *text* into tokens.  Every token remembers how many
     newlines preceded it, the blanks right before it and the
@@ -154,18 +191,7 @@ def tokenize(text):
         if line_start:
             lead = ws
         if line_start and c == '#':
-            j = i
-            while True:
-                k = text.find('\n', j)
-                if k == -1:
-                    j = n
-                    break
-                if text[j:k].rstrip(' \t\r').endswith('\\'):
-                    j = k + 1
-                else:
-                    j = k
-                    break
-            kind, end = 'PREPROC', j
+            kind, end = 'PREPROC', _directive_end(text, i)
         elif text.startswith('/*', i):
             j = text.find('*/', i + 2)
             kind, end = 'COMMENT', n if j == -1 else j + 2
