@@ -20,6 +20,7 @@
 #include <debug.h>
 #include <functional>
 #include <algorithm>
+#include <semaphore.h>
 
 #include "SoftwareKeywordDetector.h"
 #include "SoftwareEndPointDetector.h"
@@ -73,12 +74,12 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 	int sd_card = INVALID_HW_NUMBER;
 	int sd_device = INVALID_HW_NUMBER;
 
-	audio_manager_result_t result = find_stream_in_device_with_process_type(
+	audio_manager_result_t audioResult = find_stream_in_device_with_process_type(
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_KD,
 		&sd_card, &sd_device);
 
-	if (result == AUDIO_MANAGER_SUCCESS) {
+	if (audioResult == AUDIO_MANAGER_SUCCESS) {
 		medvdbg("KeywordDetector : card_id : %d device_id %d\n", sd_card, sd_device);
 		/* TODO : find AUDIO_DEVICE_PROCESS_TYPE_NONE type card, device id.
 				  currently set 0, 0 */
@@ -88,7 +89,7 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 			return false;
 		}
 	} else {
-		meddbg("Error: find_stream_in_device_with_process_type failed!, error: %d\n", result);
+		meddbg("Error: find_stream_in_device_with_process_type failed!, error: %d\n", audioResult);
 		return false;
 	}
 #elif defined(CONFIG_MEDIA_SOFTWARE_KD)
@@ -101,15 +102,37 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 #endif
 	SpeechDetectorWorker& sdw = SpeechDetectorWorker::getWorker();
 	sdw.startWorker();
-	sdw.setKeywordDetector(mKeywordDetector);
+
+	auto keywordDetector = mKeywordDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		mKeywordDetector = nullptr;
+		return false;
+	}
+	sdw.enQueue([keywordDetector, samprate, channels, &sdw, &result, &syncSem]() {
+		result = keywordDetector->init(samprate, channels);
+		if (result) {
+			sdw.setKeywordDetector(keywordDetector);
+			keywordDetector->registerKeywordResultCallback(SpeechDetectorImpl::speechResultListener);
+		}
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
+	if (!result) {
+		mKeywordDetector = nullptr;
+		sdw.stopWorker();
+		meddbg("Speech detector init KD failed");
+		return false;
+	}
+	medvdbg("Speech detector init KD successful");
 
 	SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
 	sdlw.startWorker();
 
-	sdw.enQueue(&KeywordDetector::init, mKeywordDetector, samprate, channels);
-	sdw.enQueue(&KeywordDetector::registerKeywordResultCallback, mKeywordDetector, speechResultListener);
-
-	medvdbg("Speech detector init KD successful");
 	return true;
 }
 
@@ -123,12 +146,12 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 	int sd_card = INVALID_HW_NUMBER;
 	int sd_device = INVALID_HW_NUMBER;
 
-	audio_manager_result_t result = find_stream_in_device_with_process_type(
+	audio_manager_result_t audioResult = find_stream_in_device_with_process_type(
 		AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR,
 		AUDIO_DEVICE_SPEECH_DETECT_EPD,
 		&sd_card, &sd_device);
 
-	if (result == AUDIO_MANAGER_SUCCESS) {
+	if (audioResult == AUDIO_MANAGER_SUCCESS) {
 		medvdbg("EndPointDetector : card_id : %d device_id %d\n", sd_card, sd_device);
 		/* TODO : find AUDIO_DEVICE_PROCESS_TYPE_NONE type card, device id.
 				  currently set 0, 0 */
@@ -138,7 +161,7 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 			return false;
 		}
 	} else {
-		meddbg("Error: find_stream_in_device_with_process_type failed!, error: %d\n", result);
+		meddbg("Error: find_stream_in_device_with_process_type failed!, error: %d\n", audioResult);
 		return false;
 	}
 #elif defined(CONFIG_MEDIA_SOFTWARE_EPD)
@@ -151,12 +174,33 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 #endif
 	SpeechDetectorWorker& sdw = SpeechDetectorWorker::getWorker();
 	sdw.startWorker();
+	auto endPointDetector = mEndPointDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		mEndPointDetector = nullptr;
+		return false;
+	}
+	sdw.enQueue([endPointDetector, samprate, channels, &result, &syncSem]() {
+		result = endPointDetector->init(samprate, channels);
+		if (result) {
+			endPointDetector->registerEPDResultListener(SpeechDetectorImpl::speechResultListener);
+		}
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
+	if (!result) {
+		mEndPointDetector = nullptr;
+		sdw.stopWorker();
+		meddbg("Speech detector init EPD failed");
+		return false;
+	}
 
 	SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
 	sdlw.startWorker();
-
-	sdw.enQueue(&EndPointDetector::init, mEndPointDetector, samprate, channels);
-	sdw.enQueue(&EndPointDetector::registerEPDResultListener, mEndPointDetector, speechResultListener);
 
 	medvdbg("Speech detector init EPD successful");
 	return true;
@@ -164,30 +208,67 @@ bool SpeechDetectorImpl::initEndPointDetect(uint32_t samprate, uint8_t channels)
 
 bool SpeechDetectorImpl::deinitKeywordDetect()
 {
-	if (mKeywordDetector) {
-		SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-		sdw.enQueue(&KeywordDetector::deinit, mKeywordDetector);
-		mKeywordDetector = nullptr;
-		meddbg("Speech detector deinit KD done");
-		return true;
-	} else {
+	if (!mKeywordDetector) {
 		meddbg("Nothing to deinit\n");
 		return false;
 	}
+	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	auto keywordDetector = mKeywordDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([keywordDetector, &sdw, &result, &syncSem]() {
+		sdw.setKeywordDetector(nullptr);
+		keywordDetector->deinit();
+		result = true;
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
+	if (result) {
+		mKeywordDetector = nullptr;
+		sdw.stopWorker();
+		SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
+		sdlw.stopWorker();
+		meddbg("Speech detector deinit KD done");
+	}
+	return result;
 }
 
 bool SpeechDetectorImpl::deinitEndPointDetect()
 {
-	if (mEndPointDetector) {
-		SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-		sdw.enQueue(&EndPointDetector::deinit, mEndPointDetector);
-		sdw.enQueue(&SpeechDetectorImpl::resetEndPointDetectorPtr, this);
-		medvdbg("Speech detector deinit EPD done");
-		return true;
-	} else {
+	if (!mEndPointDetector) {
 		meddbg("Nothing to deinit\n");
 		return false;
 	}
+	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	auto endPointDetector = mEndPointDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([endPointDetector, &result, &syncSem]() {
+		endPointDetector->deinit();
+		result = true;
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
+	if (result) {
+		mEndPointDetector = nullptr;
+		sdw.stopWorker();
+		SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
+		sdlw.stopWorker();
+		medvdbg("Speech detector deinit EPD done");
+	}
+	return result;
 }
 
 bool SpeechDetectorImpl::startKeywordDetect(void)
@@ -196,38 +277,73 @@ bool SpeechDetectorImpl::startKeywordDetect(void)
 		meddbg("KeywordDetector is not init\n");
 		return false;
 	}
-
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue(&KeywordDetector::startKeywordDetect, mKeywordDetector);
-
+	auto keywordDetector = mKeywordDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([keywordDetector, &result, &syncSem]() {
+		result = keywordDetector->startKeywordDetect();
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector start KD done");
-	return true;
+	return result;
 }
 
-bool SpeechDetectorImpl::setKDSensitivity(uint16_t sensitivity){
+bool SpeechDetectorImpl::setKDSensitivity(uint16_t sensitivity)
+{
 	if (mKeywordDetector == nullptr) {
 		meddbg("KeywordDetector is not init\n");
 		return false;
 	}
-
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue(&KeywordDetector::setKDSensitivity, mKeywordDetector, sensitivity);
-
+	auto keywordDetector = mKeywordDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([keywordDetector, sensitivity, &result, &syncSem]() {
+		result = keywordDetector->setKDSensitivity(sensitivity);
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector set KDSensitivity done");
-	return true;
+	return result;
 }
 
-bool SpeechDetectorImpl::getKDSensitivity(uint16_t *sensitivity){
-	if (mKeywordDetector == nullptr) {
-		meddbg("KeywordDetector is not init\n");
+bool SpeechDetectorImpl::getKDSensitivity(uint16_t *sensitivity)
+{
+	if (mKeywordDetector == nullptr || sensitivity == nullptr) {
+		meddbg("KeywordDetector is not init or sensitivity is nullptr\n");
 		return false;
 	}
-
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue(&KeywordDetector::getKDSensitivity, mKeywordDetector, sensitivity);
-
+	auto keywordDetector = mKeywordDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([keywordDetector, sensitivity, &result, &syncSem]() {
+		result = keywordDetector->getKDSensitivity(sensitivity);
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector get KDSensitivity done");
-	return true;
+	return result;
 }
 
 bool SpeechDetectorImpl::startEndPointDetect(int timeout)
@@ -236,12 +352,10 @@ bool SpeechDetectorImpl::startEndPointDetect(int timeout)
 		meddbg("EndPointDetector is not init\n");
 		return false;
 	}
-
-	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue([this, timeout]() { mEndPointDetector->startEndPointDetect(timeout); });
-
+	auto endPointDetector = mEndPointDetector;
+	bool result = endPointDetector->startEndPointDetect(timeout);
 	medvdbg("Speech detector start EPD done with %d sec timeout", timeout);
-	return true;
+	return result;
 }
 
 bool SpeechDetectorImpl::startEndPointDetect(void)
@@ -250,12 +364,23 @@ bool SpeechDetectorImpl::startEndPointDetect(void)
 		meddbg("EndPointDetector is not init\n");
 		return false;
 	}
-
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue([this]() { mEndPointDetector->startEndPointDetect(); });
-
+	auto endPointDetector = mEndPointDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([endPointDetector, &result, &syncSem]() {
+		result = endPointDetector->startEndPointDetect();
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector start EPD done");
-	return true;
+	return result;
 }
 
 bool SpeechDetectorImpl::detectEndPoint(std::shared_ptr<unsigned char> sample, int size)
@@ -264,19 +389,27 @@ bool SpeechDetectorImpl::detectEndPoint(std::shared_ptr<unsigned char> sample, i
 		meddbg("EndPointDetector is not init\n");
 		return false;
 	}
-
 	if (sample == nullptr) {
 		meddbg("parameter sample is nullptr\n");
 		return false;
 	}
-
-	if (mEndPointDetector->getEPDState() == EPD_STATE_IN_PROGRESS) {
-		SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-		sdw.enQueue([this, sample, size]() { mEndPointDetector->detectEndPoint(sample, size); });
+	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	auto endPointDetector = mEndPointDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
 	}
-
+	sdw.enQueue([endPointDetector, sample, size, &result, &syncSem]() {
+		result = endPointDetector->detectEndPoint(sample, size);
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector detect EPD done for sample size of %d bytes", size);
-	return true;
+	return result;
 }
 
 bool SpeechDetectorImpl::detectEndPoint(void)
@@ -285,14 +418,23 @@ bool SpeechDetectorImpl::detectEndPoint(void)
 		meddbg("EndPointDetector is not init\n");
 		return false;
 	}
-
-	if (mEndPointDetector->getEPDState() == EPD_STATE_IN_PROGRESS) {
-		SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-		sdw.enQueue([this]() { mEndPointDetector->detectEndPoint(); });
+	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	auto endPointDetector = mEndPointDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
 	}
-
+	sdw.enQueue([endPointDetector, &result, &syncSem]() {
+		result = endPointDetector->detectEndPoint();
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector detect EPD done");
-	return true;
+	return result;
 }
 
 bool SpeechDetectorImpl::waitEndPoint(int timeout)
@@ -301,12 +443,10 @@ bool SpeechDetectorImpl::waitEndPoint(int timeout)
 		meddbg("EndPointDetector is not init\n");
 		return false;
 	}
-
-	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue(&EndPointDetector::waitEndPoint, mEndPointDetector, timeout);
-
+	auto endPointDetector = mEndPointDetector;
+	bool result = endPointDetector->waitEndPoint(timeout);
 	medvdbg("Speech detector wait EPD done");
-	return true;
+	return result;
 }
 
 void SpeechDetectorImpl::addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
@@ -391,12 +531,23 @@ bool SpeechDetectorImpl::stopKeywordDetect(void)
 		meddbg("KeywordDetector is not init\n");
 		return false;
 	}
-
 	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.enQueue(&KeywordDetector::stopKeywordDetect, mKeywordDetector);
-
+	auto keywordDetector = mKeywordDetector;
+	bool result = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+	if (!sdw.isAlive()) {
+		sem_destroy(&syncSem);
+		return false;
+	}
+	sdw.enQueue([keywordDetector, &result, &syncSem]() {
+		result = keywordDetector->stopKeywordDetect();
+		sem_post(&syncSem);
+	});
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	medvdbg("Speech detector stop KD done");
-	return true;
+	return result;
 }
 
 bool SpeechDetectorImpl::stopEndPointDetect(void)
@@ -405,16 +556,13 @@ bool SpeechDetectorImpl::stopEndPointDetect(void)
 		meddbg("EndPointDetector is not init\n");
 		return false;
 	}
-	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
-	sdw.clearQueue();
-	SpeechDetectorListenerWorker &sdlw = SpeechDetectorListenerWorker::getWorker();
-	sdlw.clearQueue();
-	bool result = mEndPointDetector->stopEndPointDetect();
+	auto endPointDetector = mEndPointDetector;
+	bool result = endPointDetector->stopEndPointDetect();
 	if (!result) {
 		meddbg("Speech detector stop EPD failed");
 	}
 	medvdbg("Speech detector stop EPD done");
-	return true;
+	return result;
 }
 
 void SpeechDetectorImpl::resetEndPointDetectorPtr(void)

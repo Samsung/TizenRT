@@ -92,6 +92,12 @@ void SoftwareEndPointDetector::deinit()
 	medvdbg("Software EPD deinit done");
 }
 
+bool SoftwareEndPointDetector::startEndPointDetect(int timeout)
+{
+	meddbg("startEndPointDetect with timeout is not supported in Software EPD, timeout: %d\n", timeout);
+	return false;
+}
+
 bool SoftwareEndPointDetector::startEndPointDetect(void)
 {
 	std::unique_lock<std::mutex> lock(mCmdMtx);
@@ -130,6 +136,7 @@ bool SoftwareEndPointDetector::stopEndPointDetect(void)
 
 bool SoftwareEndPointDetector::waitEndPoint(int timeout)
 {
+	meddbg("waitEndPoint is not supported in Software EPD, timeout: %d\n", timeout);
 	return false;
 }
 
