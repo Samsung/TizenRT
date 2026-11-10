@@ -259,11 +259,64 @@ config WDOG_INTRESERVE
 		by interrupt handler.  This setting determines that number of
 		reserved watchdogs.
 
+config WDOG_MMU_PROTECT
+	bool "Watchdog MMU page protection"
+	default n
+	depends on ARCH_USE_MMU
+	---help---
+		Enable MMU page-level protection for watchdog static memory.
+		All watchdog static data (g_wdfreelist, g_wdactivelist, g_wdnfree,
+		and g_wdpool[]) is packed into a single page-aligned 4KB page.
+		After initialization, the page is set to Read-Only.  Any wild
+		pointer write from non-wdog code triggers an immediate Data Abort
+		at the corrupting instruction.
+
+		Wdog code temporarily restores Read-Write permission before
+		modifying its data, then re-protects the page.  A nesting counter
+		handles reentrant calls (e.g. wd_timer -> callback -> wd_start).
+
+		This provides early detection of memory corruption affecting the
+		watchdog subsystem.
+
+		SMP support: The DACR (Domain Access Control Register) is per-CPU.
+		The read-modify-write on DACR uses an atomic ldrex/strex loop on
+		a shared shadow variable to prevent cross-core race conditions
+		that could clobber domain 0 (kernel text) and cause Prefetch Abort.
+		Enable CONFIG_WDOG_MMU_DACR_DEBUG for runtime DACR corruption alerts.
+
+config WDOG_MMU_DACR_DEBUG
+	bool "Watchdog MMU DACR debug logging"
+	default n
+	depends on WDOG_MMU_PROTECT
+	---help---
+		Enable debug logging for DACR (Domain Access Control Register)
+		modifications in the watchdog MMU protection code. When enabled,
+		an alert is printed if domain 0 (kernel text) is ever clobbered
+		to No-Access during wd_mmu_write_begin()/wd_mmu_write_end().
+
+		This helps diagnose SMP Prefetch Abort crashes caused by DACR
+		corruption.
+
+config WDOG_MMU_SCENARIO_TEST
+	bool "Watchdog MMU test cases (defect + scenario)"
+	default n
+	depends on WDOG_MMU_PROTECT
+	---help---
+		Enables all watchdog MMU test cases:
+		- 8 defect reproduction tests (SMP, DSB, DACR clobber, heap
+		  overlap, wd_recover, abort handler, boot order, section size)
+		- 6 scenario tests (normal op, multi-expire, SMP concurrent,
+		  SMP tick callback, nesting stress, long run)
+
+		All test code is compiled in only when this option is enabled.
+		When disabled, zero code is added.
+
 config PREALLOC_TIMERS
 	int "Number of pre-allocated POSIX timers"
 	default 8 if !DISABLE_POSIX_TIMERS
 	default 0 if DISABLE_POSIX_TIMERS
 	---help---
+
 		The number of pre-allocated POSIX timer structures.  The system manages a
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
 		zero for all dynamic allocations.
