@@ -17,9 +17,100 @@
 
 #include "ameba_soc.h"
 #include <arch/barriers.h>
+#include <arch/irq.h>
+#include <debug.h>
+#include <assert.h>
 
 FLASH_InitTypeDef flash_init_para;
 static uint32_t PrevIrqStatus;
+
+/* Flash write-gate diagnostics: the KM4/NP handshake of
+ * FLASH_Write_Lock() and the SPIC/flash busy waits used to be
+ * unbounded.  They run with interrupts masked and the peer core
+ * paused, so a missed NP acknowledge (IPC channel not up yet during
+ * boot, KM4 not servicing the channel) or a flash that never leaves
+ * busy wedges the AP in total silence.  Bound every one of them and
+ * report through the assert machinery; the bound is far above the
+ * longest legitimate wait (sector erase is in the 100ms range).
+ */
+
+#define FLASHGATE_SPIN_LIMIT   0x04000000
+
+/* Latched fault code / offending register value of a bounded wait
+ * that ran out inside the user-mode window: such a wait cannot
+ * report inline (the flash may be stuck busy and the SPIC owned by
+ * user mode), so it is reported from FLASH_Write_Unlock() once the
+ * window is closed.
+ */
+static volatile u8 g_flash_busy_timeout;
+static volatile u32 g_flash_busy_timeout_val;
+
+/* Write-window milestone flags (file scope so the unlock side can see
+ * the open side): gate_open_done is set when FLASH_UserMode_Enter()
+ * first reached the command phase; gate_closed_logged arms the one-shot
+ * "closed" milestone in FLASH_Write_Unlock().
+ */
+static volatile u8 gate_open_done;
+static volatile u8 gate_closed_logged;
+
+/* Deferred "open" milestone: SPIC sits in USER_MODE between
+ * FLASH_UserMode_Enter() and FLASH_UserMode_Exit(), and nothing in
+ * this file may touch the XIP flash inside that window -- neither
+ * code nor data: an instruction fetch faults, and so does a load of
+ * a .rodata string or const table, with vectors and handlers
+ * themselves XIP-resident making either fault a silent lockup.  The
+ * milestone is therefore only latched inside the window; the line is
+ * printed from FLASH_Write_Unlock() once auto mode and interrupts
+ * are back.
+ */
+static volatile u8 gate_open_pending;
+static volatile u32 gate_open_cpustatus;
+
+/* Timeout of a pre-window wait (stage 1: KM4 doorbell TX bit never
+ * freed; stage 2: KM4 acknowledgement never arrived).  Both run
+ * before the user-mode window opens, with the flash controller idle
+ * and in auto mode, so the XIP console and assert machinery are safe
+ * to use here.  Report the raw state and panic: continuing with a
+ * half-open write window (peer cores paused, interrupts masked, KM4
+ * unaware) would let a flash command go out unsynchronized.
+ */
+static void flashgate_timeout(u8 stage, u32 val)
+{
+	lowsyslog("FLASHGATE TIMEOUT: stage=%d val=0x%08X\n",
+	          stage, (unsigned int)val);
+	PANIC();
+
+	/* Not reached while assertions are linked in (PANIC halts in
+	 * up_assert).  Must never return anyway.
+	 */
+	for (;;) {
+	}
+}
+
+/* Faults from bounded waits inside the user-mode window are latched,
+ * never printed: every console path (lowsyslog, up_lowputc,
+ * LOGUART_PutChar, even the RAM-resident LOGUART_PutChar_RAM which
+ * reads its FIFO index flags from an XIP const table) would fetch
+ * from the flash the window owns or that may be stuck busy, and with
+ * XIP-resident vectors such a fault is a silent lockup.
+ * FLASH_Write_Unlock() prints the latch once auto mode and
+ * interrupts are back.
+ *
+ * Latched codes:
+ * 1/3/4 = FLASH_WaitBusy_InUserMode() WaitType (flash busy, write
+ * enable, transfer), 100 = same helper with WaitType 0 (SPIC-side
+ * busy), 11 = peer core never entered the WFE pause, 12 = SPIC
+ * refused user-mode entry, 13 = SPIC stuck in user mode, 14 = RX FIFO
+ * never filled, 15 = TX FIFO never drained.
+ */
+SRAMDRAM_ONLY_TEXT_SECTION
+static void flashgate_fail(u8 code, u32 regval)
+{
+	if (g_flash_busy_timeout == 0) {
+		g_flash_busy_timeout = (code == 0) ? 100 : code;
+		g_flash_busy_timeout_val = regval;
+	}
+}
 
 void FLASH_WaitBusy_InUserMode(u32 WaitType);
 void FLASH_TxCmd_InUserMode(u8 cmd, u8 DataPhaseLen, u8 *pData);
@@ -81,9 +172,20 @@ ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGMENT(64)];
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
-	/* disable irq */
-	/* We do not need to acquire lock for this core, as the other core will be paused */
-	PrevIrqStatus = enter_critical_section();
+	/* Mask this core's interrupts only.  enter_critical_section() must
+	 * NOT be used here: it holds the kernel-wide g_cpu_irqlock across
+	 * the up_cpu_pause_all() handshake below.  Any work on the other
+	 * core that needs a critical section (timer tick, workqueue, FTL)
+	 * then spins on that lock with interrupts disabled, deaf to the
+	 * pause SGI, while this core waits for that core's pause
+	 * acknowledgement: a guaranteed deadlock (the old TizenRT kernel
+	 * broke it with pause-aware spin-waits in irq_csection.c, the
+	 * NuttX 12.13 kernel does not).  A local mask is sufficient: the
+	 * other core is frozen by up_cpu_pause_all() before the flash is
+	 * touched, and concurrent flash users are serialized by the
+	 * RT_DEV_LOCK_FLASH device mutex.
+	 */
+	PrevIrqStatus = up_irq_save();
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
@@ -97,6 +199,19 @@ void FLASH_Write_Lock(void)
 #else
 	/*2. Sent IPC to KM4 */
 	IPC_MSG_STRUCT ipc_msg_temp;
+	u32 gate_n;
+	static u8 s_gate_armed;
+
+	if (!s_gate_armed) {
+		s_gate_armed = 1;
+		/* First write window of this boot: no flash command is in
+		 * flight yet, so the XIP console output is safe here.  If
+		 * this line is ever missing from a boot log, the AP wedged
+		 * before its first flash write and the gate is innocent.
+		 */
+		lowsyslog("FLASHGATE: armed, first write-lock window opening\n");
+	}
+
 	memset(Flash_Sync_Flag, 0, sizeof(Flash_Sync_Flag));
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 
@@ -104,12 +219,58 @@ void FLASH_Write_Lock(void)
 	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
 	ipc_msg_temp.msg_len = 1;
 	ipc_msg_temp.rsvd = 0; /* for coverity init issue */
-	while (IPC_SEND_SUCCESS != ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp));
 
+	/* Stage 1: ring the KM4 doorbell directly.  ipc_send_message()
+	 * must NOT be called from this IRQ-masked window: when the
+	 * channel TX bit is busy it calls IPC_wait_idle(), whose
+	 * task-context branch blocks on a semaphore for
+	 * IPC_SEMA_MAX_DELAY (0xFFFFFFFF ms) waiting for an IPC
+	 * completion interrupt this section can never service: a
+	 * forever-block no caller-side bound can see.  Replicate the
+	 * driver's exact wire protocol instead (same message-table slot
+	 * at __km0_ipc_memory_start__, same DCache_Clean, same
+	 * IPC_TX_DATA trigger write), with a bounded local wait for the
+	 * TX bit: expiry re-arms up to ten times, then reports stage=1
+	 * through the assert machinery while the flash is still idle
+	 * (XIP readable).
+	 */
+	{
+		extern u8 __km0_ipc_memory_start__[];
+		PIPC_MSG_STRUCT msg_entry = (PIPC_MSG_STRUCT)__km0_ipc_memory_start__ +
+			(IPC_TX_CHANNEL_NUM * IPC_TX_CHANNEL_SWITCH(IPC_AP_TO_NP) +
+			 IPC_TX0_CHANNEL_NUM * IPC_TX0_CHANNEL_SWITCH(IPC_AP_TO_NP) +
+			 IPC_A2N_FLASHPG_REQ);
+		const u32 db_bit = (u32)BIT(IPC_A2N_FLASHPG_REQ);
+		u32 db_wait;
+
+		gate_n = 10;
+		db_wait = FLASHGATE_SPIN_LIMIT;
+		while (IPCAP_DEV->IPC_TX_DATA & db_bit) {
+			if (--db_wait == 0) {
+				if (--gate_n == 0) {
+					flashgate_timeout(1, IPCAP_DEV->IPC_TX_DATA);
+				}
+				db_wait = FLASHGATE_SPIN_LIMIT;
+			}
+		}
+
+		*msg_entry = ipc_msg_temp;
+		DCache_Clean((u32)msg_entry, sizeof(IPC_MSG_STRUCT));
+		IPCAP_DEV->IPC_TX_DATA = db_bit;
+	}
+
+	/* Stage 2: KM4 took the request but must set
+	 * Flash_Sync_Flag[0] from its channel handler before the AP may
+	 * touch the flash.  Bounded for the same reason.
+	 */
+	gate_n = FLASHGATE_SPIN_LIMIT;
 	while (1) {
 		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 		if (Flash_Sync_Flag[0]) {
 			break;
+		}
+		if (--gate_n == 0) {
+			flashgate_timeout(2, Flash_Sync_Flag[0]);
 		}
 	}
 #endif
@@ -140,7 +301,41 @@ void FLASH_Write_Unlock(void)
 #endif
 
 	/* restore irq */
-	leave_critical_section(PrevIrqStatus);
+	up_irq_restore(PrevIrqStatus);
+
+	/* Deferred "open" line: safe now, auto mode and interrupts are
+	 * back (see gate_open_pending comment).
+	 */
+	if (gate_open_pending) {
+		gate_open_pending = 0;
+		lowsyslog("FLASHGATE: open (cpu_status=0x%08lx), first flash command phase started\n",
+			  (unsigned long)gate_open_cpustatus);
+	}
+
+	/* Deferred report for a FLASH_WaitBusy_InUserMode() that ran out
+	 * of patience inside the closed window: latch first, then speak
+	 * once interrupts are back and the flash is expected idle again.
+	 */
+	if (g_flash_busy_timeout) {
+		u8 waittype = g_flash_busy_timeout;
+		u32 waitval = g_flash_busy_timeout_val;
+
+		g_flash_busy_timeout = 0;
+		lowsyslog("FLASH BUSY TIMEOUT: type=%d val=0x%08X\n",
+		          waittype, (unsigned int)waitval);
+		PANIC();
+	}
+
+	/* One-shot milestone: the complete lock -> user-mode -> command
+	 * -> busy -> unlock cycle ran through once without latching any
+	 * bounded-wait fault.  If a boot log shows "open" but never
+	 * "closed", the wedge is inside the first command sequence
+	 * itself (erase/write phases, bounded reports cover them).
+	 */
+	if (gate_open_done && !gate_closed_logged) {
+		gate_closed_logged = 1;
+		lowsyslog("FLASHGATE: closed, first write window completed OK\n");
+	}
 }
 
 /**
@@ -418,13 +613,40 @@ SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_UserMode_Enter(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
+	u32 gate_n;
+	u32 cpu_status = 0;
 
 #ifdef CONFIG_SMP
-	long ulCoreID = up_cpu_index();
-	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
+	long ulCoreID = (up_cpu_index() + 1) % CONFIG_SMP_NCPUS;
 	CA32_TypeDef *ca32 = CA32_BASE;
 
-	while ((!up_is_cpu_paused(ulCoreID)) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
+	/* Bound the peer-core pause re-check: if someone resumed it
+	 * between up_cpu_pause_all() and here, its next XIP fetch during
+	 * our write is the bug to find, so report and continue rather
+	 * than spin forever with interrupts masked.
+	 *
+	 * Gate on the pause handshake alone, not on the STANDBYWFE
+	 * status bits: up_is_cpu_paused() asserts only after the peer's
+	 * SGI handler entered up_cpu_paused(), whose park loop and
+	 * spinlocks are linked into PSRAM (System.map: 0x601024ce /
+	 * 0x60105748), so a handshake-paused core provably cannot fetch
+	 * XIP while our write is in flight.  The STANDBYWFE bits of
+	 * CA32_C0_CPU_STATUS are unreliable on this part: they read 0
+	 * even while the peer genuinely sits in WFE (measured constant
+	 * 0x00000003 across the full bounded wait), so gating on them
+	 * wedges boot on a register that never tells the truth.  The
+	 * value is still captured for the report below and the one-shot
+	 * open log.
+	 */
+	gate_n = FLASHGATE_SPIN_LIMIT;
+	cpu_status = ca32->CA32_C0_CPU_STATUS;
+	while (!up_is_cpu_paused(ulCoreID)) {
+		if (--gate_n == 0) {
+			flashgate_fail(11, ca32->CA32_C0_CPU_STATUS);
+			break;
+		}
+		cpu_status = ca32->CA32_C0_CPU_STATUS;
+	}
 #endif
 	UP_DSB();
 	UP_ISB();
@@ -432,16 +654,42 @@ void FLASH_UserMode_Enter(void)
 	spi_flash->CTRLR0 |= BIT_USER_MODE;
 
 	/* user mode is entered after auto cmd is done, which means if SPIC BUSY=1, HW will not write Ctrl0 */
-	while (!(spi_flash->CTRLR0 & BIT_USER_MODE));
+	gate_n = FLASHGATE_SPIN_LIMIT;
+	while (!(spi_flash->CTRLR0 & BIT_USER_MODE)) {
+		if (--gate_n == 0) {
+			flashgate_fail(12, spi_flash->CTRLR0);
+			break;
+		}
+	}
+	if (!gate_open_done) {
+		gate_open_done = 1;
+		/* Only reached once the KM4 handshake completed and SPIC
+		 * accepted user mode: real flash commands can start now.
+		 * Latch the milestone only: SPIC is in user mode from here
+		 * until FLASH_UserMode_Exit(), and any XIP access, code or
+		 * .rodata data, would fault against XIP-resident vectors.
+		 * The line is printed by FLASH_Write_Unlock() once auto
+		 * mode is restored.
+		 */
+		gate_open_cpustatus = cpu_status;
+		gate_open_pending = 1;
+	}
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_UserMode_Exit(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
+	u32 gate_n = FLASHGATE_SPIN_LIMIT;
+
 	spi_flash->CTRLR0 &= ~BIT_USER_MODE;
 
-	while (spi_flash->CTRLR0 & BIT_USER_MODE);
+	while (spi_flash->CTRLR0 & BIT_USER_MODE) {
+		if (--gate_n == 0) {
+			flashgate_fail(13, spi_flash->CTRLR0);
+			break;
+		}
+	}
 	UP_ISB();
 }
 
@@ -460,6 +708,7 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 	SPIC_TypeDef *spi_flash = SPIC;
 	u32 rx_num = 0;
 	u32 value;
+	u32 gate_n;
 
 	/* Caller should Enter user mode first */
 
@@ -486,10 +735,18 @@ void FLASH_RxCmd_InUserMode(u8 cmd, u32 read_len, u8 *read_data)
 
 	/* read data */
 	rx_num = 0;
+	gate_n = FLASHGATE_SPIN_LIMIT;
 	while (rx_num < read_len) {
 		if (spi_flash->SR & BIT_RFNE) {
 			read_data[rx_num] = spi_flash->DR[0].BYTE;
 			rx_num += 1;
+			gate_n = FLASHGATE_SPIN_LIMIT;
+		} else if (--gate_n == 0) {
+			/* RX FIFO never refilled: latch only; with a
+			 * command in flight nothing may touch the XIP flash.
+			 */
+			flashgate_fail(14, spi_flash->SR);
+			break;
 		}
 	}
 
@@ -529,6 +786,7 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType)
 	SPIC_TypeDef *spi_flash = SPIC;
 	u32 BusyCheck = 0;
 	u8 status = 0;
+	u32 busy_n = FLASHGATE_SPIN_LIMIT;
 
 	do {
 		if (WaitType == WAIT_SPIC_BUSY) {
@@ -550,6 +808,16 @@ void FLASH_WaitBusy_InUserMode(u32 WaitType)
 		}
 
 		if (!BusyCheck) {
+			break;
+		}
+
+		if (--busy_n == 0) {
+			/* Raw report from RAM first (this wait routinely runs
+			 * with the flash chip busy, where no XIP console is
+			 * reachable), then latch and let the caller's sequence
+			 * unwind; the assert comes from FLASH_Write_Unlock().
+			 */
+			flashgate_fail((u8)WaitType, spi_flash->SR);
 			break;
 		}
 	} while (1);
@@ -654,6 +922,7 @@ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 	u32 tx_num = 0;
 	u32 ctrl0;
 	u32 value;
+	u32 gate_n;
 
 	assert_param(((StartAddr & 0xFF) + DataPhaseLen) <= 0x100); /* addr should page(256) align */
 
@@ -700,10 +969,15 @@ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData)
 	spi_flash->SSIENR = BIT_SPIC_EN;
 
 	/* write the remaining data into fifo */
+	gate_n = FLASHGATE_SPIN_LIMIT;
 	while (tx_num < DataPhaseLen) {
 		if (spi_flash->SR & BIT_TFNF) {
 			spi_flash->DR[0].BYTE = (u8) * (pData + tx_num);
 			tx_num += 1;
+			gate_n = FLASHGATE_SPIN_LIMIT;
+		} else if (--gate_n == 0) {
+			flashgate_fail(15, spi_flash->SR);
+			break;
 		}
 	}
 
@@ -917,3 +1191,4 @@ void FLASH_SetSpiMode(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode)
 }
 
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+
