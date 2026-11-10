@@ -26,7 +26,7 @@ The upstream QEMU 8.2 of that image stays the default
 | Config | What it does |
 |---|---|
 | `ostest` | Runs the NuttX OS test (`apps/examples/testcase/ostest`) as the entry point (`CONFIG_INIT_ENTRYPOINT="ostest_main"`) and powers QEMU off with the test result (semihosting, `ARM_SEMIHOSTING_POWEROFF`). |
-| `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the system and FS commands and the `ostest` command. |
+| `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the system and FS commands, the `ostest` command and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
 
 One CPU (Cortex-R5 has no SMP on this board).  The system tick is the
 Arm generic timer (`ARMV7R_HAVE_PTM`, `CONFIG_ALARM_ARCH`).

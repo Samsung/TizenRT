@@ -14,7 +14,7 @@ This directory was `build/configs/qemu` before the NuttX 12.13.0 port.
 | Config | What it does |
 |---|---|
 | `ostest` | Runs the NuttX OS test (`apps/examples/testcase/ostest`) as the entry point (`CONFIG_INIT_ENTRYPOINT="ostest_main"`). |
-| `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the system and FS commands and the `ostest` command. |
+| `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the system and FS commands, the `ostest` command and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
 
 Both use the memory of the real board, which upstream QEMU emulates:
 256 KB flash and 64 KB SRAM.  To fit, they are built with
