@@ -1,28 +1,39 @@
-#
-# For a description of the syntax of this configuration file,
-# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
-#
-
 config MEM_LEAK_CHECKER
-	bool "Memory Leak Checker"
-	default n
-	depends on DEBUG_MM_HEAPINFO
-	select SAVE_BIN_SECTION_ADDR if APP_BINARY_SEPARATION
-	---help---
-		Enable support for Memory Leak Checker. This requires arch/arm/src/<chip>/memory_region.h to work for the selected board.
+        bool "Memory Leak Checker (Mark-and-Sweep)"
+        default n
+        depends on DEBUG_MM_HEAPINFO
+        select SAVE_BIN_SECTION_ADDR if APP_BINARY_SEPARATION
+        ---help---
+                Enable the memory leak checker that uses mark-and-sweep
+                from true roots (BSS, DATA, thread stacks) instead of treating
+                all heap blocks as roots. This correctly detects reference cycles.
 
 if MEM_LEAK_CHECKER
 
-config MEM_LEAK_CHECKER_HASH_TABLE_SIZE
-	int "size of hash table"
-	default 1007
-	---help---
-		The size of the hash table for searching. It is preferred to have this as a prime number
+config MEM_LEAK_CHECKER_HASH_SIZE
+        int "Hash table size for leak checker"
+        default 1007
+        ---help---
+                Size of the hash table for block lookup. Preferred to be a prime number.
 
-config MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
-	int "max allocation counts"
-	default 3000
-	---help---
-		It must be larger than the total number of memory allocations.
+config MEM_LEAK_CHECKER_MAX_BLOCKS
+        int "Max blocks for leak checker"
+        default 3000
+        ---help---
+                Must be larger than the total number of memory allocations.
 
-endif
+config MEM_LEAK_CHECKER_WORKLIST_SIZE
+        int "Worklist size for leak checker"
+        default 3000
+        ---help---
+                Size of the worklist for transitive marking. Should be >= MAX_BLOCKS.
+
+config MEM_LEAK_CHECKER_DEBUG
+        bool "Enable verbose debug logging in leak checker"
+        default n
+        ---help---
+                Enable verbose debug output showing which regions are scanned,
+                which pointers are found, and which blocks are marked reachable.
+                Useful for diagnosing false positives/negatives.
+
+endif # MEM_LEAK_CHECKER
