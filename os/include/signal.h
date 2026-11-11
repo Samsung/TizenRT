@@ -199,6 +199,17 @@
 
 #define SIGBM_STATE     16
 
+/* SIG_PREFERENCE is a TizenRT extension: the preference framework notifies
+ * registered key-change callbacks with this signal, from both the kernel
+ * (kill()) and the framework (sigaction()).  The pre-sync TizenRT signal.h
+ * assigned 14 through CONFIG_SIG_PREFERENCE, but 14 is SIGALRM in the
+ * NuttX numbering, so the Kconfig default is 30, which the NuttX signals
+ * do not use.  Like before the sync, the number is product-configurable
+ * through the SIG_PREFERENCE Kconfig symbol (CONFIG_SIG_PREFERENCE),
+ * which is the single source of the value here.
+ */
+#define SIG_PREFERENCE  CONFIG_SIG_PREFERENCE
+
 /* sigprocmask() "how" definitions.
  * Only one of the following can be specified:
  */
