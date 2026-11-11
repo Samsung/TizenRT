@@ -96,6 +96,48 @@
 #define PR_SET_DUMPABLE 5
 #define PR_GET_DUMPABLE 6
 
+/* TizenRT preference prctl() commands.
+ *
+ *  PR_SET_PREFERENCE
+ *    Write a preference key, using the preference_data_t structure pointed
+ *    to by (preference_data_t *) arg2.  As an example:
+ *
+ *      prctl(PR_SET_PREFERENCE, &data);
+ *
+ *  PR_GET_PREFERENCE
+ *    Read a preference key value into the preference_data_t structure
+ *    pointed to by (preference_data_t *) arg2.
+ *
+ *  PR_REMOVE_PREFERENCE
+ *    Remove a preference key, passing (int) arg2 as the preference type and
+ *    (char *) arg3 as the key.
+ *
+ *  PR_REMOVEALL_PREFERENCE
+ *    Remove all preference keys of one type, passing (int) arg2 as the
+ *    preference type and (char *) arg3 as the directory path.
+ *
+ *  PR_CHECK_PREFERENCE
+ *    Check the existence of a preference key, passing (int) arg2 as the
+ *    preference type, (char *) arg3 as the key and (bool *) arg4 as the
+ *    location where the result is returned.
+ *
+ *  PR_SET_PREFERENCE_CB
+ *    Register a key-change callback, using the preference_callback_t
+ *    structure pointed to by (preference_callback_t *) arg2.
+ *
+ *  PR_UNSET_PREFERENCE_CB
+ *    Unregister a key-change callback, passing (char *) arg2 as the key and
+ *    (int) arg3 as the preference type.
+ */
+
+#define PR_SET_PREFERENCE       7
+#define PR_GET_PREFERENCE       8
+#define PR_REMOVE_PREFERENCE    9
+#define PR_REMOVEALL_PREFERENCE 10
+#define PR_CHECK_PREFERENCE     11
+#define PR_SET_PREFERENCE_CB    12
+#define PR_UNSET_PREFERENCE_CB  13
+
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
