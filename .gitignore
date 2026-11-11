@@ -30,3 +30,7 @@ tags
 *.tmp.*
 *.log
 *.log.old
+
+# CODA AI Code Tracker
+.ai-tracker/
+.vscode/
