@@ -20,7 +20,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <debug.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <errno.h>
 #include <string.h>
 #include <mqueue.h>
@@ -127,7 +127,7 @@ void preference_send_cb_msg(int type, const char *key)
 		data.cb_data = node->cb_data;
 		snprintf(q_name, PREFERENCE_CBMQ_LEN, "%s%d", PREFERENCE_CBMSG_MQ, node->pid);
 		send_mq = mq_open(q_name, O_WRONLY | O_CREAT, 0666, &attr);
-		if (send_mq == (mqd_t)ERROR) {
+		if (send_mq == (mqd_t)-1) {
 			prefdbg("Failed to open mq '%s', errno %d\n", q_name, errno);
 			return;
 		}
