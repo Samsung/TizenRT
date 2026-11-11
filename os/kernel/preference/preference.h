@@ -38,4 +38,7 @@ int preference_register_callback(preference_callback_t *data);
 int preference_unregister_callback(const char *key, int type);
 int preference_get_private_keypath(const char *key, char **path);
 void preference_clear_callbacks(pid_t pid);
+#if CONFIG_TASK_NAME_SIZE > 0
+const char *preference_group_name(FAR struct tcb_s *tcb);
+#endif
 #endif							/* __KERNEL_PREFERENCE_PREFERENCE_H */
