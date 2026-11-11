@@ -1493,6 +1493,7 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 	if (0 == cause) {
 		p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_size);
 		if (!p_evt->user_data) {
+			rtk_bt_event_free(p_evt);
 			goto end;
 		}
 
@@ -1692,6 +1693,7 @@ static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool
 
 	p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_size);
 	if (!p_evt->user_data) {
+		rtk_bt_event_free(p_evt);
 		return APP_RESULT_REJECT;
 	}
 
@@ -1965,6 +1967,7 @@ T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_
 						RAM_TYPE_DATA_ON,
 						p_read_ind->multiple_variable_per.len);
 			if (NULL == p_read_ind->multiple_variable_per.value) {
+				rtk_bt_event_free(p_evt);
 				ret = APP_RESULT_REJECT;
 				goto end;
 			}
