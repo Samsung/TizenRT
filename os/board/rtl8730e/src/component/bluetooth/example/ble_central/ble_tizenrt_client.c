@@ -423,127 +423,114 @@ trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle,
 	uint8_t bond_size = 0;
 	bool is_bonded = false;
 	uint16_t mtu_size = 0;
-	
-	if (RTK_BT_OK != rtk_bt_le_sm_get_bond_num(&bond_size))
-    {
-        dbg("get bond number failed! \n");
-        return TRBLE_FAIL;
-    }
 
-	if (RTK_BT_OK != rtk_bt_le_gap_get_conn_info((uint8_t)conn_handle, &conn_info))
-    {
- 	   dbg("get connenct info failed! \n");
- 	   return TRBLE_FAIL;
-    } 
-
-	if (RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(conn_handle, &mtu_size))
-    {
-        dbg("get mtu size failed! \n");
-        return TRBLE_FAIL;
-    }
-
-    rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, bond_size * sizeof(rtk_bt_le_bond_info_t));
-	if(!bond_info){
-		dbg("bond info malloc failed! \n");
+	if (RTK_BT_OK != rtk_bt_le_sm_get_bond_num(&bond_size)) {
+		dbg("Get bond number failed! \n");
 		return TRBLE_FAIL;
 	}
-    memset(bond_info, 0, bond_size * sizeof(rtk_bt_le_bond_info_t));
-	if (RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, &bond_size))
-    {
-    	osif_mem_free(bond_info);
-        dbg("get bond info failed! \n");
-        return TRBLE_FAIL;
-    }
-		
-    out_connected_device->conn_handle = conn_handle;
-    out_connected_device->conn_info.addr.type = conn_info.remote.type;
-	out_connected_device->conn_info.conn_interval = conn_info.interval;
-    out_connected_device->conn_info.slave_latency = conn_info.latency;
-    out_connected_device->conn_info.mtu = mtu_size;
-    memcpy(out_connected_device->conn_info.addr.mac, conn_info.remote.addr_val, GAP_BD_ADDR_LEN);
 
-	for(int i = 0; i < bond_size; i++){
-		if(!memcmp(conn_info.remote.addr_val, bond_info[i].remote_addr.addr_val, GAP_BD_ADDR_LEN)){
-			is_bonded = true;
-			break;
-		}		
+	if (RTK_BT_OK != rtk_bt_le_gap_get_conn_info((uint8_t)conn_handle, &conn_info)) {
+	dbg("Get connenct info failed! \n");
+	return TRBLE_FAIL;
 	}
-    out_connected_device->is_bonded = is_bonded;
 
-    if (bond_info)
-        osif_mem_free(bond_info);
+	if (RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(conn_handle, &mtu_size)) {
+		dbg("Get mtu size failed! \n");
+		return TRBLE_FAIL;
+	}
 
-    return TRBLE_SUCCESS;
+	if (bond_size > 0) {
+		rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, bond_size * sizeof(rtk_bt_le_bond_info_t));
+		if(!bond_info){
+			dbg("Bond info malloc failed! \n");
+			return TRBLE_FAIL;
+		}
+		memset(bond_info, 0, bond_size * sizeof(rtk_bt_le_bond_info_t));
+		if (RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, &bond_size)) {
+			osif_mem_free(bond_info);
+			dbg("Get bond info failed! \n");
+			return TRBLE_FAIL;
+		}
+
+		for (uint8_t i = 0; i < bond_size; i++) {
+			if (!memcmp(conn_info.remote.addr_val, bond_info[i].remote_addr.addr_val, GAP_BD_ADDR_LEN)) {
+				is_bonded = true;
+				break;
+			}
+		}
+		osif_mem_free(bond_info);
+	}
+
+	out_connected_device->conn_handle = conn_handle;
+	out_connected_device->conn_info.addr.type = conn_info.remote.type;
+	out_connected_device->conn_info.conn_interval = conn_info.interval;
+	out_connected_device->conn_info.slave_latency = conn_info.latency;
+	out_connected_device->conn_info.mtu = mtu_size;
+	memcpy(out_connected_device->conn_info.addr.mac, conn_info.remote.addr_val, GAP_BD_ADDR_LEN);
+	out_connected_device->is_bonded = is_bonded;
+
+	return TRBLE_SUCCESS;
 }
 
-uint8_t *del_bond_addr = NULL;
 trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
 {
-    if(addr == NULL)
-    {
-        dbg("Invalid input \n");
-        return TRBLE_INVALID_ARGS;
-    }
-	
-	uint16_t device_count = 0;
-    trble_result_e ret = TRBLE_FAIL;
-    rtk_bt_le_addr_t del_addr;
+	if (addr == NULL) {
+		dbg("Invalid input \n");
+		return TRBLE_INVALID_ARGS;
+	}
+
+	uint8_t device_count = 0;
+	trble_result_e ret = TRBLE_FAIL;
+	rtk_bt_le_addr_t del_addr;
 	bool bond_addr_found = false;
-	
-	del_bond_addr = addr->mac;
-    if(RTK_BT_OK != rtk_bt_le_sm_get_bond_num((uint8_t *)&device_count)){
-		dbg("get bond num failed \n");
-    }
-    dbg("bonded num : %d \n", device_count);
 
-	if (!device_count)
-    {
-        dbg("no bond device! \n");
-        return TRBLE_FAIL;
-    }
-
-    rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, device_count * sizeof(rtk_bt_le_bond_info_t));
-	if(!bond_info){
-		dbg("bond info malloc failed \n");
+	if (RTK_BT_OK != rtk_bt_le_sm_get_bond_num(&device_count)) {
+		dbg("Get bond num failed \n");
 		return TRBLE_FAIL;
 	}
-    memset(bond_info, 0, device_count * sizeof(rtk_bt_le_bond_info_t));
-	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, (uint8_t *)&device_count)){
-		dbg("get bond info failed \n");
+	dbg("bonded num : %d \n", device_count);
+
+	if (!device_count) {
+		dbg("No bond device! \n");
+		return TRBLE_FAIL;
+	}
+
+	rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, device_count * sizeof(rtk_bt_le_bond_info_t));
+	if (!bond_info) {
+		dbg("Bond info malloc failed \n");
+		return TRBLE_FAIL;
+	}
+	memset(bond_info, 0, device_count * sizeof(rtk_bt_le_bond_info_t));
+	if (RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, &device_count)) {
+		dbg("Get bond info failed \n");
 		osif_mem_free(bond_info);
 		return TRBLE_FAIL;
 	}
 
-	for(int i = 0; i < (device_count); i++)
-	{
+	for (uint8_t i = 0; i < device_count; i++) {
 		if(!memcmp(bond_info[i].remote_addr.addr_val, addr->mac, TRBLE_BD_ADDR_MAX_LEN)){
 			del_addr.type = bond_info[i].remote_addr.type;
 			bond_addr_found = true;
 			break;
 		}
 	}
-	if(!bond_addr_found)
-	{
-		dbg("bond addr not found! \n");
+	if (!bond_addr_found) {
+		dbg("Bond addr not found! \n");
 		osif_mem_free(bond_info);
 		return TRBLE_FAIL;
 	}
-	
+
 	memcpy(del_addr.addr_val, addr->mac, TRBLE_BD_ADDR_MAX_LEN);
-	
-    if(RTK_BT_OK == rtk_bt_le_sm_delete_bond_device(&del_addr))
-    {
-       dbg("success \n");
-        ret = TRBLE_SUCCESS;
-    }else{
-       dbg("delete bonded device failed \n");
-    }
+	if (RTK_BT_OK == rtk_bt_le_sm_delete_bond_device(&del_addr)) {
+		ret = TRBLE_SUCCESS;
+	} else {
+		dbg("Delete bonded device failed \n");
+	}
 
 	if (bond_info)
-        osif_mem_free(bond_info);
-	
-    return ret;
+		osif_mem_free(bond_info);
 
+	return ret;
 }
 
 trble_result_e rtw_ble_client_delete_bond_all(void)

@@ -162,7 +162,6 @@ extern trble_client_init_config *client_init_parm;
 extern trble_server_init_config server_init_parm;
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 extern rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind;
-extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
 extern uint16_t scan_timeout;
 extern trble_le_coc_init_config le_coc_init_parm;  
