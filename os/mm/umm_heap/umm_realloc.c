@@ -58,6 +58,7 @@
 #include <stdlib.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
+#include <string.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -133,6 +134,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 {
 #ifndef CONFIG_APP_BINARY_SEPARATION
 	int prev_heap_idx ;
+	FAR struct mm_allocnode_s *oldnode;
 #endif
 	void *ret;
 
@@ -183,6 +185,8 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
 		if (ret != NULL) {
 			if (oldmem) {
+				oldnode = (FAR struct mm_allocnode_s *)((FAR char *)oldmem - SIZEOF_MM_ALLOCNODE);
+				memcpy(ret, oldmem, oldnode->size - SIZEOF_MM_ALLOCNODE);
 				mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
 			}
 			return ret;
