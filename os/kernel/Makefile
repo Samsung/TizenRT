@@ -70,6 +70,7 @@ include misc/Make.defs
 include mqueue/Make.defs
 include module/Make.defs
 include paging/Make.defs
+include preference/Make.defs
 include pthread/Make.defs
 include sched/Make.defs
 include semaphore/Make.defs
