@@ -209,6 +209,7 @@ void tash_check_security(int fd)
 		/* Allow reboot command regardless of TASH authentication */
 		#ifdef CONFIG_TASH_REBOOT
 		if (!strncmp((unsigned char *)input, "reboot", 7)) {
+			tash_free(input);
 			(void)tash_reboot(0, NULL);
 			return;
 		}
@@ -216,6 +217,7 @@ void tash_check_security(int fd)
 
 		/* Convert user input to pbkdf2 value */
 		if (get_pbkdf2(input, input_len, pbkdf2_salt, PBKDF2_SALT_LEN, CONFIG_TASH_HASH_ITERATION, input_pbkdf2_hex) < 0) {
+			tash_free(input);
 			return;
 		}
 
