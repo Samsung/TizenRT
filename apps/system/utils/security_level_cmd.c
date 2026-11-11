@@ -88,7 +88,8 @@ static void tash_security_level(int argc, char **args)
 			printf("security level : Unexpected value!!!\n");
 			printf("Please set the security level using \"sec_level high\" or \"sec_level low\".\n");
 		}
-		
+
+		(void)security_free_data(&ss_data);
 		(void)security_deinit(hnd);
 		return;
 	}
