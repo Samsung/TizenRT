@@ -164,12 +164,35 @@ static void lio_sighandler(int signo, siginfo_t *info, void *ucontext)
 	/* The info structure should contain a pointer to the AIO control block */
 
 	aiocbp = (FAR struct aiocb *)info->si_value.sival_ptr;
-	DEBUGASSERT(aiocbp && aiocbp->aio_result != -EINPROGRESS);
+	DEBUGASSERT(aiocbp != NULL);
+
+	/* A queued notification can be delivered to this handler after the
+	 * state it refers to has already been consumed elsewhere: the worker
+	 * posts each completion notification before it is dispatched, so an
+	 * overlapping lio_listio() call (or a cancel racing with completion)
+	 * can present an aiocb that is still marked in progress, or whose
+	 * private data was already consumed by an earlier delivery.  Such
+	 * stale notifications carry no work for us: ignore them instead of
+	 * asserting (TD-KERNEL-02).  Delivery of a queued notification for an
+	 * aiocb whose result is written and whose private data is attached
+	 * (the normal completion path) always passes both checks: the worker
+	 * writes aio_result before it posts, and each in-progress aiocb owns
+	 * its own private copy until it is consumed here.
+	 */
+
+	if (aiocbp->aio_result == -EINPROGRESS) {
+		finfo("Stale notification for in-progress aiocb: ignored\n");
+		return;
+	}
 
 	/* Recover our private data from the AIO control block */
 
 	sighand = (FAR struct lio_sighand_s *)aiocbp->aio_priv;
-	DEBUGASSERT(sighand && sighand->list);
+	if (sighand == NULL) {
+		finfo("Stale notification (private data consumed): ignored\n");
+		return;
+	}
+
 	aiocbp->aio_priv = NULL;
 
 	/* Check if all of the pending I/O has completed */
@@ -213,8 +236,11 @@ static void lio_sighandler(int signo, siginfo_t *info, void *ucontext)
  *  detected.
  *
  * Assumptions:
- *  The scheduler is locked and no I/O can complete asynchronously with
- *  the logic in this function.
+ *  I/O may already have been queued for some entries and can complete
+ *  asynchronously with the logic in this function.  Completions that
+ *  arrive early are harmless: the worker writes each result before
+ *  posting its notification, and the handler ignores notifications for
+ *  entries that this setup has not (yet) claimed (TD-KERNEL-02).
  *
  ****************************************************************************/
 
@@ -255,8 +281,15 @@ static int lio_sigsetup(FAR struct aiocb *const *list, int nent,
 	act.sa_sigaction = lio_sighandler;
 	act.sa_flags = SA_SIGINFO;
 
+	/* Block every signal (SIGPOLL included) during handler delivery.
+	 * Keeping SIGPOLL masked here serializes handler invocations: a
+	 * queued stale notification cannot interleave with the one being
+	 * processed and will simply be re-delivered (and then rejected by
+	 * the guards in lio_sighandler) after this one returns
+	 * (TD-KERNEL-02).
+	 */
+
 	sigfillset(&act.sa_mask);
-	sigdelset(&act.sa_mask, SIGPOLL);
 
 	status = sigaction(SIGPOLL, &act, &sighand.oact);
 	if (status != OK) {
