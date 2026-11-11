@@ -12,6 +12,15 @@ config FS_TMPFS
 
 if FS_TMPFS
 
+config FS_AUTOMOUNT_TMPFS
+	bool "Auto mount TMPFS File System"
+	default n
+	---help---
+		This provides an option to enable auto mounting of
+		TMPFS at /tmp during File System initialization,
+		the way CONFIG_FS_AUTOMOUNT_PROCFS does for
+		procfs at /proc.
+
 config FS_TMPFS_BLOCKSIZE
 	int "Reported block size"
 	default 512
