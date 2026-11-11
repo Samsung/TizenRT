@@ -682,24 +682,50 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 {
 	int ret = 0;
 	uint32_t recvsize = 0;
+	t_proto_pkt txpkt;
 	t_proto_pkt rxpkt;
 
+	memset(&txpkt, 0, sizeof(t_proto_pkt));
+	txpkt.header = PKT_HEADER_SEND;
+
+	/* 0x40/0x41: the FW sends the payload on the next clocks after the command (0x40: after its 7-byte response).
+	 * Command and payload read in one SPI bus lock, so no other command (SET_AEC etc.) comes in between */
+	adam110_spi_lock(dev);
+
 	switch(data) {
-	case AI_DATA_TYPE_SEAMLESS_R:		
-		ret = ADAM110_GET_SEAMLESS(dev, &rxpkt);		
-		if (ret != OK) {
-            auddbg("[E] GET_SEAMLESS failed op=%d ret=%d\n", rxpkt.op, ret);
-            return ret != OK ? ret : -EIO;
-        }
+	case AI_DATA_TYPE_SEAMLESS_R:
+		txpkt.op = AUD_GET_SEAMLESS_DATA;
+		txpkt.checksum = adam110_calculate_checksum((uint8_t *)&txpkt, sizeof(t_proto_pkt) - 1);
+		SPI_SNDBLOCK(dev->spi, (void *)&txpkt, sizeof(t_proto_pkt));
+		up_udelay(ADAM110_COM_RES_DELAY);
+		SPI_RECVBLOCK(dev->spi, (void *)&rxpkt, sizeof(t_proto_pkt));
+		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
+
+		if (rxpkt.header != PKT_HEADER_RECV) {
+			auddbg("[E] GET_SEAMLESS rxheader wrong : 0x%x\n", rxpkt.header);
+			ret = -EINVAL;
+			goto out;
+		}
+
+		if (rxpkt.op != RSLT_SUCCESS) {
+			ret = get_spi_command_error(rxpkt.op);
+			auddbg("[E] GET_SEAMLESS failed op=%d ret=%d\n", rxpkt.op, ret);
+			goto out;
+		}
 
 		recvsize = (uint32_t)(rxpkt.parm1 << 8 | rxpkt.parm2);
 		if (recvsize == 0) {
-			return -EAGAIN;
+			ret = -EAGAIN;
+			goto out;
 		}
-		*size_ptr = (recvsize < ADAM110_RX_MAX_SIZE) ? recvsize : ADAM110_RX_MAX_SIZE;		
+		*size_ptr = (recvsize < ADAM110_RX_MAX_SIZE) ? recvsize : ADAM110_RX_MAX_SIZE;
 		break;
 	case AI_DATA_TYPE_AUDIO:
-		ret = ADAM110_GET_AUDIO(dev, NULL);
+		txpkt.op = AUD_GET_PREP_DATA;
+		txpkt.checksum = adam110_calculate_checksum((uint8_t *)&txpkt, sizeof(t_proto_pkt) - 1);
+		SPI_SNDBLOCK(dev->spi, (void *)&txpkt, sizeof(t_proto_pkt));
+		up_udelay(ADAM110_COM_RES_DELAY);
+		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 		break;
 	default:
 		auddbg("[E] invalid data type\n");
@@ -707,8 +733,11 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 	}
 
 	if (ret == OK) {
-		adam110_spi_exchange(dev, NULL, 0, buffer, (*size_ptr) + 1, false);
+		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, true);
+		SPI_RECVBLOCK(dev->spi, (void *)buffer, (*size_ptr) + 1);
 	}
+out:
+	adam110_spi_unlock(dev);
 	return ret;
 }
 
@@ -762,7 +791,7 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	ret = ADAM110_SET_MIC_CLK(priv, PDM_CLOCK_PDM_RATE, &rxpkt);
 	if (ret != 0) {
 		auddbg("Adam110 PDM clock %s Hz failed ret : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz") ,ret);
-		return ret;
+		goto errout;
 	} else {
 		auddbg("Set Adam110 PDM clock %s Hz : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz"), ret);
 	}
@@ -770,6 +799,7 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	ret = ADAM110_SET_MODEL(priv);
 	if (ret != OK) {
 	    auddbg("[E] Model send fail!\n");
+		goto errout;
 	} else {
 		priv->lower->irq_enable(true);
 	}
@@ -855,6 +885,7 @@ static int adam110_reload_model(FAR struct adam110_dev_s *priv)
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
 	static int wait_stable_cnt = 0;
+	static int busy_cnt = 0;
 	int ret = OK;
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
@@ -879,8 +910,19 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 			auddbg("[E] XSOSC not stable (%d), reset and reload\n", wait_stable_cnt);
 			break;
 		}
+		/* FW busy (e.g. DM_ENTER_LP_MODE wake session open) : tolerate it once,
+		 * if it's still busy on the very next keepalive period, reset and reload. */
+		if (ret == -EBUSY) {
+			if (++busy_cnt < ADAM110_BUSY_WAIT_MAX_CNT) {
+				auddbg("[I] FW busy (%d), retry next period\n", busy_cnt);
+				return OK;
+			}
+			auddbg("[E] FW busy too long (%d), reset and reload\n", busy_cnt);
+			break;
+		}
 	}
 	wait_stable_cnt = 0;
+	busy_cnt = 0;
 
 	/* XSOSC ready but model none (ADAM110 rebooted) : download model */
 	if ((ret == OK) && (rxpkt.parm3 & KA_FLAG_MODEL_NONE)) {
@@ -952,7 +994,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 
 	/* TODO if it is invalid event, should we return OK here? */
 	if (rxpkt.parm1 & ((1U << WWD_MODEL_MAX) - 1U)) {
-		if (!priv->kd_enabled || priv->recording) {
+		if (!priv->kd_enabled) {
 			auddbg("It's not possible to handle kd kd_enabled : %d recording : %d\n", priv->kd_enabled, priv->recording);
 			goto out_unlock;
 		}
