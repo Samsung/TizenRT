@@ -509,6 +509,15 @@ trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 
 void tizenrt_remove_service(void)
 {
+	if (ble_tizenrt_srv_array_ptr) {
+		/* Each service owns an attrs block; the last one is also ble_tizenrt_attrs_ptr, freed below */
+		for (int i = 0; i < tizenrt_ble_srv_count; i++) {
+			if (ble_tizenrt_srv_array_ptr[i].attrs && ble_tizenrt_srv_array_ptr[i].attrs != ble_tizenrt_attrs_ptr) {
+				osif_mem_free(ble_tizenrt_srv_array_ptr[i].attrs);
+				ble_tizenrt_srv_array_ptr[i].attrs = NULL;
+			}
+		}
+	}
 	osif_mem_free(ble_tizenrt_srv_array_ptr);
 	ble_tizenrt_srv_array_ptr = NULL;
 	osif_mem_free(ble_tizenrt_attrs_ptr);

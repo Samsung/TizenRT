@@ -114,12 +114,12 @@ trble_result_e rtw_ble_combo_deinit(void)
 	osif_mem_free(ble_tizenrt_scatternet_conn_ind);
 	ble_tizenrt_scatternet_conn_ind = NULL;
 
+	tizenrt_remove_service();
+
 	memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
 	memset(&server_init_parm, 0, sizeof(server_init_parm));
 	tizenrt_ble_srv_count = 0;
 	is_server_init = false;
-
-	tizenrt_remove_service();
 
 	attr_counter = 0;
 	return TRBLE_SUCCESS;
