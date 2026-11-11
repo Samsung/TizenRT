@@ -90,6 +90,7 @@
 #include <tinyara/audio/i2s.h>
 #include <tinyara/audio/ndp120.h>
 #include <tinyara/gpio.h>
+#include <tinyara/irq.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/pm/pm.h>
 #include <tinyara/spi/spi.h>
@@ -254,6 +255,9 @@ static int ndp120_resume(FAR struct audio_lowerhalf_s *dev);
 #endif
 static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb);
 static int ndp120_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb);
+static void *ndp120_audio_worker(pthread_addr_t pvarg);
+static int ndp120_start_audio_worker(FAR struct ndp120_dev_s *priv);
+static int ndp120_stop_audio_stream(FAR struct ndp120_dev_s *priv);
 static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned long arg);
 #ifdef CONFIG_AUDIO_MULTI_SESSION
 static int ndp120_reserve(FAR struct audio_lowerhalf_s *dev, FAR void **session);
@@ -327,6 +331,289 @@ static inline void ndp120_takesem(sem_t *sem)
 static inline int ndp120_givesem(sem_t *sem)
 {
 	return sem_post(sem);
+}
+
+/* sample_data_pending is shared with the IRQ worker, which must not wait
+ * for devsem. Keep the latch update short and non-blocking.
+ */
+
+static bool ndp120_sample_pending_get(FAR struct ndp120_dev_s *priv)
+{
+	irqstate_t flags;
+	bool pending;
+
+	flags = enter_critical_section();
+	pending = priv->audio.sample_data_pending;
+	leave_critical_section(flags);
+
+	return pending;
+}
+
+static bool ndp120_sample_pending_exchange(FAR struct ndp120_dev_s *priv, bool pending)
+{
+	irqstate_t flags;
+	bool previous;
+
+	flags = enter_critical_section();
+	previous = priv->audio.sample_data_pending;
+	priv->audio.sample_data_pending = pending;
+	leave_critical_section(flags);
+
+	return previous;
+}
+
+static void *ndp120_audio_worker(pthread_addr_t pvarg)
+{
+	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)pvarg;
+
+	while(1) {
+		FAR struct ap_buffer_s *apb = NULL;
+		FAR struct ap_buffer_s *completed_apb = NULL;
+		FAR sq_entry_t *entry;
+		sq_queue_t returnq;
+		uint32_t bytes_before = 0;
+		uint32_t bytes_requested = 0;
+		uint32_t bytes_extracted = 0;
+		uint32_t keyword_bytes_before = 0;
+		int dequeue_status = OK;
+		int ret = SYNTIANT_NDP_ERROR_NONE;
+		bool can_extract = false;
+		bool ready_consumed = false;
+		bool keyword_used = false;
+		bool stop_handled = false;
+		bool self_wake = false;
+		bool unreachable = false;
+
+		sq_init(&returnq);
+		ndp120_takesem(&priv->audio.wake_sem);
+		ndp120_takesem(&priv->devsem);
+
+		if (!priv->running || priv->paused) {
+			ndp120_sample_pending_exchange(priv, false);
+		}
+		if (priv->audio.stop_requested) {
+			/* Handle a stream stop by detaching active and pending APBs. */
+			priv->audio.stop_requested = false;
+			ndp120_sample_pending_exchange(priv, false);
+			priv->audio.extracting = false;
+			priv->audio.cancel_apb = NULL;
+
+			if (priv->audio.active_apb) {
+				priv->audio.active_apb->nbytes = 0;
+				priv->audio.active_apb->curbyte = 0;
+				sq_addlast((FAR sq_entry_t *)&priv->audio.active_apb->dq_entry, &returnq);
+				priv->audio.active_apb = NULL;
+			}
+
+			while ((entry = sq_remfirst(&priv->pendq)) != NULL) {
+				apb = (FAR struct ap_buffer_s *)entry;
+				apb->nbytes = 0;
+				apb->curbyte = 0;
+				sq_addlast(entry, &returnq);
+			}
+
+			priv->audio.ack_seq = priv->audio.control_seq;
+			stop_handled = true;
+		} else if (priv->running && !priv->paused && (priv->audio.active_apb || sq_peek(&priv->pendq) != NULL)) {
+			/* Allow extraction only for an active stream with an available APB. */
+			ready_consumed = ndp120_sample_pending_exchange(priv, false);
+			if (ready_consumed || priv->keyword_bytes_left != 0) {
+				if (!priv->audio.active_apb) {
+					entry = sq_remfirst(&priv->pendq);
+					priv->audio.active_apb = (FAR struct ap_buffer_s *)entry;
+					priv->audio.active_generation = priv->audio.stream_generation;
+				}
+
+				apb = priv->audio.active_apb;
+				priv->audio.extracting = true;
+				bytes_before = apb->nbytes;
+				bytes_requested = apb->nmaxbytes - apb->nbytes;
+				keyword_bytes_before = priv->keyword_bytes_left;
+				can_extract = true;
+			}
+		}
+
+		ndp120_givesem(&priv->devsem);
+		if (stop_handled) {
+			/* Return stopped APBs outside devsem, then acknowledge the stop. */
+			while ((entry = sq_remfirst(&returnq)) != NULL) {
+				apb = (FAR struct ap_buffer_s *)entry;
+				if (priv->dev.upper) {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+					priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, -ECANCELED, apb->session);
+#else
+					priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, -ECANCELED);
+#endif
+				}
+			}
+			ndp120_givesem(&priv->audio.ack_sem);
+			continue;
+		}
+
+		if (!can_extract) {
+			continue;
+		}
+
+		ret = ndp120_extract_audio(priv, apb);
+		if (apb->nbytes >= bytes_before) {
+			bytes_extracted = apb->nbytes - bytes_before;
+		}
+
+		ndp120_takesem(&priv->devsem);
+		priv->audio.extracting = false;
+		keyword_used = keyword_bytes_before > priv->keyword_bytes_left;
+
+		if (priv->audio.active_generation != priv->audio.stream_generation || priv->audio.stop_requested || !priv->running) {
+			ndp120_givesem(&priv->devsem);
+			continue;
+		}
+		if (priv->audio.cancel_apb == apb) {
+			/* Cancel the APB that was being extracted. */
+			priv->audio.cancel_apb = NULL;
+			priv->audio.active_apb = NULL;
+			apb->nbytes = 0;
+			apb->curbyte = 0;
+			completed_apb = apb;
+			dequeue_status = -ECANCELED;
+		} else if (ret == SYNTIANT_NDP_ERROR_UNINIT) {
+			/* Stop the stream because the NDP firmware is unavailable. */
+			priv->running = false;
+			priv->audio.stop_requested = true;
+			ndp120_sample_pending_exchange(priv, false);
+			priv->audio.stream_generation++;
+			priv->audio.control_seq++;
+			unreachable = true;
+			self_wake = true;
+		} else if (ret != SYNTIANT_NDP_ERROR_NONE && ret != SYNTIANT_NDP_ERROR_DATA_REREAD) {
+			/* Any error other than DATA_REREAD is terminal for this APB. */
+			apb->nbytes = 0;
+			apb->curbyte = 0;
+			completed_apb = apb;
+			priv->audio.active_apb = NULL;
+			dequeue_status = ret;
+		} else {
+			/* Preserve partial APB data after successful or retryable extraction. */
+			priv->total_size += bytes_extracted;
+
+			/* Keyword data does not consume an NDP unread-data event. */
+			if (keyword_used && ready_consumed) {
+				ndp120_sample_pending_exchange(priv, true);
+			}
+
+			if (apb->nbytes == apb->nmaxbytes) {
+				apb->curbyte = 0;
+				completed_apb = apb;
+				priv->audio.active_apb = NULL;
+			}
+
+			if (ret == SYNTIANT_NDP_ERROR_NONE && bytes_requested != 0 && bytes_extracted == bytes_requested && !keyword_used) {
+				/* The NDP ring may still contain another APB period. */
+				ndp120_sample_pending_exchange(priv, true);
+			}
+
+			if (priv->keyword_bytes_left != 0 || ndp120_sample_pending_get(priv)) {
+				self_wake = true;
+			}
+		}
+
+		ndp120_givesem(&priv->devsem);
+
+		if (unreachable && priv->dev.upper) {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+			priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK, NULL);
+#else
+			priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
+#endif
+		}
+
+		if (completed_apb && priv->dev.upper) {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+			priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, completed_apb, dequeue_status, completed_apb->session);
+#else
+			priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, completed_apb, dequeue_status);
+#endif
+		}
+
+		if (self_wake) {
+			ndp120_givesem(&priv->audio.wake_sem);
+		}
+	}
+
+	return NULL;
+}
+
+static int ndp120_start_audio_worker(FAR struct ndp120_dev_s *priv)
+{
+	pthread_attr_t tattr;
+	int ret;
+
+	ret = sem_init(&priv->audio.wake_sem, 0, 0);
+	if (ret != OK) {
+		return ret;
+	}
+
+	ret = sem_init(&priv->audio.ack_sem, 0, 0);
+	if (ret != OK) {
+		sem_destroy(&priv->audio.wake_sem);
+		return ret;
+	}
+
+	pthread_attr_init(&tattr);
+	pthread_attr_setstacksize(&tattr, CONFIG_NDP120_WORKER_STACKSIZE);
+	ret = pthread_create(&priv->audio.tid, &tattr, ndp120_audio_worker, (pthread_addr_t)priv);
+	if (ret != OK) {
+		auddbg("ERROR: NDP120 audio worker create failed: %d\n", ret);
+		sem_destroy(&priv->audio.ack_sem);
+		sem_destroy(&priv->audio.wake_sem);
+		return ret;
+	}
+
+	priv->audio.started = true;
+	pthread_setname_np(priv->audio.tid, "ndp120 audio");
+	return OK;
+}
+
+static int ndp120_stop_audio_stream(FAR struct ndp120_dev_s *priv)
+{
+	uint32_t control_seq;
+	uint32_t total_size;
+	bool recording;
+	bool acked;
+	int ret = OK;
+
+	if (!priv->audio.started) {
+		return OK;
+	}
+
+	ndp120_takesem(&priv->devsem);
+	recording = priv->recording;
+	priv->running = false;
+	priv->paused = false;
+	priv->audio.stop_requested = true;
+	ndp120_sample_pending_exchange(priv, false);
+	priv->audio.stream_generation++;
+	control_seq = ++priv->audio.control_seq;
+	ndp120_givesem(&priv->devsem);
+
+	if (recording && ndp120_stop_sample_ready(priv) != SYNTIANT_NDP_ERROR_NONE) {
+		ret = -EIO;
+	}
+
+	ndp120_givesem(&priv->audio.wake_sem);
+	do {
+		ndp120_takesem(&priv->audio.ack_sem);
+		ndp120_takesem(&priv->devsem);
+		acked = priv->audio.ack_seq == control_seq;
+		ndp120_givesem(&priv->devsem);
+	} while (!acked);
+
+	ndp120_takesem(&priv->devsem);
+	total_size = priv->total_size;
+	priv->total_size = 0;
+	ndp120_givesem(&priv->devsem);
+	auddbg("Total record size : %lu\n", total_size);
+
+	return ret;
 }
 
 static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
@@ -594,9 +881,17 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 
 static int ndp120_shutdown(FAR struct audio_lowerhalf_s *dev)
 {
-	/* TBD:disable interrupts */
+	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
 
-	return 0;
+	if (!priv) {
+		return -EINVAL;
+	}
+
+	/* The lower-half is reused after close, so keep the device-lifetime
+	 * worker alive and only stop the current capture stream.
+	 */
+
+	return ndp120_stop_audio_stream(priv);
 }
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -606,34 +901,37 @@ static int ndp120_start(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
-	if (priv->running) {
-		return 0;
-	}
+	int ret;
 
-	if (priv->mute) {
-		return -ESTRPIPE;
+	if (!priv) {
+		return -EINVAL;
 	}
 
 	audvdbg(" ndp120_start Entry\n");
 	ndp120_takesem(&priv->devsem);
+	if (priv->running) {
+		ndp120_givesem(&priv->devsem);
+		return OK;
+	}
 
-	ndp120_start_sample_ready(priv);
+	if (priv->mute) {
+		ndp120_givesem(&priv->devsem);
+		return -ESTRPIPE;
+	}
+
+	ret = ndp120_start_sample_ready(priv);
+	if (ret != SYNTIANT_NDP_ERROR_NONE) {
+		ndp120_givesem(&priv->devsem);
+		return -EIO;
+	}
+
 	priv->running = true;
+	priv->paused = false;
 	priv->total_size = 0;
-
-	/* Enqueue buffers (enqueueed before the start of alc) to lower layer */
-	sq_entry_t *tmp = NULL;
-	sq_queue_t *q = &priv->pendq;
-	for (tmp = sq_peek(q); tmp; tmp = sq_next(tmp)) {
-		ndp120_enqueuebuffer(dev, (struct ap_buffer_s *)tmp);
-	}
-	/* Remove audio buffers from pending queue here */
-	while ((tmp = sq_remfirst(&priv->pendq)) != NULL) {
-		apb_free((struct ap_buffer_s *)tmp);
-	}
-	
 	ndp120_givesem(&priv->devsem);
-	return 0;
+
+	ndp120_givesem(&priv->audio.wake_sem);
+	return OK;
 }
 
 #ifndef CONFIG_AUDIO_EXCLUDE_STOP
@@ -644,19 +942,13 @@ static int ndp120_stop(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+
 	if (!priv) {
 		return -EINVAL;
 	}
 
 	audvdbg(" ndp120_i2s_stop Entry\n");
-	ndp120_takesem(&priv->devsem);
-	auddbg("Total record size : %lu\n", priv->total_size);
-	ndp120_stop_sample_ready(priv);
-
-	priv->running = false;
-	priv->total_size = 0;
-	ndp120_givesem(&priv->devsem);
-	return 0;
+	return ndp120_stop_audio_stream(priv);
 }
 #endif
 
@@ -668,10 +960,20 @@ static int ndp120_pause(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+
+	if (!priv) {
+		return -EINVAL;
+	}
+
 	ndp120_takesem(&priv->devsem);
-	ndp120_stop_sample_ready(priv);
+	priv->paused = true;
 	ndp120_givesem(&priv->devsem);
-	return 0;
+
+	if (ndp120_stop_sample_ready(priv) != SYNTIANT_NDP_ERROR_NONE) {
+		return -EIO;
+	}
+
+	return OK;
 }
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -681,10 +983,27 @@ static int ndp120_resume(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+
+	if (!priv) {
+		return -EINVAL;
+	}
+
 	ndp120_takesem(&priv->devsem);
-	ndp120_start_sample_ready(priv);
+	if (!priv->running) {
+		ndp120_givesem(&priv->devsem);
+		return -EINVAL;
+	}
 	ndp120_givesem(&priv->devsem);
-	return 0;
+
+	if (ndp120_start_sample_ready(priv) != SYNTIANT_NDP_ERROR_NONE) {
+		return -EIO;
+	}
+
+	ndp120_takesem(&priv->devsem);
+	priv->paused = false;
+	ndp120_givesem(&priv->devsem);
+	ndp120_givesem(&priv->audio.wake_sem);
+	return OK;
 }
 #endif
 
@@ -699,45 +1018,68 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 {
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
 
-	DEBUGASSERT(priv && priv->dev.upper && apb);
-
-	audvdbg("ndp120_enqueuebuffer: apbadr = 0x%x\n", apb);
-
-	/* TODO pendq should be handled by ndp120.c later. worker & interrupt logic need to be implemented there */
-	if (!priv->running) {
-		/* Add the new buffer to the tail of pending audio buffers */
-		ndp120_takesem(&priv->devsem);
-		sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
-		audvdbg("enqueue added buf 0x%x\n", apb);
-		ndp120_givesem(&priv->devsem);
-		return OK;
+	if (!priv || !apb || !priv->dev.upper) {
+		return -EINVAL;
 	}
 
-	sq_entry_t *tmp;
+	apb->nbytes = 0;
+	apb->curbyte = 0;
 
-	int ret = ndp120_extract_audio(priv, apb);
-	if (ret == SYNTIANT_NDP_ERROR_UNINIT) {
-		// notify upper layer to stop capture, hence here just return OK.
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
-		return OK;
-	}
+	ndp120_takesem(&priv->devsem);
+	sq_addlast((FAR sq_entry_t *)&apb->dq_entry, &priv->pendq);
+	ndp120_givesem(&priv->devsem);
 
-	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
-		if (tmp == (sq_entry_t *)apb) {
-			sq_rem(tmp, &priv->pendq);
-			audvdbg("found the apb to remove 0x%x\n", tmp);
-			break;
-		}
-	}
-
-	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, ret);
+	audvdbg("enqueue added buf %p\n", apb);
+	ndp120_givesem(&priv->audio.wake_sem);
 	return OK;
 }
 
 static int ndp120_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb)
 {
-	/* TBD */
-	return 0;
+	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+	FAR sq_entry_t *entry;
+	bool return_apb = false;
+	bool found = false;
+
+	if (!priv || !apb) {
+		return -EINVAL;
+	}
+
+	ndp120_takesem(&priv->devsem);
+	if (priv->audio.active_apb == apb) {
+		found = true;
+		if (priv->audio.extracting) {
+			priv->audio.cancel_apb = apb;
+		} else {
+			priv->audio.active_apb = NULL;
+			return_apb = true;
+		}
+	} else {
+		for (entry = sq_peek(&priv->pendq); entry;
+				entry = sq_next(entry)) {
+			if (entry == (FAR sq_entry_t *)apb) {
+				sq_rem(entry, &priv->pendq);
+				found = true;
+				return_apb = true;
+				break;
+			}
+		}
+	}
+	ndp120_givesem(&priv->devsem);
+
+	if (return_apb) {
+		apb->nbytes = 0;
+		apb->curbyte = 0;
+		if (priv->dev.upper) {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+			priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, -ECANCELED, apb->session);
+#else
+			priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, -ECANCELED);
+#endif
+		}
+	}
+
+	return found ? OK : -ENOENT;
 }
 
 static int ndp120_spi_registerprocess(FAR struct audio_lowerhalf_s *dev, struct mq_des *mq)
@@ -987,6 +1329,7 @@ int ndp120_reserve(FAR struct audio_lowerhalf_s *dev)
 		*session = NULL;
 #endif
 		priv->running = false;
+		priv->paused = false;
 		priv->reserved = true;
 	}
 
@@ -1008,19 +1351,19 @@ static int ndp120_release(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+	int ret;
 
 	if (!priv) {
 		return -EINVAL;
 	}
 
+	ret = ndp120_stop_audio_stream(priv);
+
 	ndp120_takesem(&priv->devsem);
-	if (priv->running) {
-		priv->running = false;
-	}
 	priv->reserved = false;
 	ndp120_givesem(&priv->devsem);
 
-	return 0;
+	return ret;
 }
 
 static void ndp120_interrupt_dispatch(int d)
@@ -1157,6 +1500,17 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	ret = pm_register(&g_pmndpcb);
 	DEBUGASSERT(ret == OK);
 #endif
+
+	ret = ndp120_start_audio_worker(priv);
+	if (ret != OK) {
+#ifdef CONFIG_PM
+		pm_domain_unregister(priv->pm_domain);
+		g_ndp120 = NULL;
+#endif
+		sem_destroy(&priv->devsem);
+		free(priv);
+		return NULL;
+	}
 
 	priv->lower->attach(ndp120_interrupt_dispatch, priv);
 	return &priv->dev;
@@ -2759,14 +3113,20 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 		}
 	}
 
-	if (notifications & SYNTIANT_NDP_NOTIFICATION_EXTRACT_READY) {
-		dev->sample_ready_cnt++;
-		/* signal that we have data to extract */
-		ndp120_signal_sample(dev);
-	}
-
+	/* Process mailbox notifications before dispatching audio events. */
 	if (notifications & (SYNTIANT_NDP_NOTIFICATION_MAILBOX_IN | SYNTIANT_NDP_NOTIFICATION_MAILBOX_OUT)) {
 		ndp120_signal_mb(dev);
+	}
+
+	if (notifications & SYNTIANT_NDP_NOTIFICATION_EXTRACT_READY) {
+		dev->sample_ready_cnt++;
+
+		/* Keep the condition signal for the blocking debug stream. */
+		ndp120_signal_sample(dev);
+
+		/* Latch the event without waiting for devsem. */
+		ndp120_sample_pending_exchange(dev, true);
+		ndp120_givesem(&dev->audio.wake_sem);
 	}
 
 	if ((notifications & SYNTIANT_NDP_NOTIFICATION_MATCH) && (dev->dev.process_mq != NULL)) {
@@ -2871,21 +3231,12 @@ int ndp120_set_sample_ready_int(struct ndp120_dev_s *dev, int on)
 	return s;
 }
 
-/**
- * Adds milliseconds to a timespec structure (ignores negative values for ms)
- */
-static void timespec_add_ms(struct timespec *ts, long ms) {
-    ts->tv_sec += ms / 1000;
-    ts->tv_nsec += (ms % 1000) * 1000000;
-
-    if (ts->tv_nsec >= 1000000000) {
-        ts->tv_sec += 1;
-        ts->tv_nsec -= 1000000000;
-    }
-}
-
 int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 {
+	uint32_t bytes_remaining;
+	uint32_t extract_size;
+	uint32_t keyword_size;
+	FAR uint8_t *destination;
 	int s;
 
 	if (!dev->fw_loaded) {
@@ -2894,108 +3245,53 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 	}
 
 	if (apb->nmaxbytes < dev->sample_size) {
-		/* currently we always try to flush of sample size at each call to this function
-		 * TODO : apply buffering in future if possible
-		 */
 		return SYNTIANT_NDP_ERROR_NOMEM;
 	}
 
-#ifdef CONFIG_DUMP4CH_SUPPORT
-	memset(apb->samp, 0,dev->sample_size);
-	apb->nbytes = dev->sample_size;
-	return 0;
-#endif
+	if (apb->nbytes > apb->nmaxbytes) {
+		return SYNTIANT_NDP_ERROR_ARG;
+	}
 
-	/* buffer size (apb size) for ndp120 is set equal to the sample size.
-	 * Hence, all the calls to extract_audio will have total bytes as sample size
-	 * So, we can safely copy the extracted data without checking the limits on the
-	 * apb size
-	 */
-	uint32_t sample_size = dev->sample_size;
-	s = SYNTIANT_NDP_ERROR_NONE;
-	if (dev->keyword_bytes_left != 0) {
-		memcpy(apb->samp, &dev->keyword_buffer[dev->keyword_bytes - dev->keyword_bytes_left], sample_size);
-		dev->keyword_bytes_left -= sample_size;
-		apb->nbytes = dev->sample_size;
+	bytes_remaining = apb->nmaxbytes - apb->nbytes;
+	if (bytes_remaining == 0) {
 		return SYNTIANT_NDP_ERROR_NONE;
 	}
 
-	/* wait for sample interrupt for a given time */
+	destination = &apb->samp[apb->nbytes];
 
-	int err = pthread_mutex_lock(&dev->ndp_mutex_notification_sample);
-	if (err) {
-		auddbg("NDP sample mutex lock err: %d\n", err);
-		return SYNTIANT_NDP_ERROR_FAIL;
-	}
-	/* Set timeout value to 2 sample sizes. Generally the time values are in milli seconds */
-	/* 16KHz, 1 channel, 2bytes = 16000 * 1 * 2 = 32000 bytes per second, 32 bytes per millisecond, (sample size is 640 or 768) */
-	uint32_t timeout_in_msec = (2 * dev->sample_size * 1000) / (SYNTIANT_NDP120_AUDIO_SAMPLE_RATE * SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD);
-
-	int retries = 3;
-	int timedwait_err = 0;
-	do {
-		struct timespec abstime;
-		clock_gettime(CLOCK_REALTIME, &abstime);
-		timespec_add_ms(&abstime, timeout_in_msec);
-		syntiant_get_ms_time(&dev->last_sample_wait_start[dev->last_sample_wait_idx]);
-		dev->last_sample_wait_idx = (dev->last_sample_wait_idx + 1) % (sizeof(dev->last_sample_wait_start) / sizeof(dev->last_sample_wait_start[0]));
-		timedwait_err = pthread_cond_timedwait(&dev->ndp_cond_notification_sample,
-													&dev->ndp_mutex_notification_sample, &abstime);
-		if (timedwait_err) {
-			syntiant_ms_time tnow;
-			syntiant_get_ms_time(&tnow);
-			auddbg("NDP cond timed wait err: %d (at %u) Retries = %d\n", timedwait_err, tnow, retries);
-			/* Fall through to unlock the mutex */
-			// show debug info twice so we can see if things are moving
-			ndp120_show_debug(1);
-			usleep(20);
-			ndp120_show_debug(1);
-		}
-	} while(--retries && timedwait_err);
-
-	err = pthread_mutex_unlock(&dev->ndp_mutex_notification_sample);
-	if (err) {
-		auddbg("NDP sample mutex unlock err: %d\n", err);
-		return SYNTIANT_NDP_ERROR_FAIL;
-	}
-
-	if (timedwait_err) {
-		syntiant_ms_time tnow;
-		syntiant_get_ms_time(&tnow);
-		auddbg("NDP sample wait err: %d (at %u)\n", timedwait_err, tnow);
-#if SHOW_DEBUG
-		ndp120_show_debug(1);
-		usleep(25 * 1000);
-		ndp120_show_debug(0);
+#ifdef CONFIG_DUMP4CH_SUPPORT
+	memset(destination, 0, bytes_remaining);
+	apb->nbytes += bytes_remaining;
+	return SYNTIANT_NDP_ERROR_NONE;
 #endif
-		/* Underrun need to be handled here, however, as of now we are doing
-		 * data extraction in sync. So, send back the apb with zero bytes
-		 * TODO : apply async method of extraction, then handle the underrun
-		 * case appropriately as we can add this buffer to pendq and use it
-		 */
-		apb->nbytes = 0;
-		return SYNTIANT_NDP_ERROR_FAIL;
+
+	if (dev->keyword_bytes_left != 0) {
+		keyword_size = min(bytes_remaining, dev->keyword_bytes_left);
+		memcpy(destination, &dev->keyword_buffer[dev->keyword_bytes - dev->keyword_bytes_left], keyword_size);
+		dev->keyword_bytes_left -= keyword_size;
+		apb->nbytes += keyword_size;
+		return SYNTIANT_NDP_ERROR_NONE;
 	}
 
-	/* since apb can hold 4 samples, set extraction size to 4 */
-	uint32_t extract_size = apb->nmaxbytes;
+	extract_size = bytes_remaining;
 	s = syntiant_ndp_extract_data(dev->ndp,
 		SYNTIANT_NDP_EXTRACT_TYPE_INPUT,
-		SYNTIANT_NDP_EXTRACT_FROM_UNREAD, apb->samp, &extract_size);
+		SYNTIANT_NDP_EXTRACT_FROM_UNREAD, destination, &extract_size);
 
-	/* To prevent overflow */
-	if (s) {
-		auddbg("error occured : %d\n", s);
-		extract_size = 0;
-	} else if (extract_size > apb->nmaxbytes) {
-		auddbg("error, extract_size : %d\n", extract_size);
-		extract_size = 0;
+	if (s != SYNTIANT_NDP_ERROR_NONE) {
+		if (s != SYNTIANT_NDP_ERROR_DATA_REREAD) {
+			auddbg("audio extraction failed: %d\n", s);
+		}
+		return s;
 	}
 
-	apb->nbytes = extract_size;
-	dev->total_size += extract_size;
+	if (extract_size > bytes_remaining) {
+		auddbg("invalid extract_size: %lu, remaining: %lu\n", extract_size, bytes_remaining);
+		return SYNTIANT_NDP_ERROR_FAIL;
+	}
 
-	return s;
+	apb->nbytes += extract_size;
+	return SYNTIANT_NDP_ERROR_NONE;
 }
 
 int ndp120_kd_start(struct ndp120_dev_s *dev)

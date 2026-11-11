@@ -21,6 +21,7 @@
 
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/ndp120.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include <queue.h>
 #include <syntiant_ilib/syntiant_ndp.h>
@@ -45,6 +46,22 @@ enum speech_state_e {
 typedef enum speech_state_e speech_state_t;
 #endif
 
+struct ndp120_audio_worker_s {
+	pthread_t tid;
+	sem_t wake_sem;
+	sem_t ack_sem;
+	bool sample_data_pending;
+	bool extracting;
+	bool stop_requested;
+	bool started;
+	FAR struct ap_buffer_s *active_apb;
+	FAR struct ap_buffer_s *cancel_apb;
+	uint32_t active_generation;
+	uint32_t stream_generation;
+	uint32_t control_seq;
+	uint32_t ack_seq;
+};
+
 struct ndp120_dev_s {
 	/* common parts */
 	struct audio_lowerhalf_s dev; /* ndp120 audio lower half (this device) */
@@ -54,8 +71,10 @@ struct ndp120_dev_s {
 	bool mute;
 	struct sq_queue_s pendq;	/* Queue of pending buffers to be sent */
 	sem_t devsem;			/* Protection for both pendq & dev */
-	bool running;			/* True: Worker thread is running */
+	bool running;			/* True: Audio capture stream is active */
+	bool paused;			/* True: Audio extraction is paused */
 	bool reserved;			/* True: Device is reserved */
+	struct ndp120_audio_worker_s audio;
 
 	/* spi parts */
 	FAR struct spi_dev_s *spi;
