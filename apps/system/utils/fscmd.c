@@ -1064,6 +1064,7 @@ static int delete_entry(const char *fullpath)
 				fscmd_free(entrypath);
 				return ret;
 			}
+			fscmd_free(entrypath);
 		}
 
 		ret = rmdir(fullpath);
