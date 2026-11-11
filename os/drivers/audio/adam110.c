@@ -69,6 +69,8 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
 #include <tinyara/wqueue.h>
+#include <tinyara/wdog.h>
+#include <tinyara/clock.h>
 #include <tinyara/audio/adam110.h>
 
 #include "adam110.h"
@@ -183,7 +185,7 @@ static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *
 static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
                                     uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4,
                                     t_proto_pkt *rx_out, bool txrx_delay);
-
+static void adam110_spi_timeout(int argc, uint32_t arg, ...);
 
 #define adam110_givesem(s)    sem_post(s)
 
@@ -276,18 +278,25 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 
 static void adam110_spi_lock(FAR struct adam110_dev_s *dev)
 {
+	//if (dev->lower->dbg_pin_toggle) {
+	//	dev->lower->dbg_pin_toggle(1);
+	//}
 	(void)SPI_LOCK(dev->spi, true);
 	SPI_SETMODE(dev->spi, dev->lower->spi_config.mode);
 	SPI_SETFREQUENCY(dev->spi, dev->lower->spi_config.freq);
 	dev->lower->set_sample_delay(dev->spi, dev->lower->spi_config.freq);
 	SPI_SETBITS(dev->spi, dev->lower->spi_config.bpw);
-	SPI_SELECT(dev->spi, dev->lower->spi_config.cs, true);
+	SPI_SELECT(dev->spi, dev->lower->spi_config.cs, true);	
 }
 
 static void adam110_spi_unlock(FAR struct adam110_dev_s *dev)
 {
 	SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 	(void)SPI_LOCK(dev->spi, false);
+	
+	//if (dev->lower->dbg_pin_toggle) {
+	//	dev->lower->dbg_pin_toggle(0);
+	//}
 }
 
 static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, int txlen, uint8_t *rxpkt, int rxlen, bool txrx_delay)
@@ -570,11 +579,13 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 						  fw_buf[ADAM110_FW_HEADER_VER_MINOR_OFFSET] << 16 | \
 						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_H_OFFSET] << 8 | \
 						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_L_OFFSET];
+#if 1
 	if (fw_ver == img_fw_ver) {
 		auddbg("[I] Same F/W.\n");
 		close(fd);
 		return OK;
 	}
+#endif 
 
 	auddbg("IMG FW ver:0x%8x\n",img_fw_ver);
 
@@ -691,6 +702,7 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 	/* 0x40/0x41: the FW sends the payload on the next clocks after the command (0x40: after its 7-byte response).
 	 * Command and payload read in one SPI bus lock, so no other command (SET_AEC etc.) comes in between */
 	adam110_spi_lock(dev);
+	(void)wd_start(g_adam110_spi_wdog, MSEC2TICK(ADAM110_SPI_LOCK_TIMEOUT_MSEC), adam110_spi_timeout, 1, (uint32_t)dev);
 
 	switch(data) {
 	case AI_DATA_TYPE_SEAMLESS_R:
@@ -737,7 +749,13 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 		SPI_RECVBLOCK(dev->spi, (void *)buffer, (*size_ptr) + 1);
 	}
 out:
-	adam110_spi_unlock(dev);
+	/* If wd_cancel fails, the watchdog already fired and the recovery worker
+	 * (adam110_spi_recovery_worker) owns the unlock - do not unlock twice. */
+	if (wd_cancel(g_adam110_spi_wdog) == OK) {
+		adam110_spi_unlock(dev);
+	} else {
+		auddbg("[E] SPI lock watchdog already fired; recovery worker owns the unlock\n");
+	}
 	return ret;
 }
 
@@ -968,6 +986,32 @@ static int adam110_app_device_alive_check(int argc, FAR char *argv[])
 }
 #endif
 
+/* adam110_get_audiobuffer()'s SPI lock watchdog fired: it never reached its
+ * own unlock within ADAM110_SPI_LOCK_TIMEOUT_MSEC. Force the SPI bus free so
+ * the rest of the driver isn't deadlocked forever, then try to recover the
+ * device. This runs on HPWORK, not the watchdog/timer context, since it does
+ * blocking SPI work. */
+static void adam110_spi_recovery_worker(FAR void *arg)
+{
+	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)arg;
+
+	auddbg("[E] adam110_get_audiobuffer SPI lock timeout, forcing unlock\n");
+	adam110_spi_unlock(priv);
+#ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
+	(void)adam110_check_aliveness(priv);
+#endif
+}
+
+static void adam110_spi_timeout(int argc, uint32_t arg, ...)
+{
+	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)arg;
+
+	/* Can't safely do SPI/blocking work from watchdog (timer) context; defer it. */
+	if (work_available(&g_adam110_spi_recovery_work)) {
+		(void)work_queue(HPWORK, &g_adam110_spi_recovery_work, adam110_spi_recovery_worker, (FAR void *)priv, 0);
+	}
+}
+
 static int adam110_process_event(FAR struct adam110_dev_s *priv)
 {
 	struct audio_msg_s msg;
@@ -983,6 +1027,8 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 
 	adam110_takesem(&priv->devsem);
 
+	audvdbg("parm1 = 0x%x, parm2 = 0x%x\n", rxpkt.parm1,rxpkt.parm2);
+
 	ret = ADAM110_GET_EVENT(priv, &rxpkt);
 	if (ret != OK) {
 		auddbg("[E] Get event failed.\n");
@@ -994,6 +1040,10 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 
 	/* TODO if it is invalid event, should we return OK here? */
 	if (rxpkt.parm1 & ((1U << WWD_MODEL_MAX) - 1U)) {
+		
+		auddbg("parm1 = 0x%x\n", rxpkt.parm1);
+
+		//if (!priv->kd_enabled || priv->recording) {
 		if (!priv->kd_enabled) {
 			auddbg("It's not possible to handle kd kd_enabled : %d recording : %d\n", priv->kd_enabled, priv->recording);
 			goto out_unlock;
@@ -1034,7 +1084,36 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 			ret = -EIO;
             goto errout_seamless;
 		}
+#if 0
+		static int kd_count = 0;
 
+		if (priv->dev.process_mq != NULL) {
+			if (rxpkt.parm1 == 0x08) {
+				msg.msgId = AUDIO_MSG_LOCAL0;
+
+				ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, false, &rxpkt);
+				if (ret != 0) {
+					auddbg("Disable seamless interrupt failed ret : %d\n", ret);
+					return ret;
+				}
+
+				ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
+				if (ret != 0) {
+					auddbg("Enable seamless interrupt failed ret : %d\n", ret);
+					return ret;
+				}
+				auddbg("H1,%d\n",kd_count++);
+			} else {
+				msg.msgId = AUDIO_MSG_KD;
+				auddbg("H2,%d\n",kd_count++);
+			}
+
+			int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg),	100);
+			if (ret_mq < 0) {
+				auddbg("[E] MQ:ret=%d, errno=%d\n", ret_mq, errno);
+			}
+		}
+#else
 		if (priv->dev.process_mq != NULL) {
 			msg.msgId = AUDIO_MSG_KD;
 			int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg),	100);
@@ -1042,9 +1121,9 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 				auddbg("[E] MQ:ret=%d, errno=%d\n", ret_mq, errno);
 			}
 		}
-
-        adam110_givesem(&priv->devsem);
-        priv->lower->irq_enable(true);
+#endif
+		adam110_givesem(&priv->devsem);
+		priv->lower->irq_enable(true);
         return OK;
 	}
 	if (rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
@@ -1089,7 +1168,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
             pcm_apb->nbytes = copy_len;
             send_pcm_cb = true;
         } else {
-            auddbg("no waiting pcm_apb, drop pcm=%u\n", pcm_size);
+            audvdbg("no waiting pcm_apb, drop pcm=%u\n", pcm_size);
         }
     }
 
@@ -1566,7 +1645,9 @@ static int adam110_start(FAR struct audio_lowerhalf_s *dev)
 		return -ESTRPIPE;
 	}
 
-	audvdbg("[I] adam110_start Entry\n");
+	//audvdbg("[I] adam110_start Entry\n");
+	auddbg("[I] adam110_start Entry\n");
+
 	adam110_takesem(&priv->devsem);
 	priv->running = true;
 	priv->recording = true;
@@ -1599,7 +1680,8 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 		return -EINVAL;
 	}
 
-	audvdbg("[I] adam110_stop Entry\n");
+	//audvdbg("[I] adam110_stop Entry\n");
+	auddbg("[I] adam110_stop Entry\n");
 
 	adam110_takesem(&priv->devsem);
 	priv->running = false;
@@ -1726,7 +1808,8 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		return -EINVAL;
 	}
 
-	audvdbg("[I] cmd=%d arg=%ld\n", cmd, arg);
+	//audvdbg("[I] cmd=%d arg=%ld\n", cmd, arg);
+	auddbg("[I] cmd=%d arg=%ld\n", cmd, arg);
 
 	/* Deal with ioctls passed from the upper-half driver */
 
@@ -1756,6 +1839,9 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	}
 	break;
 	case AUDIOIOC_REGISTERPROCESS: {
+		
+		auddbg("[E] Process start\n");
+
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		ret = adam110_spi_registerprocess(dev, (mqd_t)arg);
 		if (ret != OK) {
@@ -1783,7 +1869,8 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	break;
 
 	case AUDIOIOC_STARTPROCESS: {
-		audvdbg("[I] Set start process!!\n");
+		//audvdbg("[I] Set start process!!\n");
+		auddbg("[I] Set start process!!,%d, kd,%d\n",(uint8_t)arg,priv->kd_enabled);
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		switch ((uint8_t)arg) {
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
@@ -1929,6 +2016,16 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		if (ret != OK) {
 			auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
 		}
+
+		/* Seamless may have been requested (AUDIOIOC_STARTPROCESS) before firmware
+		 * was ever loaded; reapply it now that the model/firmware are up.
+		 */
+		if (priv->kd_enabled && !priv->mute) {
+			ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
+			if (ret != OK) {
+				auddbg("Restore seamless interrupt failed.\n");
+			}
+		}
 	out_unlock:
 		adam110_givesem(&priv->devsem);
 		return ret;
@@ -1941,6 +2038,46 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			auddbg("adam110_change_dsp_flow failed ret : %d\n", ret);
 			return ret;
 		}
+		break;
+	}
+	case AUDIOIOC_SETINTHIGHTTIME: {
+		uint16_t int_high_time = (uint16_t)arg;
+		ret = ADAM110_AI_SET_INT_HIGHT_TIME(priv, (int_high_time >> 8) & 0xFF, int_high_time & 0xFF, &rxpkt);
+		if (ret != OK) {
+			auddbg("Set interrupt high time failed ret : %d\n", ret);
+			return ret;
+		}
+		break;
+	}
+	case AUDIOIOC_SETREALDATA: {
+		bool enable = (bool)arg;
+
+		adam110_takesem(&priv->devsem);
+		priv->running = enable;
+		priv->recording = enable;
+		ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, enable, &rxpkt);
+		if (ret != OK) {
+			auddbg("Set real data enable failed ret : %d\n", ret);
+			priv->running = false;
+			priv->recording = false;
+			adam110_givesem(&priv->devsem);
+			return ret;
+		}
+		adam110_givesem(&priv->devsem);
+		break;
+	}
+	case AUDIOIOC_SETAEC: {
+#ifdef CONFIG_AUDIO_ADAM110_AEC_SUPPORT
+		bool enable = (bool)arg;
+		ret = ADAM110_SET_AEC(priv, enable, &rxpkt);
+		if (ret != OK) {
+			auddbg("Set AEC enable failed ret : %d\n", ret);
+			return ret;
+		}
+#else
+		auddbg("[E] Set AEC failed - Device doesn't support\n");
+		ret = -ENOSYS;
+#endif
 		break;
 	}
 	default:
@@ -2105,6 +2242,12 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 
 	sq_init(&priv->pendq);
 	sem_init(&priv->devsem, 0, 1);
+
+	g_adam110_spi_wdog = wd_create();
+	if (g_adam110_spi_wdog == NULL) {
+		auddbg("[E] Failed to create SPI lock watchdog\n");
+		goto err_with_priv;
+	}
 
 	priv->lower = lower;
 	priv->recording = false;

@@ -76,6 +76,7 @@
 #define ADAM110_COM_RES_DELAY		1  /* between command and respone imprecise */
 #define ADAM110_RETRIAL_DELAY		1  /* Seamless buffer polling retry delay */
 #define SEAMLESS_RETRY_COUNT 		6
+#define ADAM110_SPI_LOCK_TIMEOUT_MSEC	100 /* force-unlock adam110_get_audiobuffer()'s SPI lock if it never completes */
 
 #define ADAM110_RX_MAX_SIZE			3840
 #define ADAM110_KEYWORD_DATA_SIZE	64000
@@ -223,8 +224,8 @@ typedef enum {
 typedef enum {
 	AI_MODEL_HIBIXBY	= 1,	/* Hi-Bixby */
 	AI_MODEL_BIXBY,				/* Bixby */
-	AI_MODEL_ALEXA,				/* Alexa */
-	AI_MODEL_CUSTOM1,    		/* Custom model 1 */
+	AI_MODEL_ALEXA,			    /* Alexa */
+	AI_MODEL_CUSTOM1,	    	/* Custom model 1 */
 	AI_MODEL_CUSTOM2,
 	AI_MODEL_CUSTOM3,
 	AI_MODEL_CUSTOM4,
@@ -232,10 +233,10 @@ typedef enum {
 } ai_model_t;
 
 typedef enum {
-	WWD_HIBIXBY	= 0,		/* Hi-Bixby */
-	WWD_BIXBY,				/* Bixby */
-	WWD_ALEXA,				/* Alexa */
-	WWD_CUSTOM_MODEL1,    			/* Custom model 1 */
+	WWD_HIBIXBY	= 0,	        /* Hi-Bixby */
+	WWD_BIXBY,				    /* Bixby */
+	WWD_ALEXA,				    /* Alexa */
+	WWD_CUSTOM_MODEL1,	    	/* Custom model 1 */
 	WWD_CUSTOM_MODEL2,
 	WWD_CUSTOM_MODEL3,
 	WWD_CUSTOM_MODEL4,
@@ -320,6 +321,10 @@ struct adam110_dev_s {
 
 static struct work_s adam110_work; /* workqueen handle */
 static uint8_t s_temp_chunk[ADAM110_RX_MAX_SIZE + 1]; /* 3840 + 1(checksum) */
+
+static WDOG_ID g_adam110_spi_wdog; /* adam110_get_audiobuffer()'s SPI lock deadlock watchdog */
+static struct work_s g_adam110_spi_recovery_work; /* deferred HPWORK recovery for the above */
+
 
 static const char *mcu_package = "/res/kernel/audio/mcu_fw";
 static const char *dsp_package = "/res/kernel/audio/dsp_fw";
