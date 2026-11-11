@@ -88,14 +88,14 @@ $(BIN): $(OBJS)
 
 depend: .depend
 
-clean:
+clean::
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
-distclean: clean
+distclean:: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 
 -include Make.dep
 
-context:
+context::
