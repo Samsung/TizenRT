@@ -45,6 +45,7 @@
 
 #include <sched.h>
 #include <signal.h>
+#include <time.h>
 #include <aio.h>
 #include <assert.h>
 #include <errno.h>
@@ -104,38 +105,105 @@ int aio_suspend(FAR const struct aiocb *const list[], int nent,
                 FAR const struct timespec *timeout)
 {
 	sigset_t set;
+	FAR const struct aiocb *const *entry;
+	struct timespec elapsed;
+	struct timespec mark;
+	struct timespec remaining;
+	FAR struct timespec *rel;
 	int ret;
-	int i;
 
 	DEBUGASSERT(list);
-
-	/* Check each entry in the list.  Break out of the loop if any entry
-	 * has completed.
-	 */
-
-	for (i = 0; i < nent; i++) {
-		/* Check if the I/O has completed */
-
-		if (list[i] && list[i]->aio_result != -EINPROGRESS) {
-			/* Yes, return success */
-
-			return OK;
-		}
-	}
-
-	/* Then wait for SIGPOLL.  On success sigtimedwait() will return the
-	 * signal number that cause the error (SIGPOLL).  It will set errno
-	 * appropriately for this function on errors.
-	 *
-	 * NOTE: If completion of the I/O causes other signals to be generated
-	 * first, then this will wake up and return EINTR instead of success.
-	 */
 
 	sigemptyset(&set);
 	sigaddset(&set, SIGPOLL);
 
-	ret = sigtimedwait(&set, NULL, timeout);
-	return ret >= 0 ? OK : ERROR;
+	/* Work from a private copy of the (relative) timeout so the
+	 * remaining interval can be recomputed after each wake-up.
+	 */
+
+	if (timeout != NULL) {
+		remaining = *timeout;
+		rel = &remaining;
+	} else {
+		rel = NULL;
+	}
+
+	for (;;) {
+		/* Check each entry in the list.  Break out of the loop if any
+		 * entry has completed.
+		 */
+
+		for (entry = list; entry < list + nent; entry++) {
+			/* Check if the I/O has completed */
+
+			if (*entry != NULL &&
+			    (*entry)->aio_result != -EINPROGRESS) {
+				/* Yes, return success */
+
+				return OK;
+			}
+		}
+
+		/* No listed request has completed yet: wait for the next
+		 * completion notification.  The AIO worker queues one
+		 * SIGPOLL to this process for every completion it posts
+		 * (os/fs/aio/aio_signal.c), independent of the per-aiocb
+		 * sigev_notify selection.  A SIGPOLL that was already
+		 * pending -- queued by an earlier completion of this or a
+		 * previous list, and unconsumed because the process keeps
+		 * SIGPOLL blocked -- satisfies sigtimedwait() immediately
+		 * but says nothing about the requests in this list.  Such
+		 * a spurious wake-up must not be returned as success:
+		 * re-scan and wait again instead (TD-KERNEL-02).  Waiting
+		 * in a loop until a listed entry is actually complete is
+		 * also what the documented behavior of this function
+		 * promises.
+		 */
+
+		if (rel != NULL) {
+			clock_gettime(CLOCK_REALTIME, &mark);
+		}
+
+		ret = sigtimedwait(&set, NULL, rel);
+		if (ret < 0) {
+			/* Timed out (EAGAIN) or interrupted by a delivered
+			 * signal (EINTR): sigtimedwait() has set errno.
+			 */
+
+			return ERROR;
+		}
+
+		if (rel != NULL) {
+			clock_gettime(CLOCK_REALTIME, &elapsed);
+
+			elapsed.tv_sec  -= mark.tv_sec;
+			elapsed.tv_nsec -= mark.tv_nsec;
+			if (elapsed.tv_nsec < 0) {
+				elapsed.tv_nsec += 1000000000L;
+				elapsed.tv_sec  -= 1;
+			}
+
+			remaining.tv_sec  -= elapsed.tv_sec;
+			remaining.tv_nsec -= elapsed.tv_nsec;
+			if (remaining.tv_nsec < 0) {
+				remaining.tv_nsec += 1000000000L;
+				remaining.tv_sec  -= 1;
+			}
+
+			if (remaining.tv_sec < 0 ||
+			    (remaining.tv_sec == 0 &&
+			     remaining.tv_nsec <= 0)) {
+				/* Time expired without seeing a completed
+				 * entry in the scan above.
+				 */
+
+				set_errno(EAGAIN);
+				return ERROR;
+			}
+		}
+	}
+
+	return ERROR; /* NOTREACHED */
 }
 
 #endif /* CONFIG_FS_AIO */
