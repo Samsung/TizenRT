@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <wifi_manager/wifi_manager.h>
 #include <stress_tool/st_perf.h>
 #include "wm_test.h"

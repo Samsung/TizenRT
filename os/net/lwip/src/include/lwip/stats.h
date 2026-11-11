@@ -73,6 +73,9 @@ extern "C" {
 #endif
 
 /** Protocol related stats */
+/* #undef opterr: the 12.13 getopt API exposes opterr as a macro
+ * (getopterrp()); it collides with the stats_proto field name below. */
+#undef opterr
 struct stats_proto {
 	STAT_COUNTER xmit;		/* Transmitted packets. */
 	STAT_COUNTER recv;		/* Received packets. */

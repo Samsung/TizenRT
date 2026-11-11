@@ -64,6 +64,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <semaphore.h>
+#include <tinyara/queue.h>
 #include <debug.h>
 #include <errno.h>
 

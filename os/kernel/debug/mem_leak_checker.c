@@ -25,7 +25,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <sys/types.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/mm/heap_regioninfo.h>

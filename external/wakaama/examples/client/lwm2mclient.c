@@ -1418,7 +1418,7 @@ int client_main(void)
 #ifdef LWM2M_BOOTSTRAP
 		update_bootstrap_info(&previousState, lwm2mH);
 #endif
-		printf("got connection, now trying select %d:%d, %lu:%lu\n", data.sock + 1, CONFIG_NSOCKET_DESCRIPTORS,
+		printf("got connection, now trying select %d:%d, %lu:%lu\n", data.sock + 1, CONFIG_NBSDSOCKET_DESCRIPTORS,
 			   tv.tv_sec, tv.tv_usec);
 		usleep(20000);
 		/*
@@ -1426,7 +1426,7 @@ int client_main(void)
 		 * with the precedent function)
 		 */
 		result = select(CONFIG_NFILE_DESCRIPTORS +
-						CONFIG_NSOCKET_DESCRIPTORS, &readfds,
+						CONFIG_NBSDSOCKET_DESCRIPTORS, &readfds,
 						NULL, NULL, &tv);
 		ret_timestamp = clock_gettime(CLOCK_REALTIME, &tv2);
 		printf("select exits with value %d\n", result);

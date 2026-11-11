@@ -60,7 +60,7 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
 
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <errno.h>
 
 #include "pm.h"

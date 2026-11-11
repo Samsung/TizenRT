@@ -59,7 +59,7 @@
 #include <string.h>
 #include <errno.h>
 #include <debug.h>
-#include <tinyara/timer.h>
+#include <tinyara/timers/timer.h>
 #include <tinyara/irq.h>
 #include "timer_hal.h"
 #include "hal_timer_types.h"

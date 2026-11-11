@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <string.h>
 #include <wifi_manager/wifi_manager.h>

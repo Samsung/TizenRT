@@ -56,7 +56,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/watchdog.h>
+#include <tinyara/timers/watchdog.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/wqueue.h>

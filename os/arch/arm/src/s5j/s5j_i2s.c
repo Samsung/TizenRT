@@ -64,7 +64,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <assert.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <debug.h>
 
 #include <arch/board/board.h>

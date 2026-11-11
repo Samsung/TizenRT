@@ -33,7 +33,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
-#include <tinyara/fs/dirent.h>
+#include <dirent.h>
 
 #include "scsc_mx_impl.h"
 #include "utils_misc.h"

@@ -22,7 +22,7 @@
 #include <protocols/webclient.h>
 #include <protocols/websocket.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/fs/dirent.h>
+#include <dirent.h>
 
 #include "http.h"
 #include "http_client.h"

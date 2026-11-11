@@ -74,7 +74,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
-#include <tinyara/fs/dirent.h>
+#include <dirent.h>
 #include <tinyara/clock.h>
 
 #include<netinet/in.h>

@@ -20,7 +20,7 @@
 #include <tinyara/pm/pm.h>
 #include <tinyara/kmalloc.h>
 #include <time.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <debug.h>
 #include <errno.h>
 #include <string.h>

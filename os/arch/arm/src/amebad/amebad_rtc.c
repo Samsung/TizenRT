@@ -64,7 +64,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
-#include <tinyara/rtc.h>
+#include <tinyara/timers/rtc.h>
 
 #include <arch/board/board.h>
 

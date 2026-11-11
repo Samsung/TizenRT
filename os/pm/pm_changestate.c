@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <assert.h>
 #include <time.h>
 #include <debug.h>

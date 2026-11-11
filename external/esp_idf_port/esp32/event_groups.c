@@ -64,7 +64,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/wdog.h>

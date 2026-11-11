@@ -114,6 +114,10 @@ struct netstack {
 	void *data;
 };
 
+/* sock_type (TR_SOCKET/TR_LWNL/TR_UNKNOWN) comes from <tinyara/net/net.h>;
+ * the 12.13 header reshuffle removed the transitive include. */
+#include <tinyara/net/net.h>
+
 struct netstack *get_netstack(sock_type type);
 struct netstack *get_netstack_byfd(int *fd, FAR struct file **filep);
 void put_netstack_byfd(FAR struct file *filep);

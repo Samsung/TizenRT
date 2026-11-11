@@ -4,7 +4,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "queue.h"
+#include <tinyara/queue.h>
 #include "utils/os.h"
 #include <lwip/netif.h>
 #include "wifi/wifi_conf.h"

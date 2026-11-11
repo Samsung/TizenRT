@@ -1027,12 +1027,14 @@ static int rtl8730e_up_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		rtl8730e_up_rxint(dev, priv->rxint_enable);
 		break;
 
+#ifdef TIOCLOOPBACK
 	case TIOCLOOPBACK:
 		if (!arg) {
 			return -EINVAL;
 		}
 		serial_control_loopback(sdrv[uart_index_get(priv->tx)], *(bool *)arg);
 		break;
+#endif
 	default:
 		ret = -ENOTTY;
 		break;

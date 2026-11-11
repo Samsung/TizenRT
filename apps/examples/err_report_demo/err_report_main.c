@@ -206,7 +206,7 @@ static void error_report_multiple(const char *endpoint)
 	int nbytes_sent = 0;
 	int i;
 	int sock_cnt = 0;
-	int sock_fds[CONFIG_NSOCKET_DESCRIPTORS];
+	int sock_fds[CONFIG_NBSDSOCKET_DESCRIPTORS];
 
 	res = wifi_manager_init(&wifi_callbacks);
 	if (res != WIFI_MANAGER_SUCCESS) {
@@ -217,7 +217,7 @@ static void error_report_multiple(const char *endpoint)
 	 * prevent dhcp from successfully opening a socket,
 	 * and then capture the resulting error.
 	 */
-	for (i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; i++) {
+	for (i = 0; i < CONFIG_NBSDSOCKET_DESCRIPTORS; i++) {
 		sock_fds[i] = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (sock_fds[i] < 0) {
 			/* We are done here, time to exit */

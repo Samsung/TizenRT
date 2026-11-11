@@ -32,7 +32,7 @@
 #include <debug.h>
 #include <libgen.h>
 #include <crc8.h>
-#include <crc16.h>
+#include <tinyara/crc16.h>
 #include <crc32.h>
 #include "tc_internal.h"
 

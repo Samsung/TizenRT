@@ -111,7 +111,7 @@ static int wsa_init_done = 0;
 #include <errno.h>
 
 #ifndef FD_SETSIZE
-#define FD_SETSIZE     (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
+#define FD_SETSIZE     (CONFIG_NFILE_DESCRIPTORS + CONFIG_NBSDSOCKET_DESCRIPTORS)
 #endif
 
 #define IS_EINTR(ret) ((ret) == EINTR)

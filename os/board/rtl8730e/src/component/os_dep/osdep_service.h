@@ -340,7 +340,7 @@ extern u32 random_seed;
 // #include "task.h"
 // #include "event_groups.h"
 // #include "semphr.h"
-// #include "queue.h"
+// #include <tinyara/queue.h>
 // #include "timers.h"
 // #include "platform_stdlib.h"
 #ifdef __cplusplus

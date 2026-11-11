@@ -63,7 +63,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <errno.h>
 #include <fixedmath.h>
 #include <debug.h>

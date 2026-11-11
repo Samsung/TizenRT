@@ -17,7 +17,7 @@
  ****************************************************************************/
 #include <assert.h>
 #include <pthread.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <stdint.h>
 #include <stdio.h>

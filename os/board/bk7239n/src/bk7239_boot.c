@@ -89,7 +89,7 @@
 #ifdef CONFIG_WATCHDOG
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <tinyara/watchdog.h>
+#include <tinyara/timers/watchdog.h>
 #endif
 
 #if defined(CONFIG_TFM_OTP_NSC)

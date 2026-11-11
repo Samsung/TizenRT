@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <sys/time.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <stress_tool/st_perf.h>
 #ifdef __LINUX__
 #include "netlog.h"

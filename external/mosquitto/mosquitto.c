@@ -50,7 +50,7 @@ static unsigned int init_refcount = 0;
 #endif
 #if defined(__TINYARA__)
 #ifndef FD_SETSIZE
-#define FD_SETSIZE	(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
+#define FD_SETSIZE	(CONFIG_NFILE_DESCRIPTORS + CONFIG_NBSDSOCKET_DESCRIPTORS)
 #endif
 #endif
 void mosquitto__destroy(struct mosquitto *mosq);

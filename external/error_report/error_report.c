@@ -181,7 +181,7 @@ int error_report_send(const char *ep, char *readbuf, int readbuf_len)
 	struct sockaddr_in endpoint;
 	char ip_addr[ERR_IP_ADRR_LEN];
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (socket_fd < CONFIG_NSOCKET_DESCRIPTORS) {
+	if (socket_fd < CONFIG_NBSDSOCKET_DESCRIPTORS) {
 		return ERR_FAIL;
 	}
 	memset((char *)&endpoint, 0x00, sizeof(endpoint));

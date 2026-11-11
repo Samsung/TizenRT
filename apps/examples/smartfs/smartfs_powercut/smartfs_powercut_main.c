@@ -61,7 +61,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
-#include <crc16.h>
+#include <tinyara/crc16.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 

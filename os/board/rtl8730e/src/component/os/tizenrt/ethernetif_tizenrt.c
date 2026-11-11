@@ -69,7 +69,7 @@
 #include "lwip/err.h"
 #include "platform_opts.h"
 #include "ethernetif_tizenrt.h"
-#include "queue.h"
+#include <tinyara/queue.h>
 
 #include "lwip/ethip6.h" //Add for ipv6
 

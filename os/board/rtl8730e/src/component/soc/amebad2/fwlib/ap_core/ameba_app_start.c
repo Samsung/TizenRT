@@ -12,7 +12,7 @@
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 #include "FreeRTOS.h"
 #include "task.h"     /* RTOS task related API prototypes. */
-#include "queue.h"    /* RTOS queue related API prototypes. */
+#include <tinyara/queue.h>    /* RTOS queue related API prototypes. */
 #include "timers.h"   /* Software timer related API prototypes. */
 #include "semphr.h"   /* Semaphore related API prototypes. */
 #endif
