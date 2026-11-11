@@ -109,6 +109,7 @@ bool search_tz(char *dirpath)
 		strncat(dirpath, file_name[num - folder_size - 1], MAX_PATH_LEN);
 	} else {
 		printf("Out of index range.");
+		closedir(dirp);
 		return false;
 	}
 
