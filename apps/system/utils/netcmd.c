@@ -117,6 +117,7 @@ static void nic_display_state(void)
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		NETCMD_LOGE(NTAG, "fail %s:%d\n", __FUNCTION__, __LINE__);
+		netlib_freeifaddrs(ifa);
 		return;
 	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
