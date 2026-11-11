@@ -19,7 +19,6 @@
 
 extern bool is_secured;
 extern trble_client_init_config *client_init_parm;
-extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
 extern rtk_bt_le_conn_ind_t *ble_tizenrt_conn_ind;
 
