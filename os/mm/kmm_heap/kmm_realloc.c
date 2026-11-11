@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
+#include <string.h>
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 
@@ -135,6 +136,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 {
 	void *ret;
 	int kheap_idx;
+	FAR struct mm_allocnode_s *oldnode;
 
 	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_malloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -168,6 +170,8 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);
 		if (ret != NULL) {
 			if (oldmem) {
+				oldnode = (FAR struct mm_allocnode_s *)((FAR char *)oldmem - SIZEOF_MM_ALLOCNODE);
+				memcpy(ret, oldmem, oldnode->size - SIZEOF_MM_ALLOCNODE);
 				kmm_free(oldmem);
 			}
 			return ret;
