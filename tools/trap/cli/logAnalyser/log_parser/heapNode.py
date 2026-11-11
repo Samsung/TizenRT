@@ -75,9 +75,15 @@ class heap_node:
 
         #if address is in kernel
         if isKernel == True:
-            addrcmd = "arm-none-eabi-addr2line -e {file} {trans_address}".format(file= elf,trans_address=hex(address))
-
-        self.filename = os.popen(addrcmd).read()
+            if elf and os.path.exists(elf):
+                addrcmd = "arm-none-eabi-addr2line -e {file} {trans_address}".format(file= elf,trans_address=hex(address))
+                self.filename = os.popen(addrcmd).read()
+            else:
+                self.filename = "(ELF not provided)\n"
+        elif addrcmd:
+            self.filename = os.popen(addrcmd).read()
+        else:
+            self.filename = "\n"
 
     def print_info(self):
         print("\tAddress        : ", self.addr)
