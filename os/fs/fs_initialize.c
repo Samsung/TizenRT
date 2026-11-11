@@ -71,7 +71,7 @@ static int sync_reboot_handler(FAR struct notifier_block *nb,
 	return 0;
 }
 
-#ifdef CONFIG_FS_AUTOMOUNT_PROCFS
+#if defined(CONFIG_FS_AUTOMOUNT_PROCFS) || defined(CONFIG_FS_AUTOMOUNT_TMPFS)
 /****************************************************************************
  * Name: fs_auto_mount
  *
@@ -83,6 +83,9 @@ static int sync_reboot_handler(FAR struct notifier_block *nb,
  *   commands (ps, heapinfo, cpuload, irqinfo, kill) compile out their
  *   private mount fallback when CONFIG_FS_AUTOMOUNT_PROCFS is set, so
  *   /proc has to exist before the first command runs.
+ *   CONFIG_FS_AUTOMOUNT_TMPFS adds the TizenRT convention of a
+ *   mounted /tmp (ostest AIO scratch files and friends) to the same
+ *   table.
  *
  ****************************************************************************/
 
@@ -94,7 +97,12 @@ static void fs_auto_mount(void)
 		FAR const char *fs_mountpoint;
 	} fs_automount[] =
 	{
+#ifdef CONFIG_FS_AUTOMOUNT_PROCFS
 		{ "procfs", "/proc" },
+#endif
+#ifdef CONFIG_FS_AUTOMOUNT_TMPFS
+		{ "tmpfs",  "/tmp"  },
+#endif
 		{ NULL,     NULL    }
 	};
 
@@ -175,7 +183,7 @@ void fs_initialize(void)
 
 	register_reboot_notifier(&g_sync_nb);
 
-#ifdef CONFIG_FS_AUTOMOUNT_PROCFS
+#if defined(CONFIG_FS_AUTOMOUNT_PROCFS) || defined(CONFIG_FS_AUTOMOUNT_TMPFS)
 	/* Mount the file systems that the configuration requests to be
 	 * always mounted, the way the TizenRT boot used to do.
 	 */
