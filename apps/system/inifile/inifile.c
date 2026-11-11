@@ -504,6 +504,7 @@ INIHANDLE inifile_initialize(FAR const char *inifile_name)
 		return (INIHANDLE)priv;
 	} else {
 		inidbg("ERROR: Could not open \"%s\"\n", inifile_name);
+		free(priv);
 		return (INIHANDLE)NULL;
 	}
 }
