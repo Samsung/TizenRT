@@ -986,6 +986,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 		} else {
 			ble_tizenrt_dummy_callback();
 		}
+		osif_mem_free(read_result.data);
+		read_result.data = NULL;
 		break;
 	}
 #endif /* RTK_BLE_COC_SUPPORT */
