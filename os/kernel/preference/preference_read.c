@@ -22,7 +22,7 @@
 #include <debug.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <crc32.h>
+#include <tinyara/crc32.h>
 #include <tinyara/preference.h>
 
 /****************************************************************************
