@@ -50,10 +50,10 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 # | App Count | App1 Name  | App1 Active Idx | App2 Name  | App2 Active Idx |     App# ...   |
 # |  (1byte)  | (16 bytes) |   (1 bytes)     | (16 bytes) |    (1 bytes)    |  (## bytes)    |
 # --------------------------------------------------------------------------------------------
-# -------------------------------------------------------------------------------+
-# | Resource Active Idx |              Reserved               | BP Update Reason |
-# |       (1 byte)      |       ... to fixed bp tail          |      (1 byte)    |
-# -------------------------------------------------------------------------------+
+# ------------------------------------------------------------------------------+
+# | Resource Active Idx |       Reserved         | Try Count | BP Update Reason |
+# |       (1 byte)      | ... to fixed bp tail   | (1 byte)  |   (1 byte)       |
+# ------------------------------------------------------------------------------+
 #  * The "Checksum" is crc32 value for data from "BP Version" to the last byte of BP.
 #  * The "BP Version" is a version to check the latest of boot parameters.
 #  * The "BP Format Version" is a version to manage the format of boot parameters.
@@ -70,6 +70,14 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 #    - All resource have 2 partitions.
 #    - If the value is 0, "First partition" will be mounted.
 #    - If the value is 1, "Second partition" will be mounted.
+#  * "Try Count" occupies offset 4094, immediately before BP Update Reason.
+#    A binary update that switches the kernel slot sets it to 1 to start trial
+#    booting of the new binary set. The OS increments and saves the count for
+#    each trial attempt. If the count exceeds the trial limit (5), it rolls
+#    back to the opposite A/B set. When trial verification completes at the
+#    OS initialization checkpoint before app startup, it is set to 0
+#    (verification done). This script initializes it to 0. The OS also treats
+#    the legacy reserved value 0xff as 0.
 #  * The "BP Update Reason" is the last successful reason for updating BP.
 #    It is located at the last byte of each 4KB BP so the bootloader can update
 #    it without knowing the variable app/resource data layout.
@@ -98,6 +106,7 @@ def make_bootparam():
 
     INITIAL_ACTIVE_IDX = 0
     INITIAL_BP_REASON = 0
+    INITIAL_TRY_COUNT = 0
 
     # Check partitions of kernel and bootparam
     kernel_address = []
@@ -171,12 +180,14 @@ def make_bootparam():
         with open(bootparam_file_path, 'a') as fp:
                 fp.write(struct.pack('B', INITIAL_ACTIVE_IDX))
 
-    # Fill remaining space with '0xff' up to the fixed BP tail and write bp_tail
-    bp_tail = struct.pack('B', INITIAL_BP_REASON)
+    # Pad with '0xff', then place try_count and the existing reason byte at the BP end.
+    bp_try_count = struct.pack('B', INITIAL_TRY_COUNT)
+    bp_reason = struct.pack('B', INITIAL_BP_REASON)
     with open(bootparam_file_path, 'a') as fp:
         remain_size = SIZE_OF_BPx - (kernel_data_size + total_app_data_size + resource_data_size)
-        fp.write(b'\xff' * (remain_size - len(bp_tail)))
-        fp.write(bp_tail)
+        fp.write(b'\xff' * (remain_size - len(bp_try_count) - len(bp_reason)))
+        fp.write(bp_try_count)
+        fp.write(bp_reason)
 
     # Add checksum for BP1
     mkchecksum_path = os.path.dirname(__file__) + '/mkchecksum.py'
