@@ -75,7 +75,21 @@ void *tls_server_seclink_main(void *arg)
 #endif
 
 	/*
-     * 1. Load the certificates and private RSA key
+     * 1. Seed the RNG
+     */
+	TLS_SECLINK_SERVER_LOG("  . Seeding the random number generator...");
+
+	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+									 (const unsigned char *)pers,
+									 strlen(pers))) != 0) {
+		TLS_SECLINK_SERVER_LOG(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
+		goto exit;
+	}
+
+	TLS_SECLINK_SERVER_LOG(" ok\n");
+
+	/*
+     * 2. Load the certificates and private RSA key
      */
 	TLS_SECLINK_SERVER_LOG("  . Loading the server cert. and key...");
 
@@ -100,7 +114,8 @@ void *tls_server_seclink_main(void *arg)
 	}
 
 	ret = mbedtls_pk_parse_key(&pkey, (const unsigned char *)srv_key,
-							   srv_key_len, NULL, 0);
+							   srv_key_len, NULL, 0,
+							   mbedtls_ctr_drbg_random, &ctr_drbg);
 	if (ret != 0) {
 		TLS_SECLINK_SERVER_LOG(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
 		goto exit;
@@ -108,26 +123,12 @@ void *tls_server_seclink_main(void *arg)
 	TLS_SECLINK_SERVER_LOG(" ok\n");
 
 	/*
-     * 2. Setup the listening TCP socket
+     * 3. Setup the listening TCP socket
      */
 	TLS_SECLINK_SERVER_LOG("  . Bind on https://localhost:4433/ ...");
 
 	if ((ret = mbedtls_net_bind(&listen_fd, NULL, "4433", MBEDTLS_NET_PROTO_TCP)) != 0) {
 		TLS_SECLINK_SERVER_LOG(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
-		goto exit;
-	}
-
-	TLS_SECLINK_SERVER_LOG(" ok\n");
-
-	/*
-     * 3. Seed the RNG
-     */
-	TLS_SECLINK_SERVER_LOG("  . Seeding the random number generator...");
-
-	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-									 (const unsigned char *)pers,
-									 strlen(pers))) != 0) {
-		TLS_SECLINK_SERVER_LOG(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
 		goto exit;
 	}
 
