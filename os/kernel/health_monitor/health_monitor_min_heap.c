@@ -91,9 +91,15 @@ void health_monitor_publish(void)
 
 	/* Mark sequence odd to indicate an in-progress update. */
 	g_health_sequence = sequence + 1;
+#ifdef CONFIG_SMP
+	SP_DMB();
+#endif
 
 	g_health_next_count = g_health_count;
 	g_health_next_tick = next;
+#ifdef CONFIG_SMP
+	SP_DMB();
+#endif
 
 	/* Mark sequence even after writing the payload. */
 	g_health_sequence = sequence + 2;

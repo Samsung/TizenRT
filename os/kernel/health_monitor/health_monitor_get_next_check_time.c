@@ -69,9 +69,16 @@ int health_monitor_get_next_check_time(clock_t *check_at)
 	if (sequence & 1) {
 		return -EAGAIN;
 	}
+#ifdef CONFIG_SMP
+	/* SP_DMB() orders stores only; snapshot loads need a full barrier. */
+	SP_DSB();
+#endif
 
 	count = g_health_next_count;
 	if (count == 0) {
+#ifdef CONFIG_SMP
+		SP_DSB();
+#endif
 		if (sequence != g_health_sequence) {
 			return -EAGAIN;
 		}
@@ -93,6 +100,9 @@ int health_monitor_get_next_check_time(clock_t *check_at)
 #endif
 
 	/* Check whether the sequence changed during the read. */
+#ifdef CONFIG_SMP
+	SP_DSB();
+#endif
 	if (sequence != g_health_sequence) {
 		return -EAGAIN;
 	}
