@@ -306,14 +306,15 @@ static void timer_timeout(int argc, uint32_t itimer)
 
 int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value, FAR struct itimerspec *ovalue)
 {
-	FAR struct posix_timer_s *timer = (FAR struct posix_timer_s *)timerid;
+	FAR struct posix_timer_s *timer;
 	irqstate_t state;
 	int delay;
 	int ret = OK;
 
-	/* Some sanity checks */
+	/* Validate the timer handle by checking list membership */
 
-	if (!PT_ISVALID(timer) || !value) {
+	timer = timer_gethandle(timerid);
+	if (!timer || !value) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
