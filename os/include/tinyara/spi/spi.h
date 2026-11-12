@@ -555,6 +555,16 @@ enum spi_mode_e {
 typedef uint8_t spi_hwfeatures_t;
 #endif
 
+/* Raw SPI I/O configuration (TizenRT extension, restored for the
+ * 12.13.0 base - used by the audio ndp120/adam110 lower-half headers) */
+
+struct spi_io_config {
+	unsigned int bpw;        /* Bits per word */
+	int freq;                /* Clock speed */
+	int cs;                  /* Chip select */
+	enum spi_mode_e mode;    /* SPI mode */
+};
+
 /* The SPI vtable */
 
 struct spi_dev_s;

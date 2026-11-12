@@ -119,7 +119,8 @@ CONFIG_ARCH_HAVE_TICKSUPPRESS=y
 # CONFIG_ARCH_HAVE_DABORTSTACK is not set
 CONFIG_SW_STACK_OVERFLOW_DETECTION=y
 # CONFIG_STACK_OVERFLOW_PROTECTION_DISABLE is not set
-# CONFIG_SYSTEM_REBOOT_REASON is not set (reboot-reason glue dropped by 12.13 base)
+# reboot-reason glue dropped by 12.13 base
+# CONFIG_SYSTEM_REBOOT_REASON is not set
 
 #
 # ARMv7-A Configuration Options

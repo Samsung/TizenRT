@@ -19,6 +19,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/time.h>
 
 #define TRWIFI_MACADDR_LEN			  6

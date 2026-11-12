@@ -36,7 +36,9 @@ struct task_struct inic_ipc_api_host_handler;
 #endif
 
 // handle to log queue
+#ifdef CONFIG_AMEBASMART_BLE
 extern void *g_km4_log_queue;
+#endif
 
 #define RETRY_COUNT 2500
 static volatile u8 inic_ipc_old_ip_addr[4] = {0};
@@ -356,6 +358,7 @@ void inic_ipc_api_host_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	rtw_up_sema_from_isr(&g_host_inic_api_task_wake_sema);
 }
 
+#ifdef CONFIG_AMEBASMART_BLE
 static void inic_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 {
 	/* To avoid gcc warnings */
@@ -399,8 +402,9 @@ NOTIFY_MSG: ;
 	/* Indicate logs have been printed */
 	u8 *print_flag = (u8 *)ipc_recv_msg->rsvd;
 	print_flag[0] = 1;
-	DCache_Clean((u32)print_flag, sizeof(print_flag));
+		DCache_Clean((u32)print_flag, sizeof(print_flag));
 }
+#endif /* CONFIG_AMEBASMART_BLE */
 
 /**
  * @brief  to send a ipc message to device and wait result.
@@ -590,6 +594,7 @@ const IPC_INIT_TABLE ipc_api_host_table = {
 	.IPC_Channel = IPC_D2H_WIFI_API_TRAN
 };
 
+#ifdef CONFIG_AMEBASMART_BLE
 IPC_TABLE_DATA_SECTION
 const IPC_INIT_TABLE ipc_print_table = {
 	.USER_MSG_TYPE = IPC_USER_POINT,
@@ -598,6 +603,7 @@ const IPC_INIT_TABLE ipc_print_table = {
 	.Txfunc = IPC_TXHandler,
 	.TxIrqData = (VOID *) NULL,
 	.IPC_Direction = IPC_DIR_MSG_RX,
-	.IPC_Channel = IPC_N2A_NP_LOG_CHN
+		.IPC_Channel = IPC_N2A_NP_LOG_CHN
 };
-#endif
+#endif /* CONFIG_AMEBASMART_BLE */
+#endif /* PLATFORM_AMEBALITE/AMEBAD2/AMEBADPLUS/RTL8720F */

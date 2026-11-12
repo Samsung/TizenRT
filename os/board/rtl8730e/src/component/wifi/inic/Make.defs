@@ -54,7 +54,11 @@ CSRCS += inic_ipc_host.c \
 	 inic_ipc_host_api.c \
 	 inic_ipc_host_api_basic.c \
 	 inic_ipc_host_api_ext.c \
-	 inic_ipc_msg_queue.c
+	 	 inic_ipc_msg_queue.c
 
 DEPPATH += --dep-path component/wifi/inic
 VPATH += :component/wifi/inic
+
+# The inic host glue uses the BT component osif.h (unconditional on WiFi)
+CFLAGS += -I$(COMPONENT_DIR)/bluetooth/inc
+

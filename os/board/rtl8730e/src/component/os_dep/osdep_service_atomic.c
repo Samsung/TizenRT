@@ -29,9 +29,7 @@ void ATOMIC_ADD(ATOMIC_T *v, int i)
 #if defined(STDATOMIC)
 	atomic_fetch_add(v, i);
 #else
-	unsigned int irq_flags = save_and_cli();
-	v->counter += i;
-	restore_flags(irq_flags);
+			atomic_fetch_add(v, i);
 #endif
 }
 
@@ -40,9 +38,7 @@ void ATOMIC_SUB(ATOMIC_T *v, int i)
 #if defined(STDATOMIC)
 	atomic_fetch_sub(v, i);
 #else
-	unsigned int irq_flags = save_and_cli();
-	v->counter -= i;
-	restore_flags(irq_flags);
+	atomic_fetch_sub(v, i);
 #endif
 }
 
@@ -62,15 +58,7 @@ int ATOMIC_ADD_RETURN(ATOMIC_T *v, int i)
 	atomic_fetch_add(v, i);
 	return atomic_load(v);
 #else
-	int temp;
-
-	unsigned int irq_flags = save_and_cli();
-	temp = v->counter;
-	temp += i;
-	v->counter = temp;
-	restore_flags(irq_flags);
-
-	return temp;
+	return atomic_fetch_add(v, i);
 #endif
 }
 
@@ -80,15 +68,7 @@ int ATOMIC_SUB_RETURN(ATOMIC_T *v, int i)
 	atomic_fetch_sub(v, i);
 	return atomic_load(v);
 #else
-	int temp;
-
-	unsigned int irq_flags = save_and_cli();
-	temp = v->counter;
-	temp -= i;
-	v->counter = temp;
-	restore_flags(irq_flags);
-
-	return temp;
+	return atomic_fetch_sub(v, i);
 #endif
 }
 

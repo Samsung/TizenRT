@@ -889,7 +889,7 @@ static void cmd_debug(int argc, char **argv)
 	} else if (strncmp(argv[1], "is_up", strlen("is_up")) == 0) {
 		nvdbg("\r\n%d", wifi_is_up((rtw_interface_t)rtw_atoi((u8 *)argv[2])));
 	} else if (strncmp(argv[1], "set_mac", strlen("set_mac")) == 0) {
-		nvdbg("\r\n%d", wifi_set_mac_address(argv[2]));
+		nvdbg("\r\n%d", wifi_set_mac_address(0, (unsigned char *)argv[2], 0));
 	} else if (strncmp(argv[1], "get_mac", strlen("get_mac")) == 0) {
 		// rtw_mac_t *mac;
 		// wifi_get_mac_address(mac);

@@ -109,7 +109,8 @@ CONFIG_ARCH_HAVE_TICKSUPPRESS=y
 # CONFIG_ARCH_HAVE_DABORTSTACK is not set
 CONFIG_SW_STACK_OVERFLOW_DETECTION=y
 # CONFIG_STACK_OVERFLOW_PROTECTION_DISABLE is not set
-# CONFIG_SYSTEM_REBOOT_REASON is not set (reboot-reason glue dropped by 12.13 base)
+# reboot-reason glue dropped by 12.13 base
+# CONFIG_SYSTEM_REBOOT_REASON is not set
 
 #
 # ARMv7-A Configuration Options
@@ -169,7 +170,8 @@ CONFIG_RTL8730E_SERIAL_FIFO=y
 CONFIG_AMEBASMART_BOR=y
 CONFIG_AMEBASMART_THRESHOLD_FALL=14
 CONFIG_AMEBASMART_THRESHOLD_RISE=11
-# CONFIG_AMEBASMART_SPI is not set (12.13 SPI API port queued)
+# 12.13 SPI API port queued
+# CONFIG_AMEBASMART_SPI is not set
 CONFIG_AMEBASMART_SPI0=y
 CONFIG_AMEBASMART_SPI1=y
 CONFIG_AMEBASMART_SPI_EXCHANGE=y
@@ -381,7 +383,8 @@ CONFIG_HW_SE_STORAGE=y
 # CONFIG_HW_AES_ENC is not set
 # CONFIG_HW_GCM_ENC is not set
 CONFIG_SE_SECURE_CONTEXT_SIZE=9216
-# CONFIG_SECURITY_LEVEL is not set (security stack ioctls dropped by 12.13 base - port queued)
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_LEVEL is not set
 
 #
 # Crypto Module
@@ -535,7 +538,8 @@ CONFIG_I2C_TRANSFER=y
 CONFIG_I2C_POLLED=y
 # CONFIG_I2C_TRACE is not set
 # CONFIG_I2C_WRITEREAD is not set
-# CONFIG_SPI is not set (amebasmart SPI lowerhalf needs 12.13 API port - queued)
+# amebasmart SPI lowerhalf needs 12.13 API port - queued
+# CONFIG_SPI is not set
 CONFIG_SPI_USERIO=y
 # CONFIG_SPI_OWNBUS is not set
 CONFIG_SPI_EXCHANGE=y
@@ -584,7 +588,8 @@ CONFIG_RTC=y
 # CONFIG_RTC_ALARM is not set
 CONFIG_RTC_DRIVER=y
 CONFIG_RTC_IOCTL=y
-# CONFIG_WATCHDOG is not set (WDFLAGS API drift - port queued)
+# WDFLAGS API drift - port queued
+# CONFIG_WATCHDOG is not set
 CONFIG_WATCHDOG_DEVPATH="/dev/watchdog0"
 # CONFIG_WATCHDOG_FOR_IRQ is not set
 # CONFIG_TIMER is not set
@@ -719,8 +724,10 @@ CONFIG_DRIVERS_BLE=y
 # CONFIG_VIRTUAL_BLE is not set
 CONFIG_RTK_BLE=y
 # CONFIG_OTP is not set
-# CONFIG_SECURITY_LINK_DRV is not set (security stack ioctls dropped by 12.13 base - port queued)
-# CONFIG_SECURITY_LINK is not set (security stack ioctls dropped by 12.13 base - port queued)
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_LINK_DRV is not set
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_LINK is not set
 
 #
 # Networking Support
@@ -1216,7 +1223,8 @@ CONFIG_JEDEC_SPI_FREQUENCY=48000000
 #
 # Memory Management
 #
-# CONFIG_MM_KERNEL_HEAP is not set (kernel heap is a protected/user-mode feature; tash leaves it off)
+# kernel heap is a protected/user-mode feature; tash leaves it off
+# CONFIG_MM_KERNEL_HEAP is not set
 # CONFIG_REALLOC_DISABLE_NEIGHBOR_EXTENSION is not set
 CONFIG_KMM_REGIONS=1
 CONFIG_KMM_NHEAPS=1
@@ -1716,7 +1724,8 @@ CONFIG_SYSTEM_PREAPP_STACKSIZE=2048
 CONFIG_SYSTEM_IPERF=y
 CONFIG_IPERF_PRIORITY=100
 CONFIG_IPERF_STACKSIZE=4096
-# CONFIG_MEM_LEAK_CHECKER is not set (checker ioctl glue dropped by 12.13 base)
+# checker ioctl glue dropped by 12.13 base
+# CONFIG_MEM_LEAK_CHECKER is not set
 CONFIG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE=1007
 CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT=3000
 CONFIG_SYSTEM_NETDB=y
@@ -1726,7 +1735,8 @@ CONFIG_SYSTEM_NETDB_PRIORITY=100
 # CONFIG_SYSTEM_READLINE is not set
 CONFIG_SYSTEM_INFORMATION=y
 CONFIG_SYSTEM_CMDS=y
-# CONFIG_SECURITY_LEVEL_CMDS is not set (security stack ioctls dropped by 12.13 base - port queued)
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_LEVEL_CMDS is not set
 CONFIG_FS_CMDS=y
 CONFIG_FSCMD_BUFFER_LEN=256
 CONFIG_NET_CMDS=y
@@ -1737,14 +1747,16 @@ CONFIG_ENABLE_DATE=y
 # CONFIG_ENABLE_ENV_SET is not set
 # CONFIG_ENABLE_ENV_UNSET is not set
 CONFIG_ENABLE_FREE=y
-# CONFIG_ENABLE_HEAPINFO is not set (heapinfo enum header dropped by 12.13 base)
+# heapinfo enum header dropped by 12.13 base
+# CONFIG_ENABLE_HEAPINFO is not set
 # CONFIG_HEAPINFO_USER_GROUP is not set
 CONFIG_ENABLE_PRODCONFIG=y
 # CONFIG_ENABLE_TZSELECT is not set
 # CONFIG_ENABLE_KILL is not set
 # CONFIG_ENABLE_KILLALL is not set
 CONFIG_ENABLE_PS=y
-# CONFIG_ENABLE_STACKMONITOR is not set (stkmon_save_s struct glue dropped by 12.13 base)
+# stkmon_save_s struct glue dropped by 12.13 base
+# CONFIG_ENABLE_STACKMONITOR is not set
 CONFIG_STACKMONITOR_STACKSIZE=4096
 CONFIG_STACKMONITOR_PRIORITY=100
 CONFIG_STACKMONITOR_INTERVAL=5
@@ -1808,12 +1820,17 @@ CONFIG_BINMGR_UPDATE_SAME_VERSION=y
 #
 # Security Framework
 #
-# CONFIG_SECURITY_API is not set (security stack ioctls dropped by 12.13 base - port queued)
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_API is not set
 # CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR is not set
-# CONFIG_SECURITY_AUTH is not set (security stack ioctls dropped by 12.13 base - port queued)
-# CONFIG_SECURITY_CRYPTO is not set (security stack ioctls dropped by 12.13 base - port queued)
-# CONFIG_SECURITY_KEYMGR is not set (security stack ioctls dropped by 12.13 base - port queued)
-# CONFIG_SECURITY_SS is not set (security stack ioctls dropped by 12.13 base - port queued)
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_AUTH is not set
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_CRYPTO is not set
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_KEYMGR is not set
+# security stack ioctls dropped by 12.13 base - port queued
+# CONFIG_SECURITY_SS is not set
 
 # Toolchain selection (added for 12.13.0 base, matches tash)
 CONFIG_ARM_TOOLCHAIN_GNU_EABI=y

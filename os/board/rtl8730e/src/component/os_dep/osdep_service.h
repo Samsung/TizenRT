@@ -163,13 +163,10 @@ typedef void thread_return;
 typedef void *thread_context;
 
 #if !defined(CONFIG_PLATFORM_8710C)
-/* atomic_t is the NuttX type of <tinyara/atomic.h> */
+/* 12.13.0 base: atomic_t is a scalar (volatile int32_t, tinyara/atomic.h);
+ * the driver-visible ATOMIC_T maps onto it directly. */
 
-typedef struct {
-	volatile int counter;
-} osdep_atomic_t;
-
-#define ATOMIC_T osdep_atomic_t
+#define ATOMIC_T atomic_t
 #else
 #define ATOMIC_T atomic_t
 #endif
@@ -276,22 +273,12 @@ void cli(void);
  * atomic_read - read atomic variable
  * @v: pointer of type atomic_t
  *
- * Atomically reads the value of @v.  Note that the guaranteed
+  * Atomically reads the value of @v.  Note that the guaranteed
  * useful range of an atomic_t is only 24 bits.
  */
-#undef atomic_read
-#define atomic_read(v)  ((v)->counter)
-
-/*
- * atomic_set - set atomic variable
- * @v: pointer of type atomic_t
- * @i: required value
- *
- * Atomically sets the value of @v to @i.  Note that the guaranteed
- * useful range of an atomic_t is only 24 bits.
- */
-#undef atomic_set
-#define atomic_set(v, i) ((v)->counter = (i))
+/* 12.13.0 base: atomic_t is a scalar (volatile int32_t) handled by
+ * tinyara/atomic.h; the struct-with-counter macros no longer apply. */
+#include <tinyara/atomic.h>
 
 /*
  *      These inlines deal with timer wrapping correctly. You are

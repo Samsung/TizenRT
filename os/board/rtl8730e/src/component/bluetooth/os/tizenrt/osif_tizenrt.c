@@ -119,7 +119,9 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
 	if (priority > SCHED_PRIORITY_MAX)
 		priority = SCHED_PRIORITY_DEFAULT;
 
-	pid = kernel_thread(p_name, priority, stack_size, osif_wrapper_thread, (char *const *) task_info);
+		pid = nxtask_create(p_name, priority, NULL, stack_size,
+			    (main_t) osif_wrapper_thread,
+			    (char *const *) task_info, NULL);
 	if (pid == ERROR) {
 		dbg("%s create fail\n", p_name);
 		return _FAIL;
@@ -525,7 +527,16 @@ bool osif_msg_queue_peek(void *p_handle, uint32_t *p_msg_num)
 		return _FAIL;
 	}
 
-	*p_msg_num = ((mqd_t) p_handle)->msgq->nmsgs;
+	/* 12.13.0 base: mqd_t is an opaque handle; read the pending-message
+	 * count through mq_getattr() */
+
+	struct mq_attr mq_stat;
+	if (mq_getattr((mqd_t) p_handle, &mq_stat) != OK) {
+		dbg("mq_getattr fail\n");
+		return _FAIL;
+	}
+
+	*p_msg_num = (uint32_t) mq_stat.mq_curmsgs;
 
 	return _SUCCESS;
 }
@@ -552,13 +563,13 @@ bool osif_msg_send(void *p_handle, void *p_msg, uint32_t wait_ms)
 			ts.tv_sec ++;
 			ts.tv_nsec -= NSEC_PER_SEC;
 		}
-		if (mq_timedsend((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, prio, &ts) != OK) {
+		if (mq_timedsend((mqd_t) p_handle, p_msg, CONFIG_MQ_MAXMSGSIZE, prio, &ts) != OK) {
 			ret = get_errno();
 			dbg("mq time send fail: %d\n", ret);
 			return _FAIL;
 		}
 	} else {
-		if (mq_send((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, prio) != OK) {
+		if (mq_send((mqd_t) p_handle, p_msg, CONFIG_MQ_MAXMSGSIZE, prio) != OK) {
 			ret = get_errno();
 			dbg("mq send fail: %d\n", ret);
 			return _FAIL;
@@ -590,7 +601,7 @@ bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 			ts.tv_sec ++;
 			ts.tv_nsec -= NSEC_PER_SEC;
 		}
-		if (mq_timedreceive((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, &prio, &ts) == ERROR) {
+		if (mq_timedreceive((mqd_t) p_handle, p_msg, CONFIG_MQ_MAXMSGSIZE, &prio, &ts) == ERROR) {
 			ret = get_errno();
 			if (ETIMEDOUT != ret)
 			{
@@ -599,7 +610,7 @@ bool osif_msg_recv(void *p_handle, void *p_msg, uint32_t wait_ms)
 			return _FAIL;
 		}
 	} else {
-		if (mq_receive((mqd_t) p_handle, p_msg, ((mqd_t) p_handle)->msgq->maxmsgsize, &prio) == ERROR) {
+		if (mq_receive((mqd_t) p_handle, p_msg, CONFIG_MQ_MAXMSGSIZE, &prio) == ERROR) {
 			ret = get_errno();
 			dbg("mq receive fail: %d\n", ret);
 			return _FAIL;

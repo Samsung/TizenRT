@@ -1,6 +1,7 @@
 #ifndef __PLATFORM_OPTS_BT_H__
 #define __PLATFORM_OPTS_BT_H__
 #include "platform_autoconf.h"
+#include <debug.h>
 
 #define VERSION_2019		1
 #define VERSION_2021		2

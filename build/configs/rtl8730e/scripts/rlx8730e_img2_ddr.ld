@@ -134,6 +134,8 @@ SECTIONS
 	{
 		__flash_text_start__ = .;
 		_stext_flash = ABSOLUTE(.);
+		/* 12.13.0 base armv7-a code references the classic aliases */
+		_stext = ABSOLUTE(.);
 
 		*(.text)		/* .text sections (code) */
 		EXCLUDE_FILE (*arm_mmu.o *arm_cpupause.o *arm_testset.o *spinlock.o)*(.text*)      /* .text* sections (code) */
@@ -160,6 +162,7 @@ SECTIONS
 		. = ALIGN(4);
 
 		_etext_flash = ABSOLUTE(.);
+		_etext = ABSOLUTE(.);
 		__flash_text_end__ = .;
 	} > CA32_IMG2_XIP
 

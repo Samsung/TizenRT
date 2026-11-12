@@ -70,26 +70,9 @@ typedef __mode_t mode_t;
 #ifdef DIR
 #undef DIR
 #endif
-typedef void *DIR;
-struct dirent {
-	/* Always zero */
-	long d_ino;
-
-	/* File position within stream */
-	long d_off;
-
-	/* Structure size */
-	unsigned short d_reclen;
-
-	/* Length of name without \0 */
-	size_t d_namlen;
-
-	/* File type */
-	int d_type;
-
-	/* File name */
-	char d_name[VFS_PATH_MAX + 1];
-};
+/* 12.13.0 base: use the system dirent/DIR from <dirent.h> instead of
+ * redefining them here. */
+#include <dirent.h>
 typedef struct dirent dirent;
 #if __GNUC__ < 6
 #if __GNUC__ < 5
@@ -106,7 +89,7 @@ typedef signed int blkcnt_t;
 #endif
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
-typedef int nlink_t;
+/* 12.13.0 base: nlink_t is provided by <sys/types.h> */
 #endif
 
 struct stat {

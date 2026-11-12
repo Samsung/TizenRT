@@ -1,6 +1,7 @@
 #ifndef __PLATFORM_OPTS_BT_H__
 #define __PLATFORM_OPTS_BT_H__
 #include "platform_autoconf.h"
+#include <debug.h>
 
 /*
  * < CONFIG IAR PROJECT

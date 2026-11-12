@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <debug.h>
 #include <osif.h>
 #include <platform_opts_bt.h>
 #include <bt_api_config.h>

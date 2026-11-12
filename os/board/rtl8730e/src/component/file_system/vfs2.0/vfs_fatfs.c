@@ -281,9 +281,6 @@ struct dirent *fatfs_readdir(vfs_file *finfo)
 	}
 
 	fn = m_fileinfo.fname;
-	ent->d_ino = 0;
-	ent->d_off = 0;
-	ent->d_reclen = m_fileinfo.fsize;
 	if (m_fileinfo.fattrib & AM_DIR) {
 		ent->d_type = DT_DIR;    // directory
 	} else {
