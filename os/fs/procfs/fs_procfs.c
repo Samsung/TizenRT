@@ -80,6 +80,9 @@ extern const struct procfs_operations g_critmon_operations;
 extern const struct procfs_operations g_fdt_operations;
 extern const struct procfs_operations g_iobinfo_operations;
 extern const struct procfs_operations g_irq_operations;
+#ifdef CONFIG_LOG_DUMP
+extern const struct procfs_operations g_logsave_operations;
+#endif
 extern const struct procfs_operations g_meminfo_operations;
 extern const struct procfs_operations g_memdump_operations;
 extern const struct procfs_operations g_mempool_operations;
@@ -164,6 +167,10 @@ static const struct procfs_entry_s g_procfs_entries[] =
 
 #ifdef CONFIG_SCHED_IRQMONITOR
   { "irqs",         &g_irq_operations,      PROCFS_FILE_TYPE },
+#endif
+
+#ifdef CONFIG_LOG_DUMP
+  { "logsave",      &g_logsave_operations,    PROCFS_FILE_TYPE },
 #endif
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_MEMINFO

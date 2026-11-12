@@ -23,6 +23,7 @@
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
+#include <tinyara/kthread.h>
 #include <tinyara/compression.h>
 
 #include <mqueue.h>
@@ -586,6 +587,25 @@ size_t log_dump_read(FAR char *buffer, size_t buflen)
 	sched_unlock();
 
 	return ret;
+}
+
+/****************************************************************************
+ * Name: log_dump_initialize
+ *
+ * Description:
+ *   Start the log dump thread that stores console logs to a buffer and
+ *   compresses them.
+ *
+ ****************************************************************************/
+
+void log_dump_initialize(void)
+{
+	svdbg("Starting log_dump thread\n");
+
+	pid_t pid = kthread_create(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
+	if (pid < 0) {
+		sdbg("Failed to start log dump\n");
+	}
 }
 
 int log_dump(int argc, char *argv[])

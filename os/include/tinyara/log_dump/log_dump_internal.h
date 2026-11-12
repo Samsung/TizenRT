@@ -64,4 +64,11 @@ int log_dump_get_size(void);
  ****************************************************************************/
 int log_dump(int argc, char *argv[]);
 
+/****************************************************************************
+ * Description:
+ *   This is used to start the log dump thread at bring-up
+ *
+ ****************************************************************************/
+void log_dump_initialize(void);
+
 #endif							/* __LOG_DUMP_INTERNAL_H */
