@@ -131,6 +131,7 @@
 #define _EEPIOCBASE     (0x4600) /* EEPROM driver ioctl commands */
 #define _PTPBASE        (0x4700) /* PTP ioctl commands */
 #define _PMBASE         (0x4800) /* TizenRT pm driver ioctl commands */
+#define _COMPBASE       (0x4900) /* compress ioctl commands */
 #define _WLIOCBASE      (0x8b00) /* Wireless modules ioctl network commands */
 
 /* boardctl() commands share the same number space */
@@ -841,6 +842,20 @@
 #define PMIOC_METRICS         _PMIOC(0x0007)
 #define PMIOC_SUSPEND_COUNT   _PMIOC(0x0008)
 #define PMIOC_START           _PMIOC(0x0009)
+
+/* Compress driver ioctl definitions ****************************************/
+
+#define _COMPIOCVALID(c)      (_IOC_TYPE(c) == _COMPBASE)
+#define _COMPIOC(nr)          _IOC(_COMPBASE, nr)
+
+#define COMPIOC_COMPRESS           _COMPIOC(0x0001)
+#define COMPIOC_GET_COMP_TYPE      _COMPIOC(0x0002)
+#define COMPIOC_GET_COMP_NAME      _COMPIOC(0x0003)
+#define COMPIOC_DECOMPRESS         _COMPIOC(0x0004)
+#define COMPIOC_FCOMP_INIT         _COMPIOC(0x0005)
+#define COMPIOC_FCOMP_GET_BUFSIZE  _COMPIOC(0x0006)
+#define COMPIOC_FCOMP_DECOMPRESS   _COMPIOC(0x0007)
+#define COMPIOC_FCOMP_DEINIT       _COMPIOC(0x0008)
 
 /****************************************************************************
  * Public Type Definitions

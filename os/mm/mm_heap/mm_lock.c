@@ -176,3 +176,21 @@ void mm_unlock_irq(FAR struct mm_heap_s *heap, irqstate_t state)
 	kasan_bypass(false);
 	up_irq_restore(state);
 }
+
+/****************************************************************************
+ * Name: kmm_is_locked
+ *
+ * Description:
+ *   Check whether the heap used by the kmm_* allocation APIs is currently
+ *   locked by some task or interrupt handler.
+ *
+ * Returned Value:
+ *   true if the heap mutex is held, false otherwise.  Note that this is
+ *   inherently racy unless the caller itself is holding the lock.
+ *
+ ****************************************************************************/
+
+bool kmm_is_locked(void)
+{
+	return nxmutex_is_locked(&KRN_HEAP->mm_lock);
+}
