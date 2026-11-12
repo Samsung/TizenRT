@@ -59,6 +59,9 @@
 #include <tinyara/wqueue.h>
 #include <tinyara/kthread.h>
 #include <tinyara/userspace.h>
+#ifdef CONFIG_LOG_DUMP
+#include <tinyara/log_dump/log_dump_internal.h>
+#endif
 #include <tinyara/binfmt/binfmt.h>
 
 #ifdef CONFIG_LEGACY_PAGING
@@ -545,6 +548,10 @@ int nx_bringup(void)
 	 */
 
 	nx_workqueues();
+
+#ifdef CONFIG_LOG_DUMP
+	log_dump_initialize();
+#endif
 
 	/* Once the operating system has been initialized, the system must be
 	 * started by spawning the user initialization thread of execution.  This

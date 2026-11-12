@@ -2028,6 +2028,54 @@ config PTHREAD_GUARDSIZE_DEFAULT
 
 endmenu # Stack and heap information
 
+config LOG_DUMP
+	bool "Enable log dump functionality"
+	select COMPRESSION
+	default n
+
+if LOG_DUMP
+
+config LOG_DUMP_PRIO
+	int "Log dump comrpess thread priority"
+	range 0 250
+	default 200
+
+config LOG_DUMP_CHUNK_SIZE
+	int "Log dump chunk size in bytes"
+	range 0 LOG_DUMP_MAX_SIZE
+	default 4096
+
+config LOG_DUMP_MAX_SIZE
+	int "Maximum size allocated for logs in bytes"
+	default 262144
+
+config LOG_DUMP_MEMCHECK_SIZE
+	int "Number of bytes written before checking the memory constraints"
+	default 1024
+
+config LOG_DUMP_MAX_FREE_HEAP
+	int "Maximum percent of memory occupied by logs compared to free heap"
+	default 20
+
+config LOG_DUMP_NUMBUFS
+	int "Number of buffers to reserve for log dump"
+	default 2
+
+config LOG_DUMP_DEBUG_DETECT_HANG
+	bool "Debug feature to detect hangs in log dump"
+	default n
+
+if LOG_DUMP_DEBUG_DETECT_HANG
+config LOG_DUMP_HANG_CHECK_SEC
+	int "Time in seconds to check for hangs by log_dump"
+	default 150
+	---help---
+	In order to check whether a device hang has occurred, it must be the
+	time that can be noticed before the h/w watchdog reboots or before
+	an assert occurs due to a device hang.
+endif # LOG_DUMP_DEBUG_DETECT_HANG
+endif # LOG_DUMP
+
 config SCHED_BACKTRACE
 	bool "Stack BackTrace"
 	default "n"
