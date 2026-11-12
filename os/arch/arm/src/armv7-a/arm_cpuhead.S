@@ -100,6 +100,14 @@
  ****************************************************************************/
 
 #if CONFIG_SMP_NCPUS > 1
+	/* Restore the TizenRT rtl8730e placement: the board linker script
+	 * collects .cpu1start into the DRAM .code region, which is the entry
+	 * point the secure monitor accepts for PSCI CPU_ON.  Without this
+	 * section the 12.13 base links __cpu1_start into .text, i.e. into the
+	 * XIP flash image, and the monitor rejects CPU_ON with
+	 * PSCI_INVALID_ADDRESS (seen as -EINVAL). */
+
+	.section	.cpu1start, "ax"
 	.global	__cpu1_start
 	.type	__cpu1_start, #function
 
@@ -193,6 +201,8 @@ __cpu3_start:
 #endif /* CONFIG_SMP_NCPUS > 3 */
 #endif /* CONFIG_SMP_NCPUS > 2 */
 #endif /* CONFIG_SMP_NCPUS > 1 */
+
+	.section	.cpu1start, "ax"
 
 /****************************************************************************
  * Name: .Lcpu_start
