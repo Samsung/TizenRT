@@ -41,6 +41,7 @@
 
 #define HEALTH_MONITOR_HEAP_CAPACITY		CONFIG_MAX_TASKS
 #define HEALTH_MONITOR_IS_REGISTERED(state) ((state)->timeout != 0)
+#define HEALTH_MONITOR_NO_DEADLINE       	((clock_t)-1)
 
 /****************************************************************************
  * Public Variables
@@ -49,7 +50,6 @@
 extern struct tcb_s *g_health_heap[HEALTH_MONITOR_HEAP_CAPACITY];
 extern uint32_t g_health_count;
 extern volatile uint32_t g_health_sequence;
-extern volatile uint32_t g_health_next_count;
 extern volatile clock_t g_health_next_tick;
 extern spinlock_t g_health_lock;
 extern bool g_health_watchdog_started;

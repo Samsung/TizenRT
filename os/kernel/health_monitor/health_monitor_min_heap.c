@@ -32,8 +32,7 @@ struct tcb_s *g_health_heap[HEALTH_MONITOR_HEAP_CAPACITY];
 uint32_t g_health_count;
 spinlock_t g_health_lock;
 volatile uint32_t g_health_sequence;
-volatile uint32_t g_health_next_count;
-volatile clock_t g_health_next_tick;
+volatile clock_t g_health_next_tick = HEALTH_MONITOR_NO_DEADLINE;
 
 /****************************************************************************
  * Public Functions
@@ -43,7 +42,7 @@ volatile clock_t g_health_next_tick;
  * Name: health_monitor_publish
  *
  * Description:
- *   Publish the heap root as a lockless sequence/count/tick snapshot.
+ *   Publish the heap root as a lockless snapshot, or NO_DEADLINE if empty.
  *
  * Inputs:
  *   None.
@@ -59,13 +58,23 @@ volatile clock_t g_health_next_tick;
 void health_monitor_publish(void)
 {
 	uint32_t sequence = g_health_sequence;
-	clock_t next = g_health_count ? health_monitor_get_state(g_health_heap[0])->deadline : 0;
+	clock_t next = g_health_count ? health_monitor_get_state(g_health_heap[0])->deadline : HEALTH_MONITOR_NO_DEADLINE;
+
+	/* Publish one tick early if the deadline equals the reserved value. */
+	if (g_health_count > 0 && next == HEALTH_MONITOR_NO_DEADLINE) {
+		next--;
+	}
 
 	/* Mark sequence odd to indicate an in-progress update. */
 	g_health_sequence = sequence + 1;
+#ifdef CONFIG_SMP
+	SP_DMB();
+#endif
 
-	g_health_next_count = g_health_count;
 	g_health_next_tick = next;
+#ifdef CONFIG_SMP
+	SP_DMB();
+#endif
 
 	/* Mark sequence even after writing the payload. */
 	g_health_sequence = sequence + 2;

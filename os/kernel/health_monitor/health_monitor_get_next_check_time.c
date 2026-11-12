@@ -53,14 +53,7 @@
 int health_monitor_get_next_check_time(clock_t *check_at)
 {
 	uint32_t sequence;
-	uint32_t count;
 	clock_t next;
-#ifdef CONFIG_SYSTEM_TIME64
-	const volatile uint32_t *addr;
-	uint32_t high;
-	uint32_t low;
-	uint32_t high_check;
-#endif
 
 	DEBUGASSERT(check_at != NULL);
 
@@ -69,32 +62,23 @@ int health_monitor_get_next_check_time(clock_t *check_at)
 	if (sequence & 1) {
 		return -EAGAIN;
 	}
-
-	count = g_health_next_count;
-	if (count == 0) {
-		if (sequence != g_health_sequence) {
-			return -EAGAIN;
-		}
-		return 0;
-	}
-
-#ifdef CONFIG_SYSTEM_TIME64
-	/* Sample high/low/high */
-	addr = (const volatile uint32_t *)&g_health_next_tick;
-	high = addr[1];
-	low = addr[0];
-	high_check = addr[1];
-	if (high != high_check) {
-		return -EAGAIN;
-	}
-	next = ((clock_t)high << 32) | low;
-#else
-	next = g_health_next_tick;
+#ifdef CONFIG_SMP
+	/* SP_DMB() orders stores only; snapshot loads need a full barrier. */
+	SP_DSB();
 #endif
 
+	next = g_health_next_tick;
+
 	/* Check whether the sequence changed during the read. */
+#ifdef CONFIG_SMP
+	SP_DSB();
+#endif
 	if (sequence != g_health_sequence) {
 		return -EAGAIN;
+	}
+
+	if (next == HEALTH_MONITOR_NO_DEADLINE) {
+		return 0;
 	}
 
 	*check_at = next;
