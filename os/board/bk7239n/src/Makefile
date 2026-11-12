@@ -117,6 +117,9 @@ include components/wpa_supplicant-2.10/wpa_supplicant/Make.defs
 include bsp_adapter/src/net/Make.defs
 include components/bk_common/Make.defs
 include components/easy_flash/Make.defs
+ifeq ($(CONFIG_QUICK_TRACK),y)
+include components/controlappc/Make.defs
+endif
 
 ifeq ($(CONFIG_PSA_MBEDTLS),y)
 include components/psa_mbedtls/Make.defs
@@ -176,6 +179,9 @@ CFLAGS += -I$(COMPONENT_DIR)/bk_wifi/include/bk_private
 CFLAGS += -I$(COMPONENT_DIR)/bk_wifi/include
 CFLAGS += -I$(COMPONENT_DIR)/bk_startup/tizen
 CFLAGS += -I$(COMPONENT_DIR)/bk_phy/include
+ifeq ($(CONFIG_QUICK_TRACK),y)
+CFLAGS += -I$(COMPONENT_DIR)/controlappc
+endif
 
 # OS Source includes (consolidated)
 CFLAGS += -I$(COMPONENT_DIR)/os_source/tizen/include

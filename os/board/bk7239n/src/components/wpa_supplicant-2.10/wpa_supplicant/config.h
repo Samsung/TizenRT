@@ -1505,7 +1505,7 @@ struct wpa_config {
 	 */
 	 char *sched_scan_plans;
 
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 	/**
 	 * non_pref_chan - Non-preferred channels list, separated by spaces.
 	 *
@@ -1531,7 +1531,7 @@ struct wpa_config {
 	 *  - Set BIT(1) to enable OCE in STA-CFON mode
 	 */
 	unsigned int oce;
-#endif /* CONFIG_MBO */
+#endif /* CONFIG_QUICK_MBO */
 
 	/**
 	 * gas_address3 - GAS Address3 field behavior

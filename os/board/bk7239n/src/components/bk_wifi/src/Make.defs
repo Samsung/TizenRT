@@ -86,5 +86,13 @@ CSRCS += \
 	reg.c \
 	hw_csum.c
 
+ifeq ($(CONFIG_QUICK_TRACK),y)
+CFLAGS += -I$(COMPONENT_DIR)/wpa_supplicant-2.10/src
+CFLAGS += -I$(COMPONENT_DIR)/wpa_supplicant-2.10/src/common
+CFLAGS += -I$(COMPONENT_DIR)/wpa_supplicant-2.10/src/crypto
+CFLAGS += -I$(COMPONENT_DIR)/wpa_supplicant-2.10/src/utils
+CSRCS += wifi_wpa_cmd.c
+endif
+
 DEPPATH += --dep-path components/bk_wifi/src
 VPATH += :components/bk_wifi/src
