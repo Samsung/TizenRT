@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <debug.h>
 #include <stdint.h>
 #include <sched.h>
 #include <ble_manager/ble_manager.h>
