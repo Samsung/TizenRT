@@ -181,7 +181,10 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 	ret = compress_init(loadinfo->filfd, loadinfo->offset, &loadinfo->filelen);
 	if (ret != OK) {
 		berr("Failed to read header for compressed binary : %d\n", ret);
-		return ret;
+		/* compress_init() failed before its state is valid, so only the fd
+		 * can be released here; compress_uninit() must not be called.
+		 */
+		goto errout_with_fd;
 	}
 #endif
 
@@ -189,7 +192,8 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 	ret = elf_cache_init(loadinfo->filfd, loadinfo->offset, loadinfo->filelen);
 	if (ret != OK) {
 		berr("Failed to init cache support: %d\n", ret);
-		return ret;
+		/* elf_cache_init() releases its own buffers on failure. */
+		goto errout_with_compress;
 	}
 #endif
 
@@ -197,7 +201,7 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 	ret = elf_read(loadinfo, (FAR uint8_t *)&loadinfo->ehdr, sizeof(Elf32_Ehdr), 0);
 	if (ret < 0) {
 		berr("Failed to read ELF header: %d\n", ret);
-		return ret;
+		goto errout_with_init;
 	}
 
 	elf_dumpbuffer("ELF header", (FAR const uint8_t *)&loadinfo->ehdr, sizeof(Elf32_Ehdr));
@@ -214,8 +218,25 @@ int elf_init(FAR const char *filename, FAR struct elf_loadinfo_s *loadinfo)
 		 */
 
 		berr("Bad ELF header: %d\n", ret);
-		return ret;
+		goto errout_with_init;
 	}
 
 	return OK;
+
+	/* The caller skips elf_uninit() when elf_init() fails, so everything
+	 * committed above has to be released here before returning.
+	 */
+
+errout_with_init:
+#if defined(CONFIG_ELF_CACHE_READ)
+	elf_cache_uninit();
+#endif
+errout_with_compress:
+#ifdef CONFIG_COMPRESSED_BINARY
+	compress_uninit();
+#endif
+errout_with_fd:
+	close(loadinfo->filfd);
+	loadinfo->filfd = -1;
+	return ret;
 }
