@@ -23,6 +23,7 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/net/net.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>

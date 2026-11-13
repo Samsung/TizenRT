@@ -63,6 +63,9 @@
 #include <tinyara/log_dump/log_dump_internal.h>
 #endif
 #include <tinyara/binfmt/binfmt.h>
+#ifdef CONFIG_NET
+#include <tinyara/net/net.h>
+#endif
 
 #ifdef CONFIG_LEGACY_PAGING
 #  include "paging/paging.h"
@@ -551,6 +554,15 @@ int nx_bringup(void)
 
 #ifdef CONFIG_LOG_DUMP
 	log_dump_initialize();
+#endif
+
+#ifdef CONFIG_NET
+	/* Start the threads of the network stack (lwIP).  net_initialize() has
+	 * initialized the stack before the drivers; the threads need the
+	 * scheduler and the timers, which are available now.
+	 */
+
+	net_start();
 #endif
 
 	/* Once the operating system has been initialized, the system must be

@@ -38,20 +38,13 @@
 
 /**
  * Public
+ *
+ * socket(), accept4() and socketpair() are in os/fs/socket and accept() is
+ * in os/libs/libc/net: they allocate the file descriptor of the socket.
  */
 int bind(int sockfd, const struct sockaddr *name, socklen_t namelen)
 {
 	NETSTACK_CALL_BYFD(sockfd, bind, (sockfd, name, namelen));
-}
-
-int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
-{
-	(void)enter_cancellation_point();
-	struct netstack *stk = get_netstack_byfd(sockfd);
-	int res = -1;
-	NETSTACK_CALL_RET(stk, accept, (sockfd, addr, addrlen), res);
-	leave_cancellation_point();
-	return res;
 }
 
 int shutdown(int sockfd, int how)
@@ -184,21 +177,10 @@ ssize_t sendto(int sockfd, const void *data, size_t size, int flags, const struc
  * Assumptions:
  *
  ****************************************************************************/
-ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
+ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
 {
 	// ToDo: It only supports limited features of sendmsg
 	NETSTACK_CALL_BYFD(sockfd, sendmsg, (sockfd, msg, flags));
 }
 
-int socket(int domain, int type, int protocol)
-{
-	struct netstack *stk = NULL;
-	if (domain == AF_LWNL) {
-		stk = get_netstack(TR_LWNL);
-	} else {
-		stk = get_netstack(TR_SOCKET);
-	}
-
-	NETSTACK_CALL(stk, socket, (domain, type, protocol));
-}
 #endif // CONFIG_NET

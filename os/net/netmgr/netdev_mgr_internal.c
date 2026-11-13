@@ -223,12 +223,34 @@ int nm_ifup(struct netdev *dev)
 		NET_LOGKE(TAG, "fail to link up network interface\n");
 		return -1;
 	}
+
+	if (dev->type == NM_ETHERNET) {
+		/* Wi-Fi brings the interface of the stack up when it is connected to
+		 * an AP.  Ethernet has no such step: the interface of the stack is
+		 * up when the link is up.
+		 */
+		ret = ((struct netdev_ops *)(dev->ops))->softup(dev);
+		if (ret < 0) {
+			NET_LOGKE(TAG, "fail to up network interface\n");
+			return -1;
+		}
+	}
 	return 0;
 }
 
 int nm_ifdown(struct netdev *dev)
 {
-	int ret = ((struct netdev_ops *)(dev->ops))->ifdown(dev);
+	int ret;
+
+	if (dev->type == NM_ETHERNET) {
+		ret = ((struct netdev_ops *)(dev->ops))->softdown(dev);
+		if (ret < 0) {
+			NET_LOGKE(TAG, "fail to down network interface\n");
+			return -1;
+		}
+	}
+
+	ret = ((struct netdev_ops *)(dev->ops))->ifdown(dev);
 	if (ret < 0) {
 		NET_LOGKE(TAG, "fail to link down down network interface\n");
 		return -1;

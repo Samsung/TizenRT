@@ -58,6 +58,7 @@
 #include <string.h>				/* for memset used by FD_ZERO */
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/ioctl.h>			/* for FIONREAD, FIONBIO and _IO* */
 
 #if LWIP_TIMEVAL_PRIVATE
 #include <time.h>
@@ -162,11 +163,10 @@ struct lwip_setgetsockopt_data {
 };
 #endif							/* !LWIP_TCPIP_CORE_LOCKING */
 
-#if !defined IOV_MAX
-#define IOV_MAX 0xFFFF
-#elif IOV_MAX > 0xFFFF
-#error "IOV_MAX larger than supported by lwIP"
-#endif /* IOV_MAX */
+/* lwIP keeps the number of I/O vectors in a 16 bit counter.  IOV_MAX of
+ * limits.h is larger, so lwIP checks msg_iovlen against its own limit.
+ */
+#define LWIP_IOV_MAX 0xFFFF
 
 struct msghdr;
 
@@ -442,28 +442,10 @@ typedef struct ip_mreq {
 #define SHUT_RDWR 2
 #endif
 
-/* FD_SET used for lwip_select */
-#ifndef FD_SET
-#undef  FD_SETSIZE
-/* Make FD_SETSIZE match NUM_SOCKETS in socket.c */
-#define FD_SETSIZE    (LWIP_SOCKET_OFFSET + MEMP_NUM_NETCONN)
-#define FDSETSAFESET(n, code) do { \
-		if (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0)) { \
-		code; } } while (0)
-#define FDSETSAFEGET(n, code) (((n) - LWIP_SOCKET_OFFSET < MEMP_NUM_NETCONN) && (((int)(n) - LWIP_SOCKET_OFFSET) >= 0) ?\
-		(code) : 0)
-#define FD_SET(n, p)  FDSETSAFESET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] |=  (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
-#define FD_CLR(n, p)  FDSETSAFESET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] &= ~(1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
-#define FD_ISSET(n, p) FDSETSAFEGET(n, (p)->fd_bits[((n)-LWIP_SOCKET_OFFSET)/8] &   (1 << (((n)-LWIP_SOCKET_OFFSET) & 7)))
-#define FD_ZERO(p)    memset((void*)(p), 0, sizeof(*(p)))
-
-#elif LWIP_SOCKET_OFFSET
-#if 0
-#error LWIP_SOCKET_OFFSET does not work with external FD_SET!
-#endif
-#elif FD_SETSIZE < MEMP_NUM_NETCONN
-#error "external FD_SETSIZE too small for number of sockets"
-#endif							/* FD_SET */
+/* FD_SET, fd_set and FD_SETSIZE come from sys/select.h.  A socket is a
+ * file descriptor of the VFS like any other one: select() and poll() are
+ * implemented by the VFS on top of lwip_poll().
+ */
 
 /** LWIP_TIMEVAL_PRIVATE: if you want to use the struct timeval provided
  * by your system, set this to 0 and include <sys/time.h> in cc.h */
@@ -531,6 +513,8 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup);
 
 /*  API for network manager only*/
 struct lwip_sock *get_socket_by_pid(int sd, pid_t pid);
+struct lwip_sock *lwip_socket_get(int sd);
+int lwip_socket_foreach(int (*handler)(int sd, struct lwip_sock *sock, void *arg), void *arg);
 #ifdef __cplusplus
 }
 #endif

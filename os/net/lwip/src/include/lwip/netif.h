@@ -378,9 +378,7 @@ struct netif {
 #endif							/* ENABLE_LOOPBACK */
 
 	char d_ifname[6];
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
 	struct netif *flink;
-#endif
 	struct ether_addr d_mac;	/* Device MAC address */
 
 	u16_t d_len;
@@ -411,10 +409,8 @@ struct netif {
 #define IF__NETIF_CHECKSUM_ENABLED(netif, chksumflag)
 #endif							/* LWIP_CHECKSUM_CTRL_PER_NETIF */
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
 #if CONFIG_NET_LWIP
 extern struct netif *g_netdevices;
-#endif
 #endif
 
 /** The list of network interfaces. */

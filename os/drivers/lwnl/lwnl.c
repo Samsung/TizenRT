@@ -61,13 +61,12 @@ struct lwnl_open_s {
 	/* The following will be true if we are closing */
 	volatile bool io_closing;
 
-#ifndef CONFIG_DISABLE_POLL
 	/*
 	 * The following is a list if poll structures of threads waiting
-	 * for driver events
+	 * for driver events, and the files that they wait for
 	 */
 	FAR struct pollfd *io_fds[LWNL_NPOLLWAITERS];
-#endif
+	FAR struct file *io_filep[LWNL_NPOLLWAITERS];
 };
 
 struct lwnl_upperhalf_s {
@@ -86,9 +85,7 @@ static int lwnl_close(struct file *filep);
 static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len);
 static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len);
 static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg);
-#ifndef CONFIG_DISABLE_POLL
 static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
-#endif
 extern int netdev_req_handle(const char *msg, size_t msg_len);
 
 #ifdef CONFIG_BLE_MANAGER
@@ -98,15 +95,12 @@ extern int bledev_req_handle(const char *msg, size_t msg_len);
  * Private Data
  ****************************************************************************/
 static const struct file_operations g_lwnl_fops = {
-	lwnl_open,                                          /* open */
-	lwnl_close,                                         /* close */
-	lwnl_read,                                          /* read */
-	lwnl_write,                                         /* write */
-	0,                                                       /* seek */
-	lwnl_ioctl                                          /* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	, lwnl_poll                                                      /* poll */
-#endif
+	.open = lwnl_open,
+	.close = lwnl_close,
+	.read = lwnl_read,
+	.write = lwnl_write,
+	.ioctl = lwnl_ioctl,
+	.poll = lwnl_poll,
 };
 struct lwnl_upperhalf_s *g_lwnl_upper = NULL;
 
@@ -143,10 +137,8 @@ static int lwnl_close(struct file *filep)
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 	int ret = OK;
-#ifndef CONFIG_DISABLE_POLL
 	FAR struct lwnl_open_s *ln_open = &upper->ln_open;
 	int waiter_idx;
-#endif
 
 	LWNLDEV_LOCK(upper);
 	if (upper->crefs > 0) {
@@ -160,20 +152,17 @@ static int lwnl_close(struct file *filep)
 		ret = -EBADF;
 	}
 
-#ifndef CONFIG_DISABLE_POLL
-
 	/*
 	 * Check if this file is registered in a list of waiters for polling.
 	 * If it is, the used slot should be cleared.
 	 * Otherwise, an invalid pollfd remains in a list and this slot is not available forever.
 	 */
 	for (waiter_idx = 0; waiter_idx < LWNL_NPOLLWAITERS; waiter_idx++) {
-		struct pollfd *fds = ln_open->io_fds[waiter_idx];
-		if (fds && (FAR struct file *)fds->filep == filep) {
+		if (ln_open->io_fds[waiter_idx] && ln_open->io_filep[waiter_idx] == filep) {
 			ln_open->io_fds[waiter_idx] = NULL;
+			ln_open->io_filep[waiter_idx] = NULL;
 		}
 	}
-#endif
 	LWNLDEV_UNLOCK(upper);
 
 	int res = lwnl_remove_listener(filep);
@@ -225,6 +214,12 @@ static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 	LWNL_ENTER(TAG);
 	struct sockaddr_lwnl *addr = (struct sockaddr_lwnl *)arg;
+
+	/* The VFS sends the generic commands of files (FIONBIO, ...) too */
+	if (cmd != SIOCSLWNLEVT || !addr) {
+		return -ENOTTY;
+	}
+
 	int res = lwnl_add_listener(filep, addr->dev_type);
 	if (res < 0) {
 		LWNL_LOGE(TAG, "add listener fail");
@@ -255,8 +250,7 @@ static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		if (fds->events & POLLIN) {
 			int nready = lwnl_check_queue(filep);
 			if (nready > 0) {
-				fds->revents |= (fds->events & POLLIN);
-				sem_post(fds->sem);
+				poll_notify(&fds, 1, POLLIN);
 				return 0;
 			}
 		}
@@ -273,8 +267,8 @@ static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 			if (!ln_open->io_fds[i]) {
 				/* Bind the poll structure and this slot */
 				ln_open->io_fds[i] = fds;
+				ln_open->io_filep[i] = filep;
 				fds->priv = &ln_open->io_fds[i];
-				fds->filep = (void *)filep;
 				break;
 			}
 		}
@@ -292,8 +286,7 @@ static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		if (fds->events & POLLIN) {
 			int nready = lwnl_check_queue(filep);
 			if (nready > 0) {
-				fds->revents |= (fds->events & POLLIN);
-				sem_post(fds->sem);
+				poll_notify(&fds, 1, POLLIN);
 				return 0;
 			}
 		}
@@ -302,7 +295,10 @@ static int lwnl_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
 
 		/* Remove all memory of the poll setup */
+		LWNLDEV_LOCK(upper);
+		ln_open->io_filep[slot - ln_open->io_fds] = NULL;
 		*slot = NULL;
+		LWNLDEV_UNLOCK(upper);
 		fds->priv = NULL;
 	}
 
@@ -327,6 +323,7 @@ int lwnl_register(struct lwnl_lowerhalf_s *dev)
 
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		upper->ln_open.io_fds[i] = NULL;
+		upper->ln_open.io_filep[i] = NULL;
 	}
 
 	sem_init(&upper->exclsem, 0, 1);
@@ -386,14 +383,8 @@ int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len)
 	LWNLDEV_LOCK(g_lwnl_upper);
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		struct pollfd *fds = g_lwnl_upper->ln_open.io_fds[i];
-		if (fds && (lwnl_get_dev_type(fds->filep) == dev)) {
-			fds->revents |= (fds->events & POLLIN);
-			if (fds->revents != 0) {
-				int tres = sem_post(fds->sem);
-				if (tres != 0) {
-					LWNL_LOGE(TAG, "sem post fail %d\n", errno);
-				}
-			}
+		if (fds && (lwnl_get_dev_type(g_lwnl_upper->ln_open.io_filep[i]) == dev)) {
+			poll_notify(&fds, 1, POLLIN);
 		}
 	}
 	LWNLDEV_UNLOCK(g_lwnl_upper);

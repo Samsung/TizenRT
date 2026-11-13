@@ -22,7 +22,7 @@
 #include <net/if.h>
 #include <pthread.h>
 #include <debug.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/net/if/wifi.h>
 #include "lwnl_evt_queue.h"
@@ -149,6 +149,14 @@ static int _lwnl_remove_event(struct lwnl_event *evt)
 void lwnl_queue_initialize(void)
 {
 	LWNL_ENTER(TAG);
+
+	/* The semaphore of the lock has to be initialized before it is taken:
+	 * it is called by the IDLE task at boot, which cannot wait.
+	 */
+	if (sem_init(&g_wm_sem, 0, 1) != 0) {
+		LWNL_LOGE(TAG, "fail to init semaphore %d", errno);
+	}
+
 	LWQ_LOCK;
 	for (int i = 0; i < LWNL_NPOLLWAITERS; i++) {
 		g_filep_list[i].filep = NULL;
@@ -159,10 +167,6 @@ void lwnl_queue_initialize(void)
 	for (int i = 0; i < LWNL_DEV_TYPE_MAX; i++) {
 		g_connected[i] = 0;
 		sq_init(&g_event_queue[i]);
-	}
-
-	if (sem_init(&g_wm_sem, 0, 1) != 0) {
-		LWNL_LOGE(TAG, "fail to init semaphore %d", errno);
 	}
 	LWQ_UNLOCK;
 }
