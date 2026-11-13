@@ -171,80 +171,6 @@ static int state = NORMAL_STATE;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_stackdump
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_STACKDUMP
-static void up_stackdump(uint32_t sp, uint32_t stack_base)
-{
-	uint32_t stack = sp & ~0x1f;
-	uint32_t *ptr = (uint32_t *)stack;
-	uint8_t i;
-
-	lldbg("%08x:", stack);
-	for (i = 0; i < 8; i++) {  // Print first 8 values for sp located
-		if (stack < sp) {
-			/* If stack pointer(sp) is aligned(sp & 0x1f) to an address outside allocated stack */
-			/* Then, for stack addresses outside allocated stack, print 'xxxxxxxx' */
-			lldbg_noarg(" xxxxxxxx");
-		} else {
-			/* For remaining stack addresses inside allocated stack, print proper stack address values */
-			lldbg_noarg(" %08x", ptr[i]);
-		}
-		stack += 4;
-	}
-	lldbg_noarg("\n");
-
-	for (; stack < stack_base; stack += 32) { // Print remaining stack values from 9th value to end
-		ptr = (uint32_t *)stack;
-		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			   stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
-	}
-}
-#else
-#define up_stackdump(sp, stack_base)
-#endif
-
-/****************************************************************************
- * Name: up_registerdump
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_STACKDUMP
-static inline void up_registerdump(void)
-{
-	/* Are user registers available from interrupt processing? */
-	if (current_regs) {
-		/* Yes.. dump the interrupt registers */
-		lldbg_noarg("===========================================================\n");
-		lldbg_noarg("Asserted task's register dump\n");
-		lldbg_noarg("===========================================================\n");
-		lldbg("R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  current_regs[REG_R0], current_regs[REG_R1],
-			  current_regs[REG_R2], current_regs[REG_R3],
-			  current_regs[REG_R4], current_regs[REG_R5],
-			  current_regs[REG_R6], current_regs[REG_R7]);
-		lldbg("R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  current_regs[REG_R8], current_regs[REG_R9],
-			  current_regs[REG_R10], current_regs[REG_R11],
-			  current_regs[REG_R12], current_regs[REG_R13],
-			  current_regs[REG_R14], current_regs[REG_R15]);
-
-#ifdef CONFIG_ARMV8M_USEBASEPRI
-		lldbg("xPSR: %08x BASEPRI: %08x CONTROL: %08x\n", current_regs[REG_XPSR], current_regs[REG_BASEPRI], getcontrol());
-#else
-		lldbg("xPSR: %08x PRIMASK: %08x CONTROL: %08x\n", current_regs[REG_XPSR], current_regs[REG_PRIMASK], getcontrol());
-#endif
-
-#ifdef REG_EXC_RETURN
-		lldbg("EXC_RETURN: %08x\n", current_regs[REG_EXC_RETURN]);
-#endif
-	}
-}
-#else
-#define up_registerdump()
-#endif
-
-/****************************************************************************
  * Name: assert_tracecallback
  ****************************************************************************/
 
@@ -354,6 +280,7 @@ static void check_sp_corruption(uint32_t sp, uint32_t *stackbase, uint32_t *stac
 	}
 }
 
+#ifdef CONFIG_ARCH_STACKDUMP
 /****************************************************************************
  * Name: print_stack_dump
  ****************************************************************************/
@@ -394,7 +321,6 @@ static void print_stack_dump(uint32_t sp, uint32_t stackbase, uint32_t stacksize
  * Name: up_dumpstate
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_STACKDUMP
 static void up_dumpstate(void)
 {	
 	struct tcb_s *rtcb = this_task();
@@ -446,7 +372,10 @@ static void up_dumpstate(void)
 
 	/* Then dump the registers (if available) */
 
-	up_registerdump();
+	up_registerdump(current_regs);
+	if (current_regs) {
+		lldbg("CONTROL (current CPU): %08x\n", getcontrol());
+	}
 
 	/* Dump the state of all tasks (if available) */
 
@@ -568,6 +497,88 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+#ifdef CONFIG_ARCH_STACKDUMP
+/****************************************************************************
+ * Name: up_stackdump
+ ****************************************************************************/
+
+void up_stackdump(uintptr_t sp, uintptr_t stack_base)
+{
+	uint32_t stack = sp & ~0x1f;
+	uint32_t *ptr = (uint32_t *)stack;
+	uint8_t i;
+
+	lldbg("%08x:", stack);
+	for (i = 0; i < 8; i++) {  // Print first 8 values for sp located
+		if (stack < sp) {
+			/* If stack pointer(sp) is aligned(sp & 0x1f) to an address outside allocated stack */
+			/* Then, for stack addresses outside allocated stack, print 'xxxxxxxx' */
+			lldbg_noarg(" xxxxxxxx");
+		} else {
+			/* For remaining stack addresses inside allocated stack, print proper stack address values */
+			lldbg_noarg(" %08x", ptr[i]);
+		}
+		stack += 4;
+	}
+	lldbg_noarg("\n");
+
+	for (; stack < stack_base; stack += 32) { // Print remaining stack values from 9th value to end
+		ptr = (uint32_t *)stack;
+		lldbg("%08x: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+			   stack, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7]);
+	}
+}
+
+/****************************************************************************
+ * Name: up_registerdump
+ ****************************************************************************/
+
+void up_registerdump(volatile void *context)
+{
+	volatile uint32_t *regs = context;
+
+	if (regs) {
+		lldbg_noarg("===========================================================\n");
+		lldbg_noarg("Task register dump\n");
+		lldbg_noarg("===========================================================\n");
+		lldbg("R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+			  regs[REG_R0], regs[REG_R1],
+			  regs[REG_R2], regs[REG_R3],
+			  regs[REG_R4], regs[REG_R5],
+			  regs[REG_R6], regs[REG_R7]);
+		lldbg("R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
+			  regs[REG_R8], regs[REG_R9],
+			  regs[REG_R10], regs[REG_R11],
+			  regs[REG_R12], regs[REG_R13],
+			  regs[REG_R14], regs[REG_R15]);
+
+#ifdef CONFIG_ARMV8M_USEBASEPRI
+		lldbg("xPSR: %08x BASEPRI: %08x\n", regs[REG_XPSR], regs[REG_BASEPRI]);
+#else
+		lldbg("xPSR: %08x PRIMASK: %08x\n", regs[REG_XPSR], regs[REG_PRIMASK]);
+#endif
+
+#ifdef REG_EXC_RETURN
+		lldbg("EXC_RETURN: %08x\n", regs[REG_EXC_RETURN]);
+#endif
+	}
+}
+
+volatile void *up_get_task_registers(struct tcb_s *tcb)
+{
+	if (tcb == this_task()) {
+		return current_regs;
+	}
+
+	return tcb->xcp.regs;
+}
+
+uintptr_t up_get_task_stack_end(struct tcb_s *tcb)
+{
+	return (uintptr_t)tcb->adj_stack_ptr + sizeof(uint32_t);
+}
+#endif /* CONFIG_ARCH_STACKDUMP */
 
 /****************************************************************************
  * Name: dump_stack : dumps the stack of current thread
