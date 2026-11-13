@@ -147,14 +147,14 @@ static inline void flash_ll_write_status_reg(flash_hw_t *hw, uint8_t sr_width, u
 		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
 
 		while (flash_ll_is_busy(hw));
-		hw->config.wrsr_data = (sr_data >> LEN_WRSR_S0_S7);
+		hw->config.wrsr_data = (v >> LEN_WRSR_S0_S7);
 		flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S8_S15);
 		// hw->op_ctrl.wp_value = 1;    //  ???
 		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
 
 		#if 0
 		while (flash_ll_is_busy(hw));
-		hw->config.wrsr_data = (sr_data >> LEN_WRSR_S8_S15);
+		hw->config.wrsr_data = (v >> LEN_WRSR_S8_S15);
 		flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S16_S24);
 		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
 		#endif
@@ -167,6 +167,39 @@ static inline void flash_ll_write_status_reg(flash_hw_t *hw, uint8_t sr_width, u
 
 	hw->op_ctrl.wp_value = 0;
 	flash_ll_clear_volatile_status_write(hw);
+}
+
+/* Non-volatile status-register write: no 0x50 volatile-enable wrapper, so the
+ * controller issues the standard WREN (0x06) before WRSR and the value persists
+ * across power cycles. Used for one-time protection setup at init. */
+static inline void flash_ll_write_status_reg_nvol(flash_hw_t *hw, uint8_t sr_width, uint32_t sr_data)
+{
+	uint32_t v = sr_data;
+
+	flash_ll_wait_op_done(hw);
+	/* NOR SR: keep SRP0 set, clear SRP1 */
+	v |= FLASH_SR_SRP0;
+	v &= ~FLASH_SR_SRP1;
+
+	hw->cmd_cfg.v = 0;
+	hw->op_ctrl.wp_value = 1;
+	hw->config.wrsr_data = v;
+	if (sr_width == 1) {
+		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+	} else {
+		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+
+		flash_ll_wait_op_done(hw);
+		hw->config.wrsr_data = (v >> LEN_WRSR_S0_S7);
+		flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S8_S15);
+		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+
+		flash_ll_wait_op_done(hw);
+		hw->cmd_cfg.v = 0;
+	}
+
+	flash_ll_wait_op_done(hw);
+	hw->op_ctrl.wp_value = 0;
 }
 
 static inline void flash_ll_set_qe(flash_hw_t *hw, uint8_t qe_bit, uint8_t qe_bit_post)
