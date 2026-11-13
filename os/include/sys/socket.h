@@ -96,6 +96,20 @@ extern "C" {
 
 /* Supported Protocol Families */
 
+/* The flags of the type of socket() and of the flags of accept4().  They
+ * are flags of the file descriptor, not types of the network stack.
+ */
+
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC 02000000 /* Atomically set close-on-exec flag for the new descriptor */
+#endif
+#ifndef SOCK_NONBLOCK
+#define SOCK_NONBLOCK 00004000 /* Atomically mark descriptor as non-blocking */
+#endif
+#ifndef SOCK_TYPE_MASK
+#define SOCK_TYPE_MASK 0xf /* Mask which covers at least up to SOCK_MASK-1 */
+#endif
+
 #ifndef PF_UNSPEC
 #define PF_UNSPEC 0 /* Protocol family unspecified */
 #endif
@@ -215,6 +229,18 @@ int listen(int sockfd, int backlog);
 * @since TizenRT v1.0
 */
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
+/**
+ * @brief accept a connection on a socket, with flags for the new descriptor
+ * (SOCK_NONBLOCK, SOCK_CLOEXEC)
+ */
+int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
+
+/**
+ * @brief create a pair of connected sockets.  Not supported by lwIP: it
+ * fails with EAFNOSUPPORT.
+ */
+int socketpair(int domain, int type, int protocol, int sv[2]);
 
 /**
 * @brief   send a message on a socket
@@ -374,7 +400,7 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
 * @return On success, 0 is returned. On failure, -1 is returned.
 * @since TizenRT v4.1
 */
-ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags);
 
 #undef EXTERN
 #if defined(__cplusplus)

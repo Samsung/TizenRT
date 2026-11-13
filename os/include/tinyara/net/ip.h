@@ -68,7 +68,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

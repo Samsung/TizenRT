@@ -58,11 +58,12 @@
  * Included Files
  ****************************************************************************/
 
+#include <stdint.h>
 #include <stdio.h>
 #include <arpa/inet.h>
 
-typedef unsigned char u8_t;
-typedef unsigned int u32_t;
+typedef uint8_t u8_t;
+typedef uint32_t u32_t;
 
 /** 255.255.255.255 */
 #define IPADDR_NONE         ((u32_t)0xffffffffUL)
