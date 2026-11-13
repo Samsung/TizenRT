@@ -15,7 +15,7 @@ config SYSTEM_CMDS
 config SECURITY_LEVEL_CMDS
 	bool "Security level commands"
 	default y
-	depends on TASH
+	depends on TASH && SE
 	select SECURITY_API
 	select SECURITY_SS
 	select SECURITY_LEVEL
