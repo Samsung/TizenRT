@@ -541,6 +541,13 @@ SECTIONS
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
     __init_array_end = ABSOLUTE(.);
 
+    /* lib_cxx_initialize() calls every entry between _sinit and _einit:
+     * end the table here, before the tables that follow, which are not
+     * arrays of constructors.
+     */
+
+    _einit = ABSOLUTE(.);
+
     /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
 
     . = ALIGN(4);
@@ -554,8 +561,6 @@ SECTIONS
     _esp_system_init_fn_array_start = ABSOLUTE(.);
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
-
-    _einit = ABSOLUTE(.);
 
   } >default_rodata_seg AT > ROM
 
