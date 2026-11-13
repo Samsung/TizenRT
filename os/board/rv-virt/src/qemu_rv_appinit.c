@@ -211,7 +211,11 @@ void board_late_initialize(void)
 	}
 #endif /* CONFIG_BUILD_KERNEL && !CONFIG_RISCV_SEMIHOSTING_HOSTFS */
 
-#ifdef CONFIG_NSH_ARCHINIT
+	/* TizenRT has no NSH: tash and its commands (ps, free, ...) need procfs
+	 * when CONFIG_FS_AUTOMOUNT_PROCFS is selected.
+	 */
+
+#if defined(CONFIG_NSH_ARCHINIT) || defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 
 	mount(NULL, "/proc", "procfs", 0, NULL);
 
