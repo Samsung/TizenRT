@@ -59,22 +59,16 @@
 #include <tinyara/config.h>
 #ifdef CONFIG_NET
 
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <semaphore.h>
-#include <sys/types.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/* Socket descriptors are the index into the TCB sockets list, offset by the
- * following amount. This offset is used to distinguish file descriptors from
- * socket descriptors
- */
-
-#define __SOCKFD_OFFSET CONFIG_NFILE_DESCRIPTORS
 
 /* Capabilities of a socket */
 
@@ -84,10 +78,14 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-/* Data link layer type */
+
+/* Data link layer type.  This type is used with netdev_register in order to
+ * identify the type of the network driver.
+ */
 
 enum net_lltype_e {
 	NET_LL_ETHERNET = 0,		/* Ethernet */
+	NET_LL_IEEE80211,			/* IEEE 802.11 */
 	NET_LL_SLIP,				/* Serial Line Internet Protocol (SLIP) */
 	NET_LL_PPP					/* Point-to-Point Protocol (PPP) */
 };
@@ -104,108 +102,42 @@ typedef uint16_t sockopt_t;
 
 typedef uint16_t socktimeo_t;
 
-
 /* This type defines the type of the socket capabilities set */
 
 typedef uint8_t sockcaps_t;
 
-/* This callbacks are socket operations that may be performed on a socket of
- * a given address family.
- */
-
 struct file;	 /* Forward reference */
-struct socket;   /* Forward reference */
+struct stat;	 /* Forward reference */
 struct pollfd;   /* Forward reference */
 struct sockaddr; /* Forward reference */
 
-struct sock_intf_s {
-	CODE int (*si_setup)(FAR struct socket *psock, int protocol);
-	CODE sockcaps_t (*si_sockcaps)(FAR struct socket *psock);
-	CODE void (*si_addref)(FAR struct socket *psock);
-	CODE int (*si_bind)(FAR struct socket *psock,
-						FAR const struct sockaddr *addr, socklen_t addrlen);
-	CODE int (*si_getsockname)(FAR struct socket *psock,
-							   FAR struct sockaddr *addr, FAR socklen_t *addrlen);
-	CODE int (*si_getpeername)(FAR struct socket *psock,
-							   FAR struct sockaddr *addr, FAR socklen_t *addrlen);
-	CODE int (*si_listen)(FAR struct socket *psock, int backlog);
-	CODE int (*si_connect)(FAR struct socket *psock,
-						   FAR const struct sockaddr *addr, socklen_t addrlen);
-	CODE int (*si_accept)(FAR struct socket *psock,
-						  FAR struct sockaddr *addr, FAR socklen_t *addrlen,
-						  FAR struct socket *newsock);
-	CODE int (*si_poll)(FAR struct socket *psock,
-						FAR struct pollfd *fds, bool setup);
-	CODE ssize_t (*si_send)(FAR struct socket *psock, FAR const void *buf,
-							size_t len, int flags);
-	CODE ssize_t (*si_sendto)(FAR struct socket *psock, FAR const void *buf,
-							  size_t len, int flags, FAR const struct sockaddr *to,
-							  socklen_t tolen);
-	CODE ssize_t (*si_recvfrom)(FAR struct socket *psock, FAR void *buf,
-								size_t len, int flags, FAR struct sockaddr *from,
-								FAR socklen_t *fromlen);
-	CODE int (*si_close)(FAR struct socket *psock);
-};
-
-/* This is the internal representation of a socket reference by a file
- * descriptor.
- */
-typedef enum {
+typedef enum sock_type {
 	TR_SOCKET,
 	TR_UDS,
 	TR_LWNL,
 	TR_UNKNOWN,
 } sock_type;
 
+/* This is the internal representation of a socket.  As in NuttX 12.13.0, a
+ * socket is a file of the VFS: the socket inode of os/fs/socket keeps a
+ * pointer to this structure in the private data of the file, and the VFS
+ * allocates the file descriptor.
+ *
+ * The network stack is lwIP: s_sd is the socket descriptor of lwIP (the
+ * index in the socket table of lwIP).  It is not a file descriptor.
+ */
+
 struct socket {
-	int16_t s_crefs;  /* Reference count on the socket */
-	uint8_t s_domain; /* IP domain: PF_INET, PF_INET6, or PF_PACKET */
-	uint8_t s_type;   /* Protocol type: Only SOCK_STREAM or
-					   * SOCK_DGRAM */
-	uint8_t s_flags;  /* See _SF_* definitions */
-
-	FAR void *s_conn; /* Connection inherits from struct socket_conn_s */
-
-	/* Socket interface */
-
-	FAR const struct sock_intf_s *s_sockif;
-
-	/** sockets currently are built on netconns, each socket has one netconn */
-	void *conn;
-	sock_type type; // socket, uds, ...
-	void *sock;	// lwip_sock
+	uint8_t s_domain;			/* IP domain */
+	uint8_t s_type;				/* Protocol type */
+	uint16_t s_proto;			/* Socket Protocol */
+	FAR void *s_conn;			/* Not used with lwIP */
+	int s_sd;					/* Socket descriptor of the network stack */
 };
 
-/* This defines a list of sockets indexed by the socket descriptor */
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-struct socketlist {
-	sem_t sl_sem;				/* Manage access to the socket list */
-	struct socket sl_sockets[CONFIG_NSOCKET_DESCRIPTORS];
-};
-
-#endif
-
-/* Callback from netdev_foreach() */
 struct netif;					/* Forward reference. Defined in lwip/netif.h */
 typedef int (*netdev_callback_t)(FAR struct netif *dev, void *arg);
 
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/* Parameters for connectivity manager statistic collection.
- * Currently WIFI and Ethernet parameters being defined.
- */
-
-/* Connectivity Manager */
-
-/* Connectivity Manager - WiFi*/
-
-/* Connectivity Manager - Ethernet*/
 #ifdef CONFIG_ENC28J60
 #ifndef CONFIG_SYSTEM_IOTJS
 uint64_t eth_tx_count;
@@ -215,11 +147,10 @@ uint64_t eth_avg_message_size;
 uint64_t eth_total_message_size;
 #endif
 #endif
-/* Connectivity Manager - Ethernet*/
 
-/* Connectivity Manager - 802.15.4*/
-///TODO
-/* Connectivity Manager - 802.15.4*/
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
@@ -229,222 +160,114 @@ extern "C" {
 #endif
 
 /****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Name: net_setup
- *
- * Description:
- *   This is called from the OS initialization logic at power-up reset in
- *   order to configure networking data structures.  This is called prior
- *   to platform-specific driver initialization so that the networking
- *   subsystem is prepared to deal with network driver initialization
- *   actions.
- *
- *   Actions performed in this initialization phase assume that base OS
- *   facilities such as semaphores are available but this logic cannot
- *   depend upon OS resources such as interrupts or timers which are not
- *   yet available.
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void net_setup(void);
-
-/****************************************************************************
  * Name: net_initialize
  *
  * Description:
  *   This is called from the OS initialization logic at power-up reset in
- *   order to configure the networking subsystem.
+ *   order to configure the networking subsystem.  It is called prior to
+ *   the platform-specific driver initialization (up_initialize()), so that
+ *   the network drivers can register their devices.
  *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
+ *   It initializes the network stack and the network device manager.  It
+ *   cannot depend upon OS resources such as interrupts or timers, which
+ *   are not yet available.
  *
  ****************************************************************************/
 
 void net_initialize(void);
 
 /****************************************************************************
- * Name: net_checksd
+ * Name: net_start
  *
  * Description:
- *   Check if the socket descriptor is valid for the provided TCB and if it
- *   supports the requested access.  This trivial operation is part of the
- *   fdopen() operation when the fdopen() is performed on a socket descriptor.
- *   It simply performs some sanity checking before permitting the socket
- *   descriptor to be wrapped as a C FILE stream.
+ *   This is called from the OS initialization logic AFTER the
+ *   initialization of the hardware facilities such as timers and
+ *   interrupts.  It completes the initialization started by
+ *   net_initialize(): it starts the threads of the network stack.
  *
  ****************************************************************************/
 
-int net_checksd(int fd, int oflags);
-
+void net_start(void);
 
 /****************************************************************************
- * Name:
+ * Name: sockfd_allocate
  *
  * Description:
- *   Initialize a list of sockets for a new task
+ *   Allocate a socket descriptor
  *
  * Input Parameters:
- *   list -- A reference to the pre-alloated socket list to be initialized.
+ *   psock    A pointer to socket structure.
+ *   oflags   Open mode flags.
  *
  * Returned Value:
- *   None
+ *   Allocate a struct files instance and associate it with an socket
+ *   instance.  Returns the file descriptor.
  *
  ****************************************************************************/
 
-void net_initlist(FAR struct socketlist *list);
+int sockfd_allocate(FAR struct socket *psock, int oflags);
 
 /****************************************************************************
- * Name: net_releaselist
+ * Name: file_socket / sockfd_socket
  *
  * Description:
- *   Release resources held by the socket list
- *
- * Input Parameters:
- *   list -- A reference to the pre-allocated socket list to be un-initialized.
+ *   Given a file or a file descriptor, return the underlying socket
+ *   structure.  sockfd_socket() returns the file with a reference: the
+ *   caller must release it with file_put().
  *
  * Returned Value:
- *   None
+ *   file_socket(): the socket, NULL if the file is not a socket.
+ *   sockfd_socket(): OK; -EBADF if the descriptor is not open; -ENOTSOCK
+ *   if it is not a socket.
  *
  ****************************************************************************/
 
-void net_releaselist(FAR struct socketlist *list);
+FAR struct socket *file_socket(FAR struct file *filep);
+int sockfd_socket(int sockfd, FAR struct file **filep, FAR struct socket **socketp);
 
 /****************************************************************************
- * Function: net_close
+ * Name: net_lwnl_socket
  *
  * Description:
- *   Performs the close operation on socket descriptors
- *
- * Parameters:
- *   sockfd   Socket descriptor of socket
+ *   socket() of the AF_LWNL domain.  A lightweight netlink socket is a file
+ *   descriptor of the lwnl driver.
  *
  * Returned Value:
- *   0 on success; -1 on error with errno set appropriately.
- *
- * Assumptions:
+ *   The file descriptor; -1 (ERROR) with the errno set on failure.
  *
  ****************************************************************************/
 
-int net_close(int sockfd);
+int net_lwnl_socket(int domain, int type, int protocol);
 
 /****************************************************************************
- * Function: net_poll
+ * Name: psock_*
  *
  * Description:
- *   poll() waits for one of a set of file descriptors to become ready to
- *   perform I/O.
- *
-  * Returned Value:
- *   0 on success; -1 on error with errno set appropriately.
- *
- * Assumptions:
- *
- ****************************************************************************/
-int net_poll(int sd, struct pollfd *fds, bool setup);
-
-/****************************************************************************
- * Function: net_dupsd
- *
- * Description:
- *   Clone a socket descriptor to an arbitray descriptor number.  If file
- *   descriptors are implemented, then this is called by dup() for the case
- *   of socket file descriptors.  If file descriptors are not implemented,
- *   then this function IS dup().
- *
- ****************************************************************************/
-
-int net_dupsd(int sockfd);
-
-/****************************************************************************
- * Function: net_dupsd2
- *
- * Description:
- *   Clone a socket descriptor to an arbitray descriptor number.  If file
- *   descriptors are implemented, then this is called by dup2() for the case
- *   of socket file descriptors.  If file descriptors are not implemented,
- *   then this function IS dup2().
- *
- ****************************************************************************/
-
-int net_dupsd2(int sockfd1, int sockfd2);
-
-/****************************************************************************
- * Function: net_clone
- *
- * Description:
- *   Performs the low level, common portion of net_dupsd() and net_dupsd2()
- *
- ****************************************************************************/
-
-int net_clone(FAR struct socket *psock1, FAR struct socket *psock2);
-
-/****************************************************************************
- * Name: net_vfcntl
- *
- * Description:
- *   Performs fcntl operations on socket
- *
- * Input Parameters:
- *   sockfd - Socket descriptor of the socket to operate on
- *   cmd    - The fcntl command.
- *   ap     - Command-specific arguments
+ *   The socket operations of the file operations of the socket inode
+ *   (os/fs/socket) and of the VFS.  They are implemented by the network
+ *   manager (os/net/netmgr) with the network stack.
  *
  * Returned Value:
- *   Zero (OK) is returned on success; -1 (ERROR) is returned on failure and
- *   the errno value is set appropriately.
+ *   A non-negative value on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-int net_vfcntl(int sockfd, int cmd, va_list ap);
+int psock_socket(int domain, int type, int protocol, FAR struct socket *psock);
+int psock_close(FAR struct socket *psock);
+int psock_accept(FAR struct socket *psock, FAR struct sockaddr *addr, FAR socklen_t *addrlen, FAR struct socket *newsock, int flags);
+ssize_t psock_send(FAR struct socket *psock, FAR const void *buf, size_t len, int flags);
+ssize_t psock_recvfrom(FAR struct socket *psock, FAR void *buf, size_t len, int flags, FAR struct sockaddr *from, FAR socklen_t *fromlen);
+int psock_ioctl(FAR struct socket *psock, int cmd, unsigned long arg);
+int psock_poll(FAR struct socket *psock, FAR struct pollfd *fds, bool setup);
+int psock_dup2(FAR struct socket *psock1, FAR struct socket *psock2);
+int psock_fstat(FAR struct socket *psock, FAR struct stat *buf);
+int psock_socketpair(int domain, int type, int protocol, FAR struct socket *psocks[2]);
+
+#define psock_recv(psock, buf, len, flags) \
+	psock_recvfrom(psock, buf, len, flags, NULL, NULL)
 
 /****************************************************************************
- * Name: net_ioctl
- *
- * Description:
- *   Perform network device specific operations.
- *
- * Parameters:
- *   sockfd   Socket descriptor of device
- *   cmd      The ioctl command
- *   arg      The argument of the ioctl cmd
- *
- * Return:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   On a failure, -1 is returned with errno set appropriately
- *
- *   EBADF
- *     'sockfd' is not a valid descriptor.
- *   EFAULT
- *     'arg' references an inaccessible memory area.
- *   ENOTTY
- *     'cmd' not valid.
- *   EINVAL
- *     'arg' is not valid.
- *   ENOTTY
- *     'sockfd' is not associated with a network device.
- *   ENOTTY
- *      The specified request does not apply to the kind of object that the
- *      descriptor 'sockfd' references.
- *
- ****************************************************************************/
-
-
-int net_ioctl(int sockfd, int cmd, unsigned long arg);
-
-/****************************************************************************
- * Function: netdev_foreach
+ * Name: netdev_foreach
  *
  * Description:
  *   Enumerate each registered network device.
@@ -464,6 +287,7 @@ int net_ioctl(int sockfd, int cmd, unsigned long arg);
  ****************************************************************************/
 
 int netdev_foreach(netdev_callback_t callback, void *arg);
+
 #undef EXTERN
 #ifdef __cplusplus
 }

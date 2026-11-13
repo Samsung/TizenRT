@@ -199,7 +199,6 @@ in_addr_t inet_addr(FAR const char *cp);
 in_addr_t inet_network(FAR const char *cp);
 ///@endcond
 
-#ifdef CONFIG_CAN_PASS_STRUCTS
 /**
  * @brief Convert the Internet host address to a string in IPv4 dotted-decimal notation.
  *
@@ -215,18 +214,6 @@ FAR char *inet_ntoa(struct in_addr in);
 in_addr_t inet_lnaof(struct in_addr in);
 in_addr_t inet_netof(struct in_addr in);
 ///@endcond
-#else
-///@cond
-FAR char *_inet_ntoa(in_addr_t in);
-# define inet_ntoa(in) _inet_ntoa(in.s_addr);
-
-in_addr_t _inet_lnaof(in_addr_t in);
-# define inet_lnaof(in) _inet_lnaof(in.s_addr);
-
-in_addr_t _inet_netof(in_addr_t in);
-# define inet_netof(in) _inet_netof(in.s_addr);
-///@endcond
-#endif
 ///@cond
 struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);
 
