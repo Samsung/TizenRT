@@ -156,3 +156,44 @@ config MM_LARGE_ALLOC_THRESHOLD
 		to this value are placed at the back of the selected free
 		chunk. Default is 512KB. Must be larger than SIZEOF_MM_FREENODE.
 
+
+config MM_BACKTRACE
+	int "Backtrace depth for heap allocations"
+	default -1
+	---help---
+		Enables recording of call-stack backtraces for each heap allocation.
+		-1 : Disabled (no overhead)
+		 0 : Record the allocation sequence number only (minimal overhead)
+		>0 : Record the sequence number + N levels of backtrace (e.g. 4 or 8)
+
+		Each allocation node grows by seqno(4) + N*sizeof(void *) bytes and the
+		node header is rounded up to a MM_MIN_CHUNK multiple, so enabling this
+		costs RAM on every live and free chunk.  Keep it disabled in production
+		builds.  Ported from NuttX CONFIG_MM_BACKTRACE.
+
+if MM_BACKTRACE >= 0
+
+config MM_BACKTRACE_SEQNO
+	bool "Record allocation sequence number"
+	default y
+	---help---
+		Each allocation is tagged with a monotonically increasing sequence
+		number. Useful for ordering and range-based leak filtering.
+
+config MM_BACKTRACE_DEFAULT
+	bool "Enable backtrace recording by default"
+	default n
+	depends on MM_BACKTRACE > 0
+	---help---
+		Start with backtrace recording enabled at boot. When disabled,
+		recording can be activated later via the heap debug interface.
+
+config MM_BACKTRACE_SKIP
+	int "Number of stack frames to skip when capturing backtrace"
+	default 3
+	depends on MM_BACKTRACE > 0
+	---help---
+		Skips the given number of innermost frames (typically the allocator
+		itself) so the stored trace starts at the actual caller.
+
+endif # MM_BACKTRACE >= 0
