@@ -50,4 +50,17 @@ config ARCH_CHIP_QEMU_TRUSTZONE
 		TrustZone in qemu chip.
 
 
+config QEMU_VIRTIO_NET
+	bool "virtio-net network device (virtio-mmio)"
+	default y
+	depends on NET_LWIP && NET_NETMGR && NET_ETHERNET
+	depends on SCHED_HPWORK
+	---help---
+		The network device of the QEMU 'virt' machine for lwIP and the
+		network manager: a virtio-net device behind a virtio-mmio
+		transport.  It is registered as the Ethernet interface eth0.
+
+		Run QEMU with a network backend and the device, for example:
+		  -netdev user,id=net0 -device virtio-net-device,netdev=net0
+
 endif # ARCH_CHIP_QEMU_ARM
