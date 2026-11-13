@@ -30,3 +30,6 @@ tags
 *.tmp.*
 *.log
 *.log.old
+
+# Optional storage of the repositories cloned by the build (NXTMPDIR)
+/nxtmpdir

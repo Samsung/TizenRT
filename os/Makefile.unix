@@ -379,10 +379,30 @@ include/arch/board: include/arch Make.defs
 	$(Q) $(DIRLINK) $(TOPDIR)/$(BOARD_DIR)/include include/arch/board
 
 # Link the configs/<board-name>/src dir to arch/<arch-name>/src/board
+#
+# With CONFIG_ARCH_BOARD_COMMON, the boards of a chip share the sources of
+# board/<chip-name>-common, as the boards of NuttX share
+# boards/<arch-name>/<chip-name>/common: link that directory to
+# arch/<arch-name>/src/board and the configs/<board-name>/src dir to
+# arch/<arch-name>/src/board/board.
 
+ifeq ($(CONFIG_ARCH_BOARD_COMMON),y)
+BOARD_COMMON_DIR = board/$(patsubst "%",%,$(CONFIG_ARCH_CHIP))-common
+
+$(ARCH_SRC)/board: Make.defs
+	@echo "LN: $(ARCH_SRC)/board to $(BOARD_COMMON_DIR)"
+	$(Q) $(DIRLINK) $(TOPDIR)/$(BOARD_COMMON_DIR) $(ARCH_SRC)/board
+
+$(ARCH_SRC)/board/board: $(ARCH_SRC)/board
+	@echo "LN: $(ARCH_SRC)/board/board to $(BOARD_DIR)/src"
+	$(Q) $(DIRLINK) $(TOPDIR)/$(BOARD_DIR)/src $(ARCH_SRC)/board/board
+
+ARCH_SRC_BOARD_BOARD = $(ARCH_SRC)/board/board
+else
 $(ARCH_SRC)/board: Make.defs
 	@echo "LN: $(ARCH_SRC)/board to $(BOARD_DIR)/src"
 	$(Q) $(DIRLINK) $(TOPDIR)/$(BOARD_DIR)/src $(ARCH_SRC)/board
+endif
 
 # Link arch/<arch-name>/include/<chip-name> to arch/<arch-name>/include/chip
 
@@ -408,7 +428,7 @@ drivers/platform:
 	@echo "LN: drivers/platform to $(BOARD_DRIVERS_DIR)"
 	$(Q) $(DIRLINK) $(BOARD_DRIVERS_DIR) drivers/platform
 
-dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(ARCH_SRC)/chip include/apps drivers/platform
+dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(ARCH_SRC_BOARD_BOARD) $(ARCH_SRC)/chip include/apps drivers/platform
 
 # context
 #
@@ -444,6 +464,9 @@ clean_context:
 	$(Q) $(DIRUNLINK) include/arch/board
 	$(Q) $(DIRUNLINK) include/arch/chip
 	$(Q) $(DIRUNLINK) include/arch
+ifeq ($(CONFIG_ARCH_BOARD_COMMON),y)
+	$(Q) $(DIRUNLINK) $(ARCH_SRC)/board/board
+endif
 	$(Q) $(DIRUNLINK) $(ARCH_SRC)/board
 	$(Q) $(DIRUNLINK) $(ARCH_SRC)/chip
 	$(Q) $(DIRUNLINK) include/apps
