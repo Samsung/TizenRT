@@ -37,44 +37,32 @@
 #
 ############################################################################
 
-include $(TOPDIR)/tools/Make.defs
-include chip/Make.defs
-ifeq ($(CONFIG_OPENSBI),y)
-include opensbi/Make.defs
-else ifeq ($(CONFIG_NUTTSBI),y)
-include nuttsbi/Make.defs
-endif
+-include $(TOPDIR)/Make.defs
+-include chip/Make.defs
 
 ARCH_SRCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src
 
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common
-INCLUDES += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)sched
+INCLUDES += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)kernel
 
 CPPFLAGS += $(INCLUDES)
 CFLAGS += $(INCLUDES)
 CXXFLAGS += $(INCLUDES)
 AFLAGS += $(INCLUDES)
 
-NUTTX = $(call CONVERT_PATH,$(TOPDIR)$(DELIM)nuttx$(EXEEXT))
-
-# Additional rules for system call wrapper
-
-ifeq ($(CONFIG_SCHED_INSTRUMENTATION_SYSCALL),y)
-  EXTRALINKCMDS += @$(TOPDIR)/syscall/syscall_wraps.ldcmd
-endif
+TINYARA = "$(TOPDIR)/$(OUTBIN_DIR)/tinyara$(EXEEXT)"
 
 # The "head" object
 
 HEAD_OBJ = $(HEAD_ASRC:.S=$(OBJEXT))
-STARTUP_OBJS ?= $(HEAD_OBJ)
 
 # Flat build or kernel-mode objects
 
-ASRCS = $(CHIP_ASRCS) $(CMN_ASRCS) $(SBI_ASRCS)
+ASRCS = $(CHIP_ASRCS) $(CMN_ASRCS)
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 
-CSRCS = $(CHIP_CSRCS) $(CMN_CSRCS) $(SBI_CSRCS)
+CSRCS = $(CHIP_CSRCS) $(CMN_CSRCS)
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
@@ -92,50 +80,29 @@ USRCS = $(UASRCS) $(UCSRCS)
 UOBJS = $(UAOBJS) $(UCOBJS)
 
 KBIN = libkarch$(LIBEXT)
+UBIN = libuarch$(LIBEXT)
 BIN  = libarch$(LIBEXT)
 
-$(foreach lib,$(notdir $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))), \
-  $(foreach elib,$(EXTRA_LIBS), \
-    $(if $(filter $(notdir $(elib)),$(lib)), \
-      $(eval NAMEFULL_LIBS+=$(elib)), \
-      $(if $(filter $(notdir $(elib)),$(patsubst lib%$(LIBEXT),-l%,$(lib))), \
-        $(eval NAMESPEC_LIBS+=$(elib)) \
-       ) \
-     ) \
-   ) \
- )
-
-EXTRA_LIBS := $(filter-out $(NAMEFULL_LIBS) $(NAMESPEC_LIBS),$(EXTRA_LIBS))
-EXTRA_LIBS += $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))
+# The linker scripts are always run through the C preprocessor
 
 ARCHSCRIPT := $(call CONVERT_PATH,$(ARCHSCRIPT))
-LDFLAGS += $(addprefix -T,$(addsuffix .tmp,$(ARCHSCRIPT))) $(EXTRALINKCMDS)
+LINKSCRIPT_DEP = $(addsuffix .tmp,$(ARCHSCRIPT))
+LDFLAGS += $(addprefix -T,$(LINKSCRIPT_DEP))
 
-ifeq ($(LD),$(CC))
-  ifeq ($(CONFIG_STACK_CANARIES),y)
-    # filter out ssp(Stack Smashing Protector) related flags:
-    #  -fstack-protector
-    #  -fstack-protector-all
-    #  -fstack-protector-strong
-    #  -fstack-protector-explicit
-    STRIPCFLAGS = $(filter -fstack-protector%,$(CFLAGS))
-  endif
-  LDENTRY      ?= -Wl,--entry=__start
-  LDSTARTGROUP ?= -Wl,--start-group
-  LDENDGROUP   ?= -Wl,--end-group
-  LDFLAGS      := $(addprefix -Xlinker ,$(LDFLAGS))
-  LDFLAGS      += $(filter-out $(STRIPCFLAGS),$(CFLAGS))
-else
-  LDENTRY      ?= --entry=__start
-  LDSTARTGROUP ?= --start-group
-  LDENDGROUP   ?= --end-group
-endif
+# Override in Make.defs if linker is not 'ld'
+
+LDSTARTGROUP ?= --start-group
+LDENDGROUP ?= --end-group
+
+EXTRA_LIBS ?=
+EXTRA_LIBPATHS ?=
+LINKLIBS ?=
 
 BOARDMAKE = $(if $(wildcard board$(DELIM)Makefile),y,)
 
-LIBPATHS += -L $(call CONVERT_PATH,$(TOPDIR)$(DELIM)staging)
+LIBPATHS += -L"$(TOPDIR)/$(LIBRARIES_DIR)"
 ifeq ($(BOARDMAKE),y)
-  LIBPATHS += -L $(call CONVERT_PATH,$(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)board)
+  LIBPATHS += -L"$(TOPDIR)/arch/$(CONFIG_ARCH)/src/board"
 endif
 
 LDLIBS = $(patsubst %.a,%,$(patsubst lib%,-l%,$(LINKLIBS)))
@@ -145,14 +112,11 @@ endif
 
 VPATH += chip
 VPATH += common
-VPATH += common/espressif
-VPATH += $(SBI_DIR)
-VPATH += $(ARCH_SUBDIR)
 VPATH += $(CHIP_DIR)
 
 all: $(HEAD_OBJ) $(BIN)
 
-.PHONY: board/libboard$(LIBEXT)
+.PHONY: board$(DELIM)libboard$(LIBEXT)
 
 $(AOBJS) $(UAOBJS) $(HEAD_OBJ): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -160,80 +124,37 @@ $(AOBJS) $(UAOBJS) $(HEAD_OBJ): %$(OBJEXT): %.S
 $(COBJS) $(UCOBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(STARTUP_OBJS): %$(OBJEXT): %.c
-	$(Q) $(CC) $(CELFFLAGS) -c common$(DELIM)crt0.c -o crt0$(OBJEXT)
-
-ifeq ($(CONFIG_BUILD_FLAT),y)
-$(BIN): $(STARTUP_OBJS) $(OBJS)
+$(BIN) $(KBIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
-else
-$(BIN): $(STARTUP_OBJS) $(UOBJS)
+
+$(UBIN): $(UOBJS)
 	$(call ARCHIVE, $@, $(UOBJS))
-endif
 
-$(KBIN): $(OBJS)
-	$(call ARCHIVE, $@, $(OBJS))
+board$(DELIM)libboard$(LIBEXT):
+	$(Q) $(MAKE) $(JOBS) -C board TOPDIR="$(TOPDIR)" libboard$(LIBEXT) EXTRADEFINES=$(EXTRADEFINES)
 
-board/libboard$(LIBEXT):
-	$(Q) $(MAKE) -C board libboard$(LIBEXT) EXTRAFLAGS="$(EXTRAFLAGS)"
+$(LINKSCRIPT_DEP): %.tmp: % $(TOPDIR)/include/tinyara/config.h
+	$(call PREPROCESS, $<, $@)
 
-# When multiple linking, these two additional linking objects will be included
-
-ifeq ($(CONFIG_MM_KASAN_GLOBAL),y)
-EXTRA_LIBS += kasan_globals$(OBJEXT)
-endif
-ifeq ($(CONFIG_ALLSYMS),y)
-EXTRA_LIBS += allsyms$(OBJEXT)
-endif
-
-define LINK_ALLSYMS_KASAN
-	$(if $(CONFIG_ALLSYMS),
-	$(Q) $(TOPDIR)/tools/mkallsyms.py $(NUTTX) allsyms.tmp --orderbyname $(CONFIG_SYMTAB_ORDEREDBYNAME)
-	$(Q) $(call COMPILE, allsyms.tmp, allsyms$(OBJEXT), -x c)
-	$(Q) $(call DELFILE, allsyms.tmp))
-	$(if $(CONFIG_MM_KASAN_GLOBAL),
-	$(Q) $(TOPDIR)/tools/kasan_global.py -e $(NUTTX) -o kasan_globals.tmp -a $(CONFIG_MM_KASAN_GLOBAL_ALIGN)
-	$(Q) $(call COMPILE, kasan_globals.tmp, kasan_globals$(OBJEXT) -fno-sanitize=kernel-address, -x c)
-	$(Q) $(call DELFILE, kasan_globals.tmp))
-	$(Q) $(LD) $(LDENTRY) $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
-		-o $(NUTTX) $(HEAD_OBJ) $(EXTRA_OBJS) \
-		$(LDSTARTGROUP) $(LDLIBS) $(EXTRA_LIBS) $(LDENDGROUP)
-endef
-
-$(addsuffix .tmp,$(ARCHSCRIPT)): $(ARCHSCRIPT)
-	$(call PREPROCESS, $(patsubst %.tmp,%,$@), $@)
-
-nuttx$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT) $(addsuffix .tmp,$(ARCHSCRIPT))
-	$(Q) echo "LD: nuttx"
-ifeq ($(CONFIG_ALLSYMS)$(CONFIG_MM_KASAN_GLOBAL),)
-	$(Q) $(LD) $(LDENTRY) $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
-		-o $(NUTTX) $(HEAD_OBJ) $(EXTRA_OBJS) \
-		$(LDSTARTGROUP) $(LDLIBS) $(EXTRA_LIBS) $(LDENDGROUP)
-else
-	$(Q) $(call LINK_ALLSYMS_KASAN)
-	$(Q) $(call LINK_ALLSYMS_KASAN)
-	$(Q) $(call LINK_ALLSYMS_KASAN)
-	$(Q) $(call LINK_ALLSYMS_KASAN)
-endif
-ifeq ($(CONFIG_MM_KASAN_GLOBAL),y)
-	$(Q) $(OBJCOPY) -R .kasan.global $(NUTTX)
-	$(Q) $(OBJCOPY) -R .kasan.unused $(NUTTX)
-endif
+$(OUTBIN_DIR)/tinyara$(EXEEXT): $(HEAD_OBJ) board/libboard$(LIBEXT) $(LINKSCRIPT_DEP)
+	$(Q) echo "LD: tinyara"
+	$(Q) $(LD) --entry=__start $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
+		-o $(TINYARA) $(HEAD_OBJ) $(EXTRA_OBJS) \
+		$(LDSTARTGROUP) $(LDLIBS) $(EXTRA_LIBS) $(LDENDGROUP) -Map $(TOPDIR)/../build/output/bin/tinyara.map
 ifneq ($(CONFIG_WINDOWS_NATIVE),y)
-	$(Q) $(NM) $(NUTTX) | \
+	$(Q) $(NM) -l $(TINYARA) | \
 	grep -v '\(compiled\)\|\(\$(OBJEXT)$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
-	sort > $(TOPDIR)/System.map
+	sort > $(TOPDIR)/$(OUTBIN_DIR)/System.map
 endif
-	$(Q) $(call DELFILE, $(addsuffix .tmp,$(ARCHSCRIPT)))
 
 # This is part of the top-level export target
 # Note that there may not be a head object if layout is handled
 # by the linker configuration.
 
-export_startup: $(STARTUP_OBJS)
-ifneq ($(STARTUP_OBJS),)
+export_startup: board/libboard$(LIBEXT) $(HEAD_OBJ)
+ifneq ($(HEAD_OBJ),)
 	$(Q) if [ -d "$(EXPORT_DIR)/startup" ]; then \
-		cp -f $(STARTUP_OBJS) "$(EXPORT_DIR)/startup/."; \
+		cp -f $(HEAD_OBJ) "$(EXPORT_DIR)/startup/."; \
 	 else \
 		echo "$(EXPORT_DIR)/startup does not exist"; \
 	exit 1; \
@@ -242,15 +163,12 @@ endif
 
 # Dependencies
 
-makedepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds) $(HEAD_ASRC:.S=.dds)
-	$(call CATFILE, Make.dep, $^)
-	$(call DELFILE, $^)
-
-.depend: Makefile $(SRCS) $(TOPDIR)$(DELIM).config
+.depend: Makefile chip/Make.defs $(SRCS)
 ifeq ($(BOARDMAKE),y)
-	$(Q) $(MAKE) -C board depend
+	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" depend
 endif
-	$(Q) $(MAKE) makedepfile DEPPATH="$(patsubst %,--dep-path %,$(subst :, ,$(VPATH)))"
+	$(Q) $(MKDEP) $(patsubst %,--dep-path %,$(subst :, ,$(VPATH))) \
+	 "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
@@ -259,19 +177,19 @@ context::
 
 clean:
 ifeq ($(BOARDMAKE),y)
-	$(Q) $(MAKE) -C board clean
+	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" clean
 endif
-	$(call DELFILE, $(addsuffix .tmp,$(ARCHSCRIPT)))
+	$(call DELFILE, $(LINKSCRIPT_DEP))
 	$(call DELFILE, $(KBIN))
+	$(call DELFILE, $(UBIN))
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(HEAD_OBJ))
 	$(call CLEAN)
 
 distclean:: clean
 ifeq ($(BOARDMAKE),y)
-	$(Q) $(MAKE) -C board distclean
+	$(Q) $(MAKE) -C board TOPDIR="$(TOPDIR)" distclean
 endif
-	$(call DELFILE, $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds) $(HEAD_ASRC:.S=.dds))
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 

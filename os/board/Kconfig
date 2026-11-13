@@ -205,6 +205,14 @@ config ARCH_BOARD_MPS2_AN521
 		This options selects support for NuttX on the MPS2 AN521
 		board featuring the Cortex-M33.
 
+config ARCH_BOARD_QEMU_RV_VIRT
+	bool "QEMU RV Virt"
+	depends on ARCH_CHIP_QEMU_RV
+	select ARCH_HAVE_LEDS
+	---help---
+		This is the board configuration for the port of NuttX to the
+		QEMU RV32 Virt board. This board features the QEMU RV32 CPU.
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -236,6 +244,7 @@ config ARCH_BOARD
 	default "qemu-armv7r"        if ARCH_BOARD_QEMU_ARMV7R
 	default "mps2-an500"         if ARCH_BOARD_MPS2_AN500
 	default "mps2-an521"         if ARCH_BOARD_MPS2_AN521
+	default "rv-virt"            if ARCH_BOARD_QEMU_RV_VIRT
 
 comment "Common Board Options"
 
@@ -723,6 +732,9 @@ source board/mps2-an500/Kconfig
 endif
 if ARCH_BOARD_MPS2_AN521
 source board/mps2-an521/Kconfig
+endif
+if ARCH_BOARD_QEMU_RV_VIRT
+source board/rv-virt/Kconfig
 endif
 
 source board/common/Kconfig
