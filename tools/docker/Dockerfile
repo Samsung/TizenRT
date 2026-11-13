@@ -27,17 +27,25 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.s
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-RUN apt-get update && apt-get source --download-only qemu && \
+RUN apt-get update && apt-get source --download-only qemu libslirp && \
     rm -rf /var/lib/apt/lists/* && \
-    tar xf qemu_*.orig.tar.* && mv qemu-*/ qemu
+    tar xf qemu_*.orig.tar.* && mv qemu-*/ qemu && \
+    tar xf libslirp_*.orig.tar.* && mv libslirp-*/ libslirp
+
+# libslirp gives QEMU the user-mode network backend ('-netdev user'), which
+# connects the emulated NIC to the host without a tap device.  Ubuntu ships
+# only the shared library, so build a static one for the static QEMU.
+WORKDIR /build/libslirp
+RUN meson setup build --prefix=/usr -Ddefault_library=static && \
+    ninja -C build install
 
 # The +ds source has no firmware blobs: do not unpack the edk2 images.
 WORKDIR /build/qemu/build
 RUN sed -i 's/unpack_edk2_blobs = bzip2.found()/unpack_edk2_blobs = false/' \
         ../meson.build && \
     ../configure --prefix=/opt/qemu --target-list=arm-softmmu --static \
-        --without-default-features --enable-fdt=system --disable-docs \
-        --disable-install-blobs --disable-werror && \
+        --without-default-features --enable-fdt=system --enable-slirp \
+        --disable-docs --disable-install-blobs --disable-werror && \
     make -j"$(nproc)" && make install && \
     /opt/qemu/bin/qemu-system-arm --version
 
