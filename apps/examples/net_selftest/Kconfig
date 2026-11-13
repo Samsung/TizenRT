@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_NET_SELFTEST
+	bool "Socket self test over the loopback and with a host"
+	default n
+	depends on NET_SOCKET && NET_TCP && NET_UDP && NET_LOOPBACK_INTERFACE
+	---help---
+		A self test of the socket layer: TCP and UDP over the loopback
+		interface, select(), poll(), non-blocking sockets, dup(), close()
+		of a socket that another thread is blocked on, and the sockets of
+		a task that exits.  It also runs a TCP and UDP echo test with a
+		host and a TCP echo server.

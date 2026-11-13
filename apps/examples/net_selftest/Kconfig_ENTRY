@@ -1,0 +1,3 @@
+config ENTRY_NET_SELFTEST
+	bool "Socket self test"
+	depends on EXAMPLES_NET_SELFTEST
