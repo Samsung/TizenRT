@@ -57,6 +57,9 @@
 #include <errno.h>
 #include <debug.h>
 #include <spawn.h>
+#ifdef CONFIG_LOG_DUMP
+#include <tinyara/log_dump/log_dump_internal.h>
+#endif
 
 #include <tinyara/irq.h>
 #include <tinyara/ascii.h>
@@ -267,6 +270,13 @@ static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
 			/* No.. not full.  Add the character to the TX buffer and return. */
 
 			dev->xmit.buffer[dev->xmit.head] = ch;
+#ifdef CONFIG_LOG_DUMP
+			/* only save UART data that is being transmitted to the console */
+
+			if (dev->isconsole) {
+				log_dump_save(ch);
+			}
+#endif
 			dev->xmit.head = nexthead;
 			break;
 		}

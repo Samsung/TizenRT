@@ -58,6 +58,7 @@ DEPPATH = --dep-path .
 VPATH = .
 
 include addrenv/Make.defs
+include binary_manager/Make.defs
 include clock/Make.defs
 include environ/Make.defs
 include event/Make.defs
@@ -65,10 +66,12 @@ include group/Make.defs
 include init/Make.defs
 include instrument/Make.defs
 include irq/Make.defs
+include log_dump/Make.defs
 include misc/Make.defs
 include mqueue/Make.defs
 include module/Make.defs
 include paging/Make.defs
+include preference/Make.defs
 include pthread/Make.defs
 include sched/Make.defs
 include semaphore/Make.defs

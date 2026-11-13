@@ -470,6 +470,19 @@ struct mallinfo_task kmm_mallinfo_task(FAR const struct malltask *task);
 #  endif
 #endif
 
+/* Functions contained in mm_lock.c ******************************************/
+
+bool kmm_is_locked(void);
+
+/* Heap info debug helpers ***************************************************/
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+void heapinfo_set_pid(void *address, pid_t pid);
+#  define DEBUG_SET_PID(mem, pid) heapinfo_set_pid(mem, pid)
+#else
+#  define DEBUG_SET_PID(mem, pid)
+#endif
+
 /* Functions contained in mm_memdump.c **************************************/
 
 void mm_memdump(FAR struct mm_heap_s *heap,

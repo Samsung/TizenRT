@@ -38,9 +38,10 @@
 #include "arm.h"
 #include "mmu.h"
 #include "scu.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "amebasmart_config.h"
 #include "amebasmart_memorymap.h"
+#include "amebasmart_enablesmp.h"
 
 #include "sctlr.h"
 #include "section_config.h"
@@ -57,6 +58,10 @@
 
 extern uint8_t _vector_start[]; /* Beginning of vector block */
 extern uint8_t _vector_end[];   /* End+1 of vector block */
+
+/* Realtek SoC start-up (fwlib/ap_core/ameba_app_start.c) */
+
+extern void app_start(void);
 
 /****************************************************************************
  * Private Functions
@@ -286,9 +291,9 @@ void arm_boot(void)
   */
 
 #ifdef CONFIG_SMP
-  /* Enable SMP cache coherency for CPU0 */
+  /* Enable SMP cache coherency for CPU0 (no SCU on the Cortex-A32) */
 
-  arm_enable_smp(0);
+  amebasmart_enable_smp(0);
 #endif
 
   /* Provide a special mapping for the OCRAM interrupt vector positioned in

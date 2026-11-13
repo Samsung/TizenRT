@@ -77,7 +77,7 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 ###########################################################################################
 
 def make_bootparam():
-    print "========== Start to make boot parameters =========="
+    print("========== Start to make boot parameters ==========")
     SIZE_OF_CHECKSUM = 4
     SIZE_OF_BP_VERSION = 4
     SIZE_OF_BP_FORMAT_VERSION = 4
@@ -93,8 +93,8 @@ def make_bootparam():
     FLASH_SIZE = util.get_value_from_file(config_file_path, "CONFIG_FLASH_SIZE=")
     names = util.get_value_from_file(config_file_path, "CONFIG_FLASH_PART_NAME=").replace('"','').replace('\n','').split(",")
     sizes = util.get_value_from_file(config_file_path, "CONFIG_FLASH_PART_SIZE=").replace('"','').replace('\n','').split(",")
-    names = filter(None, names)
-    sizes = filter(None, sizes)
+    names = list(filter(None, names))
+    sizes = list(filter(None, sizes))
 
     INITIAL_ACTIVE_IDX = 0
     INITIAL_BP_REASON = 0
@@ -113,19 +113,19 @@ def make_bootparam():
             bp_part_size = int(sizes[index]) * 1024
             # Verify partition size and offset of boot parameters
             if bp_part_size == 0:
-                print "FAIL!! No bootparam partition."
+                print("FAIL!! No bootparam partition.")
                 sys.exit(1)
             elif bp_part_size != SIZE_OF_BP_PARTITION:
-                print "FAIL!! Bootparam partition size should be 8K. Please re-configure."
+                print("FAIL!! Bootparam partition size should be 8K. Please re-configure.")
                 sys.exit(1)
             elif offset != int(FLASH_SIZE) - int(SIZE_OF_BP_PARTITION):
-                print "FAIL!! Bootparam should be located at the end of flash with 8K. Please re-configure."
+                print("FAIL!! Bootparam should be located at the end of flash with 8K. Please re-configure.")
                 sys.exit(1)
         offset += int(sizes[index]) * 1024
 
     # Verify kernel partitions
     if len(kernel_address) == 0 or len(kernel_address) > 2:
-        print "FAIL!! No found kernel partition"
+        print("FAIL!! No found kernel partition")
         sys.exit(1)
 
     with open(bootparam_file_path, 'wb') as fp:
@@ -156,11 +156,11 @@ def make_bootparam():
         total_app_data_size = SIZE_OF_BINCOUNT + TOTAL_APP_COUNT * (SIZE_OF_BINNAME + SIZE_OF_BINIDX)
         remain_app_data_size = (TOTAL_APP_COUNT - user_app_count) * (SIZE_OF_BINNAME + SIZE_OF_BINIDX)
 
-        with open(bootparam_file_path, 'a') as fp:
+        with open(bootparam_file_path, 'ab') as fp:
             # User Data
             fp.write(struct.pack('B', user_app_count))
             for user_file in user_file_list:
-                    fp.write('{:{}{}.{}}'.format(user_file, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0'))
+                    fp.write('{:{}{}.{}}'.format(user_file, '<', SIZE_OF_BINNAME, SIZE_OF_BINNAME - 1).replace(' ','\0').encode())
                     fp.write(struct.pack('B', INITIAL_ACTIVE_IDX))
             fp.write(b'\xff' * remain_app_data_size)
 
@@ -168,22 +168,22 @@ def make_bootparam():
     resource_data_size = 0
     if (util.check_config_existence(config_file_path, "CONFIG_RESOURCE_FS")) :
         resource_data_size = SIZE_OF_RESOURCE_INDEX
-        with open(bootparam_file_path, 'a') as fp:
+        with open(bootparam_file_path, 'ab') as fp:
                 fp.write(struct.pack('B', INITIAL_ACTIVE_IDX))
 
     # Fill remaining space with '0xff' up to the fixed BP tail and write bp_tail
     bp_tail = struct.pack('B', INITIAL_BP_REASON)
-    with open(bootparam_file_path, 'a') as fp:
+    with open(bootparam_file_path, 'ab') as fp:
         remain_size = SIZE_OF_BPx - (kernel_data_size + total_app_data_size + resource_data_size)
         fp.write(b'\xff' * (remain_size - len(bp_tail)))
         fp.write(bp_tail)
 
     # Add checksum for BP1
     mkchecksum_path = os.path.dirname(__file__) + '/mkchecksum.py'
-    os.system('python %s %s' % (mkchecksum_path, bootparam_file_path))
+    os.system('%s %s %s' % (sys.executable, mkchecksum_path, bootparam_file_path))
 
     # Fill remaining space with '0xff' for BP2
-    with open(bootparam_file_path, 'a') as fp:
+    with open(bootparam_file_path, 'ab') as fp:
         fp.write(b'\xff' * SIZE_OF_BPx)
 
 ###################################################

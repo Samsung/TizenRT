@@ -90,6 +90,14 @@ config MTD_BYTE_WRITE
 		support such writes.  The SMART file system can take advantage of
 		this option if it is enabled.
 
+config MTD_FTL
+	bool "Enable MTD ftl layer"
+	default n
+	---help---
+		Enable to support a MTD FTL layer.  The FTL block driver registers
+		/dev/mtdblockN devices from flash partitions; it is also a
+		dependency of the binary manager.
+
 config MTD_WRBUFFER
 	bool "Enable MTD write buffering"
 	default n

@@ -42,6 +42,9 @@
  ****************************************************************************/
 
 #include <tinyara/clk/clk_provider.h>
+#if defined(CONFIG_COMPRESSION)
+#  include <tinyara/compression.h>
+#endif
 #if defined(CONFIG_CRYPTO)
 #  include <tinyara/crypto/crypto.h>
 #endif
@@ -192,6 +195,10 @@ void drivers_initialize(void)
 
 #if defined(CONFIG_DRIVERS_NOTE)
 	note_initialize();    /* Non-standard /dev/note */
+#endif
+
+#ifdef CONFIG_COMPRESSION
+	compress_register();  /* Non-standard /dev/compress */
 #endif
 
 #if defined(CONFIG_CLK_RPMSG)

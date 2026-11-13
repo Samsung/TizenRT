@@ -5,6 +5,8 @@
  ******************************************************************************/
 // #include <task.h>
 #include <osdep_service.h>
+#include <tinyara/kthread.h>
+#include <tinyara/sched.h>
 #include <stdio.h>
 
 static int wrapper_thread(int argc, char *argv[])
@@ -49,8 +51,8 @@ int rtw_create_task(struct task_struct *ptask, const char *name,
 	task_info[0] = itoa(func_addr, str_func_addr, 16);
 	task_info[1] = itoa(ctx_addr, str_ctx_addr, 16);
 	task_info[2] = NULL;
-	pid = kernel_thread(name, priority, stack_size, wrapper_thread, (char * const *)task_info);
-	if (pid == ERROR) {
+	pid = kthread_create(name, priority, stack_size, wrapper_thread, (char * const *)task_info);
+	if (pid < 0) {
 		DBG_ERR("%s fail\n", name);
 		return _FAIL;
 	}
@@ -74,7 +76,7 @@ void rtw_delete_task(struct task_struct *ptask)
 
 void rtw_set_priority_task(void *task, u32 NewPriority)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
+	FAR struct tcb_s *rtcb = nxsched_get_tcb(*(pid_t *)task);
 	DBG_INFO("\n");
 
 	if (rtcb == NULL) {
@@ -82,13 +84,15 @@ void rtw_set_priority_task(void *task, u32 NewPriority)
 		return;
 	}
 
-	sched_setpriority(rtcb, NewPriority + SCHED_PRIORITY_DEFAULT);
+	struct sched_param param;
+	param.sched_priority = NewPriority + SCHED_PRIORITY_DEFAULT;
+	nxsched_set_param(rtcb->pid, &param);
 	return;
 }
 
 int rtw_get_priority_task(void *task)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
+	FAR struct tcb_s *rtcb = nxsched_get_tcb(*(pid_t *)task);
 	DBG_INFO("\n");
 
 	if (rtcb == NULL) {
@@ -101,7 +105,7 @@ int rtw_get_priority_task(void *task)
 
 void rtw_suspend_task(void *task)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
+	FAR struct tcb_s *rtcb = nxsched_get_tcb(*(pid_t *)task);
 	DBG_INFO("\n");
 
 	if (rtcb == NULL) {
@@ -114,7 +118,7 @@ void rtw_suspend_task(void *task)
 
 void rtw_resume_task(void *task)
 {
-	FAR struct tcb_s *rtcb = sched_gettcb(*(pid_t *)task);
+	FAR struct tcb_s *rtcb = nxsched_get_tcb(*(pid_t *)task);
 	DBG_INFO("\n");
 
 	if (rtcb == NULL) {

@@ -23,10 +23,13 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 
 #ifdef CONFIG_FLASH_PARTITION
-struct partition_info_s {
+/* Renamed from struct partition_info_s: NuttX 12.13.0 defines a struct
+ * with the same name for the BIOC_PARTINFO ioctl in tinyara/fs/ioctl.h.
+ */
+struct board_partition_info_s {
 	int smartfs_partno;
 	int romfs_partno;
 	int timezone_partno;
@@ -34,7 +37,7 @@ struct partition_info_s {
 	int littlefs_partno;
 	int dhara_minor;
 };
-typedef struct partition_info_s partition_info_t;
+typedef struct board_partition_info_s partition_info_t;
 
 int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t *partinfo);
 FAR struct mtd_dev_s *mtd_initialize(void);

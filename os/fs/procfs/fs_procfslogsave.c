@@ -92,11 +92,12 @@ static int logsave_stat(FAR const char *relpath, FAR struct stat *buf);
  * with any compiler.
  */
 
-const struct procfs_operations logsave_operations = {
+const struct procfs_operations g_logsave_operations = {
 	logsave_open,				/* open */
 	logsave_close,				/* close */
 	logsave_read,				/* read */
 	logsave_write,				/* write */
+	NULL,					/* poll */
 
 	logsave_dup,				/* dup */
 
@@ -167,7 +168,7 @@ static int logsave_dup(FAR const struct file *oldp, FAR struct file *newp)
  *
  ****************************************************************************/
 
-static int logsave_stat(const char *relpath, struct stat *buf)
+static int logsave_stat(FAR const char *relpath, FAR struct stat *buf)
 {
 	/* "logsave" is the only acceptable value for the relpath */
 

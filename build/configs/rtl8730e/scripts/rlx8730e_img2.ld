@@ -134,9 +134,10 @@ SECTIONS
 	{
 		__flash_text_start__ = .;
 		_stext_flash = ABSOLUTE(.);
+		_stext = ABSOLUTE(.);
 
-		*(.text)		/* .text sections (code) */
-		EXCLUDE_FILE (*arm_mmu.o *arm_cpupause.o *arm_testset.o *spinlock.o)*(.text*)      /* .text* sections (code) */
+		EXCLUDE_FILE (*arm_head.o *arm_cpuhead.o) *(.text)		/* .text sections (code) */
+		EXCLUDE_FILE (*arm_head.o *arm_cpuhead.o *arm_mmu.o *arm_cpupause.o *arm_testset.o *spinlock.o)*(.text*)      /* .text* sections (code) */
 		*(.rodata)      /* .rodata sections (constants, strings, etc.) */
 		*(.rodata*)     /* .rodata* sections (constants, strings, etc.) */
 		*(.glue_7)      /* glue arm to thumb code */
@@ -160,6 +161,7 @@ SECTIONS
 		. = ALIGN(4);
 
 		_etext_flash = ABSOLUTE(.);
+		_etext = ABSOLUTE(.);
 		__flash_text_end__ = .;
 	} > CA32_IMG2_XIP
 
@@ -176,6 +178,14 @@ SECTIONS
 		*(.cpu1start)
 		*(.timesensitive.text*)
 		*(.sramdram.only.text*)     
+		/* The NuttX __start (arm_head.S) maps only the PSRAM; it and the
+		 * MMU code run before arm_boot() maps the flash.
+		 */
+		*arm_head.o (.text*)
+		/* CPU1 enters the NuttX __cpu1_start (arm_cpuhead.S) with the MMU
+		 * off (PSCI CPU_ON from up_cpu_start()).
+		 */
+		*arm_cpuhead.o (.text*)
 		/* Place arm_mmu.c in PSRAM to reduce delay in boot sequence */
 		*arm_mmu.o (.text*)
 		*arm_cpupause.o (.text*)

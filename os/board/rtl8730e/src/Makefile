@@ -71,13 +71,6 @@ ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
 CSRCS += crashdump.c
 endif
 
-# boardctl support
-ifeq ($(CONFIG_LIB_BOARDCTL),y)
-DEPPATH += --dep-path $(TOPDIR)/arch
-VPATH += :$(TOPDIR)/arch
-CSRCS += boardctl.c
-endif
-
 include Make.defs
 include component/soc/amebad2/fwlib/ram_common/Make.defs
 include component/soc/amebad2/fwlib/ap_peripheral/Make.defs
@@ -87,15 +80,15 @@ include component/soc/amebad2/fwlib/ram_hp/Make.defs
 include component/soc/amebad2/swlib/Make.defs
 
 include component/usrcfg/rtl8730e/Make.defs
-include component/lwip/api/Make.defs
-include component/wifi/Make.defs
-include component/wifi/inic/Make.defs
-include component/wifi/common/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
 include component/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_WIFI),y)
+include component/lwip/api/Make.defs
+include component/wifi/Make.defs
+include component/wifi/inic/Make.defs
+include component/wifi/common/Make.defs
 include component/wifi/api/Make.defs
 include component/wifi/wpa_supplicant/wpa_supplicant/Make.defs
 include component/soc/amebad2/misc/Make.defs
@@ -131,9 +124,14 @@ include component/usb/device_new/cdc_acm/Make.defs
 include component/usb/device_new/core/Make.defs
 endif
 
+ifeq ($(CONFIG_AMEBASMART_FTL),y)
 include component/file_system/ftl/Make.defs
+endif
+
+ifeq ($(CONFIG_AMEBASMART_WIFI),y)
 include component/file_system/kv/Make.defs
 include component/file_system/vfs2.0/Make.defs
+endif
 
 ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
 BOARD_SRCDIR = 	$(TOPDIR)/board

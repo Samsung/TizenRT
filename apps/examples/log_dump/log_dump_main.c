@@ -118,7 +118,7 @@ int log_dump_main(int argc, char *argv[])
 			}
 		}
 	}
-	printf("log_dump_size = %d, and total_read = %d, Both should be equal\n", GET_LOGDUMP_SIZE(fd), total_read);
+	printf("\nlog_dump_size = %d, and total_read = %d, Both should be equal\n", GET_LOGDUMP_SIZE(fd), total_read);
 
 	printf("\n*********************   LOG DUMP END  ***********************\n");
 

@@ -47,10 +47,8 @@ static const struct file_operations compress_fops = {
 	comp_read,                  /* read */
 	comp_write,                 /* write */
 	0,                          /* seek */
-	comp_ioctl              /* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	, 0                         /* poll */
-#endif
+	comp_ioctl,                 /* ioctl */
+	0                           /* mmap */
 };
 
 static struct file_decomp_data_s {

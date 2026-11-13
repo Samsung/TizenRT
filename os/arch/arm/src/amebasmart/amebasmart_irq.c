@@ -28,7 +28,9 @@
 
 #include <tinyara/arch.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
+#include "arm_cpupause.h"
+#include "amebasmart_enablesmp.h"
 #include "sctlr.h"
 #include "gic.h"
 
@@ -119,9 +121,24 @@ void up_irqinitialize(void)
    * access to the GIC.
    */
 
-  /* Initialize the Generic Interrupt Controller (GIC) for CPU0 */
+  /* Initialize the Generic Interrupt Controller (GIC).  The distributor is
+   * initialized once by CPU0; CPUn only initializes its CPU interface when
+   * arm_cpu_boot() calls this function (as in the NuttX qemu chip).
+   */
 
-  arm_gic0_initialize();  /* Initialization unique to CPU0 */
+  if (up_cpu_index() == 0)
+    {
+      arm_gic0_initialize();  /* Initialization unique to CPU0 */
+
+#ifdef CONFIG_SMP
+      /* Attach the CPU pause handler used while the XIP flash is
+       * programmed.  The handler is attached to all CPUs at once.
+       */
+
+      amebasmart_cpupause_initialize();
+#endif
+    }
+
   arm_gic_initialize();   /* Initialization common to all CPUs */
 
 #ifdef CONFIG_ARCH_LOWVECTORS
@@ -145,6 +162,14 @@ void up_irqinitialize(void)
   cp15_wrvbar((uint32_t)_vector_start);
 #endif /* CONFIG_ARCH_LOWVECTORS */
 
+  /* Enable the generic timer event stream for this CPU: every WFE in
+   * the kernel (spin_lock_notrace wait, CPU pause stage-5 wait) then
+   * wakes within a bounded time even if an SEV is lost.  Runs after
+   * the GIC and VBAR are set up and attaches the pause SGI handler.
+   */
+
+  amebasmart_enable_evtstrm((int)up_cpu_index());
+
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 
   /* And finally, enable interrupts */
@@ -154,33 +179,18 @@ void up_irqinitialize(void)
 }
 
 /****************************************************************************
- * Name: arm_intstack_top
- *
- * Description:
- *   Return a pointer to the top the correct interrupt stack allocation
- *   for the current CPU.
- *
- ****************************************************************************/
-
-#if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
-uintptr_t arm_intstack_top(void)
-{
-  return g_irqstack_top[up_cpu_index()];
-}
-#endif
-
-/****************************************************************************
- * Name: arm_intstack_alloc
+ * Name: up_get_intstackbase
  *
  * Description:
  *   Return a pointer to the "alloc" the correct interrupt stack allocation
- *   for the current CPU.
+ *   for the given CPU (NuttX 12.13 interface; the old TizenRT had
+ *   arm_intstack_top() and arm_intstack_alloc() for the current CPU).
  *
  ****************************************************************************/
 
 #if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
-uintptr_t arm_intstack_alloc(void)
+uintptr_t up_get_intstackbase(int cpu)
 {
-  return g_irqstack_top[up_cpu_index()] - INTSTACK_SIZE;
+  return g_irqstack_top[cpu] - INTSTACK_SIZE;
 }
 #endif

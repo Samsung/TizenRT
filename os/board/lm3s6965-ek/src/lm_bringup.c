@@ -155,7 +155,7 @@ int lm_bringup(void)
 	}
 #endif
 
-#ifdef CONFIG_FS_PROCFS
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	/* Mount the procfs file system */
 
 	ret = nx_mount(NULL, LM_PROCFS_MOUNTPOINT, "procfs", 0, NULL);

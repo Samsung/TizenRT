@@ -23,6 +23,7 @@
 #include <tinyara/config.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/sched.h>
+#include <tinyara/kthread.h>
 #include <tinyara/compression.h>
 
 #include <mqueue.h>
@@ -32,10 +33,10 @@
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <queue.h>
 #include <debug.h>
 #include <assert.h>
 
+#include <tinyara/queue.h>
 #include <tinyara/clock.h>
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
@@ -259,7 +260,7 @@ static void log_dump_mem_check(size_t max_size)
 	 * mem free opeartions. So we just return here. The mem
 	 * free will be done when the kernel heap is released
 	 */
-	if (IS_KMM_LOCKED()) {
+	if (kmm_is_locked()) {
 		return;
 	}
 
@@ -311,11 +312,8 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 	*free_size = kmm_get_heap_free_size();
 #else
 	struct mallinfo mem;
-#ifdef CONFIG_CAN_PASS_STRUCTS
+
 	mem = kmm_mallinfo();
-#else
-	(void)kmm_mallinfo(&mem);
-#endif
 	*free_size = mem.fordblks;
 #endif
 
@@ -418,7 +416,7 @@ static int compress_full_bufs(void)
 		 * code internally tries to allocate memory. So, we will just ignore
 		 * the log data until the kernel heap lock is released.
 		 */
-		if (IS_KMM_LOCKED()) {
+		if (kmm_is_locked()) {
 			leave_critical_section(flags);
 			return LOG_DUMP_MEM_FAIL;
 		}
@@ -517,7 +515,7 @@ int log_dump_save(char ch)
 			 * priority, then there will be a lockup since both threads cannot proceed. 
 			 * So, in this case, we will return without performing the compression.
 			 */
-			if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount()) {
+			if (nxsched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount()) {
 				return LOG_DUMP_FAIL;
 			}
 
@@ -528,7 +526,7 @@ int log_dump_save(char ch)
 		// This else statement is entered only when enitre uncompressed buffer is full.
 		// If compression is available, compress the entire uncompressed buffer.
 		// Otherwise, discard the character.
-		if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount() || IS_KMM_LOCKED()) {
+		if (nxsched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount() || kmm_is_locked()) {
 			return LOG_DUMP_FAIL;
 		}
 
@@ -586,6 +584,25 @@ size_t log_dump_read(FAR char *buffer, size_t buflen)
 	sched_unlock();
 
 	return ret;
+}
+
+/****************************************************************************
+ * Name: log_dump_initialize
+ *
+ * Description:
+ *   Start the log dump thread that stores console logs to a buffer and
+ *   compresses them.
+ *
+ ****************************************************************************/
+
+void log_dump_initialize(void)
+{
+	svdbg("Starting log_dump thread\n");
+
+	pid_t pid = kthread_create(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
+	if (pid < 0) {
+		sdbg("Failed to start log dump\n");
+	}
 }
 
 int log_dump(int argc, char *argv[])
