@@ -62,7 +62,8 @@
 
 #define ADAM110_MIC_GAIN_MAX		255
 #define ADAM110_MIC_GAIN_DEFAULT	64  /* The default ADAM110 setting at 95 dB SPL is 0x40. This value corresponds to -12 dB and may need to be adjusted depending on the board configuration. */
-#define ADAM110_DEFAULT_SENSITIVITY	0xAAAA
+#define ADAM110_DEFAULT_SENSITIVITY	0xAAAA	/* > ADAM110_SENSITIVITY_MAX : not set by upper layer, keep FW default */
+#define ADAM110_SENSITIVITY_MAX		32767	/* FW thd max (FW compare value as is, FW clamps 0 ~ 32767) */
 #define ADAM110_DEFAULT_SAMPLE_SIZE 3840
 
 #define ADMA110_DIS_OFF				0x00
@@ -75,6 +76,7 @@
 #define ADAM110_COM_RES_DELAY		1  /* between command and respone imprecise */
 #define ADAM110_RETRIAL_DELAY		1  /* Seamless buffer polling retry delay */
 #define SEAMLESS_RETRY_COUNT 		6
+#define ADAM110_SPI_LOCK_TIMEOUT_MSEC	100 /* force-unlock adam110_get_audiobuffer()'s SPI lock if it never completes */
 
 #define ADAM110_RX_MAX_SIZE			3840
 #define ADAM110_KEYWORD_DATA_SIZE	64000
@@ -90,6 +92,8 @@
 #define ADAM110_FW_WRITE_WAITTIME   (4 * 1000) /* Min 4ms */
 #define ADAM110_FW_CHKSUM_WAITTIME  (100 * 1000) /* Min 100ms */
 #define ADAM110_ALIVENESS_CHECK_PERIOD_US	(3 * 1000 * 1000) /* 3 sec */
+#define ADAM110_XSOSC_WAIT_MAX_CNT			5	/* 0x07 x 5 (4 periods, 12 sec > FW XSOSC check 10 sec) : reset and reload */
+#define ADAM110_BUSY_WAIT_MAX_CNT			2	/* RSLT_BUSY(DM_ENTER_LP_MODE wake session) tolerated once; busy again on the very next keepalive period : reset and reload */
 #define ADAM110_FW_BOOT_MODE_OK		0xB004C0DE
 #define ADAM110_FW_CHKSUM_FAIL		0xDE
 #define ADAM110_FW_DATA_HEADER		2
@@ -142,6 +146,7 @@
 #define AC_GET_MODEL_NAME			0x65 /* Get AI model name */
 #define AC_INT_EN					0x66 /* AI model Interrupt Enable/Disable */
 #define AC_GET_THD					0x67 /* Get AI Model Threshold Adjust */
+#define AC_SET_INT_HIGH_TIME        0x68 /* Set AI model interrupt high time 800: 8ms, Max : 100000(1s)*/
 
 /* Firmware */
 #define FW_GET_VER					0xE0 /* Get FW Version */
@@ -163,6 +168,12 @@
 #define RSLT_CHKSUM_ERR				0x04 /* Checksum Error */
 #define RSLT_SYNC_ERR				0x05 /* Sync Byte Error */
 #define RSLT_INTERNAL_ERR			0x06 /* Internal Error */
+#define RSLT_SYS_WAIT_STABLE		0x07 /* XSOSC(32.768kHz) not ready yet */
+#define RSLT_BUSY					0x09 /* Busy now (DM_ENTER_LP_MODE : wake session open), retry later. 0x08 reserved */
+
+/* Keep alive flags (parm3) */
+#define KA_FLAG_WAIT_STABLE			(1u << 0) /* XSOSC wait for ready */
+#define KA_FLAG_MODEL_NONE			(1u << 3) /* model not loaded */
 
 typedef struct {
 	uint8_t header;
@@ -213,8 +224,8 @@ typedef enum {
 typedef enum {
 	AI_MODEL_HIBIXBY	= 1,	/* Hi-Bixby */
 	AI_MODEL_BIXBY,				/* Bixby */
-	AI_MODEL_ALEXA,				/* Alexa */
-	AI_MODEL_CUSTOM1,    		/* Custom model 1 */
+	AI_MODEL_ALEXA,			    /* Alexa */
+	AI_MODEL_CUSTOM1,	    	/* Custom model 1 */
 	AI_MODEL_CUSTOM2,
 	AI_MODEL_CUSTOM3,
 	AI_MODEL_CUSTOM4,
@@ -222,10 +233,10 @@ typedef enum {
 } ai_model_t;
 
 typedef enum {
-	WWD_HIBIXBY	= 0,		/* Hi-Bixby */
-	WWD_BIXBY,				/* Bixby */
-	WWD_ALEXA,				/* Alexa */
-	WWD_CUSTOM_MODEL1,    			/* Custom model 1 */
+	WWD_HIBIXBY	= 0,	        /* Hi-Bixby */
+	WWD_BIXBY,				    /* Bixby */
+	WWD_ALEXA,				    /* Alexa */
+	WWD_CUSTOM_MODEL1,	    	/* Custom model 1 */
 	WWD_CUSTOM_MODEL2,
 	WWD_CUSTOM_MODEL3,
 	WWD_CUSTOM_MODEL4,
@@ -310,6 +321,10 @@ struct adam110_dev_s {
 
 static struct work_s adam110_work; /* workqueen handle */
 static uint8_t s_temp_chunk[ADAM110_RX_MAX_SIZE + 1]; /* 3840 + 1(checksum) */
+
+static WDOG_ID g_adam110_spi_wdog; /* adam110_get_audiobuffer()'s SPI lock deadlock watchdog */
+static struct work_s g_adam110_spi_recovery_work; /* deferred HPWORK recovery for the above */
+
 
 static const char *mcu_package = "/res/kernel/audio/mcu_fw";
 static const char *dsp_package = "/res/kernel/audio/dsp_fw";
