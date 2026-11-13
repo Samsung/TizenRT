@@ -179,9 +179,12 @@ static int comp_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if (ret != OK) {
 			if (ret == -EBUSY) {
 				bcmpdbg("Another file decompression is in process\n");
-				close(data->fd);
-				free(data);
+			} else {
+				bcmpdbg("Failed to initialize file decompression = %d\n", ret);
 			}
+			/* Release the fd and data on every failure, not only on -EBUSY */
+			close(data->fd);
+			free(data);
 			return ret;
 		}
 		DEBUGASSERT(filep);
