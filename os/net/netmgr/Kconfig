@@ -19,14 +19,14 @@ config NET_NETMGR_ZEROCOPY
 
 config NET_TASK_BIND
 	bool "Bind to the task"
-	depends on NSOCKET_DESCRIPTORS > 0
+	depends on NET_SOCKET
 	default n
 	---help---
 		Enable bind sockets to task
 
 config NET_DEBUG_PORT
 	bool "Debugging binded local ports"
-	depends on NSOCKET_DESCRIPTORS > 0
+	depends on NET_SOCKET
 	depends on DEBUG_NET_WARN
 	default n
 	---help---

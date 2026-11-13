@@ -647,7 +647,7 @@ err_t ip4_input(struct pbuf *p, struct netif *inp)
 #else							/* IP_REASSEMBLY == 0, no packet fragment reassembly code present */
 		pbuf_free(p);
 		LWIP_DEBUGF(IP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("IP packet dropped since it was fragmented (0x%" X16_F ") (while IP_REASSEMBLY == 0).\n", lwip_ntohs(IPH_OFFSET(iphdr))));
-		IP_STATS_INC(ip.opterr);
+		IP_STATS_INC(ip.opt_err);
 		IP_STATS_INC(ip.drop);
 		/* unsupported protocol feature */
 		MIB2_STATS_INC(mib2.ipinunknownprotos);
@@ -664,7 +664,7 @@ err_t ip4_input(struct pbuf *p, struct netif *inp)
 #endif							/* LWIP_IGMP */
 		LWIP_DEBUGF(IP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("IP packet dropped since there were IP options (while IP_OPTIONS_ALLOWED == 0).\n"));
 		pbuf_free(p);
-		IP_STATS_INC(ip.opterr);
+		IP_STATS_INC(ip.opt_err);
 		IP_STATS_INC(ip.drop);
 		/* unsupported protocol feature */
 		MIB2_STATS_INC(mib2.ipinunknownprotos);

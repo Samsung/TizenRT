@@ -19,7 +19,12 @@
 #ifndef _NETMGR_NETSTACK_H__
 #define _NETMGR_NETSTACK_H__
 
+#include <stdarg.h>
+#include <errno.h>
+#include <sys/socket.h>
 #include <net/if.h>
+#include <tinyara/net/net.h>
+#include <tinyara/fs/fs.h>
 
 #define NETSTACK_CALL(stk, method, arg)			\
 	do {										\
@@ -36,16 +41,31 @@
 		}											\
 	} while (0)
 
-#define NETSTACK_CALL_BYFD(fd, method, arg)				\
-	do {												\
-		struct netstack *stk = get_netstack_byfd(fd);	\
-		NETSTACK_CALL(stk, method, arg);				\
+/* The stack methods take the descriptor of the stack, not the file descriptor.
+ * get_netstack_byfd() replaces the file descriptor in fd with the descriptor
+ * of the stack that owns it, so arg must refer to fd.
+ *
+ * The reference of the file is kept while the stack is called: close() of
+ * another thread does not free a socket that a thread is blocked on.  The
+ * socket is closed when the last call returns.
+ */
+#define NETSTACK_CALL_BYFD_RET(fd, method, arg, res)				\
+	do {															\
+		FAR struct file *filep_ = NULL;								\
+		struct netstack *stk_ = get_netstack_byfd(&fd, &filep_);	\
+		if (stk_ && stk_->ops->method) {							\
+			res = (stk_->ops->method)arg;							\
+		} else if (stk_) {											\
+			set_errno(ENOTSOCK);									\
+		}															\
+		put_netstack_byfd(filep_);									\
 	} while (0)
 
-#define NETSTACK_CALL_BYFD_RET(fd, method, arg, res)	\
-	do {												\
-		struct netstack *stk = get_netstack_byfd(fd);	\
-		NETSTACK_CALL_RET(stk, method, arg, res);		\
+#define NETSTACK_CALL_BYFD(fd, method, arg)						\
+	do {														\
+		int res_ = -1;											\
+		NETSTACK_CALL_BYFD_RET(fd, method, arg, res_);			\
+		return res_;											\
 	} while (0)
 
 struct netstack_ops {
@@ -76,7 +96,7 @@ struct netstack_ops {
 	ssize_t (*recvmsg)(int s, struct msghdr *msg, int flags);
 	ssize_t (*send)(int s, const void *data, size_t size, int flags);
 	ssize_t (*sendto)(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen);
-	ssize_t (*sendmsg)(int s, struct msghdr *msg, int flags);
+	ssize_t (*sendmsg)(int s, const struct msghdr *msg, int flags);
 	int (*getsockname)(int s, struct sockaddr *name, socklen_t *namelen);
 	int (*getpeername)(int s, struct sockaddr *name, socklen_t *namelen);
 	int (*setsockopt)(int s, int level, int optname, const void *optval, socklen_t optlen);
@@ -87,8 +107,6 @@ struct netstack_ops {
 	int (*delroute)(struct rtentry *entry);
 #endif
 	int (*getstats)(void *arg);
-	void (*initlist)(struct socketlist *list);
-	void (*releaselist)(struct socketlist *list);
 };
 
 struct netstack {
@@ -97,6 +115,7 @@ struct netstack {
 };
 
 struct netstack *get_netstack(sock_type type);
-struct netstack *get_netstack_byfd(int fd);
+struct netstack *get_netstack_byfd(int *fd, FAR struct file **filep);
+void put_netstack_byfd(FAR struct file *filep);
 
 #endif //  _NETMGR_NETSTACK_H__

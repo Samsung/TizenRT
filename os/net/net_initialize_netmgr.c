@@ -40,7 +40,7 @@ extern void vble_start(void);
 #endif
 extern int trwifi_run_handler(void);
 /****************************************************************************
- * Name: netmgr_setup
+ * Name: net_initialize
  *
  * Description:
  *   This is called from the OS initialization logic at power-up reset in
@@ -54,6 +54,9 @@ extern int trwifi_run_handler(void);
  *   depend upon OS resources such as interrupts or timers which are not
  *   yet available.
  *
+ *   NuttX 12.13.0 calls net_initialize() at this point (nx_start()).  It
+ *   was net_setup() of TizenRT.
+ *
  * Input Parameters:
  *   None
  *
@@ -61,7 +64,7 @@ extern int trwifi_run_handler(void);
  *   None
  *
  ****************************************************************************/
-void net_setup(void)
+void net_initialize(void)
 {
 	int res = 0;
 #ifdef CONFIG_LWNL80211
@@ -88,13 +91,16 @@ void net_setup(void)
 }
 
 /****************************************************************************
- * Name: netmgr_start
+ * Name: net_start
  *
  * Description:
  *   This function is called from the OS initialization logic at power-up
  *   reset AFTER initialization of hardware facilities such as timers and
- *   interrupts.   This logic completes the initialization started by
- *   net_setup().
+ *   interrupts (nx_bringup()).  This logic completes the initialization
+ *   started by net_initialize(): it starts the threads of the network
+ *   stack.
+ *
+ *   It was net_initialize() of TizenRT.
  *
  * Input Parameters:
  *   None
@@ -103,13 +109,13 @@ void net_setup(void)
  *   None
  *
  ****************************************************************************/
-void net_initialize(void)
+void net_start(void)
 {
 #ifdef CONFIG_VIRTUAL_WLAN
 	vwifi_start();
 #endif
 #ifdef CONFIG_VIRTUAL_BLE
-    vble_start();
+	vble_start();
 #endif
 	/*  start network stack */
 	struct netstack *stk = get_netstack(TR_SOCKET);

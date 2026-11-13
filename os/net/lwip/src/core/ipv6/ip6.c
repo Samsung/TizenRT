@@ -906,7 +906,7 @@ netif_found:
 				/* free (drop) packet pbufs */
 				LWIP_DEBUGF(IP6_DEBUG, ("ip6_input: packet with Fragment header dropped (with LWIP_IPV6_REASS==0)\n"));
 				pbuf_free(p);
-				IP6_STATS_INC(ip6.opterr);
+				IP6_STATS_INC(ip6.opt_err);
 				IP6_STATS_INC(ip6.drop);
 				goto ip6_input_cleanup;
 #endif							/* LWIP_IPV6_REASS */

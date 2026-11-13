@@ -653,11 +653,8 @@
 #define LWIP_TIMEVAL_PRIVATE            0
 #define LWIP_POSIX_SOCKETS_IO_NAMES     0
 
-#ifdef CONFIG_DISABLE_POLL
-#define LWIP_SELECT                     1
-#else
+/* select() and poll() are implemented by the VFS with lwip_poll() */
 #define LWIP_SELECT                     0
-#endif
 
 #ifdef CONFIG_NET_SOCKET
 #define LWIP_SOCKET	CONFIG_NET_SOCKET
@@ -671,11 +668,12 @@
 #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS      CONFIG_NET_RANDOMIZE_INITIAL_LOCAL_PORTS
 #endif
 
-#ifdef CONFIG_NFILE_DESCRIPTORS
-#define LWIP_SOCKET_OFFSET CONFIG_NFILE_DESCRIPTORS
-#endif
+/* A lwIP socket descriptor is an index of the lwIP socket table.  The file
+ * descriptor of a socket is allocated by the VFS.
+ */
+#define LWIP_SOCKET_OFFSET 0
 
-#ifdef CONFIG_NSOCKET_DESCRIPTORS
+#ifdef CONFIG_NBSDSOCKET_DESCRIPTORS
 #define MEMP_NUM_NETCONN CONFIG_NBSDSOCKET_DESCRIPTORS
 #define MEMP_NUM_RAW_PCB CONFIG_NBSDSOCKET_DESCRIPTORS
 #endif

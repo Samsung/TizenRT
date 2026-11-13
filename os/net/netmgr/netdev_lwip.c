@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <arpa/inet.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <netinet/in.h>
@@ -255,8 +256,9 @@ static void _lwip_init_loop(struct netif *nic)
 
 static inline void _free_ifaddrs(struct ifaddrs *addrs)
 {
-	struct ifaddrs *ifa = NULL, *prev = NULL;
-	for (ifa = addrs; ifa; ifa = ifa->ifa_next) {
+	struct ifaddrs *ifa = addrs, *next = NULL;
+	while (ifa) {
+		next = ifa->ifa_next;
 		if (ifa->ifa_name) {
 			free(ifa->ifa_name);
 		}
@@ -269,9 +271,8 @@ static inline void _free_ifaddrs(struct ifaddrs *addrs)
 		if (ifa->ifa_dstaddr) {
 			free(ifa->ifa_dstaddr);
 		}
-		prev = ifa;
-		ifa = prev->ifa_next;
-		free(prev);
+		free(ifa);
+		ifa = next;
 	}
 }
 
@@ -559,20 +560,23 @@ static int lwip_get_ifaddrs(struct netdev *dev, struct ifaddrs **addrs)
 	}
 	strncpy(ifa4->ifa_name, dev->ifname, IFNAMSIZ - 1);
 
-	FAR struct sockaddr_in *dest = (struct sockaddr_in *)zalloc(sizeof(struct sockaddr_in) * 3);
-	if (!dest) {
+	/* The addresses are freed one by one (_free_ifaddrs(),
+	 * netlib_freeifaddrs()), so each of them is an allocation.
+	 */
+	cursor = root = ifa4;
+	UNUSED(cursor);
+
+	ifa4->ifa_addr = (struct sockaddr *)zalloc(sizeof(struct sockaddr_in));
+	ifa4->ifa_netmask = (struct sockaddr *)zalloc(sizeof(struct sockaddr_in));
+	ifa4->ifa_dstaddr = (struct sockaddr *)zalloc(sizeof(struct sockaddr_in));
+	if (!ifa4->ifa_addr || !ifa4->ifa_netmask || !ifa4->ifa_dstaddr) {
 		NET_LOGKE(TAG, "zalloc fail\n");
 		goto free_list;
 	}
 
-	_convert_ip4addr_lton(&dest[0], &ni->ip_addr);
-	ifa4->ifa_addr = (struct sockaddr *)(&dest[0]);
-	_convert_ip4addr_lton(&dest[1], &ni->gw);
-	ifa4->ifa_netmask = (struct sockaddr *)(&dest[1]);
-	_convert_ip4addr_lton(&dest[2], &ni->netmask);
-	ifa4->ifa_dstaddr = (struct sockaddr *)&dest[2];
-
-	cursor = root = ifa4;
+	_convert_ip4addr_lton((struct sockaddr_in *)ifa4->ifa_addr, &ni->ip_addr);
+	_convert_ip4addr_lton((struct sockaddr_in *)ifa4->ifa_netmask, &ni->gw);
+	_convert_ip4addr_lton((struct sockaddr_in *)ifa4->ifa_dstaddr, &ni->netmask);
 
 #ifdef CONFIG_NET_IPv6
 	// get ipv6 address

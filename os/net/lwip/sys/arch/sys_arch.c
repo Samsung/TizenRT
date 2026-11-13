@@ -29,6 +29,8 @@
 #include <sys/types.h>
 #include <tinyara/clock.h>
 #include <tinyara/arch.h>
+#include <stdbool.h>
+#include <tinyara/irq.h>
 #include <tinyara/cancelpt.h>
 #include <tinyara/kthread.h>
 #include <tinyara/semaphore.h>
@@ -52,6 +54,8 @@
 #define SYS_THREAD_MAX 6
 
 static u16_t s_nextthread = 0;
+
+static u32_t sys_sem_wait_common(sys_sem_t *sem, u32_t timeout, bool cancelable);
 
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_new
@@ -276,16 +280,19 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 			if (timeout < MSEC_PER_TICK)
 				timeout = MSEC_PER_TICK;
 
-			time = sys_arch_sem_wait(&(mbox->mail), timeout);
-
-			if (time == SYS_ARCH_TIMEOUT) {
-				sys_arch_sem_wait(&(mbox->mutex), 0);
-				mbox->wait_fetch--;
-				sys_sem_signal(&(mbox->mutex));
-				return SYS_ARCH_TIMEOUT;
-			}
+			time = sys_sem_wait_common(&(mbox->mail), timeout, true);
 		} else {
-			sys_arch_sem_wait(&(mbox->mail), 0);
+			time = sys_sem_wait_common(&(mbox->mail), 0, true);
+		}
+
+		/* The thread that waits for a mail (recv(), accept()) is canceled
+		 * here.
+		 */
+		if (time == SYS_ARCH_TIMEOUT || time == SYS_ARCH_CANCELED) {
+			sys_arch_sem_wait(&(mbox->mutex), 0);
+			mbox->wait_fetch--;
+			sys_sem_signal(&(mbox->mutex));
+			return time;
 		}
 
 		status = sys_arch_sem_wait(&(mbox->mutex), 0);
@@ -433,6 +440,71 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 }
 
 /*---------------------------------------------------------------------------*
+ * Routine:  sys_sem_wait_common
+ *---------------------------------------------------------------------------*
+ * Description:
+ *      Wait for a semaphore.  A cancelable wait ends when the thread is
+ *      canceled at a cancellation point (pthread_cancel(), exit of the
+ *      task): the thread returns to the cancellation point and exits there.
+ * Inputs:
+ *      sys_sem_t sem           -- Semaphore to wait on
+ *      u32_t timeout           -- Number of milliseconds until timeout
+ *      bool cancelable         -- End the wait if the thread is canceled
+ * Outputs:
+ *      u32_t                   -- SYS_ARCH_CANCELED if the operation canceled,
+ *				   SYS_ARCH_TIMEOUT if timeout, else time elapsed.
+ *---------------------------------------------------------------------------*/
+static u32_t sys_sem_wait_common(sys_sem_t *sem, u32_t timeout, bool cancelable)
+{
+	clock_t start = clock_systime_ticks();
+	int status = OK;
+	int remaining_time;
+
+	/* The cancellation woke the thread up before it came here */
+	if (cancelable && check_cancellation_point()) {
+		return SYS_ARCH_CANCELED;
+	}
+
+	/* nxsem_wait() and nxsem_tickwait() return a negated errno value.  They
+	 * do not set the errno.
+	 */
+	if (timeout == 0) {
+		while ((status = nxsem_wait(sem)) != OK) {
+			/* The wait was awakened by a signal (EINTR) or by the
+			 * cancellation of the thread (ECANCELED).  Restart it unless
+			 * the cancellation ends it.
+			 */
+			if (status == -ECANCELED && cancelable) {
+				return SYS_ARCH_CANCELED;
+			}
+			LWIP_ASSERT("status == EINTR", status == -EINTR || status == -ECANCELED);
+		}
+	} else {
+		remaining_time = timeout;
+		while ((status = nxsem_tickwait(sem, MSEC2TICK(remaining_time))) != OK) {
+			/* Restart the wait that a signal or the cancellation awakened,
+			 * break if ETIMEDOUT
+			 */
+			if (status == -ETIMEDOUT) {
+				return SYS_ARCH_TIMEOUT;
+			} else if (status == -ENOMEM) {
+				LWIP_ASSERT("status == ENOMEM", 0);
+			} else if (status == -ECANCELED && cancelable) {
+				return SYS_ARCH_CANCELED;
+			} else {
+				/* calculate remaining timeout */
+				remaining_time = timeout - TICK2MSEC(clock_systime_ticks() - start);
+				if (remaining_time < MSEC_PER_TICK) {
+					return SYS_ARCH_TIMEOUT;
+				}
+			}
+		}
+	}
+	clock_t end = clock_systime_ticks();
+	return TICK2MSEC(end - start);
+}
+
+/*---------------------------------------------------------------------------*
  * Routine:  sys_arch_sem_wait
  *---------------------------------------------------------------------------*
  * Description:
@@ -458,48 +530,10 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
  *---------------------------------------------------------------------------*/
 u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
-	clock_t start = clock_systimer();
-	int status = OK;
-	int remaining_time;
-
-	if (timeout == 0) {
-		while (sem_wait(sem) != OK) {
-			/* Handle the special case where the semaphore wait was
-			 * awakened by the receipt of a signal.
-			 * Restart If signal is EINTR else crash on Assert as we can't receive ETIMEDOUT
-			 */
-			status = get_errno();
-			if (status == ECANCELED) {
-				return SYS_ARCH_CANCELED;
-			}
-			LWIP_ASSERT("status == EINTR", status == EINTR);
-		}
-		status = OK;
-	} else {
-		remaining_time = timeout;
-		while ((status = sem_tickwait(sem, clock_systimer(), MSEC2TICK(remaining_time))) != OK) {
-			/* Handle the special case where the semaphore wait was
-			 * awakened by the receipt of a signal.
-			 * Restart If signal is EINTR else break if ETIMEDOUT
-			 */
-			int err_no = get_errno();
-			if (err_no == ETIMEDOUT) {
-				return SYS_ARCH_TIMEOUT;
-			} else if (err_no == ENOMEM) {
-				LWIP_ASSERT("status == ENOMEM", 0);
-			} else if (err_no == ECANCELED) {
-				return SYS_ARCH_CANCELED;
-			} else {
-				/* calculate remaining timeout */
-				remaining_time -= TICK2MSEC(clock_systimer() - start);
-				if (remaining_time < MSEC_PER_TICK) {
-					return SYS_ARCH_TIMEOUT;
-				}
-			}
-		}
-	}
-	clock_t end = clock_systimer();
-	return TICK2MSEC(end - start);
+	/* A thread that waits for the tcpip thread is not canceled: the tcpip
+	 * thread refers to the message of the waiting thread.
+	 */
+	return sys_sem_wait_common(sem, timeout, false);
 }
 
 /*---------------------------------------------------------------------------*
@@ -642,7 +676,7 @@ void sys_mutex_unlock(sys_mutex_t *mutex)
 
 u32_t sys_now(void)
 {
-	return TICK2MSEC(clock_systimer());
+	return TICK2MSEC(clock_systime_ticks());
 }
 
 /*---------------------------------------------------------------------------*
@@ -705,11 +739,11 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 
 	if (s_nextthread < SYS_THREAD_MAX) {
 		sys_thread_t new_thread;
-		new_thread = kernel_thread(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
+		/* kthread_create() returns a negated errno value on failure */
+		new_thread = kthread_create(name, priority, stacksize, (main_t) entry_function, (char *const *)NULL);
 		if (new_thread < 0) {
-			int errval = errno;
-			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", errval));
-			return -errval;
+			LWIP_DEBUGF(SYS_DEBUG, ("Failed to create new_thread: %d", new_thread));
+			return new_thread;
 		} else {
 			LWIP_DEBUGF(SYS_DEBUG, ("Created New Thread with pid %d", new_thread));
 			s_nextthread++;
@@ -719,14 +753,17 @@ sys_thread_t sys_kernel_thread_new(const char *name, lwip_thread_fn entry_functi
 	return -1;
 }
 
+/* The lightweight protection of lwIP is a critical section.  sched_lock()
+ * is not enough: with SMP it does not stop the threads of the other CPUs,
+ * and lwIP needs the exclusion between all of the threads.  The critical
+ * sections nest.
+ */
 sys_prot_t sys_arch_protect(void)
 {
-	sched_lock();
-	return (sys_prot_t) 1;
+	return (sys_prot_t)enter_critical_section();
 }
 
 void sys_arch_unprotect(sys_prot_t p)
 {
-	sched_unlock();
-	return;
+	leave_critical_section((irqstate_t)p);
 }

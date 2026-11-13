@@ -57,6 +57,14 @@ ARCHINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)in
 ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)framework$(DELIM)include
 ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)include
 
+# lwIP headers: the socket headers of os/include take their definitions from
+# the lwIP port in os/net.
+
+ifeq ($(CONFIG_NET_LWIP),y)
+ARCHINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)net$(DELIM)lwip$(DELIM)src$(DELIM)include
+ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)net$(DELIM)lwip$(DELIM)src$(DELIM)include
+endif
+
 # EXTRADEFINES is used by the TizenRT build system to pass __KERNEL__ to the
 # kernel libraries (EXTRAFLAGS in NuttX).
 

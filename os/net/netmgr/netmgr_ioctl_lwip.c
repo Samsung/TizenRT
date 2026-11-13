@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <ifaddrs.h>
@@ -356,7 +357,7 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 {
 	int ret = -EINVAL;
 
-	struct lwip_sock *sock = get_socket_by_pid(s, getpid());
+	struct lwip_sock *sock = lwip_socket_get(s);
 	if (!sock) {
 		NET_LOGKE(TAG, "get socket fail\n");
 		ret = -EBADF;

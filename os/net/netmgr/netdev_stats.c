@@ -17,6 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <inttypes.h>
 #include <debug.h>
 #include <tinyara/net/netlog.h>
 #define TAG "[NETMGR]"
@@ -30,7 +31,7 @@ uint32_t g_app_recv_cnt = 0;
 
 void netstats_display(void)
 {
-	NET_LOGK(TAG, "[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
-	NET_LOGK(TAG, "[driver] mbox err %u\n", g_link_recv_err);
-	NET_LOGK(TAG, "[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
+	NET_LOGK(TAG, "[driver] total recv %" PRIu32 "\t%" PRIu32 "\n", g_link_recv_byte, g_link_recv_cnt);
+	NET_LOGK(TAG, "[driver] mbox err %" PRIu32 "\n", g_link_recv_err);
+	NET_LOGK(TAG, "[app] total recv %" PRIu32 "\t%" PRIu32 "\n", g_app_recv_byte, g_app_recv_cnt);
 }
