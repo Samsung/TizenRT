@@ -53,7 +53,14 @@ static int disconnect_count = 0;
 /*
  *  * WiFi
  *   */
+/* The Wi-Fi is connected by this test only if the Wi-Fi manager is built.
+ * With another interface (ethernet), the network is already up.
+ */
+#ifdef CONFIG_WIFI_MANAGER
 #define WIFI_AUTO_CONNECT 1
+#else
+#define WIFI_AUTO_CONNECT 0
+#endif
 
 #if WIFI_AUTO_CONNECT
 #include <wifi_manager/wifi_manager.h>

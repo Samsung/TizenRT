@@ -21,7 +21,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#if defined(CONFIG_NET_IPv4) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET_IPv4)
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -71,7 +71,7 @@ int netlib_getifaddrs(struct ifaddrs **ifap)
 void netlib_freeifaddrs(struct ifaddrs *ifa)
 {
 	struct ifaddrs *cursor = ifa, *next = NULL;
-	if (cursor) {
+	while (cursor) {
 		next = cursor->ifa_next;
 		if (cursor->ifa_name) {
 			free(cursor->ifa_name);
@@ -89,4 +89,4 @@ void netlib_freeifaddrs(struct ifaddrs *ifa)
 		cursor = next;
 	}
 }
-#endif //#if defined(CONFIG_NET_IPv4) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#endif //#if defined(CONFIG_NET_IPv4)

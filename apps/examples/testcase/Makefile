@@ -68,6 +68,12 @@ CSRCS += tc_main.c
 DEPPATH = --dep-path .
 VPATH = .
 
+# The testcases of the sub-directories include the headers of this directory
+# (tc_common.h)
+
+CFLAGS += ${INCDIR_PREFIX}$(APPDIR)$(DELIM)examples$(DELIM)testcase
+CXXFLAGS += ${INCDIR_PREFIX}$(APPDIR)$(DELIM)examples$(DELIM)testcase
+
 ifeq ($(WINTOOL),y)
 INCDIROPT = -w
 endif

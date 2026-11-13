@@ -16,6 +16,7 @@
  *
  ****************************************************************************/
 #include <lwip/sockets.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <tinyara/config.h>
 #include <stress_tool/st_perf.h>

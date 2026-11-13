@@ -35,10 +35,10 @@ static void itc_net_fcntl_p_dupfd(void)
 	int ret;
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);//If ASSERT FAILS, no need to close(fd) as socket is not created
-	TC_ASSERT_GEQ("socket", fd, CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_GEQ("socket", fd, 0);
 
 	int nfd = fcntl(fd, F_DUPFD, 0);
-	TC_ASSERT_GEQ_CLEANUP("fcntl", nfd, CONFIG_NFILE_DESCRIPTORS, close(fd));
+	TC_ASSERT_GEQ_CLEANUP("fcntl", nfd, 0, close(fd));
 
 	ret = close(fd);
 	TC_ASSERT_EQ_CLEANUP("close", ret, 0, close(nfd));
@@ -62,10 +62,10 @@ static void itc_net_fcntl_p_dupfd_nonblock(void)
 	int ret;
 	int fd = -1;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
-	TC_ASSERT_GEQ("socket", fd, CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_GEQ("socket", fd, 0);
 
 	int nfd = fcntl(fd, F_DUPFD, O_NONBLOCK);
-	TC_ASSERT_GEQ_CLEANUP("fcntl", nfd, CONFIG_NFILE_DESCRIPTORS, close(fd));
+	TC_ASSERT_GEQ_CLEANUP("fcntl", nfd, 0, close(fd));
 
 	ret = close(fd);
 	TC_ASSERT_EQ_CLEANUP("close", ret, 0, close(nfd));

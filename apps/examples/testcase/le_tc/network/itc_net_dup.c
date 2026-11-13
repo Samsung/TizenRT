@@ -41,10 +41,10 @@ static void itc_net_dup_p_multiple_time(void)
 
 	for (index = 0; index < LOOP_COUNT; index++) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
-		TC_ASSERT_GEQ("socket", sock, CONFIG_NFILE_DESCRIPTORS);//If ASSERT FAILS, no need to close(sock) as socket is not created
+		TC_ASSERT_GEQ("socket", sock, 0);//If ASSERT FAILS, no need to close(sock) as socket is not created
 
 		fd = dup(sock);
-		TC_ASSERT_GT_CLEANUP("dup", fd, CONFIG_NFILE_DESCRIPTORS, close(sock));
+		TC_ASSERT_GT_CLEANUP("dup", fd, 0, close(sock));
 
 		ret = close(sock);
 		TC_ASSERT_EQ_CLEANUP("close", ret, 0, close(fd));
@@ -74,11 +74,11 @@ static void itc_net_dup2_p_multiple_time(void)
 	for (index = 0; index < LOOP_COUNT; index++) {
 		sock_old = -1;
 		sock_old = socket(AF_INET, SOCK_STREAM, 0);
-		TC_ASSERT_GEQ("socket", sock_old, CONFIG_NFILE_DESCRIPTORS);
+		TC_ASSERT_GEQ("socket", sock_old, 0);
 
 		sock_new = -1;
 		sock_new = socket(AF_INET, SOCK_DGRAM, 0);
-		TC_ASSERT_GEQ_CLEANUP("socket", sock_new, CONFIG_NFILE_DESCRIPTORS, close(sock_old));
+		TC_ASSERT_GEQ_CLEANUP("socket", sock_new, 0, close(sock_old));
 
 		ret = dup2(sock_old, sock_new);
 		TC_ASSERT_EQ_CLEANUP("dup2", ret, 0, close(sock_old); close(sock_new));

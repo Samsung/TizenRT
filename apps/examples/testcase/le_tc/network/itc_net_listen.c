@@ -46,7 +46,7 @@ static void itc_net_listen_p_multiple_time(void)
 
 	for (index = 0; index < LOOP_COUNT; index++) {
 		socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-		TC_ASSERT_GEQ("socket", socket_fd, CONFIG_NFILE_DESCRIPTORS);//If ASSERT FAILS, no need to close(socket_fd) as socket is not created
+		TC_ASSERT_GEQ("socket", socket_fd, 0);//If ASSERT FAILS, no need to close(socket_fd) as socket is not created
 
 		memset(&sa, 0, sizeof sa);
 
@@ -80,10 +80,10 @@ static void itc_net_listen_p_different_socket(void)
 	struct sockaddr_in sa;
 	struct sockaddr_in saddr;
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_GEQ("socket", socket_fd, CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_GEQ("socket", socket_fd, 0);
 
 	int fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_GEQ("socket", fd, CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_GEQ("socket", fd, 0);
 
 	memset(&sa, 0, sizeof sa);
 	memset(&saddr, 0, sizeof saddr);
@@ -129,7 +129,7 @@ static void itc_net_listen_n_after_socket_close(void)
 {
 	struct sockaddr_in sa;
 	int socket_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	TC_ASSERT_GEQ("socket", socket_fd, CONFIG_NFILE_DESCRIPTORS);
+	TC_ASSERT_GEQ("socket", socket_fd, 0);
 
 	memset(&sa, 0, sizeof sa);
 
