@@ -78,7 +78,7 @@
 #if LWIP_SOCKET					/* don't build if not configured for use in lwipopts.h */
 
 #ifdef CONFIG_NET_NETMON
-#include <queue.h>
+#include <tinyara/queue.h>
 #endif
 
 #include "lwip/api.h"
@@ -255,8 +255,8 @@ struct lwip_select_cb {
 	/** semaphore to wake up a task waiting for select */
 	sys_sem_t sem;
 #else
-	/** Pointer to semaphore used post output event */
-	sys_sem_t *poll_sem;
+	/** The poll structure of the VFS that waits for the events */
+	struct pollfd *fds;
 	/** Pointer to event-set of requested poll events */
 	pollevent_t events;
 	/** socket descriptor value */
@@ -366,37 +366,41 @@ void lwip_socket_thread_cleanup(void)
 	netconn_thread_cleanup();
 }
 
+/** The lwIP sockets.  A lwIP socket descriptor is the index in this table.
+ * It is not a file descriptor: the VFS allocates the file descriptor of a
+ * socket and the socket layer of os/net/netmgr keeps the lwIP descriptor in
+ * the socket structure of the file.
+ */
+static struct lwip_sock *g_sockets[NUM_SOCKETS];
+
 /**
- * Map a externally used socket index to the internal socket representation.
+ * Map a lwIP socket descriptor to the internal socket representation.
  *
- * @param s externally used socket index
- * @param pid process id used to get the corresponding socketlist
+ * @param s lwIP socket descriptor
+ * @param group not used
  *
  * @return struct lwip_sock for the socket or NULL if not found
  */
 struct lwip_sock *get_socket(int s, void *group)
 {
 	struct lwip_sock *sock = NULL;
-	struct socketlist *slist = NULL;
-	struct task_group_s *tgroup = (struct task_group_s *)group;
 
-	s -= LWIP_SOCKET_OFFSET;
+	LWIP_UNUSED_ARG(group);
 
-	if ((s < 0) || (s >= CONFIG_NSOCKET_DESCRIPTORS)) {
-		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): invalid\n", s + LWIP_SOCKET_OFFSET));
+	if ((s < 0) || (s >= NUM_SOCKETS)) {
+		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): invalid\n", s));
 		set_errno(EBADF);
 		return NULL;
 	}
 
-	slist = &tgroup->tg_socketlist;
-	sock = (struct lwip_sock *)(slist->sl_sockets[s].sock);
+	sock = g_sockets[s];
 	if (!sock) {
-		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): Socket is NULL.\n", s + LWIP_SOCKET_OFFSET));
+		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): Socket is NULL.\n", s));
 		set_errno(EBADF);
 		return NULL;
 	}
 	if (!sock->conn) {
-		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): not active\n", s + LWIP_SOCKET_OFFSET));
+		LWIP_DEBUGF(SOCKETS_DEBUG, ("get_socket(%d): not active\n", s));
 		set_errno(EBADF);
 		return NULL;
 	}
@@ -407,23 +411,21 @@ struct lwip_sock *get_socket(int s, void *group)
 /**
  * Same as get_socket but doesn't set errno
  *
- * @param s externally used socket index
- * @param pid process id used to get the corresponding socketlist
+ * @param s lwIP socket descriptor
+ * @param group not used
  *
  * @return struct lwip_sock for the socket or NULL if not found
  */
 static struct lwip_sock *tryget_socket(int s, void *group)
 {
 	struct lwip_sock *sock = NULL;
-	struct socketlist *slist = NULL;
-	struct task_group_s *tgroup = (struct task_group_s *)group;
 
-	s -= LWIP_SOCKET_OFFSET;
-	if ((s < 0) || (s >= CONFIG_NSOCKET_DESCRIPTORS)) {
+	LWIP_UNUSED_ARG(group);
+
+	if ((s < 0) || (s >= NUM_SOCKETS)) {
 		return NULL;
 	}
-	slist = &(tgroup->tg_socketlist); // pkbuild
-	sock = (struct lwip_sock *)slist->sl_sockets[s].sock;
+	sock = g_sockets[s];
 	if (!sock || !sock->conn) {
 		return NULL;
 	}
@@ -433,34 +435,19 @@ static struct lwip_sock *tryget_socket(int s, void *group)
 
 static struct lwip_sock *tryget_socket_by_pid(int s, pid_t pid)
 {
-	struct tcb_s *tcb = sched_gettcb(pid);
-	DEBUGASSERT(tcb && tcb->group);
+	LWIP_UNUSED_ARG(pid);
 
-	return tryget_socket(s, (void *)tcb->group);
-}
-
- /**
-  * Check closed socket which has non-zero select_waiting value
-  *
-  * @param s externally used socket index
-  * @return struct lwip_sock for the socket with non-zero select_waiting value,
-  *         or NULL if not found
-  */
-struct lwip_sock *trycheck_selwait_socket(int s, pid_t pid)
-{
-	struct lwip_sock *sock;
-	sock = tryget_socket_by_pid(s, pid);
-
-	if (sock && !sock->conn) {
-		return sock;
-	}
-	return NULL;
+	return tryget_socket(s, NULL);
 }
 
 static inline void _get_pid_name(pid_t pid, u8_t *buf)
 {
-	if (pthread_getname_np(pid, buf)) {
-		strncpy((char *)buf, "NONE", 5);
+	FAR struct tcb_s *tcb = nxsched_get_tcb(pid);
+
+	if (tcb) {
+		strlcpy((char *)buf, get_task_name(tcb), CONFIG_TASK_NAME_SIZE);
+	} else {
+		strlcpy((char *)buf, "NONE", CONFIG_TASK_NAME_SIZE);
 	}
 }
 
@@ -475,14 +462,7 @@ static inline void _get_pid_name(pid_t pid, u8_t *buf)
 static int alloc_socket(struct netconn *newconn, int accepted)
 {
 	int idx;
-	struct socketlist *list;
 	struct lwip_sock *sock;
-
-	list = sched_getsockets();
-	if (!list) {
-		LWIP_DEBUGF(SOCKETS_DEBUG, ("could not get the socketlist\n"));
-		return -1;
-	}
 
 	SYS_ARCH_DECL_PROTECT(lev);
 	sock = (struct lwip_sock *)kmm_zalloc(sizeof(struct lwip_sock));
@@ -491,20 +471,17 @@ static int alloc_socket(struct netconn *newconn, int accepted)
 		return -1;
 	}
 
+	sock->conn = newconn;
+	sock->sendevent = (NETCONNTYPE_GROUP(newconn->type) == NETCONN_TCP ? (accepted != 0) : 1);
+	sock->pid = (u32_t)getpid();
+	_get_pid_name(getpid(), sock->pname);
+
 	SYS_ARCH_PROTECT(lev);
-	for (idx = 0; idx < CONFIG_NSOCKET_DESCRIPTORS; ++idx) {
-		if (!list->sl_sockets[idx].sock) {
-			struct tcb_s *tcb = sched_gettcb(getpid());
-			DEBUGASSERT(tcb && tcb->group);
-			newconn->group = (void *)tcb->group;
-			sock->conn = newconn;
-			sock->sendevent = (NETCONNTYPE_GROUP(newconn->type) == NETCONN_TCP ? (accepted != 0) : 1);
-			sock->pid = (u32_t)getpid();
-			_get_pid_name(getpid(), sock->pname);
-			list->sl_sockets[idx].sock = sock;
-			list->sl_sockets[idx].s_crefs = 1;
+	for (idx = 0; idx < NUM_SOCKETS; ++idx) {
+		if (!g_sockets[idx]) {
+			g_sockets[idx] = sock;
 			SYS_ARCH_UNPROTECT(lev);
-			return idx + LWIP_SOCKET_OFFSET;
+			return idx;
 		}
 	}
 	SYS_ARCH_UNPROTECT(lev);
@@ -589,7 +566,7 @@ int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 		sock_set_errno(sock, ENFILE);
 		return -1;
 	}
-	LWIP_ASSERT("invalid socket index", (newsock >= LWIP_SOCKET_OFFSET) && (newsock < NUM_SOCKETS + LWIP_SOCKET_OFFSET));
+	LWIP_ASSERT("invalid socket index", (newsock >= 0) && (newsock < NUM_SOCKETS));
 	LWIP_ASSERT("newconn->callback == event_callback", newconn->callback == event_callback);
 	nsock = get_socket_by_pid(newsock, getpid());
 	if (nsock == NULL) {
@@ -693,19 +670,18 @@ int lwip_close(int s)
 {
 	struct lwip_sock *sock;
 	int ret;
-	struct socketlist *list;
 
 	LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_close(%d)\n", s));
 	sock = get_socket_by_pid(s, getpid());
-	list = sched_getsockets();
-
 	if (!sock) {
 		return -1;
 	}
 
-	s -= LWIP_SOCKET_OFFSET;
 	ret = lwip_sock_close(sock);
-	list->sl_sockets[s].sock = NULL;
+	if (ret == 0) {
+		/* lwip_sock_close() freed the socket */
+		g_sockets[s] = NULL;
+	}
 
 	return ret;
 }
@@ -1613,13 +1589,15 @@ return_copy_fdsets:
 
 #else							/* LWIP_SELECT */
 
-static int lwip_poll_scan(int fd, struct lwip_sock *sock, struct pollfd *fds)
+/* Return the poll events that are pending on the socket */
+
+static pollevent_t lwip_poll_scan(struct lwip_sock *sock)
 {
 	void *lastdata = NULL;
 	s16_t rcvevent = 0;
 	u16_t sendevent = 0;
 	u16_t errevent = 0;
-	int nready = 0;
+	pollevent_t eventset = 0;
 	SYS_ARCH_DECL_PROTECT(lev);
 
 	SYS_ARCH_PROTECT(lev);
@@ -1631,47 +1609,41 @@ static int lwip_poll_scan(int fd, struct lwip_sock *sock, struct pollfd *fds)
 
 	SYS_ARCH_UNPROTECT(lev);
 
-	/* ... then examine it: */
 	/* See if netconn of this socket is ready for read */
-	if ((fds->events & POLLIN) && ((lastdata != NULL) || (rcvevent > 0))) {
-		fds->revents |= POLLIN;
-		nready++;
+	if ((lastdata != NULL) || (rcvevent > 0)) {
+		eventset |= POLLIN;
 	}
 	/* See if netconn of this socket is ready for write */
-	if ((fds->events & POLLOUT) && (sendevent != 0)) {
-		fds->revents |= POLLOUT;
-		nready++;
+	if (sendevent != 0) {
+		eventset |= POLLOUT;
 	}
 	/* See if netconn of this socket had an error */
-	if ((fds->events & POLLERR) && (errevent != 0)) {
-		fds->revents |= POLLERR;
-		nready++;
+	if (errevent != 0) {
+		eventset |= POLLERR;
 	}
 
-	LWIP_ASSERT("nready >= 0", nready >= 0);
-	return nready;
+	return eventset;
 }
 
 static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
-	int nready = 0;
+	pollevent_t eventset;
 	int scb_size = 0;
 	struct lwip_select_cb *select_cb = NULL;
+	SYS_ARCH_DECL_PROTECT(lev);
 
-	/* Sanity check */
-#ifdef CONFIG_DEBUG
 	if (!fds) {
 		return -EINVAL;
 	}
-#endif
-	SYS_ARCH_DECL_PROTECT(lev);
-	fds->scb = NULL;
-	nready = lwip_poll_scan(fd, sock, fds);
+
+	fds->priv = NULL;
 
 	/* Check if any requested events are already in effect */
-	if (nready > 0 && fds->revents != 0) {
-		/* Yes.. then signal the poll logic */
-		sys_sem_signal(fds->sem);
+	eventset = lwip_poll_scan(sock);
+	if ((eventset & (fds->events | POLLERR | POLLHUP)) != 0) {
+		/* Yes.. then report them: poll() does not wait and we need not be
+		   on the list (fds->priv stays NULL for the teardown) */
+		poll_notify(&fds, 1, eventset);
 		return 0;
 	}
 
@@ -1684,12 +1656,12 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 
 	memset(select_cb, 0, scb_size);
 
-	/* None ready: add our semaphore to list: */
+	/* Add the poll structure to the list: event_callback() notifies it */
 
 	select_cb->next = NULL;
 	select_cb->prev = NULL;
 	select_cb->sem_signalled = 0;
-	select_cb->poll_sem = fds->sem;
+	select_cb->fds = fds;
 	select_cb->events = fds->events;
 	select_cb->sfd = fd;
 
@@ -1702,7 +1674,7 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 		select_cb_list->prev = select_cb;
 	}
 
-	fds->scb = (void *)select_cb;
+	fds->priv = (void *)select_cb;
 	select_cb_list = select_cb;
 
 	/* Increasing this counter tells event_callback that the list has changed. */
@@ -1714,15 +1686,11 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 	/* Now we can safely unprotect */
 	SYS_ARCH_UNPROTECT(lev);
 
-	/* Call lwip_pollscan again: there could have been events between
+	/* Call lwip_poll_scan again: there could have been events between
 	   the last scan (without us on the list) and putting us on the list! */
-	nready = lwip_poll_scan(fd, sock, fds);
-
-	/* Check if any requested events are already in effect */
-	if (nready > 0 && fds->revents != 0) {
-		/* Yes.. then signal the poll logic */
-
-		sys_sem_signal(fds->sem);
+	eventset = lwip_poll_scan(sock);
+	if (eventset != 0) {
+		poll_notify(&fds, 1, eventset);
 	}
 
 	return 0;
@@ -1733,15 +1701,20 @@ static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds
 	struct lwip_select_cb *select_cb = NULL;
 	SYS_ARCH_DECL_PROTECT(lev);
 
-	select_cb = (struct lwip_select_cb *)fds->scb;
+	if (!fds) {
+		return -EINVAL;
+	}
+
+	select_cb = (struct lwip_select_cb *)fds->priv;
 
 	SYS_ARCH_PROTECT(lev);
-	if (sock->select_waiting > 0) {
-		sock->select_waiting--;
-	}
 
 	/* Take select_cb_list off the list */
 	if (select_cb) {
+		if (sock->select_waiting > 0) {
+			sock->select_waiting--;
+		}
+
 		if (select_cb->next != NULL) {
 			select_cb->next->prev = select_cb->prev;
 		}
@@ -1753,14 +1726,15 @@ static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds
 			select_cb->prev->next = select_cb->next;
 		}
 
-		mem_free((void *)select_cb);
 		/* Increasing this counter tells event_callback that the list has changed. */
 		select_cb_ctr++;
+		fds->priv = NULL;
 	}
 	SYS_ARCH_UNPROTECT(lev);
 
-	/* See what's set */
-	lwip_poll_scan(fd, sock, fds);
+	if (select_cb) {
+		mem_free((void *)select_cb);
+	}
 
 	return 0;
 }
@@ -1769,13 +1743,13 @@ static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds
  * Function: lwip_poll
  *
  * Description:
- *   The standard poll() operation redirects operations on socket descriptors
- *   to this function.
+ *   The poll method of the socket file redirects to this function.  The VFS
+ *   implements poll() and select() with it.  The events are reported with
+ *   poll_notify().
  *
  * Input Parameters:
- *   sock - An instance of the lwip socket structure.
- *   fds   - The structure describing the events to be monitored, OR NULL if
- *           this is a request to stop monitoring events.
+ *   fd    - The lwIP socket descriptor.
+ *   fds   - The structure describing the events to be monitored.
  *   setup - true: Setup up the poll; false: Teardown the poll
  *
  * Returned Value:
@@ -1785,25 +1759,12 @@ static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds
 
 int lwip_poll(int fd, struct pollfd *fds, bool setup)
 {
-
 	int ret = 0;
 	struct lwip_sock *sock = NULL;
 
-	/* First get the socket's status (protected)... */
-
-	sock = tryget_socket_by_pid(fd, getpid());
+	sock = tryget_socket(fd, NULL);
 	if (!sock) {
-		/* Need to check select_waiting counter on socket ... */
-		sock = trycheck_selwait_socket(fd, getpid());
-		if (!sock) {
-			return -EBADF;
-		}
-		/* Suspisious case, try to make poll setup with invalid socket */
-		LWIP_ASSERT("setup = true", (setup == false));
-
-		/* Set to zero for send/rcv event to prevent setting abnormal value */
-		sock->sendevent = 0;
-		sock->rcvevent = 0;
+		return -EBADF;
 	}
 
 	/* Check if we are setting up or tearing down the poll */
@@ -1817,7 +1778,6 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
 	}
 
 	return ret;
-
 }
 
 #endif							/*LWIP_SELECT */
@@ -1855,7 +1815,7 @@ static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len
 			s = conn->socket;
 			SYS_ARCH_UNPROTECT(lev);
 		}
-		sock = get_socket(s, conn->group);
+		sock = tryget_socket(s, NULL);
 		if (!sock) {
 			return;
 		}
@@ -1902,37 +1862,26 @@ again:
 	for (scb = select_cb_list; scb != NULL; scb = scb->next) {
 		/* remember the state of select_cb_list to detect changes */
 		last_select_cb_ctr = select_cb_ctr;
+#if LWIP_SELECT
 		if (scb->sem_signalled == 0) {
 			/* semaphore not signalled yet */
 			int do_signal = 0;
 			int check_set = 0;
 			/* Test this select call for our socket */
 			if (sock->rcvevent > 0) {
-#if LWIP_SELECT
 				check_set = scb->readset && FD_ISSET(s, scb->readset);
-#else
-				check_set = (scb->sfd == s) && (scb->events & POLLIN);
-#endif
 				if (check_set) {
 					do_signal = 1;
 				}
 			}
 			if (sock->sendevent != 0) {
-#if LWIP_SELECT
 				check_set = scb->writeset && FD_ISSET(s, scb->writeset);
-#else
-				check_set = (scb->sfd == s) && (scb->events & POLLOUT);
-#endif
 				if (!do_signal && check_set) {
 					do_signal = 1;
 				}
 			}
 			if (sock->errevent != 0) {
-#if LWIP_SELECT
 				check_set = scb->exceptset && FD_ISSET(s, scb->exceptset);
-#else
-				check_set = (scb->sfd == s) && (scb->events & POLLERR);
-#endif
 				if (!do_signal && check_set) {
 					do_signal = 1;
 				}
@@ -1941,13 +1890,30 @@ again:
 				scb->sem_signalled = 1;
 				/* Don't call SYS_ARCH_UNPROTECT() before signaling the semaphore, as this might
 				   lead to the select thread taking itself off the list, invalidagin the semaphore. */
-#if LWIP_SELECT
 				sys_sem_signal(&scb->sem);
-#else
-				sys_sem_signal(scb->poll_sem);
-#endif
 			}
 		}
+#else
+		if (scb->sfd == s) {
+			/* Report the pending events to the poll structure of the VFS.
+			   Don't call SYS_ARCH_UNPROTECT() before that, as the polling
+			   thread might take itself off the list. */
+			pollevent_t eventset = 0;
+
+			if (sock->rcvevent > 0) {
+				eventset |= POLLIN;
+			}
+			if (sock->sendevent != 0) {
+				eventset |= POLLOUT;
+			}
+			if (sock->errevent != 0) {
+				eventset |= POLLERR;
+			}
+			if (eventset != 0) {
+				poll_notify(&scb->fds, 1, eventset);
+			}
+		}
+#endif
 		/* unlock interrupts with each step */
 		SYS_ARCH_UNPROTECT(lev);
 		/* this makes sure interrupt protection time is short */
@@ -3034,10 +3000,31 @@ static void lwip_socket_drop_registered_memberships(struct lwip_sock *sock)
 
 struct lwip_sock *get_socket_by_pid(int s, pid_t pid)
 {
-	struct tcb_s *tcb = sched_gettcb(pid);
-	DEBUGASSERT(tcb && tcb->group);
+	LWIP_UNUSED_ARG(pid);
 
-	return get_socket(s, (void *)tcb->group);
+	return get_socket(s, NULL);
+}
+
+struct lwip_sock *lwip_socket_get(int s)
+{
+	return tryget_socket(s, NULL);
+}
+
+/* Call the handler for every open lwIP socket (network monitor) */
+
+int lwip_socket_foreach(int (*handler)(int sd, struct lwip_sock *sock, void *arg), void *arg)
+{
+	int idx;
+	int ret = 0;
+
+	for (idx = 0; idx < NUM_SOCKETS && ret == 0; idx++) {
+		struct lwip_sock *sock = tryget_socket(idx, NULL);
+		if (sock) {
+			ret = handler(idx, sock, arg);
+		}
+	}
+
+	return ret;
 }
 #endif							/* LWIP_SOCKET */
 

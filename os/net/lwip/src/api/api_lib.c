@@ -384,6 +384,7 @@ err_t netconn_accept(struct netconn *conn, struct netconn **new_conn)
 #if LWIP_TCP
 	void *accept_ptr;
 	struct netconn *newconn;
+	u32_t fetched;
 #if TCP_LISTEN_BACKLOG
 	API_MSG_VAR_DECLARE(msg);
 #endif							/* TCP_LISTEN_BACKLOG */
@@ -404,16 +405,20 @@ err_t netconn_accept(struct netconn *conn, struct netconn **new_conn)
 	API_MSG_VAR_ALLOC(msg);
 #endif							/* TCP_LISTEN_BACKLOG */
 
+	/* The wait ends without a connection when it times out or when the
+	 * thread is canceled.
+	 */
 #if LWIP_SO_RCVTIMEO
-	if (sys_arch_mbox_fetch(&conn->acceptmbox, &accept_ptr, conn->recv_timeout) == SYS_ARCH_TIMEOUT) {
+	fetched = sys_arch_mbox_fetch(&conn->acceptmbox, &accept_ptr, conn->recv_timeout);
+#else
+	fetched = sys_arch_mbox_fetch(&conn->acceptmbox, &accept_ptr, 0);
+#endif							/* LWIP_SO_RCVTIMEO */
+	if (fetched == SYS_ARCH_TIMEOUT || fetched == SYS_ARCH_CANCELED) {
 #if TCP_LISTEN_BACKLOG
 		API_MSG_VAR_FREE(msg);
 #endif							/* TCP_LISTEN_BACKLOG */
 		return ERR_TIMEOUT;
 	}
-#else
-	sys_arch_mbox_fetch(&conn->acceptmbox, &accept_ptr, 0);
-#endif							/* LWIP_SO_RCVTIMEO */
 	newconn = (struct netconn *)accept_ptr;
 	/* Register event with callback */
 	API_EVENT(conn, NETCONN_EVT_RCVMINUS, 0);
@@ -468,6 +473,7 @@ static err_t netconn_recv_data(struct netconn *conn, void **new_buf)
 {
 	void *buf = NULL;
 	u16_t len;
+	u32_t fetched;
 #if LWIP_TCP
 	API_MSG_VAR_DECLARE(msg);
 #if LWIP_MPU_COMPATIBLE
@@ -507,8 +513,15 @@ static err_t netconn_recv_data(struct netconn *conn, void **new_buf)
 	}
 #endif							/* LWIP_TCP */
 
+	/* The wait ends without data when it times out or when the thread is
+	 * canceled.
+	 */
 #if LWIP_SO_RCVTIMEO
-	if (sys_arch_mbox_fetch(&conn->recvmbox, &buf, conn->recv_timeout) == SYS_ARCH_TIMEOUT) {
+	fetched = sys_arch_mbox_fetch(&conn->recvmbox, &buf, conn->recv_timeout);
+#else
+	fetched = sys_arch_mbox_fetch(&conn->recvmbox, &buf, 0);
+#endif							/* LWIP_SO_RCVTIMEO */
+	if (fetched == SYS_ARCH_TIMEOUT || fetched == SYS_ARCH_CANCELED) {
 #if LWIP_TCP
 #if (LWIP_UDP || LWIP_RAW)
 		if (NETCONNTYPE_GROUP(conn->type) == NETCONN_TCP)
@@ -519,9 +532,6 @@ static err_t netconn_recv_data(struct netconn *conn, void **new_buf)
 #endif							/* LWIP_TCP */
 		return ERR_TIMEOUT;
 	}
-#else
-	sys_arch_mbox_fetch(&conn->recvmbox, &buf, 0);
-#endif							/* LWIP_SO_RCVTIMEO */
 
 #if LWIP_TCP
 #if (LWIP_UDP || LWIP_RAW)

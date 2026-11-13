@@ -83,7 +83,7 @@ struct stats_proto {
 	STAT_COUNTER memerr;	/* Out of memory error. */
 	STAT_COUNTER rterr;		/* Routing error. */
 	STAT_COUNTER proterr;	/* Protocol error. */
-	STAT_COUNTER opterr;	/* Error in options. */
+	STAT_COUNTER opt_err;	/* Error in options.  Not 'opterr': it is a macro of unistd.h */
 	STAT_COUNTER err;		/* Misc error. */
 	STAT_COUNTER cachehit;
 };

@@ -23,6 +23,7 @@
 #include <netinet/in.h>
 #include <debug.h>
 #include <tinyara/lwnl/lwnl.h>
+#include <tinyara/kthread.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
@@ -336,7 +337,7 @@ int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32
 	return 0;
 }
 
-void *_trwifi_event_handler(void *arg)
+static int _trwifi_event_handler(int argc, char *argv[])
 {
 	while (1) {
 		WAIT_EVTQUEUE(g_queue);
@@ -362,8 +363,8 @@ void *_trwifi_event_handler(void *arg)
 		kmm_free(evt);
 	}
 
-	NET_LOGKE(TAG, "critical error\n", errno);
-	return NULL;
+	NET_LOGKE(TAG, "critical error %d\n", errno);
+	return 0;
 }
 
 int trwifi_run_handler(void)
@@ -378,10 +379,10 @@ int trwifi_run_handler(void)
 	}
 
 	sys_thread_t tid;
-	tid = kernel_thread("netmgr_event_handler", NETMGR_EVTHANDLER_PRIO,
-						NETMGR_EVTHANDLER_STACKSIZE, _trwifi_event_handler, NULL);
-	if (tid == ERROR) {
-		NET_LOGKE(TAG, "critical error %d\n", errno);
+	tid = kthread_create("netmgr_event_handler", NETMGR_EVTHANDLER_PRIO,
+						 NETMGR_EVTHANDLER_STACKSIZE, _trwifi_event_handler, NULL);
+	if (tid < 0) {
+		NET_LOGKE(TAG, "critical error %d\n", tid);
 		return -2;
 	}
 	return 0;

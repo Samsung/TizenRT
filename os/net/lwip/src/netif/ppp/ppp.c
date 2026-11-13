@@ -801,7 +801,7 @@ static err_t pppifOutput(struct netif *netif, struct pbuf *pb, const ip4_addr_t 
 	 * and the peer will just drop it if it's not accepting it. */
 	if (pd < 0 || pd >= NUM_PPP || !pc->openFlag || !pb) {
 		PPPDEBUG(LOG_WARNING, ("pppifOutput[%d]: bad parms prot=%d pb=%p\n", pd, PPP_IP, pb));
-		LINK_STATS_INC(link.opterr);
+		LINK_STATS_INC(link.opt_err);
 		LINK_STATS_INC(link.drop);
 		snmp_inc_ifoutdiscards(netif);
 		return ERR_ARG;

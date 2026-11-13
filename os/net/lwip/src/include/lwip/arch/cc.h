@@ -55,22 +55,23 @@
 #include <errno.h>
 #include "cpu.h"
 
-typedef unsigned char u8_t;
-typedef signed char s8_t;
-typedef unsigned short u16_t;
-typedef signed short s16_t;
-typedef unsigned int u32_t;
-typedef signed int s32_t;
-typedef u32_t mem_ptr_t;
+/* u8_t ... s32_t and mem_ptr_t are defined by lwip/arch.h with the types of
+ * stdint.h.  uint32_t is not 'unsigned int' with every toolchain (it is
+ * 'unsigned long' with arm-none-eabi-gcc), so the types cannot be redefined
+ * here and the formats of the 32-bit types come from inttypes.h.
+ */
+#include <stdint.h>
+#include <inttypes.h>
+
 typedef int sys_prot_t;
 
 #define U16_F "hu"
 #define S16_F "d"
 #define X16_F "hx"
-#define U32_F "u"
-#define S32_F "d"
-#define X32_F "x"
-#define SZT_F "uz"
+#define U32_F PRIu32
+#define S32_F PRId32
+#define X32_F PRIx32
+#define SZT_F "zu"
 
 /* define compiler specific symbols */
 #if defined(__ICCARM__)

@@ -20,6 +20,8 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <net/if.h>
+#include <errno.h>
+#include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
 #include <tinyara/net/netlog.h>
@@ -31,17 +33,6 @@ extern struct netstack *get_netstack_lwip(void);
 #ifdef CONFIG_LWNL80211
 extern struct netstack *get_netstack_netlink(void);
 #endif
-
-static sock_type _get_socktype(int fd)
-{
-	if (fd < CONFIG_NFILE_DESCRIPTORS) {
-		return TR_LWNL;
-	} else if (fd < CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS) {
-		return TR_SOCKET;
-	}
-	NET_LOGKE(TAG, "not supported socket type\n");
-	return TR_UNKNOWN;
-}
 
 struct netstack *get_netstack(sock_type type)
 {
@@ -56,17 +47,75 @@ struct netstack *get_netstack(sock_type type)
 	return NULL;
 }
 
-struct netstack *get_netstack_byfd(int fd)
-{
-	sock_type type = _get_socktype(fd);
+/****************************************************************************
+ * Name: get_netstack_byfd
+ *
+ * Description:
+ *   Get the stack that owns a file descriptor and replace the file
+ *   descriptor with the descriptor of the stack.
+ *
+ *   A socket of lwIP is a file of the VFS with a socket inode.  Its socket
+ *   structure keeps the lwIP socket descriptor.  The reference of the file
+ *   is returned in filep and the caller releases it with
+ *   put_netstack_byfd() after it called the stack: a socket that a thread
+ *   is blocked on is not freed by close() of another thread.
+ *
+ *   A descriptor that is not a socket is a descriptor of the lwnl driver
+ *   (socket(AF_LWNL) opens the driver).  The lwnl methods take the file
+ *   descriptor and no reference is returned.
+ *
+ * Input Parameters:
+ *   fd    - In: the file descriptor.  Out: the descriptor of the stack.
+ *   filep - Out: the file of the socket, or NULL.
+ *
+ * Returned Value:
+ *   The stack; NULL with the errno set to EBADF if fd is not open.
+ *
+ ****************************************************************************/
 
-	if (type == TR_SOCKET) {
+struct netstack *get_netstack_byfd(int *fd, FAR struct file **filep)
+{
+	FAR struct socket *psock;
+	int ret;
+
+	ret = sockfd_socket(*fd, filep, &psock);
+	if (ret == OK) {
+#ifdef CONFIG_NET_LWIP
+		*fd = psock->s_sd;
 		return get_netstack_lwip();
-	} else if (type == TR_LWNL) {
+#else
+		file_put(*filep);
+		ret = -ENOTSOCK;
+#endif
+	}
+
+	*filep = NULL;
+	if (ret == -ENOTSOCK) {
 #ifdef CONFIG_LWNL80211
 		return get_netstack_netlink();
 #endif
 	}
-	NET_LOGKE(TAG, "not supported stack type\n");
+
+	set_errno(ret == -ENOTSOCK ? ENOTSOCK : EBADF);
 	return NULL;
+}
+
+/****************************************************************************
+ * Name: put_netstack_byfd
+ *
+ * Description:
+ *   Release the file that get_netstack_byfd() returned.  The socket is
+ *   closed here if it was closed while the stack was called; the errno of
+ *   the call is kept.
+ *
+ ****************************************************************************/
+
+void put_netstack_byfd(FAR struct file *filep)
+{
+	if (filep != NULL) {
+		int errcode = get_errno();
+
+		file_put(filep);
+		set_errno(errcode);
+	}
 }

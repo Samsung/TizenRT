@@ -168,7 +168,7 @@ static char *_convert_udp_type(struct lwip_sock *sock)
 static void _get_port(int fd, int *port)
 {
 	*port = -1;
-	struct lwip_sock *sock = get_socket_by_pid(fd, getpid());
+	struct lwip_sock *sock = lwip_socket_get(fd);
 	if (!sock) {
 		NET_LOGKE(TTAG, "get socket fail\n");
 		return;
@@ -348,7 +348,7 @@ static void _get_raw_info(int fd, struct lwip_sock *lsock, netmgr_logger_p logge
 static void _get_proto(int fd, char **type)
 {
 	*type = UNKNOWN_STR;
-	struct lwip_sock *sock = get_socket_by_pid(fd, getpid());
+	struct lwip_sock *sock = lwip_socket_get(fd);
 	if (!sock) {
 		NET_LOGKE(TTAG, "get socket fail\n");
 		return;
@@ -363,63 +363,23 @@ static void _get_proto(int fd, char **type)
 }
 #endif
 
-static inline int _netsock_clone(FAR struct lwip_sock *sock1, FAR struct lwip_sock *sock2)
+static int _netmon_handler(int fd, struct lwip_sock *sock, void *arg)
 {
-	int ret = OK;
+	netmgr_logger_p logger = (netmgr_logger_p)arg;
 
-	/* Parts of this operation need to be atomic */
-	if (sock1 == NULL || sock2 == NULL) {
-		NET_LOGKE(TAG, "invalid parameter\n");
-		return ERROR;
+	if (!sock->conn->pcb.ip) {
+		NET_LOGKV(TAG, "no IP pcb\n");
+		return 0;
+	}
+	if (NETCONNTYPE_GROUP(sock->conn->type) == NETCONN_TCP) {
+		_get_tcp_info(fd, sock, logger);
+	} else if (NETCONNTYPE_GROUP(sock->conn->type) == NETCONN_UDP) {
+		_get_udp_info(fd, sock, logger);
+	} else if (NETCONNTYPE_GROUP(sock->conn->type) == NETCONN_RAW) {
+		_get_raw_info(fd, sock, logger);
 	}
 
-	/* Duplicate the socket state */
-	sock2->conn = sock1->conn;			   /* Netconn callback */
-	sock2->lastdata = sock1->lastdata; /* data that was left from the previous read */
-	sock2->lastoffset = sock1->lastoffset; /* offset in the data that was left from the previous read */
-	sock2->rcvevent = sock1->rcvevent; /*  number of times data was received, set by event_callback(), tested by the receive and select / poll functions */
-	sock2->sendevent = sock1->sendevent;   /* number of times data was ACKed (free send buffer), set by event_callback(), tested by select / poll */
-	sock2->errevent = sock1->errevent; /* error happened for this socket, set by event_callback(), tested by select / poll */
-
-	sock2->err = sock1->err; /* last error that occurred on this socket */
-
-	sock2->select_waiting = sock1->select_waiting; /* counter of how many threads are waiting for this socket using select */
-	sock2->conn->crefs++;
-
-	return ret;
-}
-
-static void _netmon_handler(struct tcb_s *tcb, void *arg)
-{
-	netmgr_logger_p logger= (netmgr_logger_p)arg;
-	struct task_group_s *group = tcb->group;
-	if (!group) {
-		fflush(stdout);
-		assert(0);
-	}
-	struct socketlist *slist = &group->tg_socketlist;
-	for (int fd = 0; fd < CONFIG_NSOCKET_DESCRIPTORS; fd++) {
-		struct lwip_sock *sock = (struct lwip_sock *)slist->sl_sockets[fd].sock;
-		if (!sock || !sock->conn) {
-			NET_LOGKV(TAG, "fd %d is not assigned socket %p %p\n", fd, sock, sock->conn);
-			continue;
-		};
-
-		if (!sock->conn->pcb.ip) {
-			NET_LOGKV(TAG, "no IP pcb\n");
-			fflush(stdout);
-			assert(0);
-			continue;
-		}
-
-		if (NETCONNTYPE_GROUP(sock->conn->type) == NETCONN_TCP) {
-			_get_tcp_info(fd, sock, logger);
-		} else if (NETCONNTYPE_GROUP(sock->conn->type) == NETCONN_UDP) {
-			_get_udp_info(fd, sock, logger);
-		} else if (NETCONNTYPE_GROUP(sock->conn->type) == NETCONN_RAW) {
-			_get_raw_info(fd, sock, logger);
-		}
-	}
+	return 0;
 }
 
 /*
@@ -442,48 +402,10 @@ static int lwip_ns_dup(int sockfd)
 
 static int lwip_ns_dup2(int sockfd1, int sockfd2)
 {
-	struct lwip_sock *sock1;
-	struct lwip_sock *sock2;
-	int err;
-	int ret;
-
-	/* Lock the scheduler throughout the following */
-	sched_lock();
-
-	/* Get the socket structures underly both descriptors */
-	sock1 = (struct lwip_sock *)get_socket_by_pid(sockfd1, getpid());
-	sock2 = (struct lwip_sock *)get_socket_by_pid(sockfd2, getpid());
-
-	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
-	 * descriptors and that sockfd1 has valid allocated conn
+	/* The VFS duplicates the file descriptor of a socket.  The duplicated
+	 * descriptors share the file and the lwIP socket of it.
 	 */
-	if (!sock1 || !sock2) {
-		err = EBADF;
-		goto errout;
-	}
-
-	/* If sockfd2 also has valid allocated conn, then we will have to
-	 * close it!
-	 */
-	if (sock2->conn) {
-		netconn_delete(sock2->conn);
-		sock2->conn = NULL;
-	}
-
-	/* Duplicate the socket state */
-	ret = _netsock_clone(sock1, sock2);
-	if (ret < 0) {
-		err = -ret;
-		goto errout;
-	}
-
-	sched_unlock();
 	return 0;
-
-errout:
-	sched_unlock();
-	errno = err;
-	return -1;
 }
 
 static int lwip_ns_clone(FAR struct socket *psock1, FAR struct socket *psock2)
@@ -634,17 +556,17 @@ static ssize_t lwip_ns_recvmsg(int sockfd, struct msghdr *msg, int flags)
 	socklen_t *addrlen = &(msg->msg_namelen);
 	msg->msg_controllen = 0;
 
-	return recvfrom(sockfd, buf, len, flags, from, addrlen);
+	return lwip_recvfrom(sockfd, buf, len, flags, from, addrlen);
 }
 
-static ssize_t lwip_ns_sendmsg(int sockfd, struct msghdr *msg, int flags)
+static ssize_t lwip_ns_sendmsg(int sockfd, const struct msghdr *msg, int flags)
 {
 	uint8_t *buf = (uint8_t *)(msg->msg_iov->iov_base);
 	size_t len = msg->msg_iov->iov_len;
 	struct sockaddr *to = (struct sockaddr *)msg->msg_name;
 	int *addrlen = (int *)&(msg->msg_namelen);
 
-	return sendto(sockfd, buf, len, flags, to, (socklen_t)*addrlen);
+	return lwip_sendto(sockfd, buf, len, flags, to, (socklen_t)*addrlen);
 }
 
 static int lwip_ns_init(void *data)
@@ -720,54 +642,12 @@ static int lwip_ns_getstats(void *arg)
 	if (res != 0) {
 		return -ENOTTY;
 	}
-	sched_foreach(_netmon_handler, (void *)logger);
+	lwip_socket_foreach(_netmon_handler, (void *)logger);
 	netlogger_serialize(logger, &buf);
 	netlogger_deinit(logger);
 	msg->info = buf;
 
 	return 0;
-}
-
-static void lwip_ns_initlist(struct socketlist *list)
-{
-	for (int i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; ++i) {
-		list->sl_sockets[i].sock = NULL;
-	}
-
-	/* Initialize the list access mutex */
-	sem_init(&list->sl_sem, 0, 1);
-}
-
-static void lwip_ns_releaselist(struct socketlist *list)
-{
-	int i;
-	int ret;
-	struct lwip_sock *psock;
-
-	for (i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; ++i) {
-		if (list->sl_sockets[i].sock) {
-
-			psock = (struct lwip_sock *)list->sl_sockets[i].sock;
-
-			if (list->sl_sockets[i].s_crefs == 1) {
-				ret = lwip_sock_close(psock);
-				if (ret) {
-					NET_LOGKE(TAG, "socket could not close properly\n");
-					list->sl_sockets[i].sock = NULL;
-					return;
-				}
-			}
-
-			else if (list->sl_sockets[i].s_crefs > 1) {
-				list->sl_sockets[i].s_crefs--;
-			}
-
-			else {
-				memset(&list->sl_sockets[i], 0, sizeof(struct socket));
-			}
-		}
-		list->sl_sockets[i].sock = NULL;
-	}
 }
 
 struct netstack_ops g_lwip_stack_ops = {
@@ -807,9 +687,8 @@ struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_addroute,
 	lwip_ns_delroute,
 #endif
-	lwip_ns_getstats,
-	lwip_ns_initlist,
-	lwip_ns_releaselist};
+	lwip_ns_getstats
+};
 
 struct netstack g_lwip_stack = {&g_lwip_stack_ops, NULL};
 

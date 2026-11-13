@@ -89,7 +89,7 @@ void stats_display_proto(struct stats_proto *proto, const char *name)
 	LWIP_PLATFORM_DIAG(("memerr: %" STAT_COUNTER_F "\n\t", proto->memerr));
 	LWIP_PLATFORM_DIAG(("rterr: %" STAT_COUNTER_F "\n\t", proto->rterr));
 	LWIP_PLATFORM_DIAG(("proterr: %" STAT_COUNTER_F "\n\t", proto->proterr));
-	LWIP_PLATFORM_DIAG(("opterr: %" STAT_COUNTER_F "\n\t", proto->opterr));
+	LWIP_PLATFORM_DIAG(("opterr: %" STAT_COUNTER_F "\n\t", proto->opt_err));
 	LWIP_PLATFORM_DIAG(("err: %" STAT_COUNTER_F "\n\t", proto->err));
 	LWIP_PLATFORM_DIAG(("cachehit: %" STAT_COUNTER_F "\n", proto->cachehit));
 }
