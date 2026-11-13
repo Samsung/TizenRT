@@ -88,6 +88,8 @@ def check_app_crash(parser):
     # Check for lr & pc values in application text address range
     if (pc_value != 00000000):
         for app_idx in range(parser.g_app_idx):
+            if not os.path.exists(parser.bin_path + parser.app_name[app_idx] + "_dbg"):
+                continue
             if (address1 >= hex(parser.g_stext_app[app_idx]) and address1 < hex(parser.g_etext_app[app_idx])):
                 if parser.xip_enabled:
                     addr = lr_value
@@ -139,6 +141,8 @@ def check_app_crash(parser):
     else:
         address1 = hex(parser.g_assertpc)
         for app_idx in range(parser.g_app_idx):
+            if not os.path.exists(parser.bin_path + parser.app_name[app_idx] + "_dbg"):
+                continue
             if (address1 >= hex(parser.g_stext_app[app_idx]) and address1 < hex(parser.g_etext_app[app_idx])):
                 if parser.xip_enabled:
                     addr = parser.g_assertpc
@@ -173,6 +177,9 @@ def check_app_crash(parser):
 
 def check_kernel_crash(parser):
     global pc_value, lr_value, is_kernel_crash, assertline
+
+    if not parser.elf or not os.path.exists(parser.elf):
+        return
 
     address1 = hex(lr_value)
     address2 = hex(pc_value)
@@ -257,11 +264,14 @@ def check_kernel_crash(parser):
 def find_crash_point(parser):
     global is_app_crash, is_kernel_crash, assertline
 
-    parser.g_stext_flash = utils.get_address_of_symbol("_stext_flash")
-    parser.g_etext_flash = utils.get_address_of_symbol("_etext_flash")
+    parser.g_stext_flash = utils.get_address_of_symbol("_stext_flash") or 0
+    parser.g_etext_flash = utils.get_address_of_symbol("_etext_flash") or 0
     if (parser.have_ram_kernel_text):
-        parser.g_stext_ram = utils.get_address_of_symbol("_stext_ram")
-        parser.g_etext_ram = utils.get_address_of_symbol("_etext_ram")
+        parser.g_stext_ram = utils.get_address_of_symbol("_stext_ram") or 0
+        parser.g_etext_ram = utils.get_address_of_symbol("_etext_ram") or 0
+    else:
+        parser.g_stext_ram = 0
+        parser.g_etext_ram = 0
 
     # Parse the contents based on tokens in log file.
     # pc_value, lr_value, assertline 
@@ -288,5 +298,8 @@ def find_crash_point(parser):
                     # If PC value is invalid, show invalid PC
                     if 'PC value might be invalid' in line:
                         print('\tPC value might be invalid.')
-            print('\t-  PC & LR values not in any text range! No probable crash point detected.')
+            if not parser.elf:
+                print('	-  PC: {0}, LR: {1} (Symbol resolution unavailable without ELF)'.format(hex(pc_value), hex(lr_value)))
+            else:
+                print('	-  PC & LR values not in any text range! No probable crash point detected.')
             

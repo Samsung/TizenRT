@@ -67,10 +67,10 @@ We can use [CUI](#trap-using-cui) or [GUI](#trap-using-gui) for trap. To use any
 ### TRAP using CUI
 
 #### .config dependency and the --arch option
-TRAP previously required the build `.config` (default `../../../os/.config`, or the path passed with `-c`). It now tolerates a missing `.config`:
+TRAP previously required the build `.config` (default `../../../os/.config`, or the path passed with `-c`) and a kernel ELF binary. It now tolerates a missing `.config` and missing ELF binaries:
 
-- `-t` (assert log) mode works **without** `.config`. Build features such as XIP ELF (`CONFIG_XIP_ELF`) and RAM kernel text (`CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT`) are detected from the kernel symbol map (`xipelf_initialize`, `_stext_ram`/`_etext_ram`) instead of `.config`.
-- `-r` (RAM/FLASH dump) mode needs the architecture family to know the stack frame register layout. Provide it either through `.config` (`CONFIG_ARCH_FAMILY="armv7-r"`) or the new `--arch` argument. Only `armv7-r` is supported:
+- `-t` (assert log) mode works **without** `.config` and **without** ELF binaries (`tinyara.axf`). When an ELF binary is absent, TRAP automatically continues without symbol resolution, still displaying all text-based diagnostic information from the crash log (crash type, assert location/file/line, raw register values, IRQ context, TCB state/flags, system task list, heap corruption checks, etc.). When ELF binaries are available, full symbol resolution (function names, file/line mapping) is provided.
+- `-r` (RAM/FLASH dump) mode requires the kernel ELF binary for binary parsing and stack unwinding, as well as the architecture family to know the stack frame register layout. Provide it either through `.config` (`CONFIG_ARCH_FAMILY="armv7-r"`) or the new `--arch` argument. Only `armv7-r` is supported:
 ```
 $ python3 trap.py -r <ramdump_file> --arch=armv7-r
 ```

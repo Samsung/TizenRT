@@ -75,18 +75,20 @@ def parse_tcb_info(parser):
                     elif "Syscall" in line:
                         app_idx = logUtils.is_app_text_address(parser, data)
                         if app_idx:
-                            if parser.xip_enabled:
-                                addr = data
-                            else:
-                                addr = data - int(hex(parser.g_stext_app[app_idx - 1]), 16)
-                            f = os.popen('arm-none-eabi-addr2line -f -e ' + parser.bin_path + parser.app_name[app_idx - 1] + '_dbg ' + hex(int(addr, 16)))
+                            app_dbg = parser.bin_path + parser.app_name[app_idx - 1] + "_dbg"
+                            if os.path.exists(app_dbg):
+                                if parser.xip_enabled:
+                                    addr = data
+                                else:
+                                    addr = data - int(hex(parser.g_stext_app[app_idx - 1]), 16)
+                                f = os.popen("arm-none-eabi-addr2line -f -e " + app_dbg + " " + hex(int(addr, 16)))
+                                result = f.read()
+                                if "??" not in result and "$d" not in result:
+                                    line = line.replace(data, result.replace("\n"," ").split()[0])
+                        elif logUtils.is_kernel_text_address(parser, data) and parser.elf and os.path.exists(parser.elf):
+                            f = os.popen("arm-none-eabi-addr2line -f -e " + parser.elf + " " + hex(int(data, 16)))
                             result = f.read()
-                            if '??' not in result and '$d' not in result:
-                                line = line.replace(data, result.replace("\n"," ").split()[0])
-                        elif logUtils.is_kernel_text_address(parser, data):
-                            f = os.popen('arm-none-eabi-addr2line -f -e ' + parser.elf + ' ' + hex(int(data, 16)))
-                            result = f.read()
-                            if '??' not in result and '$d' not in result:
+                            if "??" not in result and "$d" not in result:
                                 line = line.replace(data, result.replace("\n"," ").split()[0])
                     elif "Flags" in line:
                         flag = int(data)
