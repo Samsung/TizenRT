@@ -82,8 +82,10 @@ typedef struct preference_data_s preference_data_t;
 
 typedef void (*preference_changed_cb)(char *key, void *cb_data);
 
+#define PREFERENCE_KEY_MAX 64
+
 struct preference_callback_s {
-	char *key;
+	char key[PREFERENCE_KEY_MAX];
 	int type;
 	preference_changed_cb cb_func;
 	void *cb_data;
