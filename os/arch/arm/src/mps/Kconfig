@@ -50,4 +50,18 @@ endchoice # ARM MPS Configuration
 
 endmenu # MPS Chip Selection
 
+config MPS_LAN9118
+	bool "LAN9118 Ethernet controller of the MPS2 boards"
+	default y
+	depends on ARCH_CHIP_MPS2_AN500 || ARCH_CHIP_MPS2_AN521
+	depends on NET_LWIP && NET_NETMGR && NET_ETHERNET
+	depends on SCHED_HPWORK
+	---help---
+		The Ethernet controller of the MPS2 boards (a LAN9220, compatible
+		with the LAN9118 that QEMU models) for lwIP and the network
+		manager.  It is registered as the Ethernet interface eth0.
+
+		Run QEMU with a network backend for the controller, for example:
+		  -nic user,model=lan9118
+
 endif # ARCH_CHIP_MPS

@@ -60,6 +60,11 @@ ifeq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
 CHIP_CSRCS += qemu_idle.c
 endif
 
+# arm_netinitialize() and the virtio-net device of the 'virt' machine
+ifeq ($(CONFIG_NET),y)
+CHIP_CSRCS += qemu_virtio_net.c
+endif
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
   CHIP_CSRCS += qemu_userspace.c qemu_allocateheap.c
 endif
