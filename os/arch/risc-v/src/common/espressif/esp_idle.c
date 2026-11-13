@@ -47,7 +47,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 
-#include <tinyara/power/pm.h>
+#ifdef CONFIG_PM
+#  include <tinyara/power/pm.h>
+#endif
 #include <tinyara/spinlock.h>
 #include <debug.h>
 #include <tinyara/arch.h>

@@ -37,7 +37,11 @@
 #
 #############################################################################
 
-include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/Make.defs
+
+ASRCS =
+DEPPATH = --dep-path .
+VPATH = .
 
 include board/Make.defs
 include src/Make.defs
@@ -45,8 +49,47 @@ include src/Make.defs
 DEPPATH += --dep-path board
 DEPPATH += --dep-path src
 
-include $(TOPDIR)/board/Board.mk
-
 ARCHSRCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src
 BOARDDIR = $(ARCHSRCDIR)$(DELIM)board
 CFLAGS += ${INCDIR_PREFIX}$(BOARDDIR)$(DELIM)include
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)kernel
+CFLAGS += ${INCDIR_PREFIX}$(ARCHSRCDIR)$(DELIM)common
+CFLAGS += ${INCDIR_PREFIX}$(ARCHSRCDIR)$(DELIM)chip
+
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+
+SRCS = $(ASRCS) $(CSRCS)
+OBJS = $(AOBJS) $(COBJS)
+
+BIN = libboard$(LIBEXT)
+
+all: $(BIN)
+.PHONY: context depend clean distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+$(BIN): $(OBJS)
+	$(call ARCHIVE, $@, $(OBJS))
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, $(BIN))
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
+
+context:

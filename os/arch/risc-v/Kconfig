@@ -31,6 +31,39 @@ config ARCH_CHIP_QEMU_RV
 	---help---
 		QEMU Generic RV32/RV64 processor
 
+config ARCH_CHIP_ESP32C6
+	bool "ESP32-C6"
+	select ARCH_RV32
+	select ARCH_RV_ISA_M
+	select ARCH_RV_ISA_A
+	select ARCH_RV_ISA_C
+	select ARCH_VECNOTIRQ
+	select ARCH_HAVE_BOOTLOADER if !ESPRESSIF_SIMPLE_BOOT
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_RNG
+	select ARCH_HAVE_TICKLESS
+	select LIBC_ARCH_MEMCPY
+	select LIBC_ARCH_MEMCHR
+	select LIBC_ARCH_MEMCMP
+	select LIBC_ARCH_MEMMOVE
+	select LIBC_ARCH_MEMSET
+	select LIBC_ARCH_STRCHR
+	select LIBC_ARCH_STRCMP
+	select LIBC_ARCH_STRCPY
+	select LIBC_ARCH_STRLCPY
+	select LIBC_ARCH_STRNCPY
+	select LIBC_ARCH_STRLEN
+	select LIBC_ARCH_STRNLEN
+	select ESPRESSIF_SOC_RTC_MEM_SUPPORTED
+	select ARCH_CHIP_ESPRESSIF
+	select ARCH_HAVE_RAMFUNCS
+	select ONESHOT_COUNT if ONESHOT
+	select ONESHOT_FAST_DIVISION if ONESHOT
+	---help---
+		Espressif ESP32-C6 (RV32IMAC).
+
 endchoice # RISC-V chip selection
 
 config ARCH_RV32
@@ -191,6 +224,7 @@ config ARCH_FAMILY
 
 config ARCH_CHIP
 	string
+	default "esp32c6"               if ARCH_CHIP_ESP32C6
 	default "qemu-rv"               if ARCH_CHIP_QEMU_RV
 
 config ARCH_RISCV_INTXCPT_EXTENSIONS
@@ -351,6 +385,9 @@ config RISCV_SEMIHOSTING_HOSTFS_CACHE_COHERENCE
 
 endif # RISCV_SEMIHOSTING_HOSTFS
 
+if ARCH_CHIP_ESP32C6
+source "arch/risc-v/src/esp32c6/Kconfig"
+endif
 if ARCH_CHIP_QEMU_RV
 source "arch/risc-v/src/qemu-rv/Kconfig"
 endif

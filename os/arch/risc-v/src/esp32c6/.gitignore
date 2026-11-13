@@ -2,4 +2,5 @@
 /esp-nuttx-bootloader
 /*.zip
 /esp-hal-3rdparty
+/nuttx_compat
 /ulp

@@ -294,11 +294,23 @@ ifeq ($(CONFIG_ESP_WIRELESS),y)
 	include common$(DELIM)espressif$(DELIM)Wireless.mk
 endif
 
-context:: chip/$(ESP_HAL_3RDPARTY_REPO)
+# The HAL includes the NuttX headers as <nuttx/...>.  They are in
+# include/tinyara in TizenRT: give them to the HAL under the NuttX name.
+
+NUTTX_COMPAT_DIR = chip$(DELIM)nuttx_compat
+
+$(NUTTX_COMPAT_DIR)$(DELIM)nuttx:
+	$(Q) mkdir -p $(NUTTX_COMPAT_DIR)
+	$(Q) $(DIRLINK) $(TOPDIR)$(DELIM)include$(DELIM)tinyara $(NUTTX_COMPAT_DIR)$(DELIM)nuttx
+
+context:: chip/$(ESP_HAL_3RDPARTY_REPO) $(NUTTX_COMPAT_DIR)$(DELIM)nuttx
 	$(call COPYFILE,chip/$(ESP_HAL_3RDPARTY_REPO)/components/soc/$(CHIP_SERIES)/include/soc/gpio_sig_map.h,../include/chip/)
 	$(call COPYFILE,chip/$(ESP_HAL_3RDPARTY_REPO)/nuttx/$(CHIP_SERIES)/include/irq.h,../include/chip/)
+	$(Q) sed -i -e 's|<nuttx/|<tinyara/|' ../include/chip/irq.h
 
 distclean::
+	$(Q) $(DIRUNLINK) $(NUTTX_COMPAT_DIR)$(DELIM)nuttx
+	$(call DELDIR,$(NUTTX_COMPAT_DIR))
 	$(call DELFILE,../include/chip/gpio_sig_map.h)
 	$(call DELFILE,../include/chip/irq.h)
 	$(call DELFILE,../../../vefuse.bin)
@@ -309,4 +321,5 @@ endif
 
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common$(DELIM)espressif
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common$(DELIM)espressif$(DELIM)platform_include
+INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)$(NUTTX_COMPAT_DIR)
 VPATH += common$(DELIM)espressif

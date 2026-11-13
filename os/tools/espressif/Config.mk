@@ -41,6 +41,11 @@
 
 CHIP_SERIES = $(patsubst "%",%,$(CONFIG_ESPRESSIF_CHIP_SERIES))
 
+# TizenRT puts the ELF file (tinyara) and the images made from it in
+# build/output/bin and has no manifest of the generated files.
+
+ESP_OUTBIN_DIR := $(TOPDIR)/../build/output/bin
+
 # MCUBoot requires a region in flash for the E-Fuse virtual mode.
 # To avoid erasing this region, flash a dummy empty file to the
 # virtual E-Fuse offset.
@@ -120,7 +125,7 @@ ifeq ($(CONFIG_ESPRESSIF_BOOTLOADER_MCUBOOT),y)
 		APP_OFFSET := $(CONFIG_ESPRESSIF_OTA_SECONDARY_SLOT_OFFSET)
 	endif
 
-	APP_IMAGE      := nuttx.bin
+	APP_IMAGE      := $(ESP_OUTBIN_DIR)/tinyara.bin
 	FLASH_APP      := $(APP_OFFSET) $(APP_IMAGE)
 
 	ifeq ($(CONFIG_ESPRESSIF_SECURE_FLASH_ENC_ENABLED),y)
@@ -140,7 +145,7 @@ ifeq ($(CONFIG_ESPRESSIF_BOOTLOADER_MCUBOOT),y)
 		-S $(CONFIG_ESPRESSIF_OTA_SLOT_SIZE)
 else ifeq ($(CONFIG_ESPRESSIF_SIMPLE_BOOT),y)
 	APP_OFFSET     := 0x0000
-	APP_IMAGE      := nuttx.bin
+	APP_IMAGE      := $(ESP_OUTBIN_DIR)/tinyara.bin
 	FLASH_APP      := $(APP_OFFSET) $(APP_IMAGE)
 	ESPTOOL_BINDIR := .
 endif
@@ -219,7 +224,7 @@ endef
 # MERGEBIN -- Merge raw binary files into a single file
 
 define MERGEBIN
-	@python3 tools/espressif/check_esptool.py -v $(ESPTOOL_MIN_VERSION)
+	@python3 $(TOPDIR)/tools/espressif/check_esptool.py -v $(ESPTOOL_MIN_VERSION)
 	$(Q) if [ -z $(ESPTOOL_BINDIR) ]; then \
 		echo "MERGEBIN error: Missing argument for binary files directory."; \
 		echo "USAGE: make ESPTOOL_BINDIR=<dir>"; \
@@ -229,9 +234,8 @@ define MERGEBIN
 		echo "Missing Flash memory size configuration."; \
 		exit 1; \
 	fi
-	esptool.py -c $(CHIP_SERIES) merge_bin --fill-flash-size $(FLASH_SIZE) --output nuttx.merged.bin $(ESPTOOL_BINS)
-	$(Q) echo nuttx.merged.bin >> nuttx.manifest
-	$(Q) echo "Generated: nuttx.merged.bin"
+	esptool.py -c $(CHIP_SERIES) merge_bin --fill-flash-size $(FLASH_SIZE) --output $(ESP_OUTBIN_DIR)/tinyara.merged.bin $(ESPTOOL_BINS)
+	$(Q) echo "Generated: tinyara.merged.bin"
 endef
 
 # MKIMAGE -- Convert an ELF file into a compatible binary file
@@ -243,25 +247,23 @@ define MKIMAGE
 		echo ""; \
 		echo "imgtool not found.  Please run: \"pip install imgtool\""; \
 		echo ""; \
-		echo "Run make again to create the nuttx.bin image."; \
+		echo "Run make again to create the tinyara.bin image."; \
 		exit 1; \
 	fi
-	imgtool sign $(IMGTOOL_SIGN_ARGS) nuttx.hex nuttx.bin
-	$(Q) echo nuttx.bin >> nuttx.manifest
-	$(Q) echo "Generated: nuttx.bin (MCUboot compatible)"
+	imgtool sign $(IMGTOOL_SIGN_ARGS) $(ESP_OUTBIN_DIR)/tinyara.hex $(ESP_OUTBIN_DIR)/tinyara.bin
+	$(Q) echo "Generated: tinyara.bin (MCUboot compatible)"
 endef
 else
 define MKIMAGE
 	$(Q) echo "MKIMAGE: NuttX binary"
-	@python3 tools/espressif/check_esptool.py -v $(ESPTOOL_MIN_VERSION)
+	@python3 $(TOPDIR)/tools/espressif/check_esptool.py -v $(ESPTOOL_MIN_VERSION)
 	$(Q) if [ -z $(FLASH_SIZE) ]; then \
 		echo "Missing Flash memory size configuration."; \
 		exit 1; \
 	fi
 	$(eval ELF2IMAGE_OPTS := $(if $(CONFIG_ESPRESSIF_SIMPLE_BOOT),--ram-only-header) -fs $(FLASH_SIZE) -fm $(FLASH_MODE) -ff $(FLASH_FREQ))
-	esptool.py -c $(CHIP_SERIES) elf2image $(ELF2IMAGE_OPTS) -o nuttx.bin nuttx
-	$(Q) echo nuttx.bin >> nuttx.manifest
-	$(Q) echo "Generated: nuttx.bin"
+	esptool.py -c $(CHIP_SERIES) elf2image $(ELF2IMAGE_OPTS) -o $(ESP_OUTBIN_DIR)/tinyara.bin $(ESP_OUTBIN_DIR)/tinyara
+	$(Q) echo "Generated: tinyara.bin"
 endef
 endif
 
@@ -289,6 +291,6 @@ define FLASH
 
 	$(if $(CONFIG_ESPRESSIF_SECURE_FLASH_ENC_ENABLED),$(call BURN_EFUSES))
 	$(eval ESPTOOL_OPTS := -c $(CHIP_SERIES) -p $(ESPTOOL_PORT) -b $(ESPTOOL_BAUD) $(if $(CONFIG_ESPRESSIF_ESPTOOLPY_NO_STUB),--no-stub))
-	$(eval WRITEFLASH_OPTS := $(if $(CONFIG_ESPRESSIF_MERGE_BINS),$(ESPTOOL_WRITEFLASH_OPTS) 0x0 nuttx.merged.bin,$(ESPTOOL_WRITEFLASH_OPTS) $(ESPTOOL_BINS)))
+	$(eval WRITEFLASH_OPTS := $(if $(CONFIG_ESPRESSIF_MERGE_BINS),$(ESPTOOL_WRITEFLASH_OPTS) 0x0 $(ESP_OUTBIN_DIR)/tinyara.merged.bin,$(ESPTOOL_WRITEFLASH_OPTS) $(ESPTOOL_BINS)))
 	esptool.py $(ESPTOOL_OPTS) write_flash $(WRITEFLASH_OPTS)
 endef

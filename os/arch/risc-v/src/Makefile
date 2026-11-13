@@ -38,9 +38,10 @@
 ############################################################################
 
 -include $(TOPDIR)/Make.defs
--include chip/Make.defs
 
 ARCH_SRCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src
+
+-include chip/Make.defs
 
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common
@@ -184,6 +185,7 @@ endif
 	$(call DELFILE, $(UBIN))
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, $(HEAD_OBJ))
+	$(call DELFILE, $(OBJS))
 	$(call CLEAN)
 
 distclean:: clean
