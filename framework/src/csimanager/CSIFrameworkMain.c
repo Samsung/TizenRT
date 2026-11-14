@@ -16,12 +16,12 @@
  *
  ****************************************************************************/
 
-#include "debug.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <sched.h>
 #include <semaphore.h>
 #include <sys/types.h>
 #include "CSIParser.h"
@@ -29,82 +29,40 @@
 #include "PingGenerator.h"
 #include "CSINetworkMonitor.h"
 #include "CSIPacketReceiver.h"
-#include <task_manager/task_manager.h>
 
 #define RUNNING 1
 #define STOPPED 0
 
-const static char **CSIFW_TASK_ARGV = NULL;
 const static char *CSIFW_TASK_NAME = "csifw_task_Main";
-
 const static int CSIFW_TASK_STACKSIZE = 8192;
-const static int CSIFW_TASK_PRIORITY = 100;
-const static int CSIFW_TASK_PERMISSION = TM_APP_PERMISSION_ALL;
+const static int CSIFW_TASK_PRIORITY = SCHED_PRIORITY_DEFAULT;
 
 int csifw_task_Main(int argc, char *argv[]);
 
-int csifw_register_task(csifw_context_t *p_ctx)
-{
-	if (p_ctx->task_handle >= 0) {
-		CSIFW_LOGI("csifw task already registered (task_handle=%d) - skipping registration", p_ctx->task_handle);
-		return p_ctx->task_handle;
-	}
-	CSIFW_LOGD("Registering task with params: name=%s, priority=%d, stacksize=%d, permission=%d",
-		   CSIFW_TASK_NAME, CSIFW_TASK_PRIORITY, CSIFW_TASK_STACKSIZE, CSIFW_TASK_PERMISSION);
-	int handle = task_manager_register_task(
-			(char *)CSIFW_TASK_NAME,
-			CSIFW_TASK_PRIORITY,
-			CSIFW_TASK_STACKSIZE,
-			csifw_task_Main,
-			(char **)CSIFW_TASK_ARGV,
-			CSIFW_TASK_PERMISSION,
-			TM_RESPONSE_WAIT_INF);
-
-	if (handle < 0) {
-		CSIFW_LOGE("Failed to create csifw task to the task manager! Return: %d", handle);
-		p_ctx->task_handle = -1;
-		return p_ctx->task_handle;
-	}
-	CSIFW_LOGI("Created csifw task to the task manager PID: %d", handle);
-	p_ctx->task_handle = handle;
-	return p_ctx->task_handle;
-}
-
-void csifw_unregister_task(csifw_context_t *p_ctx)
-{
-	if (p_ctx->task_handle < 0) {
-		CSIFW_LOGI("csifw task not registered (task_handle=%d) - nothing to unregister", p_ctx->task_handle);
-		return;
-	}
-	CSIFW_LOGD("Unregistering csifw task (handle=%d)...", p_ctx->task_handle);
-	int result = task_manager_unregister(p_ctx->task_handle, TM_RESPONSE_WAIT_INF);
-	if (result < 0) {
-		CSIFW_LOGE("Failed to unregister csifw task (handle=%d). Return: %d", p_ctx->task_handle, result);
-		return;
-	}
-	CSIFW_LOGI("csifw task unregistered successfully (handle=%d)", p_ctx->task_handle);
-	p_ctx->task_handle = -1;
-}
-
 int start_csi_framework(csifw_context_t *p_ctx)
 {
+	CSIFW_LOGV;
 	if (p_ctx->task_run_state == RUNNING) {
 		CSIFW_LOGE("csifw_task already running (task_run_state=%d) - cannot start again", p_ctx->task_run_state);
+		CSIFW_LOGX;
 		return -1;
 	}
 	CSIFW_LOGD("Current task state: task_run_state=%d", p_ctx->task_run_state);
 	CSIFW_LOGD("Starting CSI Framework with context: %p", p_ctx);
 	if (sem_init(&p_ctx->csifw_task_sema, 0, 0) < OK) {
 		CSIFW_LOGE("Semaphore init failed errno: %d (%s)", get_errno(), strerror(get_errno()));
+		CSIFW_LOGX;
 		return -1;
 	}
 	CSIFW_LOGD("Semaphore initialized successfully");
+
 	p_ctx->task_run_success = 0;
 
 	CSIFW_LOGI("Starting CSIFW Task...");
-	int result = task_manager_start(p_ctx->task_handle, TM_RESPONSE_WAIT_INF);
+	int result = task_create(CSIFW_TASK_NAME, CSIFW_TASK_PRIORITY, CSIFW_TASK_STACKSIZE,
+			csifw_task_Main, NULL);
 	if (result < 0) {
-		CSIFW_LOGE("Failed to start %s (handle=%d). Return: %d. Cleaning up...", CSIFW_TASK_NAME, p_ctx->task_handle, result);
+		CSIFW_LOGE("Failed to start %s. errno: %d (%s)", CSIFW_TASK_NAME, errno, strerror(errno));
 		if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
 			CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 		}
@@ -124,20 +82,25 @@ int start_csi_framework(csifw_context_t *p_ctx)
 			if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
 				CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 			}
+			CSIFW_LOGX;
 			return -1;
 		}
 		CSIFW_LOGI("Started %s", CSIFW_TASK_NAME);
+		result = 0;
 	}
+	CSIFW_LOGX;
 	return result;
 }
 
 int stop_csi_framework(csifw_context_t *p_ctx)
 {
+	CSIFW_LOGV;
 	if (p_ctx->task_run_state == STOPPED) {
 		CSIFW_LOGE("csifw_task already stopped (task_run_state=%d)", p_ctx->task_run_state);
+		CSIFW_LOGX;
 		return -1;
 	}
-	
+
 	p_ctx->task_run_state = STOPPED;			//stop the main loop of the task
 	CSIFW_LOGD("Waiting for csifw_task to complete...");
 	while (sem_wait(&p_ctx->csifw_task_sema) < 0) {
@@ -152,11 +115,13 @@ int stop_csi_framework(csifw_context_t *p_ctx)
 	if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
 		CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 	}
+	CSIFW_LOGX;
 	return 0;
 }
 
 int csifw_task_Main(int argc, char *argv[])
 {
+	CSIFW_LOGV;
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	p_csifw_ctx->task_run_success = 0;
 
@@ -165,6 +130,7 @@ int csifw_task_Main(int argc, char *argv[])
 		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
 			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 		}
+		CSIFW_LOGX;
 		return -1;
 	}
 	if (csi_packet_receiver_start_collect() != CSIFW_OK) {
@@ -173,6 +139,7 @@ int csifw_task_Main(int argc, char *argv[])
 		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
 			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 		}
+		CSIFW_LOGX;
 		return -1;
 	}
 	if (csi_ping_generator_initialize() != CSIFW_OK) {
@@ -183,6 +150,7 @@ int csifw_task_Main(int argc, char *argv[])
 		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
 			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 		}
+		CSIFW_LOGX;
 		return -1;
 	}
 	if (ping_generator_start() != CSIFW_OK) {
@@ -194,6 +162,7 @@ int csifw_task_Main(int argc, char *argv[])
 		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
 			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 		}
+		CSIFW_LOGX;
 		return -1;
 	}
 	//to unlock start_csi_framework()
@@ -204,7 +173,7 @@ int csifw_task_Main(int argc, char *argv[])
 	}
 
 	while (p_csifw_ctx->task_run_state) {
-		usleep(50 * 1000);		//50 milisecond sleep
+		usleep(50 * 1000);
 	}
 
 	if (ping_generator_stop() != CSIFW_OK) {
@@ -223,6 +192,7 @@ int csifw_task_Main(int argc, char *argv[])
 	if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
 		CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
 	}
+	CSIFW_LOGX;
 	return 0;
 }
 

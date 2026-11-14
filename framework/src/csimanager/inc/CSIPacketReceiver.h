@@ -20,12 +20,13 @@
 
 #include "CSIManager.h"
 
-CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info);
+CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action);
 CSIFW_RES csi_packet_callback_register(CSIDataListener CSIDataCallback);
-CSIFW_RES csi_packet_receiver_stop_collect(void);
-CSIFW_RES csi_packet_receiver_start_collect(void);
+CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info);
 CSIFW_RES csi_packet_receiver_change_interval(void);
-CSIFW_RES csi_packet_receiver_deinit(void);
+CSIFW_RES csi_packet_receiver_start_collect(void);
+CSIFW_RES csi_packet_receiver_stop_collect(void);
 CSIFW_RES csi_packet_receiver_initialize(void);
 CSIFW_RES csi_packet_receiver_cleanup(void);
+CSIFW_RES csi_packet_receiver_deinit(void);
 

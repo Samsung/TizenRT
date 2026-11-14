@@ -7,7 +7,7 @@ config CSIFW
 	bool "CSI Framework"
 	default n
 	select WIFI_CSI
-	depends on TASK_MANAGER
+	select CLOCK_MONOTONIC
 	---help---
 		Enables CSI Framework.
 

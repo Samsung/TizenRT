@@ -36,7 +36,7 @@ static void csifw_update_state_and_log(CSI_FRAMEWORK_STATE new_state);
 static CSIFW_RES remove_service(csifw_context_t *p_csifw_ctx, csifw_service_info_t *p_svc_info);
 static csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callbacks_t *p_svc_cb);
 
-static const char *csi_framework_state_strings[] = 
+static const char *csi_framework_state_strings[] =
 {
     "UNINITIALIZED",
     "STARTED",
@@ -49,6 +49,7 @@ static const char *csi_framework_state_strings[] =
 static inline CSIFW_RES validate_register_params(csifw_service_handle *p_hnd, service_callbacks_t *p_svc_cb,
                                                  csi_config_type_t config_type, unsigned int interval)
 {
+  CSIFW_LOGV;
   CSIFW_RES ret = CSIFW_INVALID_ARG;
 	if (!p_hnd) {
 		CSIFW_LOGE("Invalid argument: Service Handle is NULL");
@@ -63,23 +64,25 @@ static inline CSIFW_RES validate_register_params(csifw_service_handle *p_hnd, se
 	} else {
 		ret = CSIFW_OK;
 	}
+  CSIFW_LOGX;
   return ret;
 }
 
-static void csifw_update_state_and_log(CSI_FRAMEWORK_STATE new_state) 
+static void csifw_update_state_and_log(CSI_FRAMEWORK_STATE new_state)
 {
+  CSIFW_LOGV;
   if (!g_pcsifw_context) {
+    CSIFW_LOGX;
     return;
   }
   const int max_state = sizeof(csi_framework_state_strings) / sizeof(csi_framework_state_strings[0]);
   if (new_state < CSI_FRAMEWORK_STATE_UNINITIALIZED || new_state >= max_state - 1) {
     CSIFW_LOGE("Invalid state value: %d", new_state);
+    CSIFW_LOGX;
     return;
   }
-
   CSI_FRAMEWORK_STATE prev_state = g_pcsifw_context->csifw_state;
   g_pcsifw_context->csifw_state = new_state;
-
   const char *prev_state_str = (prev_state == CSI_FRAMEWORK_STATE_UNINITIALIZED) ? "UNINITIALIZED" : csi_framework_state_strings[prev_state + 1];
   const char *new_state_str = csi_framework_state_strings[new_state + 1];
   CSIFW_LOGE("CSIFW state changed from %s to %s", prev_state_str, new_state_str);
@@ -87,10 +90,13 @@ static void csifw_update_state_and_log(CSI_FRAMEWORK_STATE new_state)
 
 static void csi_network_state_listener(CONNECTION_STATE state)
 {
+  CSIFW_LOGV;
+  CSIFW_MUTEX_LOCK(&g_api_mutex);
   if (!g_pcsifw_context) {
+    CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+    CSIFW_LOGX;
     return;
   }
-  CSIFW_MUTEX_LOCK(&g_api_mutex);
   CSIFW_LOGD("Network Status: %s", state ? "disconnected" : "connected");
   if (state == WIFI_DISCONNECTED) {
     if (g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_STARTED) {
@@ -121,20 +127,22 @@ static void csi_network_state_listener(CONNECTION_STATE state)
   }
   nw_state_notify_service(state);
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
 }
 
-static void csi_data_listener(CSIFW_RES res, int raw_csi_buff_len, unsigned char *raw_csi_buff) 
+static void csi_data_listener(CSIFW_RES res, int raw_csi_buff_len, unsigned char *raw_csi_buff)
 {
   if (!g_pcsifw_context) {
     return;
   }
-  // csi_data_listener callback can be invoked from a background thread when CSI data arrives. 
-  // Simultaneously, application threads may call `csifw_start()/csifw_stop()` to modify service states. 
+
+  // csi_data_listener callback can be invoked from a background thread when CSI data arrives.
+  // Simultaneously, application threads may call `csifw_start()/csifw_stop()` to modify service states.
   // Without this mutex, race conditions will occur
   CSIFW_MUTEX_LOCK(&g_pcsifw_context->data_receiver_mutex);
-  
-  // Process and parse CSI data
-  if (g_pcsifw_context->parsed_data_cb_count > 0 && g_pcsifw_context->parsed_data_cb_started_count > 0) {
+
+  if (g_pcsifw_context->parsed_data_cb_count > 0 &&
+      g_pcsifw_context->parsed_data_cb_started_count > 0) {
     CSIFW_LOGE("Parsing not implemented");
   }
 
@@ -152,8 +160,9 @@ static void csi_data_listener(CSIFW_RES res, int raw_csi_buff_len, unsigned char
   CSIFW_MUTEX_UNLOCK(&g_pcsifw_context->data_receiver_mutex);
 }
 
-CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t *p_svc_cb, csi_config_type_t config_type, unsigned int interval) 
+CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t *p_svc_cb, csi_config_type_t config_type, unsigned int interval)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   csifw_service_info_t *p_svc_info = NULL;
   if (validate_register_params(p_hnd, p_svc_cb, config_type, interval) == CSIFW_INVALID_ARG) {
@@ -177,15 +186,6 @@ CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t
       goto on_error;
     }
     g_pcsifw_context->csifw_state = CSI_FRAMEWORK_STATE_UNINITIALIZED;
-    g_pcsifw_context->task_handle = -1;
-
-    if (csifw_register_task(g_pcsifw_context) < 0) {
-      CSIFW_LOGE("CSIFW Registration Fail: Task registration failed");
-      pthread_mutex_destroy(&g_pcsifw_context->data_receiver_mutex);
-      destroy_csifw_context();
-      res = CSIFW_ERROR;
-      goto on_error;
-    }
   }
 
   if (g_pcsifw_context->service_count >= CSIFW_MAX_NUM_APPS) {
@@ -219,7 +219,7 @@ CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t
       res = CSIFW_ERROR;
       goto on_error;
     }
-    
+
     csi_packet_callback_register(csi_data_listener);
     csifw_update_state_and_log(CSI_FRAMEWORK_STATE_INITIALIZED);
   } else {
@@ -243,11 +243,13 @@ CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_start(csifw_service_handle hnd) 
+CSIFW_RES csifw_start(csifw_service_handle hnd)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   csifw_service_info_t *p_svc_info = NULL;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
@@ -262,7 +264,12 @@ CSIFW_RES csifw_start(csifw_service_handle hnd)
   if (g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_STARTED_WAITING_FOR_NW ||
       g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_STARTED_WAITING_FOR_NW_RECONNECT) {
     CSIFW_LOGE("Waiting for Network, CSI data will start upon network connection");
+    CSIFW_MUTEX_LOCK(&g_pcsifw_context->data_receiver_mutex);
     p_svc_info->svc_state = CSI_SERVICE_START;
+    if (p_svc_info->parsed_data_cb) {
+      g_pcsifw_context->parsed_data_cb_started_count++;
+    }
+    CSIFW_MUTEX_UNLOCK(&g_pcsifw_context->data_receiver_mutex);
     CSIFW_LOGE("Service started successfully, registered services count is %d", g_pcsifw_context->service_count);
     res = CSIFW_OK_WIFI_NOT_CONNECTED;
     goto on_error;
@@ -273,16 +280,16 @@ CSIFW_RES csifw_start(csifw_service_handle hnd)
     res = CSIFW_OK_ALREADY_STARTED;
     goto on_error;
   }
-
+  
   if (g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_STOPPED ||
-      g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_INITIALIZED) {
-    if (checkWifiConnection()) {
-      if (start_csi_framework(g_pcsifw_context) != 0) {
-        res = CSIFW_ERROR;
-        goto on_error;
-      }
-      csifw_update_state_and_log(CSI_FRAMEWORK_STATE_STARTED);
-      CSIFW_LOGE("CSIFW started successfully");
+    g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_INITIALIZED) {
+      if (checkWifiConnection()) {
+        if (start_csi_framework(g_pcsifw_context) != 0) {
+          res = CSIFW_ERROR;
+          goto on_error;
+        }
+        csifw_update_state_and_log(CSI_FRAMEWORK_STATE_STARTED);
+        CSIFW_LOGE("CSIFW started successfully");
     } else {
       csifw_update_state_and_log(CSI_FRAMEWORK_STATE_STARTED_WAITING_FOR_NW);
       CSIFW_LOGE("CSIFW started but waiting for Network, CSI data will start upon network connection");
@@ -299,11 +306,13 @@ CSIFW_RES csifw_start(csifw_service_handle hnd)
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_stop(csifw_service_handle hnd) 
+CSIFW_RES csifw_stop(csifw_service_handle hnd)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   csifw_service_info_t *p_svc_info = NULL;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
@@ -348,11 +357,13 @@ CSIFW_RES csifw_stop(csifw_service_handle hnd)
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_unregisterService(csifw_service_handle hnd) 
+CSIFW_RES csifw_unregisterService(csifw_service_handle hnd)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   csifw_service_info_t *p_svc_info = NULL;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
@@ -383,7 +394,6 @@ CSIFW_RES csifw_unregisterService(csifw_service_handle hnd)
       CSIFW_LOGE("Network monitor deinit failed");
       res = CSIFW_ERROR;
     }
-    csifw_unregister_task(g_pcsifw_context);
     pthread_mutex_destroy(&g_pcsifw_context->data_receiver_mutex);
     destroy_csifw_context();
   }
@@ -391,11 +401,13 @@ CSIFW_RES csifw_unregisterService(csifw_service_handle hnd)
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval) 
+CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
 
@@ -409,13 +421,12 @@ CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
     res = CSIFW_INVALID_ARG;
     goto on_error;
   }
-
   if (g_pcsifw_context->csi_interval == interval) {
     CSIFW_LOGI("Interval unchanged (current: %u)", g_pcsifw_context->csi_interval);
     goto on_error;
   }
-
   g_pcsifw_context->csi_interval = interval;
+
   if (g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_STOPPED ||
       g_pcsifw_context->csifw_state == CSI_FRAMEWORK_STATE_STARTED_WAITING_FOR_NW) {
     CSIFW_LOGI("Interval updated: %u", g_pcsifw_context->csi_interval);
@@ -436,11 +447,13 @@ CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_get_interval(csifw_service_handle hnd, unsigned int *p_interval) 
+CSIFW_RES csifw_get_interval(csifw_service_handle hnd, unsigned int *p_interval)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
 
@@ -460,11 +473,13 @@ CSIFW_RES csifw_get_interval(csifw_service_handle hnd, unsigned int *p_interval)
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_get_config(csifw_service_handle hnd, csi_config_type_t *config_type) 
+CSIFW_RES csifw_get_config(csifw_service_handle hnd, csi_config_type_t *config_type)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
 
@@ -484,11 +499,13 @@ CSIFW_RES csifw_get_config(csifw_service_handle hnd, csi_config_type_t *config_t
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_info) 
+CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_info)
 {
+  CSIFW_LOGV;
   CSIFW_RES res = CSIFW_OK;
   csifw_service_info_t *p_svc_info = NULL;
   CSIFW_MUTEX_LOCK(&g_api_mutex);
@@ -505,6 +522,7 @@ CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_
   }
 
   p_svc_info = (csifw_service_info_t *)hnd;
+
   if (g_pcsifw_context->csifw_state != CSI_FRAMEWORK_STATE_STARTED && p_svc_info->svc_state != CSI_SERVICE_START) {
     CSIFW_LOGE("CSIFW should be started to get AP MAC.");
     res = CSIFW_ERROR_INVALID_SERVICE_STATE;
@@ -519,30 +537,37 @@ CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
+  CSIFW_LOGX;
   return res;
 }
 
-CSIFW_RES csifw_force_restart(csifw_service_handle hnd) 
+CSIFW_RES csifw_force_restart(csifw_service_handle hnd)
 {
+  CSIFW_LOGV;
   // THIS SERVICE WILL FORCE RESTART THE THREADS TO GET DATA ANYHOW
   // ONLY CHECHK IS INIT = TRUE.
   CSIFW_RES res = CSIFW_ERROR;
-  return res; // NOT YET IMPLEMENTED
+  CSIFW_LOGX;
+  return res; //Not yet Implemented.!
 }
 
 /* service handling functions */
 
-static int get_empty_idx(void) 
+static int get_empty_idx(void)
 {
+  CSIFW_LOGV;
   if (!g_pcsifw_context) {
+    CSIFW_LOGX;
     return CSIFW_ERROR_NOT_INITIALIZED;
   }
 
   for (int i = 0; i < CSIFW_MAX_NUM_APPS; i++) {
     if (g_pcsifw_context->csi_services[i].svc_id == 0) {
+      CSIFW_LOGX;
       return i;
     }
   }
+  CSIFW_LOGX;
   return -1;
 }
 
@@ -554,11 +579,13 @@ static int get_empty_idx(void)
  *
  * @return Index of register service on success, -1 in case of failure.
  */
-csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callbacks_t *p_svc_cb) 
+csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callbacks_t *p_svc_cb)
 {
+  CSIFW_LOGV;
   int idx = get_empty_idx();
   if (idx < 0) {
     CSIFW_LOGE("Max Number of services already registered");
+    CSIFW_LOGX;
     return NULL;  // invalid id
   }
 
@@ -568,6 +595,7 @@ csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callback
         (p_csifw_ctx->csi_services[i].parsed_data_cb == p_svc_cb->parsed_data_cb)) {
       CSIFW_LOGE("Service already registered");
       CSIFW_MUTEX_UNLOCK(&g_pcsifw_context->data_receiver_mutex);
+      CSIFW_LOGX;
       return NULL;
     }
   }
@@ -596,14 +624,17 @@ csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callback
   CSIFW_MUTEX_UNLOCK(&g_pcsifw_context->data_receiver_mutex);
 
   CSIFW_LOGE("Idx %d: Service added successfully. Total registered services: %d", idx, p_csifw_ctx->service_count);
+  CSIFW_LOGX;
   return &p_csifw_ctx->csi_services[idx];
 }
 
-static CSIFW_RES remove_service(csifw_context_t *p_csifw_ctx, csifw_service_info_t *p_svc_info) 
+static CSIFW_RES remove_service(csifw_context_t *p_csifw_ctx, csifw_service_info_t *p_svc_info)
 {
+  CSIFW_LOGV;
   int idx = p_svc_info - p_csifw_ctx->csi_services;
   if (idx < 0 || idx >= CSIFW_MAX_NUM_APPS || p_csifw_ctx->csi_services[idx].svc_id == 0) {
     CSIFW_LOGE("CSI Service not registered.");
+    CSIFW_LOGX;
     return CSIFW_ERROR_SERVICE_NOT_REGISTERED;
   }
 
@@ -616,17 +647,21 @@ static CSIFW_RES remove_service(csifw_context_t *p_csifw_ctx, csifw_service_info
       p_csifw_ctx->parsed_buffptr = NULL;
     }
   }
+
   memset(&p_csifw_ctx->csi_services[idx], 0, sizeof(csifw_service_info_t));
   p_csifw_ctx->service_count--;
   CSIFW_MUTEX_UNLOCK(&g_pcsifw_context->data_receiver_mutex);
 
   CSIFW_LOGE("Service removed successfully. Remaining registered services: %d", p_csifw_ctx->service_count);
+  CSIFW_LOGX;
   return CSIFW_OK;
 }
 
-static void nw_state_notify_service(CONNECTION_STATE state) 
+static void nw_state_notify_service(CONNECTION_STATE state)
 {
+  CSIFW_LOGV;
   if (!g_pcsifw_context) {
+    CSIFW_LOGX;
     return;
   }
   CSIFW_RES res = CSIFW_OK_WIFI_CONNECTED;
@@ -646,41 +681,47 @@ static void nw_state_notify_service(CONNECTION_STATE state)
 
 csifw_context_t *get_csifw_context() { return g_pcsifw_context; }
 
-static CSIFW_RES check_hnd_validity(csifw_service_handle hnd) 
+static CSIFW_RES check_hnd_validity(csifw_service_handle hnd)
 {
+  CSIFW_LOGV;
   if (!hnd) {
     CSIFW_LOGE("Invalid/NULL handle argument, should be same as csifw_service_handle returned from csifw_registerService()");
+    CSIFW_LOGX;
     return CSIFW_INVALID_ARG;
   }
-
   if (!g_pcsifw_context) {
     CSIFW_LOGE("Invalid context pointer (NULL)");
+    CSIFW_LOGX;
     return CSIFW_ERROR_NOT_INITIALIZED;
   }
 
   csifw_service_info_t *p_svc_info = (csifw_service_info_t *)hnd;
   if (((uintptr_t)p_svc_info - (uintptr_t)g_pcsifw_context->csi_services) %sizeof(csifw_service_info_t) != 0) {
     CSIFW_LOGE("Invalid handle(pointer) alignment");
+    CSIFW_LOGX;
     return CSIFW_INVALID_ARG;
   }
-
   if (p_svc_info < &g_pcsifw_context->csi_services[0] ||
       p_svc_info > &g_pcsifw_context->csi_services[CSIFW_MAX_NUM_APPS - 1]) {
     CSIFW_LOGE("Handle out of bounds");
+    CSIFW_LOGX;
     return CSIFW_INVALID_ARG;
   }
-
   if (p_svc_info->svc_id == 0) {
     CSIFW_LOGE("Service not registered");
+    CSIFW_LOGX;
     return CSIFW_ERROR_SERVICE_NOT_REGISTERED;
   }
 
+  CSIFW_LOGX;
   return CSIFW_OK;
 }
 
-static void destroy_csifw_context(void) 
+static void destroy_csifw_context(void)
 {
+  CSIFW_LOGV;
   if (!g_pcsifw_context) {
+    CSIFW_LOGX;
     return;
   }
 
@@ -688,27 +729,33 @@ static void destroy_csifw_context(void)
   g_pcsifw_context = NULL;
 }
 
-static int all_services_stopped(void) 
+static int all_services_stopped(void)
 {
+  CSIFW_LOGV;
   if (!g_pcsifw_context) {
+    CSIFW_LOGX;
     return 0;
   }
 
+  // If there are no services, consider them all stopped
   if (g_pcsifw_context->service_count == 0) {
     CSIFW_LOGD("No services registered\n");
+    CSIFW_LOGX;
     return 1;
   }
-
+  // Check all services
   for (int i = 0; i < CSIFW_MAX_NUM_APPS; i++) {
     if ((g_pcsifw_context->csi_services[i].svc_id != 0) &&
         (g_pcsifw_context->csi_services[i].svc_state == CSI_SERVICE_START)) {
       CSIFW_LOGE("Service %d is still running (state: %d)\n", i,
                  g_pcsifw_context->csi_services[i].svc_state);
+      CSIFW_LOGX;
       return 0;
     }
   }
 
   CSIFW_LOGE("All services are stopped\n");
+  CSIFW_LOGX;
   return 1;
 }
 

@@ -46,8 +46,10 @@
 
 #ifdef CONFIG_DEBUG_WIFICSI_INFO
 #define CSIFW_LOGI(...) PRINT_CSI_LOG("\033[32mI", LOG_TAG, __VA_ARGS__)
-#define CSIFW_LOGV(...) PRINT_CSI_LOG("\033[32mI", LOG_TAG, __VA_ARGS__)
+#define CSIFW_LOGV PRINT_CSI_LOG("\033[32mI", LOG_TAG, "Enter")
+#define CSIFW_LOGX PRINT_CSI_LOG("\033[32mI", LOG_TAG, "Exit")
 #else
 #define CSIFW_LOGI(...)
-#define CSIFW_LOGV(...)
+#define CSIFW_LOGV
+#define CSIFW_LOGX
 #endif

@@ -19,25 +19,25 @@
 #pragma once
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdint.h>
-#include "mqueue.h"
 #include <pthread.h>
-#include "csifw_log.h"
 #include <semaphore.h>
+#include "mqueue.h"
+#include "csifw_log.h"
 #include "csimanager/csifw_api.h"
+
+#ifndef CONFIG_CSI_DATA_TIMEOUT_SEC /* In case not defined in defconfig, force it to default value*/
+#define CONFIG_CSI_DATA_TIMEOUT_SEC 15
+#endif
 
 #define ERROR -1  // for ERROR
 #define CSIFW_MAX_NUM_APPS 3 // Max number of Services
+#define CSIFW_RTK_CSI_HEADER_LEN 43 // CSI packet header size for RTK
+#define CSIFW_BEKEN_CSI_HEADER_LEN 28 // CSI packet header size for BEKEN
 #define CSIFW_MIN_INTERVAL_MS 30  // Minimum supported CSI interval in milliseconds
 #define CSIFW_MAX_RAW_BUFF_LEN 1024 // CSI data buffer max size
-#define CSIFW_RTK_CSI_HEADER_LEN 43 // CSI packet header size for Realtek
-#define CSIFW_BEKEN_CSI_HEADER_LEN 28 // CSI packet header size for Beken
-
-#ifndef CONFIG_CSI_DATA_TIMEOUT_SEC /* In case not defined in defconfig, force it to default value*/ 
-#define CONFIG_CSI_DATA_TIMEOUT_SEC 15 
-#endif
 
 typedef unsigned long long u64;  // for u64
 typedef void (*CSIDataListener)(CSIFW_RES res, int csi_data_len, unsigned char *csi_buff);
@@ -88,7 +88,6 @@ typedef struct {
   uint8_t service_count;                /* Registered Service count */
   bool disable_required;                /* CSI Config Disable Required */
   int data_receiver_fd;                 /* Value from OPEN Driver */
-  int task_handle;                      /* Task Manager handle */
   int ping_socket;                      /* Ping Socket */
 
   pthread_mutex_t data_receiver_mutex; /* CSI Data Receiver Mutex */
@@ -102,8 +101,6 @@ typedef struct {
 
 } csifw_context_t;
 
-int csifw_register_task(csifw_context_t *p_ctx);
-void csifw_unregister_task(csifw_context_t *p_ctx);
 int start_csi_framework(csifw_context_t *p_con_ctx);
 int stop_csi_framework(csifw_context_t *p_con_ctx);
 csifw_context_t *get_csifw_context(void);
@@ -112,13 +109,17 @@ csifw_context_t *get_csifw_context(void);
   do {                                            \
     if (pthread_mutex_lock(mutex) != 0) {         \
       CSIFW_LOGE("Mutex lock failed! %d", errno); \
-    }                                             \
+    } else if ((mutex) == &g_api_mutex) {                                      \
+      CSIFW_LOGD("Mutex lock acquired: %p", (void *)(mutex)); \
+    }                                              \
   } while (0)
 
 #define CSIFW_MUTEX_UNLOCK(mutex)                   \
   do {                                              \
     if (pthread_mutex_unlock(mutex) != 0) {	    \
       CSIFW_LOGE("Mutex unlock failed! %d", errno); \
-    }                                               \
-  } while(0)
-  
+    } else if ((mutex) == &g_api_mutex) {                                      \
+      CSIFW_LOGD("Mutex unlock acquired: %p", (void *)(mutex)); \
+    }                                              \
+  } while (0)
+
