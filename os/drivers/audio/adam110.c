@@ -69,8 +69,6 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/kthread.h>
 #include <tinyara/wqueue.h>
-#include <tinyara/wdog.h>
-#include <tinyara/clock.h>
 #include <tinyara/audio/adam110.h>
 
 #include "adam110.h"
@@ -185,7 +183,6 @@ static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *
 static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
                                     uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4,
                                     t_proto_pkt *rx_out, bool txrx_delay);
-static void adam110_spi_timeout(int argc, uint32_t arg, ...);
 
 
 #define adam110_givesem(s)    sem_post(s)
@@ -694,7 +691,6 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 	/* 0x40/0x41: the FW sends the payload on the next clocks after the command (0x40: after its 7-byte response).
 	 * Command and payload read in one SPI bus lock, so no other command (SET_AEC etc.) comes in between */
 	adam110_spi_lock(dev);
-	(void)wd_start(g_adam110_spi_wdog, MSEC2TICK(ADAM110_SPI_LOCK_TIMEOUT_MSEC), adam110_spi_timeout, 1, (uint32_t)dev);
 
 	switch(data) {
 	case AI_DATA_TYPE_SEAMLESS_R:
@@ -741,13 +737,7 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 		SPI_RECVBLOCK(dev->spi, (void *)buffer, (*size_ptr) + 1);
 	}
 out:
-	/* If wd_cancel fails, the watchdog already fired and the recovery worker
-	 * (adam110_spi_recovery_worker) owns the unlock - do not unlock twice. */
-	if (wd_cancel(g_adam110_spi_wdog) == OK) {
-		adam110_spi_unlock(dev);
-	} else {
-		auddbg("[E] SPI lock watchdog already fired; recovery worker owns the unlock\n");
-	}
+	adam110_spi_unlock(dev);
 	return ret;
 }
 
@@ -977,32 +967,6 @@ static int adam110_app_device_alive_check(int argc, FAR char *argv[])
 	return OK;
 }
 #endif
-
-/* adam110_get_audiobuffer()'s SPI lock watchdog fired: it never reached its
- * own unlock within ADAM110_SPI_LOCK_TIMEOUT_MSEC. Force the SPI bus free so
- * the rest of the driver isn't deadlocked forever, then try to recover the
- * device. This runs on HPWORK, not the watchdog/timer context, since it does
- * blocking SPI work. */
-static void adam110_spi_recovery_worker(FAR void *arg)
-{
-	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)arg;
-
-	auddbg("[E] adam110_get_audiobuffer SPI lock timeout, forcing unlock\n");
-	adam110_spi_unlock(priv);
-#ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
-	(void)adam110_check_aliveness(priv);
-#endif
-}
-
-static void adam110_spi_timeout(int argc, uint32_t arg, ...)
-{
-	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)arg;
-
-	/* Can't safely do SPI/blocking work from watchdog (timer) context; defer it. */
-	if (work_available(&g_adam110_spi_recovery_work)) {
-		(void)work_queue(HPWORK, &g_adam110_spi_recovery_work, adam110_spi_recovery_worker, (FAR void *)priv, 0);
-	}
-}
 
 static int adam110_process_event(FAR struct adam110_dev_s *priv)
 {
@@ -2152,12 +2116,6 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	sq_init(&priv->pendq);
 	sem_init(&priv->devsem, 0, 1);
 
-	g_adam110_spi_wdog = wd_create();
-	if (g_adam110_spi_wdog == NULL) {
-		auddbg("[E] Failed to create SPI lock watchdog\n");
-		goto err_with_priv;
-	}
-
 	priv->lower = lower;
 	priv->recording = false;
 	priv->mute = false;
@@ -2186,7 +2144,10 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
    g_adam110 = priv;
 
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
-	pid_t pid = kernel_thread("alive_check", 100, 4096, adam110_app_device_alive_check, NULL);
+	/* 4096 overflows: adam110_send_model()'s chunk_buf alone is
+	 * ADAM110_MODEL_CHUNK_SIZE+1 (3841) bytes, reached from here via
+	 * adam110_check_aliveness() -> adam110_reload_model()/adam110_load_firmware(). */
+	pid_t pid = kernel_thread("alive_check", 100, 8192, adam110_app_device_alive_check, NULL);
 	if (pid < 0) {
 		auddbg("Device alive check thread creatiopn failed\n");
 		goto errout;
