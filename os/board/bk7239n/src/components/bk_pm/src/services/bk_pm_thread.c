@@ -23,6 +23,7 @@
 #define PM_THREAD_PRIORITY                (BEKEN_DEFAULT_WORKER_PRIORITY - 3)/* With priority 3 thread, 200ms buffer (20*10ms) is sufficient */
 
 #define PM_UART_RXD_WAKEUP_TIME_MS        (2000)
+#define PM_POP_ERROR_BACKOFF_MS           (10)
 
 /*=====================DEFINE  SECTION  END=====================*/
 /*=====================STRUCT AND ENUM  SECTION  START==========*/
@@ -214,7 +215,7 @@ static bk_err_t pm_message_handle(void)
                             if(ret != BK_OK)
                             {
                                 LOGE("register rxd_wk_alarm failed\r\n");
-                                return BK_FAIL;
+                                break;
                             }
                         } else if (msg.param1 == PM_MODE_NORMAL_SLEEP) {
                             LOGI("NS GPIO wakeup[reason:%d][id:%d]\r\n", bk_pm_sleep_wakeup_reason_get(), msg.param3);
@@ -235,6 +236,11 @@ static bk_err_t pm_message_handle(void)
                     break;
             }
         }
+        else
+        {
+            /* Never busy-spin if the queue becomes invalid or is destroyed */
+            rtos_delay_milliseconds(PM_POP_ERROR_BACKOFF_MS);
+        }
     }
 
 	return  ret;
@@ -243,6 +249,13 @@ static bk_err_t pm_message_handle(void)
 bk_err_t pm_thread_main(void)
 {
     bk_err_t ret = BK_OK;
+
+    if (s_queue != NULL)
+    {
+        LOGE("pm thread already initialized\n");
+        return BK_OK;
+    }
+
 	ret = rtos_init_queue(&s_queue,
                           "pm_queue",
                           sizeof(pm_ap_core_msg_t),
@@ -251,6 +264,8 @@ bk_err_t pm_thread_main(void)
     if (ret != BK_OK)
     {
         LOGE("create pm que fail\n");
+        s_queue = NULL;
+        return ret;
     }
 
 	/* Optimization: Use higher priority (lower number = higher priority)
@@ -266,6 +281,9 @@ bk_err_t pm_thread_main(void)
     if (ret != BK_OK)
     {
         LOGE("create pm thrd fail\n");
+        rtos_deinit_queue(&s_queue);
+        s_queue = NULL;
+        return ret;
     }
-	return 0;
+	return BK_OK;
 }
