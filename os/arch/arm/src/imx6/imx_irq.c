@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_irq.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -45,7 +47,7 @@
 
 #include <tinyara/arch.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "sctlr.h"
 #include "gic.h"
 
@@ -60,7 +62,6 @@
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
 
 #if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
 /* In the SMP configuration, we will need custom IRQ and FIQ stacks.
@@ -68,6 +69,7 @@ volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
  */
 
 uint64_t g_irqstack_alloc[INTSTACK_ALLOC >> 3];
+uint64_t g_fiqstack_alloc[INTSTACK_ALLOC >> 3];
 
 /* These are arrays that point to the top of each interrupt stack */
 
@@ -85,10 +87,6 @@ uintptr_t g_irqstack_top[CONFIG_SMP_NCPUS] =
 #endif
 };
 
-#if defined(CONFIG_ARMV7A_DECODEFIQ)
-
-uint64_t g_fiqstack_alloc[INTSTACK_ALLOC >> 3];
-
 uintptr_t g_fiqstack_top[CONFIG_SMP_NCPUS] =
 {
   (uintptr_t)g_fiqstack_alloc + INTSTACK_SIZE,
@@ -102,8 +100,6 @@ uintptr_t g_fiqstack_top[CONFIG_SMP_NCPUS] =
   (uintptr_t)g_fiqstack_alloc + 4 * INTSTACK_SIZE
 #endif
 };
-
-#endif
 
 #endif
 
@@ -128,70 +124,58 @@ extern uint8_t _vector_end[];   /* End+1 of vector block */
 
 void up_irqinitialize(void)
 {
-  /* The following operations need to be atomic, but since this function is
-   * called early in the initialization sequence, we expect to have exclusive
-   * access to the GIC.
-   */
+	/* The following operations need to be atomic, but since this function is
+	 * called early in the initialization sequence, we expect to have exclusive
+	 * access to the GIC.
+	 */
 
-  /* Initialize the Generic Interrupt Controller (GIC) for CPU0 */
+	/* Initialize the Generic Interrupt Controller (GIC) for CPU0 */
 
-  arm_gic0_initialize();  /* Initialization unique to CPU0 */
-  arm_gic_initialize();   /* Initialization common to all CPUs */
+	if (sched_getcpu() == 0) {
+		arm_gic0_initialize();  /* Initialization unique to CPU0 */
+	}
+
+	arm_gic_initialize();   /* Initialization common to all CPUs */
 
 #ifdef CONFIG_ARCH_LOWVECTORS
-  /* If CONFIG_ARCH_LOWVECTORS is defined, then the vectors located at the
-   * beginning of the .text region must appear at address at the address
-   * specified in the VBAR.  There are two ways to accomplish this:
-   *
-   *   1. By explicitly mapping the beginning of .text region with a page
-   *      table entry so that the virtual address zero maps to the beginning
-   *      of the .text region.  VBAR == 0x0000:0000.
-   *
-   *   2. Set the Cortex-A5 VBAR register so that the vector table address
-   *      is moved to a location other than 0x0000:0000.
-   *
-   *  The second method is used by this logic.
-   */
+	/* If CONFIG_ARCH_LOWVECTORS is defined, then the vectors located at the
+	 * beginning of the .text region must appear at address at the address
+	 * specified in the VBAR.  There are two ways to accomplish this:
+	 *
+	 *   1. By explicitly mapping the beginning of .text region with a page
+	 *      table entry so that the virtual address zero maps to the beginning
+	 *      of the .text region.  VBAR == 0x0000:0000.
+	 *
+	 *   2. Set the Cortex-A5 VBAR register so that the vector table address
+	 *      is moved to a location other than 0x0000:0000.
+	 *
+	 *  The second method is used by this logic.
+	 */
 
-  /* Set the VBAR register to the address of the vector table */
+	/* Set the VBAR register to the address of the vector table */
 
-  DEBUGASSERT((((uintptr_t)_vector_start) & ~VBAR_MASK) == 0);
-  cp15_wrvbar((uint32_t)_vector_start);
+	DEBUGASSERT((((uintptr_t)_vector_start) & ~VBAR_MASK) == 0);
+	cp15_wrvbar((uint32_t)_vector_start);
 #endif /* CONFIG_ARCH_LOWVECTORS */
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 #ifdef CONFIG_IMX6_PIO_IRQ
-  /* Initialize logic to support a second level of interrupt decoding for
-   * PIO pins.
-   */
+	/* Initialize logic to support a second level of interrupt decoding for
+	 * PIO pins.
+	 */
 
-  imx_gpioirq_initialize();
+	imx_gpioirq_initialize();
 #endif
 
-  /* And finally, enable interrupts */
+	/* And finally, enable interrupts */
 
-  up_irq_enable();
+	arm_color_intstack();
+	up_irq_enable();
 #endif
 }
 
 /****************************************************************************
- * Name: arm_intstack_top
- *
- * Description:
- *   Return a pointer to the top the correct interrupt stack allocation
- *   for the current CPU.
- *
- ****************************************************************************/
-
-#if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
-uintptr_t arm_intstack_top(void)
-{
-  return g_irqstack_top[up_cpu_index()];
-}
-#endif
-
-/****************************************************************************
- * Name: arm_intstack_alloc
+ * Name: up_get_intstackbase
  *
  * Description:
  *   Return a pointer to the "alloc" the correct interrupt stack allocation
@@ -200,8 +184,8 @@ uintptr_t arm_intstack_top(void)
  ****************************************************************************/
 
 #if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
-uintptr_t arm_intstack_alloc(void)
+uintptr_t up_get_intstackbase(int cpu)
 {
-  return g_irqstack_top[up_cpu_index()] - INTSTACK_SIZE;
+	return g_irqstack_top[cpu] - INTSTACK_SIZE;
 }
 #endif

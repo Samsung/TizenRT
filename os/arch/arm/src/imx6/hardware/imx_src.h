@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/hardware/imx_src.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -128,7 +130,7 @@
 #define SRC_SCR_CORE2_ENABLE       (1 << 23)      /* Bit 23: core2 enable */
 #define SRC_SCR_CORE3_ENABLE       (1 << 24)      /* Bit 24: core3 enable */
 #define SRC_SCR_DBG_RST_MSK_PG     (1 << 25)      /* Bit 25: No debug resets after core power gating event */
-                                                  /* Bits 26-31: Reserved */
+/* Bits 26-31: Reserved */
 
 /* SRC Boot Mode Register 1 */
 
@@ -148,15 +150,15 @@
 /* SRC Reset Status Register */
 
 #define SRC_SRSR_IPP_RESET         (1 << 0)  /* Bit 0:  Reset result of ipp_reset_b pin (Power-up sequence) */
-                                             /* Bit 1:  Reserved */
+/* Bit 1:  Reserved */
 #define SRC_SRSR_CSU_RESET         (1 << 2)  /* Bit 2:  Reset result of the csu_reset_b input */
 #define SRC_SRSR_IPP_USER_RESET    (1 << 3)  /* Bit 3:  Reset result of ipp_user_reset_b qualified reset */
 #define SRC_SRSR_WDOG_RST          (1 << 4)  /* Bit 4:  IC Watchdog Time-out reset */
 #define SRC_SRSR_JTAG_RST          (1 << 5)  /* Bit 5:  HIGH - Z JTAG reset */
 #define SRC_SRSR_JTAG_SW_RST       (1 << 6)  /* Bit 6:  JTAG software reset */
-                                             /* Bits 7-15: Reserved */
+/* Bits 7-15: Reserved */
 #define SRC_SRSR_WARM_BOOT         (1 << 16) /* Bit 16: WARM boot indication shows that WARM boot was initiated by software */
-                                             /* Bits 17-31: Reserved */
+/* Bits 17-31: Reserved */
 
 /* SRC Interrupt Status Register */
 
@@ -169,7 +171,7 @@
 #define SRC_SISR_CORE1_WDOG_RST_REQ    (1 << 6)  /* Bit 6:  WDOG reset request from core1 */
 #define SRC_SISR_CORE2_WDOG_RST_REQ    (1 << 7)  /* Bit 7:  WDOG reset request from core2 */
 #define SRC_SISR_CORE3_WDOG_RST_REQ    (1 << 8)  /* Bit 8:  WDOG reset request from core3 */
-                                                 /* Bits 9-31: Reserved */
+/* Bits 9-31: Reserved */
 
 /* SRC Interrupt Mask Register */
 #define SRC_SIMR_
@@ -179,18 +181,18 @@
 #define SRC_SIMR_IPU1_PASSED_RESET     (1 << 2)  /* Bit 2:  Mask ipu passed software reset interrupt */
 #define SRC_SIMR_OPEN_VG_PASSED_RESET  (1 << 3)  /* Bit 3:  Mask open_vg passed software reset interrupt */
 #define SRC_SIMR_IPU2_PASSED_RESET     (1 << 4)  /* Bit 4:  Mask ipu2 passed software reset interrupt */
-                                                 /* Bits 5-31: Reserved */
+/* Bits 5-31: Reserved */
 
 /* SRC Boot Mode Register 2 */
 
 #define SRC_SBMR2_SEC_CONFIG_SHIFT (0)       /* Bits 0-1: State of the SECONFIG fuses */
-                                             /* Bit 2: Reserved */
+/* Bit 2: Reserved */
 #define SRC_SBMR2_DIR_BT_DIS       (1 << 3)  /* Bit 3:  State of the DIR_BT_DIS fuse */
 #define SRC_SBMR2_BT_FUSE_SEL      (1 << 4)  /* Bit 4: State of the BT_FUSE_SEL fuse */
-                                             /* Bits 5-23: Reserved */
+/* Bits 5-23: Reserved */
 #define SRC_SBMR2_BMOD_SHIFT       (24)      /* Bits 24-25: Latched state of the BOOT_MODE1 and BOOT_MODE0 */
 #define SRC_SBMR2_BMOD_MASK        (3 << SRC_SBMR2_BMOD_SHIFT)
-                                             /* Bits 26-31: Reserved */
+/* Bits 26-31: Reserved */
 
 /* SRC General Purpose Register 1:  32-bit PERSISTENT_ENTRY0:
  * core0 entry function for waking-up from low power mode

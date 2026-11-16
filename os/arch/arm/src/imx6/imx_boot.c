@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_boot.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -45,7 +47,8 @@
 #include <assert.h>
 #include <debug.h>
 
-#ifdef CONFIG_PAGING
+#include <tinyara/cache.h>
+#ifdef CONFIG_LEGACY_PAGING
 #  include <tinyara/page.h>
 #endif
 
@@ -55,18 +58,17 @@
 #include "arm.h"
 #include "mmu.h"
 #include "scu.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "imx_config.h"
 #include "imx_clockconfig.h"
 #include "imx_memorymap.h"
 #include "imx_lowputc.h"
 #include "imx_serial.h"
 #include "imx_boot.h"
-#include "sctlr.h"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
 
 #ifdef CONFIG_DEBUG_FEATURES
 #  define PROGRESS(c) imx_lowputc(c)
@@ -98,7 +100,7 @@ extern uint8_t _vector_end[];   /* End+1 of vector block */
 #ifndef CONFIG_ARCH_ROMPGTABLE
 static inline void imx_setupmappings(void)
 {
-  mmu_l1_map_regions(g_section_mapping, g_num_mappings);
+	mmu_l1_map_regions(g_section_mapping, g_num_mappings);
 }
 #else
 #  define imx_setupmappings()
@@ -115,7 +117,7 @@ static inline void imx_setupmappings(void)
 #ifdef NEED_SDRAM_REMAPPING
 static inline void imx_remap(void)
 {
-  mmu_l1_map_regions(g_operational_mapping, g_num_opmappings);
+	mmu_l1_map_regions(g_operational_mapping, g_num_opmappings);
 }
 #endif
 
@@ -128,30 +130,27 @@ static inline void imx_remap(void)
  ****************************************************************************/
 
 #if !defined(CONFIG_ARCH_ROMPGTABLE) && defined(CONFIG_ARCH_LOWVECTORS) && \
-     defined(CONFIG_PAGING)
+     defined(CONFIG_LEGACY_PAGING)
 static void imx_vectorpermissions(uint32_t mmuflags)
 {
-  /* The PTE for the beginning of OCRAM is at the base of the L2 page table */
+	/* The PTE for the beginning of OCRAM is at the base of the L2 page table */
 
-  uint32_t pte = mmu_l2_getentry(PG_L2_VECT_VADDR, 0);
+	uintptr_t pte = mmu_l2_getentry(PG_L2_VECT_VADDR, 0);
 
-  /* Mask out the old MMU flags from the page table entry.
-   *
-   * The pte might be zero the first time this function is called.
-   */
+	/* Mask out the old MMU flags from the page table entry.
+	 *
+	 * The pte might be zero the first time this function is called.
+	 */
 
-  if (pte == 0)
-    {
-      pte = PG_VECT_PBASE;
-    }
-  else
-    {
-      pte &= PG_L1_PADDRMASK;
-    }
+	if (pte == 0) {
+		pte = PG_VECT_PBASE;
+	} else {
+		pte &= PG_L1_PADDRMASK;
+	}
 
-  /* Update the page table entry with the MMU flags and save */
+	/* Update the page table entry with the MMU flags and save */
 
-  mmu_l2_setentry(PG_L2_VECT_VADDR, pte, 0, mmuflags);
+	mmu_l2_setentry(PG_L2_VECT_VADDR, pte, 0, mmuflags);
 }
 #endif
 
@@ -165,7 +164,7 @@ static void imx_vectorpermissions(uint32_t mmuflags)
 
 static inline size_t imx_vectorsize(void)
 {
-  return _vector_end - _vector_start;
+	return _vector_end - _vector_start;
 }
 
 /****************************************************************************
@@ -180,36 +179,35 @@ static inline size_t imx_vectorsize(void)
 #ifndef CONFIG_ARCH_LOWVECTORS
 static void imx_vectormapping(void)
 {
-  uint32_t vector_paddr = IMX_VECTOR_PADDR & PTE_SMALL_PADDR_MASK;
-  uint32_t vector_vaddr = IMX_VECTOR_VADDR & PTE_SMALL_PADDR_MASK;
-  uint32_t vector_size  = _vector_end - _vector_start;
-  uint32_t end_paddr    = IMX_VECTOR_PADDR + vector_size;
+	uint32_t vector_paddr = IMX_VECTOR_PADDR & PTE_SMALL_PADDR_MASK;
+	uint32_t vector_vaddr = IMX_VECTOR_VADDR & PTE_SMALL_PADDR_MASK;
+	uint32_t vector_size  = _vector_end - _vector_start;
+	uint32_t end_paddr    = IMX_VECTOR_PADDR + vector_size;
 
-  /* REVISIT:  Cannot really assert in this context */
+	/* REVISIT:  Cannot really assert in this context */
 
-  DEBUGASSERT (vector_size <= VECTOR_TABLE_SIZE);
+	DEBUGASSERT(vector_size <= VECTOR_TABLE_SIZE);
 
-  /* We want to keep our interrupt vectors and interrupt-related logic in
-   * on-chip RAM (OCRAM).  The i.MX6 has 256Kb of OCRAM positioned at
-   * physical address 0x0090:0000; we need to map this to 0xffff:0000.
-   */
+	/* We want to keep our interrupt vectors and interrupt-related logic in
+	 * on-chip RAM (OCRAM).  The i.MX6 has 256Kb of OCRAM positioned at
+	 * physical address 0x0090:0000; we need to map this to 0xffff:0000.
+	 */
 
-  while (vector_paddr < end_paddr)
-    {
-      mmu_l2_setentry(VECTOR_L2_VBASE,  vector_paddr, vector_vaddr,
-                      MMU_L2_VECTORFLAGS);
-      vector_paddr += 4096;
-      vector_vaddr += 4096;
-    }
+	while (vector_paddr < end_paddr) {
+		mmu_l2_setentry(VECTOR_L2_VBASE, vector_paddr, vector_vaddr,
+		                MMU_L2_VECTORFLAGS);
+		vector_paddr += 4096;
+		vector_vaddr += 4096;
+	}
 
-  /* Now set the level 1 descriptor to refer to the level 2 page table. */
+	/* Now set the level 1 descriptor to refer to the level 2 page table. */
 
-  mmu_l1_setentry(VECTOR_L2_PBASE & PMD_PTE_PADDR_MASK,
-                  IMX_VECTOR_VADDR & PMD_PTE_PADDR_MASK,
-                  MMU_L1_VECTORFLAGS);
+	mmu_l1_setentry(VECTOR_L2_PBASE & PMD_PTE_PADDR_MASK,
+	                IMX_VECTOR_VADDR & PMD_PTE_PADDR_MASK,
+	                MMU_L1_VECTORFLAGS);
 }
 #else
-  /* No vector remap */
+/* No vector remap */
 
 #  define imx_vectormapping()
 #endif
@@ -228,46 +226,45 @@ static void imx_vectormapping(void)
 #ifndef CONFIG_ARCH_LOWVECTORS
 static void imx_copyvectorblock(void)
 {
-  uint32_t *src;
-  uint32_t *end;
-  uint32_t *dest;
+	uint32_t *src;
+	uint32_t *end;
+	uint32_t *dest;
 
-#ifdef CONFIG_PAGING
-  /* If we are using re-mapped vectors in an area that has been marked
-   * read only, then temporarily mark the mapping write-able (non-buffered).
-   */
+#ifdef CONFIG_LEGACY_PAGING
+	/* If we are using re-mapped vectors in an area that has been marked
+	 * read only, then temporarily mark the mapping write-able (non-buffered).
+	 */
 
-  imx_vectorpermissions(MMU_L2_VECTRWFLAGS);
+	imx_vectorpermissions(MMU_L2_VECTRWFLAGS);
 #endif
 
-  /* Copy the vectors into OCRAM at the address that will be mapped to the
-   * vector address:
-   *
-   *   IMX_VECTOR_PADDR - Unmapped, physical address of vector table in OCRAM
-   *   IMX_VECTOR_VSRAM - Virtual address of vector table in OCRAM
-   *   IMX_VECTOR_VADDR - Virtual address of vector table (0x00000000 or
-   *                      0xffff0000)
-   */
+	/* Copy the vectors into OCRAM at the address that will be mapped to the
+	 * vector address:
+	 *
+	 *   IMX_VECTOR_PADDR - Unmapped, physical address of vector table in OCRAM
+	 *   IMX_VECTOR_VSRAM - Virtual address of vector table in OCRAM
+	 *   IMX_VECTOR_VADDR - Virtual address of vector table (0x00000000 or
+	 *                      0xffff0000)
+	 */
 
-  src  = (uint32_t *)_vector_start;
-  end  = (uint32_t *)_vector_end;
-  dest = (uint32_t *)IMX_VECTOR_VSRAM;
+	src  = (uint32_t *)_vector_start;
+	end  = (uint32_t *)_vector_end;
+	dest = (uint32_t *)IMX_VECTOR_VSRAM;
 
-  while (src < end)
-    {
-      *dest++ = *src++;
-    }
+	while (src < end) {
+		*dest++ = *src++;
+	}
 
-#if !defined(CONFIG_ARCH_LOWVECTORS) && defined(CONFIG_PAGING)
-  /* Make the vectors read-only, cacheable again */
+#if !defined(CONFIG_ARCH_LOWVECTORS) && defined(CONFIG_LEGACY_PAGING)
+	/* Make the vectors read-only, cacheable again */
 
-  imx_vectorpermissions(MMU_L2_VECTORFLAGS);
+	imx_vectorpermissions(MMU_L2_VECTORFLAGS);
 
 #else
-  /* Flush the DCache to assure that the vector data is in physical RAM */
+	/* Flush the DCache to assure that the vector data is in physical RAM */
 
-  up_clean_dcache((uintptr_t)IMX_VECTOR_VSRAM,
-                  (uintptr_t)IMX_VECTOR_VSRAM + imx_vectorsize());
+	up_clean_dcache((uintptr_t)IMX_VECTOR_VSRAM,
+	                (uintptr_t)IMX_VECTOR_VSRAM + imx_vectorsize());
 #endif
 }
 
@@ -299,7 +296,7 @@ static void imx_copyvectorblock(void)
 #ifndef CONFIG_IMX6_WDT
 static inline void imx_wdtdisable(void)
 {
-  /* REVISIT: WDT initialization */
+	/* REVISIT: WDT initialization */
 }
 #else
 #  define imx_wdtdisable()
@@ -376,149 +373,148 @@ static inline void imx_wdtdisable(void)
  *
  ****************************************************************************/
 
+osentry_function
 void arm_boot(void)
 {
 #if defined(CONFIG_ARCH_RAMFUNCS)
-  const uint32_t *src;
+	const uint32_t *src;
 #endif
 #if defined(CONFIG_ARCH_RAMFUNCS) || defined(CONFIG_SMP) && defined(SMP_INTERCPU_NONCACHED)
-  uint32_t *dest;
+	uint32_t *dest;
 #endif
 
-  /* __start provided the basic MMU mappings for OCRAM.  Now provide mappings
-   * for all IO regions (Including the vector region).
-   */
+	/* __start provided the basic MMU mappings for OCRAM.  Now provide mappings
+	 * for all IO regions (Including the vector region).
+	 */
 
-  imx_setupmappings();
-  PROGRESS('A');
+	imx_setupmappings();
+	PROGRESS('A');
 
-  /* Make sure that all other CPUs are in the disabled state.  This is a
-   * formality because the other CPUs are actually running then we have
-   * probably already crashed.
-   */
+	/* Make sure that all other CPUs are in the disabled state.  This is a
+	 * formality because the other CPUs are actually running then we have
+	 * probably already crashed.
+	 */
 
-  imx_cpu_disable();
-  PROGRESS('B');
+	imx_cpu_disable();
+	PROGRESS('B');
 
 #ifdef CONFIG_SMP
-  /* Enable SMP cache coherency for CPU0 */
+	/* Enable SMP cache coherency for CPU0 */
 
-  arm_enable_smp(0);
-  PROGRESS('C');
+	arm_enable_smp(0);
+	PROGRESS('C');
 #endif
 
-  /* Provide a special mapping for the OCRAM interrupt vector positioned in
-   * high memory.
-   */
+	/* Provide a special mapping for the OCRAM interrupt vector positioned in
+	 * high memory.
+	 */
 
-  imx_vectormapping();
-  PROGRESS('D');
+	imx_vectormapping();
+	PROGRESS('D');
 
 #ifdef CONFIG_ARCH_RAMFUNCS
-  /* Copy any necessary code sections from FLASH to RAM.  The correct
-   * destination in OCRAM is given by _sramfuncs and _eramfuncs.  The
-   * temporary location is in flash after the data initialization code
-   * at _framfuncs
-   */
+	/* Copy any necessary code sections from FLASH to RAM.  The correct
+	 * destination in OCRAM is given by _sramfuncs and _eramfuncs.  The
+	 * temporary location is in flash after the data initialization code
+	 * at _framfuncs
+	 */
 
-  for (src = (const uint32_t *)_framfuncs,
-       dest = (uint32_t *)_sramfuncs; dest < (uint32_t *)_eramfuncs;
-      )
-    {
-      *dest++ = *src++;
-    }
+	for (src = (const uint32_t *)_framfuncs,
+	     dest = (uint32_t *)_sramfuncs; dest < (uint32_t *)_eramfuncs;
+	    ) {
+		*dest++ = *src++;
+	}
 
-  PROGRESS('E');
+	PROGRESS('E');
 
-  /* Flush the copied RAM functions into physical RAM so that will
-   * be available when fetched into the I-Cache.
-   */
+	/* Flush the copied RAM functions into physical RAM so that will
+	 * be available when fetched into the I-Cache.
+	 */
 
-  up_clean_dcache((uintptr_t)_sramfuncs, (uintptr_t)_eramfuncs)
-  PROGRESS('F');
+	up_clean_dcache((uintptr_t)_sramfuncs, (uintptr_t)_eramfuncs)
+	PROGRESS('F');
 #endif
 
-  /* Setup up vector block.  _vector_start and _vector_end are exported from
-   * arm_vector.S
-   */
+	/* Setup up vector block.  _vector_start and _vector_end are exported from
+	 * arm_vector.S
+	 */
 
-  imx_copyvectorblock();
-  PROGRESS('G');
+	imx_copyvectorblock();
+	PROGRESS('G');
 
-  /* Disable the watchdog timer */
+	/* Disable the watchdog timer */
 
-  imx_wdtdisable();
-  PROGRESS('H');
+	imx_wdtdisable();
+	PROGRESS('H');
 
-  /* Initialize clocking to settings provided by board-specific logic */
+	/* Initialize clocking to settings provided by board-specific logic */
 
-  imx_clockconfig();
-  PROGRESS('I');
+	imx_clockconfig();
+	PROGRESS('I');
 
-  /* Initialize the FPU */
+	/* Initialize the FPU */
 
-  arm_fpuconfig();
-  PROGRESS('J');
+	arm_fpuconfig();
+	PROGRESS('J');
 
-  /* Perform board-specific memory initialization,  This must include
-   * initialization of board-specific memory resources (e.g., SDRAM)
-   *
-   * NOTE: We must use caution prior to this point to make sure that
-   * the logic does not access any global variables that might lie
-   * in SDRAM.
-   */
+	/* Perform board-specific memory initialization,  This must include
+	 * initialization of board-specific memory resources (e.g., SDRAM)
+	 *
+	 * NOTE: We must use caution prior to this point to make sure that
+	 * the logic does not access any global variables that might lie
+	 * in SDRAM.
+	 */
 
-  imx_memory_initialize();
-  PROGRESS('K');
+	imx_memory_initialize();
+	PROGRESS('K');
 
 #ifdef NEED_SDRAM_REMAPPING
-  /* SDRAM was configured in a temporary state to support low-level
-   * initialization.  Now that the SDRAM has been fully initialized,
-   * we can reconfigure the SDRAM in its final, fully cache-able state.
-   */
+	/* SDRAM was configured in a temporary state to support low-level
+	 * initialization.  Now that the SDRAM has been fully initialized,
+	 * we can reconfigure the SDRAM in its final, fully cache-able state.
+	 */
 
-  imx_remap();
-  PROGRESS('L');
+	imx_remap();
+	PROGRESS('L');
 #endif
 
 #ifdef CONFIG_BOOT_SDRAM_DATA
-  /* If .data and .bss reside in SDRAM, then initialize the data sections
-   * now after SDRAM has been initialized.
-   */
+	/* If .data and .bss reside in SDRAM, then initialize the data sections
+	 * now after SDRAM has been initialized.
+	 */
 
-  arm_data_initialize();
-  PROGRESS('M');
+	arm_data_initialize();
+	PROGRESS('M');
 #endif
 
-  /* Perform board-specific device initialization. This would include
-   * configuration of board specific resources such as GPIOs, LEDs, etc.
-   */
+	/* Perform board-specific device initialization. This would include
+	 * configuration of board specific resources such as GPIOs, LEDs, etc.
+	 */
 
-  board_initialize();
-  PROGRESS('N');
+	imx_board_initialize();
+	PROGRESS('N');
 
-  /* Perform common, low-level chip initialization (might do nothing) */
+	/* Perform common, low-level chip initialization (might do nothing) */
 
-  imx_lowsetup();
-  PROGRESS('O');
+	imx_lowsetup();
+	PROGRESS('O');
 
 #ifdef USE_EARLYSERIALINIT
-  /* Perform early serial initialization if we are going to use the serial
-   * driver.
-   */
+	/* Perform early serial initialization if we are going to use the serial
+	 * driver.
+	 */
 
-  imx_earlyserialinit();
-  PROGRESS('P');
+	imx_earlyserialinit();
+	PROGRESS('P');
 #endif
 
-  /* Now we can enable all other CPUs.  The enabled CPUs will start execution
-   * at __cpuN_start and, after very low-level CPU initialization has been
-   * performed, will branch to arm_cpu_boot()
-   * (see arch/arm/src/armv7-a/smp.h)
-   */
+	/* Now we can enable all other CPUs.  The enabled CPUs will start execution
+	 * at __cpuN_start and, after very low-level CPU initialization has been
+	 * performed, will branch to arm_cpu_boot()
+	 * (see arch/arm/src/armv7-a/smp.h)
+	 */
 
-  cp15_wrvbar((uint32_t)_vector_start);
-  imx_cpu_enable();
-  PROGRESS('Q');
-  PROGRESS('\n');
+	imx_cpu_enable();
+	PROGRESS('Q');
+	PROGRESS('\n');
 }

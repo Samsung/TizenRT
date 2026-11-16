@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_cpuboot.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -45,24 +47,19 @@
 #include <assert.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
+#include <arch/barriers.h>
 #include <arch/irq.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "hardware/imx_src.h"
 #include "sctlr.h"
 #include "smp.h"
 #include "scu.h"
 #include "gic.h"
 #include "mmu.h"
-#include "barriers.h"
 
 #ifdef CONFIG_SMP
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-typedef void (*cpu_start_t)(void);
 
 /****************************************************************************
  * Private Data
@@ -112,7 +109,7 @@ static const uintptr_t g_cpu_gpr[CONFIG_SMP_NCPUS] =
 #endif
 };
 
-static const cpu_start_t g_cpu_boot[CONFIG_SMP_NCPUS] =
+static const start_t g_cpu_boot[CONFIG_SMP_NCPUS] =
 {
   0,
 #if CONFIG_SMP_NCPUS > 1
@@ -149,11 +146,11 @@ extern uint8_t _vector_start[]; /* Beginning of vector block */
 #if 0 /* Not used */
 static void imx_cpu_reset(int cpu)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  regval  = getreg32(IMX_SRC_SCR);
-  regval |= g_cpu_reset[cpu];
-  putreg32(regval, IMX_SRC_SCR);
+	regval  = getreg32(IMX_SRC_SCR);
+	regval |= g_cpu_reset[cpu];
+	putreg32(regval, IMX_SRC_SCR);
 }
 #endif
 
@@ -179,23 +176,23 @@ static void imx_cpu_reset(int cpu)
 
 void imx_cpu_disable(void)
 {
-  uint32_t regval;
-  uint32_t cpumask;
+	uint32_t regval;
+	uint32_t cpumask;
 
-  cpumask  = 0;
+	cpumask  = 0;
 #if CONFIG_SMP_NCPUS > 1
-  cpumask |= SRC_SCR_CORE1_ENABLE;
+	cpumask |= SRC_SCR_CORE1_ENABLE;
 #endif
 #if CONFIG_SMP_NCPUS > 2
-  cpumask |= SRC_SCR_CORE2_ENABLE;
+	cpumask |= SRC_SCR_CORE2_ENABLE;
 #endif
 #if CONFIG_SMP_NCPUS > 3
-  cpumask |= SRC_SCR_CORE3_ENABLE;
+	cpumask |= SRC_SCR_CORE3_ENABLE;
 #endif
 
-  regval  = getreg32(IMX_SRC_SCR);
-  regval &= ~cpumask;
-  putreg32(regval, IMX_SRC_SCR);
+	regval  = getreg32(IMX_SRC_SCR);
+	regval &= ~cpumask;
+	putreg32(regval, IMX_SRC_SCR);
 }
 
 /****************************************************************************
@@ -217,33 +214,32 @@ void imx_cpu_disable(void)
 
 void imx_cpu_enable(void)
 {
-  cpu_start_t bootaddr;
-  uintptr_t regaddr;
-  uint32_t regval;
-  int cpu;
+	start_t bootaddr;
+	uintptr_t regaddr;
+	uint32_t regval;
+	int cpu;
 
-  for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++)
-    {
+	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 #ifdef CONFIG_ARCH_ADDRENV
-      /* Copy cpu0 page table to each cpu. */
+		/* Copy cpu0 page table to each cpu. */
 
-      memcpy((uint32_t *)(PGTABLE_BASE_VADDR + PGTABLE_SIZE * cpu),
-             (uint32_t *)PGTABLE_BASE_VADDR, PGTABLE_SIZE);
-      ARM_DSB();
+		memcpy((uint32_t *)(PGTABLE_BASE_VADDR + PGTABLE_SIZE * cpu),
+		       (uint32_t *)PGTABLE_BASE_VADDR, PGTABLE_SIZE);
+		UP_DSB();
 #endif
 
-      /* Set the start up address */
+		/* Set the start up address */
 
-      regaddr  = g_cpu_gpr[cpu];
-      bootaddr = g_cpu_boot[cpu];
-      putreg32((uint32_t)bootaddr, regaddr);
+		regaddr  = g_cpu_gpr[cpu];
+		bootaddr = g_cpu_boot[cpu];
+		putreg32((uint32_t)bootaddr, regaddr);
 
-      /* Then enable the CPU */
+		/* Then enable the CPU */
 
-      regval   = getreg32(IMX_SRC_SCR);
-      regval  |= g_cpu_ctrl[cpu];
-      putreg32(regval, IMX_SRC_SCR);
-    }
+		regval   = getreg32(IMX_SRC_SCR);
+		regval  |= g_cpu_ctrl[cpu];
+		putreg32(regval, IMX_SRC_SCR);
+	}
 }
 
 /****************************************************************************
@@ -260,7 +256,7 @@ void imx_cpu_enable(void)
  *
  * Input Parameters:
  *   cpu - The CPU index.  This is the same value that would be obtained by
- *      calling up_cpu_index();
+ *      calling this_cpu();
  *
  * Returned Value:
  *   Does not return.
@@ -269,53 +265,25 @@ void imx_cpu_enable(void)
 
 void arm_cpu_boot(int cpu)
 {
-  /* Enable SMP cache coherency for the CPU */
+	/* Enable SMP cache coherency for the CPU */
 
-  arm_enable_smp(cpu);
+	arm_enable_smp(cpu);
 
-  /* Initialize the FPU */
+	/* Initialize the FPU */
 
-  arm_fpuconfig();
+	arm_fpuconfig();
 
-  /* Initialize the Generic Interrupt Controller (GIC) for CPUn (n != 0) */
+	/* Initialize the Generic Interrupt Controller (GIC) for CPUn (n != 0) */
 
-  arm_gic_initialize();
+	up_irqinitialize();
 
-#ifdef CONFIG_ARCH_LOWVECTORS
-  /* If CONFIG_ARCH_LOWVECTORS is defined, then the vectors located at the
-   * beginning of the .text region must appear at address at the address
-   * specified in the VBAR.  There are two ways to accomplish this:
-   *
-   *   1. By explicitly mapping the beginning of .text region with a page
-   *      table entry so that the virtual address zero maps to the beginning
-   *      of the .text region.  VBAR == 0x0000:0000.
-   *
-   *   2. Set the Cortex-A5 VBAR register so that the vector table address
-   *      is moved to a location other than 0x0000:0000.
-   *
-   *  The second method is used by this logic.
-   */
+	/* The next thing that we expect to happen is for logic running on CPU0
+	 * to call up_cpu_start() which generate an SGI and a context switch to
+	 * the configured NuttX IDLE task.
+	 */
 
-  /* Set the VBAR register to the address of the vector table */
-
-  DEBUGASSERT((((uintptr_t)_vector_start) & ~VBAR_MASK) == 0);
-  cp15_wrvbar((uint32_t)_vector_start);
-#endif /* CONFIG_ARCH_LOWVECTORS */
-
-#ifndef CONFIG_SUPPRESS_INTERRUPTS
-  /* And finally, enable interrupts */
-
-  up_irq_enable();
-#endif
-
-  /* The next thing that we expect to happen is for logic running on CPU0
-   * to call up_cpu_start() which generate an SGI and a context switch to
-   * the configured NuttX IDLE task.
-   */
-
-  for (; ; )
-    {
-      asm("WFI");
-    }
+	for (;;) {
+		asm("WFI");
+	}
 }
 #endif /* CONFIG_SMP */

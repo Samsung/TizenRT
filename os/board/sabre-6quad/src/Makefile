@@ -1,102 +1,109 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 ############################################################################
-# boards/arm/imx6/sabre-6quad/src/Makefile
+# board/sabre-6quad/src/Makefile
 #
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.  The
-# ASF licenses this file to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance with the
-# License.  You may obtain a copy of the License at
+#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
-# License for the specific language governing permissions and limitations
-# under the License.
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
-
+-include $(TOPDIR)/Make.defs
+ASRCS =
 DEPPATH = --dep-path .
+VPATH = .
 
-include Make.defs
+CSRCS = imx_boardinit.c imx_bringup.c
 
-ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
-BOARD_SRCDIR = 	$(TOPDIR)/board
-ifeq ($(WINTOOL),y)
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
-  CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
-  CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src}"
+ifeq ($(CONFIG_BOARDCTL),y)
+CSRCS += imx_appinit.c
+endif
+
+ifeq ($(CONFIG_ARCH_LEDS),y)
+CSRCS += imx_autoleds.c
 else
-  CFLAGS += -I$(ARCH_SRCDIR)/chip
-  CFLAGS += -I$(ARCH_SRCDIR)/common
-  CFLAGS += -I$(BOARD_SRCDIR)/common
-  CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src
-  CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/armv7-a
+CSRCS += imx_userleds.c
 endif
 
-# boardctl support
-ifeq ($(CONFIG_LIB_BOARDCTL),y)
-DEPPATH += --dep-path $(TOPDIR)/arch
-VPATH += :$(TOPDIR)/arch
-CSRCS += boardctl.c
-endif
 
-all: libboard$(LIBEXT)
-
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+CFLAGS += -I$(TOPDIR)/kernel -I$(TOPDIR)/arch/arm/src/common -I$(TOPDIR)/arch/arm/src/chip -I$(TOPDIR)/arch/arm/src/$(ARCH_FAMILY)
+AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-ifneq ($(ZDSVERSION),)
-$(ASRCS) $(HEAD_ASRC): %$(ASMEXT): %.S
-	$(Q) $(CPP) $(CPPFLAGS) $(call CONVERT_PATH,$<) -o $@.tmp
-	$(Q) cat $@.tmp | sed -e "s/^#/;/g" > $@
-	$(Q) rm $@.tmp
-endif
+BIN = libboard$(LIBEXT)
 
-$(AOBJS): %$(OBJEXT): %$(ASMEXT)
+all: $(BIN)
+.PHONY: context depend clean distclean
+
+$(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
+$(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(CXXOBJS) $(LINKOBJS): %$(OBJEXT): %.cxx
-	$(call COMPILEXX, $<, $@)
+$(BIN): $(OBJS)
+	$(call ARCHIVE, $@, $(OBJS))
 
-libboard$(LIBEXT): $(OBJS) $(CXXOBJS)
-	$(call ARCHIVE, $@, $(OBJS) $(CXXOBJS))
-
-.depend: Makefile $(SRCS) $(CXXSRCS) $(RCSRCS) $(TOPDIR)$(DELIM).config
-ifneq ($(ZDSVERSION),)
+.depend: Makefile $(SRCS)
 	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-else
-	$(Q) $(MKDEP) $(DEPPATH) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
-endif
-ifneq ($(CXXSRCS),)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(CXXSRCS) >>Make.dep
-endif
-ifneq ($(RCSRCS),)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CPP)" --obj-path . -- $(CPPFLAGS) -- $(RCSRCS) >>Make.dep
-endif
 	$(Q) touch $@
 
 depend: .depend
 
-context::
-
-clean::
-	$(call DELFILE, libboard$(LIBEXT))
-	$(call DELFILE, $(ETCSRC))
-	$(call DELDIR, $(ETCDIR))
+clean:
+	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
-distclean:: clean
+distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 
 -include Make.dep
+
+context:
