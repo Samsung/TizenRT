@@ -1,36 +1,39 @@
 /****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * arch/arm/src/stm32l4/stm32l4_rtc_lowerhalf.c
  *
- *   Copyright (C) 2016-2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           dev@ziggurat29.com (adaptations for stm32l4)
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -43,9 +46,11 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/mutex.h>
 #include <tinyara/timers/rtc.h>
 
 #include "chip.h"
@@ -64,11 +69,10 @@
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-struct stm32l4_cbinfo_s
-{
-  volatile rtc_alarm_callback_t cb;  /* Callback when the alarm expires */
-  volatile FAR void *priv;           /* Private argument to accompany callback */
-  uint8_t id;                        /* Identifies the alarm */
+struct stm32l4_cbinfo_s {
+	volatile rtc_alarm_callback_t cb; /* Callback when the alarm expires */
+	volatile void *priv;              /* Private argument to accompany callback */
+	uint8_t id;                       /* Identifies the alarm */
 };
 #endif
 
@@ -76,30 +80,29 @@ struct stm32l4_cbinfo_s
  * with struct rtc_lowerhalf_s.
  */
 
-struct stm32l4_lowerhalf_s
-{
-  /* This is the contained reference to the read-only, lower-half
-   * operations vtable (which may lie in FLASH or ROM)
-   */
+struct stm32l4_lowerhalf_s {
+	/* This is the contained reference to the read-only, lower-half
+	 * operations vtable (which may lie in FLASH or ROM)
+	 */
 
-  FAR const struct rtc_ops_s *ops;
+	const struct rtc_ops_s *ops;
 
-  /* Data following is private to this driver and not visible outside of
-   * this file.
-   */
+	/* Data following is private to this driver and not visible outside of
+	 * this file.
+	 */
 
-  sem_t devsem;         /* Threads can only exclusively access the RTC */
+	mutex_t devlock;      /* Threads can only exclusively access the RTC */
 
 #ifdef CONFIG_RTC_ALARM
-  /* Alarm callback information */
+	/* Alarm callback information */
 
-  struct stm32l4_cbinfo_s cbinfo[STM32L4_NALARMS];
+	struct stm32l4_cbinfo_s cbinfo[STM32L4_NALARMS];
 #endif
 
 #ifdef CONFIG_RTC_PERIODIC
-  /* Periodic wakeup information */
+	/* Periodic wakeup information */
 
-  struct lower_setperiodic_s periodic;
+	struct lower_setperiodic_s periodic;
 #endif
 };
 
@@ -109,27 +112,30 @@ struct stm32l4_lowerhalf_s
 
 /* Prototypes for static methods in struct rtc_ops_s */
 
-static int stm32l4_rdtime(FAR struct rtc_lowerhalf_s *lower,
-                          FAR struct rtc_time *rtctime);
-static int stm32l4_settime(FAR struct rtc_lowerhalf_s *lower,
-                           FAR const struct rtc_time *rtctime);
-static bool stm32l4_havesettime(FAR struct rtc_lowerhalf_s *lower);
+static int stm32l4_rdtime(struct rtc_lowerhalf_s *lower,
+                          struct rtc_time *rtctime);
+static int stm32l4_settime(struct rtc_lowerhalf_s *lower,
+                           const struct rtc_time *rtctime);
+static bool stm32l4_havesettime(struct rtc_lowerhalf_s *lower);
 
 #ifdef CONFIG_RTC_ALARM
-static int stm32l4_setalarm(FAR struct rtc_lowerhalf_s *lower,
-                            FAR const struct lower_setalarm_s *alarminfo);
-static int stm32l4_setrelative(FAR struct rtc_lowerhalf_s *lower,
-                               FAR const struct lower_setrelative_s *alarminfo);
-static int stm32l4_cancelalarm(FAR struct rtc_lowerhalf_s *lower,
+static int stm32l4_setalarm(struct rtc_lowerhalf_s *lower,
+                            const struct lower_setalarm_s *alarminfo);
+static int
+stm32l4_setrelative(struct rtc_lowerhalf_s *lower,
+                   const struct lower_setrelative_s *alarminfo);
+static int stm32l4_cancelalarm(struct rtc_lowerhalf_s *lower,
                                int alarmid);
-static int stm32l4_rdalarm(FAR struct rtc_lowerhalf_s *lower,
-                           FAR struct lower_rdalarm_s *alarminfo);
+static int stm32l4_rdalarm(struct rtc_lowerhalf_s *lower,
+                           struct lower_rdalarm_s *alarminfo);
 #endif
 
 #ifdef CONFIG_RTC_PERIODIC
-static int stm32l4_setperiodic(FAR struct rtc_lowerhalf_s *lower,
-                               FAR const struct lower_setperiodic_s *alarminfo);
-static int stm32l4_cancelperiodic(FAR struct rtc_lowerhalf_s *lower, int id);
+static int
+stm32l4_setperiodic(struct rtc_lowerhalf_s *lower,
+                    const struct lower_setperiodic_s *alarminfo);
+static int
+stm32l4_cancelperiodic(struct rtc_lowerhalf_s *lower, int id);
 #endif
 
 /****************************************************************************
@@ -153,19 +159,14 @@ static const struct rtc_ops_s g_rtc_ops =
   .setperiodic    = stm32l4_setperiodic,
   .cancelperiodic = stm32l4_cancelperiodic,
 #endif
-#ifdef CONFIG_RTC_IOCTL
-  .ioctl       = NULL,
-#endif
-#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
-  .destroy     = NULL,
-#endif
 };
 
 /* STM32L4 RTC device state */
 
 static struct stm32l4_lowerhalf_s g_rtc_lowerhalf =
 {
-  .ops         = &g_rtc_ops,
+  .ops     = &g_rtc_ops,
+  .devlock = NXMUTEX_INITIALIZER,
 };
 
 /****************************************************************************
@@ -188,35 +189,34 @@ static struct stm32l4_lowerhalf_s g_rtc_lowerhalf =
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-static void stm32l4_alarm_callback(FAR void *arg, unsigned int alarmid)
+static void stm32l4_alarm_callback(void *arg, unsigned int alarmid)
 {
-  FAR struct stm32l4_lowerhalf_s *lower;
-  FAR struct stm32l4_cbinfo_s *cbinfo;
-  rtc_alarm_callback_t cb;
-  FAR void *priv;
+	struct stm32l4_lowerhalf_s *lower;
+	struct stm32l4_cbinfo_s *cbinfo;
+	rtc_alarm_callback_t cb;
+	void *priv;
 
-  DEBUGASSERT(arg != NULL);
-  DEBUGASSERT(alarmid == RTC_ALARMA || alarmid == RTC_ALARMB);
+	DEBUGASSERT(arg != NULL);
+	DEBUGASSERT(alarmid == RTC_ALARMA || alarmid == RTC_ALARMB);
 
-  lower        = (struct stm32l4_lowerhalf_s *)arg;
-  cbinfo       = &lower->cbinfo[alarmid];
+	lower        = (struct stm32l4_lowerhalf_s *)arg;
+	cbinfo       = &lower->cbinfo[alarmid];
 
-  /* Sample and clear the callback information to minimize the window in
-   * time in which race conditions can occur.
-   */
+	/* Sample and clear the callback information to minimize the window in
+	 * time in which race conditions can occur.
+	 */
 
-  cb           = (rtc_alarm_callback_t)cbinfo->cb;
-  priv         = (FAR void *)cbinfo->priv;
+	cb           = (rtc_alarm_callback_t)cbinfo->cb;
+	priv         = (void *)cbinfo->priv;
 
-  cbinfo->cb   = NULL;
-  cbinfo->priv = NULL;
+	cbinfo->cb   = NULL;
+	cbinfo->priv = NULL;
 
-  /* Perform the callback */
+	/* Perform the callback */
 
-  if (cb != NULL)
-    {
-      cb(priv, alarmid);
-    }
+	if (cb != NULL) {
+		cb(priv, alarmid);
+	}
 }
 #endif /* CONFIG_RTC_ALARM */
 
@@ -236,29 +236,27 @@ static void stm32l4_alarm_callback(FAR void *arg, unsigned int alarmid)
  *
  ****************************************************************************/
 
-static int stm32l4_rdtime(FAR struct rtc_lowerhalf_s *lower,
-                          FAR struct rtc_time *rtctime)
+static int stm32l4_rdtime(struct rtc_lowerhalf_s *lower,
+                          struct rtc_time *rtctime)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	int ret;
 
-  priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	priv = (struct stm32l4_lowerhalf_s *)lower;
 
-  ret = nxsem_wait(&priv->devsem);
-  if (ret < 0)
-   {
-     return ret;
-   }
+	ret = nxmutex_lock(&priv->devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  /* This operation depends on the fact that struct rtc_time is cast
-   * compatible with struct tm.
-   */
+	/* This operation depends on the fact that struct rtc_time is cast
+	 * compatible with struct tm.
+	 */
 
-  ret = up_rtc_getdatetime((FAR struct tm *)rtctime);
+	ret = up_rtc_getdatetime((struct tm *)rtctime);
 
-  nxsem_post(&priv->devsem);
-
-  return ret;
+	nxmutex_unlock(&priv->devlock);
+	return ret;
 }
 
 /****************************************************************************
@@ -277,29 +275,27 @@ static int stm32l4_rdtime(FAR struct rtc_lowerhalf_s *lower,
  *
  ****************************************************************************/
 
-static int stm32l4_settime(FAR struct rtc_lowerhalf_s *lower,
-                           FAR const struct rtc_time *rtctime)
+static int stm32l4_settime(struct rtc_lowerhalf_s *lower,
+                           const struct rtc_time *rtctime)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	int ret;
 
-  priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	priv = (struct stm32l4_lowerhalf_s *)lower;
 
-  ret = nxsem_wait(&priv->devsem);
-  if (ret < 0)
-    {
-      return ret;
-    }
+	ret = nxmutex_lock(&priv->devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  /* This operation depends on the fact that struct rtc_time is cast
-   * compatible with struct tm.
-   */
+	/* This operation depends on the fact that struct rtc_time is cast
+	 * compatible with struct tm.
+	 */
 
-  ret = stm32l4_rtc_setdatetime((FAR const struct tm *)rtctime);
+	ret = stm32l4_rtc_setdatetime((const struct tm *)rtctime);
 
-  nxsem_post(&priv->devsem);
-
-  return ret;
+	nxmutex_unlock(&priv->devlock);
+	return ret;
 }
 
 /****************************************************************************
@@ -316,9 +312,9 @@ static int stm32l4_settime(FAR struct rtc_lowerhalf_s *lower,
  *
  ****************************************************************************/
 
-static bool stm32l4_havesettime(FAR struct rtc_lowerhalf_s *lower)
+static bool stm32l4_havesettime(struct rtc_lowerhalf_s *lower)
 {
-  return stm32l4_rtc_havesettime();
+	return stm32l4_rtc_havesettime();
 }
 
 /****************************************************************************
@@ -339,56 +335,52 @@ static bool stm32l4_havesettime(FAR struct rtc_lowerhalf_s *lower)
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-static int stm32l4_setalarm(FAR struct rtc_lowerhalf_s *lower,
-                            FAR const struct lower_setalarm_s *alarminfo)
+static int stm32l4_setalarm(struct rtc_lowerhalf_s *lower,
+                            const struct lower_setalarm_s *alarminfo)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  FAR struct stm32l4_cbinfo_s *cbinfo;
-  struct alm_setalarm_s lowerinfo;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	struct stm32l4_cbinfo_s *cbinfo;
+	struct alm_setalarm_s lowerinfo;
+	int ret;
 
-  /* ID0-> Alarm A; ID1 -> Alarm B */
+	/* ID0-> Alarm A; ID1 -> Alarm B */
 
-  DEBUGASSERT(lower != NULL && alarminfo != NULL);
-  DEBUGASSERT(alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB);
-  priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	DEBUGASSERT(lower != NULL && alarminfo != NULL);
+	DEBUGASSERT(alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB);
+	priv = (struct stm32l4_lowerhalf_s *)lower;
 
-  ret = nxsem_wait(&priv->devsem);
-  if (ret < 0)
-    {
-      return ret;
-    }
+	ret = nxmutex_lock(&priv->devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  ret = -EINVAL;
-  if (alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB)
-    {
-      /* Remember the callback information */
+	ret = -EINVAL;
+	if (alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB) {
+		/* Remember the callback information */
 
-      cbinfo            = &priv->cbinfo[alarminfo->id];
-      cbinfo->cb        = alarminfo->cb;
-      cbinfo->priv      = alarminfo->priv;
-      cbinfo->id        = alarminfo->id;
+		cbinfo            = &priv->cbinfo[alarminfo->id];
+		cbinfo->cb        = alarminfo->cb;
+		cbinfo->priv      = alarminfo->priv;
+		cbinfo->id        = alarminfo->id;
 
-      /* Set the alarm */
+		/* Set the alarm */
 
-      lowerinfo.as_id   = alarminfo->id;
-      lowerinfo.as_cb   = stm32l4_alarm_callback;
-      lowerinfo.as_arg  = priv;
-      memcpy(&lowerinfo.as_time, &alarminfo->time, sizeof(struct tm));
+		lowerinfo.as_id   = alarminfo->id;
+		lowerinfo.as_cb   = stm32l4_alarm_callback;
+		lowerinfo.as_arg  = priv;
+		memcpy(&lowerinfo.as_time, &alarminfo->time, sizeof(struct tm));
 
-      /* And set the alarm */
+		/* And set the alarm */
 
-      ret = stm32l4_rtc_setalarm(&lowerinfo);
-      if (ret < 0)
-        {
-          cbinfo->cb   = NULL;
-          cbinfo->priv = NULL;
-        }
-    }
+		ret = stm32l4_rtc_setalarm(&lowerinfo);
+		if (ret < 0) {
+			cbinfo->cb   = NULL;
+			cbinfo->priv = NULL;
+		}
+	}
 
-  nxsem_post(&priv->devsem);
-
-  return ret;
+	nxmutex_unlock(&priv->devlock);
+	return ret;
 }
 #endif
 
@@ -410,58 +402,58 @@ static int stm32l4_setalarm(FAR struct rtc_lowerhalf_s *lower,
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-static int stm32l4_setrelative(FAR struct rtc_lowerhalf_s *lower,
-                               FAR const struct lower_setrelative_s *alarminfo)
+static int
+stm32l4_setrelative(struct rtc_lowerhalf_s *lower,
+                    const struct lower_setrelative_s *alarminfo)
 {
-  struct lower_setalarm_s setalarm;
-  struct tm time;
-  time_t seconds;
-  int ret = -EINVAL;
+	struct lower_setalarm_s setalarm;
+	struct tm time;
+	time_t seconds;
+	int ret = -EINVAL;
+	irqstate_t flags;
 
-  DEBUGASSERT(lower != NULL && alarminfo != NULL);
-  DEBUGASSERT(alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB);
+	DEBUGASSERT(lower != NULL && alarminfo != NULL);
+	DEBUGASSERT(alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB);
 
-  if ((alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB) &&
-      alarminfo->reltime > 0)
-    {
-      /* Disable pre-emption while we do this so that we don't have to worry
-       * about being suspended and working on an old time.
-       */
+	if ((alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB) &&
+	    alarminfo->reltime > 0) {
+		/* Disable pre-emption while we do this so that we don't have to worry
+		 * about being suspended and working on an old time.
+		 */
 
-      sched_lock();
+		flags = enter_critical_section();
 
-      /* Get the current time in broken out format */
+		/* Get the current time in broken out format */
 
-      ret = up_rtc_getdatetime(&time);
-      if (ret >= 0)
-        {
-          /* Convert to seconds since the epoch */
+		ret = up_rtc_getdatetime(&time);
+		if (ret >= 0) {
+			/* Convert to seconds since the epoch */
 
-          seconds = mktime(&time);
+			seconds = timegm(&time);
 
-          /* Add the seconds offset.  Add one to the number of seconds
-           * because we are unsure of the phase of the timer.
-           */
+			/* Add the seconds offset.  Add one to the number of seconds
+			 * because we are unsure of the phase of the timer.
+			 */
 
-          seconds += (alarminfo->reltime + 1);
+			seconds += (alarminfo->reltime + 1);
 
-          /* And convert the time back to broken out format */
+			/* And convert the time back to broken out format */
 
-          (void)gmtime_r(&seconds, (FAR struct tm *)&setalarm.time);
+			gmtime_r(&seconds, (struct tm *)&setalarm.time);
 
-          /* The set the alarm using this absolute time */
+			/* The set the alarm using this absolute time */
 
-          setalarm.id   = alarminfo->id;
-          setalarm.cb   = alarminfo->cb;
-          setalarm.priv = alarminfo->priv;
+			setalarm.id   = alarminfo->id;
+			setalarm.cb   = alarminfo->cb;
+			setalarm.priv = alarminfo->priv;
 
-          ret = stm32l4_setalarm(lower, &setalarm);
-        }
+			ret = stm32l4_setalarm(lower, &setalarm);
+		}
 
-      sched_unlock();
-    }
+		leave_critical_section(flags);
+	}
 
-  return ret;
+	return ret;
 }
 #endif
 
@@ -483,41 +475,39 @@ static int stm32l4_setrelative(FAR struct rtc_lowerhalf_s *lower,
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-static int stm32l4_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
+static int stm32l4_cancelalarm(struct rtc_lowerhalf_s *lower,
+                               int alarmid)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  FAR struct stm32l4_cbinfo_s *cbinfo;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	struct stm32l4_cbinfo_s *cbinfo;
+	int ret;
 
-  DEBUGASSERT(lower != NULL);
-  DEBUGASSERT(alarmid == RTC_ALARMA || alarmid == RTC_ALARMB);
-  priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	DEBUGASSERT(lower != NULL);
+	DEBUGASSERT(alarmid == RTC_ALARMA || alarmid == RTC_ALARMB);
+	priv = (struct stm32l4_lowerhalf_s *)lower;
 
-  ret = nxsem_wait(&priv->devsem);
-  if (ret < 0)
-    {
-      return ret;
-    }
+	ret = nxmutex_lock(&priv->devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  /* ID0-> Alarm A; ID1 -> Alarm B */
+	/* ID0-> Alarm A; ID1 -> Alarm B */
 
-  ret = -EINVAL;
-  if (alarmid == RTC_ALARMA || alarmid == RTC_ALARMB)
-    {
-      /* Nullify callback information to reduce window for race conditions */
+	ret = -EINVAL;
+	if (alarmid == RTC_ALARMA || alarmid == RTC_ALARMB) {
+		/* Nullify callback information to reduce window for race conditions */
 
-      cbinfo       = &priv->cbinfo[alarmid];
-      cbinfo->cb   = NULL;
-      cbinfo->priv = NULL;
+		cbinfo       = &priv->cbinfo[alarmid];
+		cbinfo->cb   = NULL;
+		cbinfo->priv = NULL;
 
-      /* Then cancel the alarm */
+		/* Then cancel the alarm */
 
-      ret = stm32l4_rtc_cancelalarm((enum alm_id_e)alarmid);
-    }
+		ret = stm32l4_rtc_cancelalarm((enum alm_id_e)alarmid);
+	}
 
-  nxsem_post(&priv->devsem);
-
-  return ret;
+	nxmutex_unlock(&priv->devlock);
+	return ret;
 }
 #endif
 
@@ -538,32 +528,32 @@ static int stm32l4_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_ALARM
-static int stm32l4_rdalarm(FAR struct rtc_lowerhalf_s *lower,
-                           FAR struct lower_rdalarm_s *alarminfo)
+static int stm32l4_rdalarm(struct rtc_lowerhalf_s *lower,
+                           struct lower_rdalarm_s *alarminfo)
 {
-  struct alm_rdalarm_s lowerinfo;
-  int ret = -EINVAL;
+	struct alm_rdalarm_s lowerinfo;
+	int ret = -EINVAL;
+	irqstate_t flags;
 
-  DEBUGASSERT(lower != NULL && alarminfo != NULL && alarminfo->time != NULL);
-  DEBUGASSERT(alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB);
+	DEBUGASSERT(lower != NULL && alarminfo != NULL && alarminfo->time != NULL);
+	DEBUGASSERT(alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB);
 
-  if (alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB)
-    {
-      /* Disable pre-emption while we do this so that we don't have to worry
-       * about being suspended and working on an old time.
-       */
+	if (alarminfo->id == RTC_ALARMA || alarminfo->id == RTC_ALARMB) {
+		/* Disable pre-emption while we do this so that we don't have to worry
+		 * about being suspended and working on an old time.
+		 */
 
-      sched_lock();
+		flags = enter_critical_section();
 
-      lowerinfo.ar_id = alarminfo->id;
-      lowerinfo.ar_time = alarminfo->time;
+		lowerinfo.ar_id = alarminfo->id;
+		lowerinfo.ar_time = alarminfo->time;
 
-      ret = stm32l4_rtc_rdalarm(&lowerinfo);
+		ret = stm32l4_rtc_rdalarm(&lowerinfo);
 
-      sched_unlock();
-    }
+		leave_critical_section(flags);
+	}
 
-  return ret;
+	return ret;
 }
 #endif
 
@@ -571,8 +561,9 @@ static int stm32l4_rdalarm(FAR struct rtc_lowerhalf_s *lower,
  * Name: stm32l4_periodic_callback
  *
  * Description:
- *   This is the function that is called from the RTC driver when the periodic
- *   wakeup goes off.  It just invokes the upper half drivers callback.
+ *   This is the function that is called from the RTC driver when the
+ *   periodic wakeup goes off.
+ *   It just invokes the upper half drivers callback.
  *
  * Input Parameters:
  *   None
@@ -585,25 +576,24 @@ static int stm32l4_rdalarm(FAR struct rtc_lowerhalf_s *lower,
 #ifdef CONFIG_RTC_PERIODIC
 static int stm32l4_periodic_callback(void)
 {
-  FAR struct stm32l4_lowerhalf_s *lower;
-  struct lower_setperiodic_s *cbinfo;
-  rtc_wakeup_callback_t cb;
-  FAR void *priv;
+	struct stm32l4_lowerhalf_s *lower;
+	struct lower_setperiodic_s *cbinfo;
+	rtc_wakeup_callback_t cb;
+	void *priv;
 
-  lower = (FAR struct stm32l4_lowerhalf_s *)&g_rtc_lowerhalf;
+	lower = (struct stm32l4_lowerhalf_s *)&g_rtc_lowerhalf;
 
-  cbinfo = &lower->periodic;
-  cb     = (rtc_wakeup_callback_t)cbinfo->cb;
-  priv   = (FAR void *)cbinfo->priv;
+	cbinfo = &lower->periodic;
+	cb     = (rtc_wakeup_callback_t)cbinfo->cb;
+	priv   = (void *)cbinfo->priv;
 
-  /* Perform the callback */
+	/* Perform the callback */
 
-  if (cb != NULL)
-    {
-      cb(priv, 0);
-    }
+	if (cb != NULL) {
+		cb(priv, 0);
+	}
 
-  return OK;
+	return OK;
 }
 #endif /* CONFIG_RTC_PERIODIC */
 
@@ -626,28 +616,27 @@ static int stm32l4_periodic_callback(void)
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_PERIODIC
-static int stm32l4_setperiodic(FAR struct rtc_lowerhalf_s *lower,
-                               FAR const struct lower_setperiodic_s *alarminfo)
+static int
+stm32l4_setperiodic(struct rtc_lowerhalf_s *lower,
+                    const struct lower_setperiodic_s *alarminfo)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	int ret;
 
-  DEBUGASSERT(lower != NULL && alarminfo != NULL);
-  priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	DEBUGASSERT(lower != NULL && alarminfo != NULL);
+	priv = (struct stm32l4_lowerhalf_s *)lower;
 
-  ret = nxsem_wait(&priv->devsem);
-  if (ret < 0)
-    {
-      return ret;
-    }
+	ret = nxmutex_lock(&priv->devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  memcpy(&priv->periodic, alarminfo, sizeof(struct lower_setperiodic_s));
+	memcpy(&priv->periodic, alarminfo, sizeof(struct lower_setperiodic_s));
+	ret = stm32l4_rtc_setperiodic(&alarminfo->period,
+	                              stm32l4_periodic_callback);
 
-  ret = stm32l4_rtc_setperiodic(&alarminfo->period, stm32l4_periodic_callback);
-
-  nxsem_post(&priv->devsem);
-
-  return ret;
+	nxmutex_unlock(&priv->devlock);
+	return ret;
 }
 #endif
 
@@ -668,27 +657,25 @@ static int stm32l4_setperiodic(FAR struct rtc_lowerhalf_s *lower,
  ****************************************************************************/
 
 #ifdef CONFIG_RTC_PERIODIC
-static int stm32l4_cancelperiodic(FAR struct rtc_lowerhalf_s *lower, int id)
+static int stm32l4_cancelperiodic(struct rtc_lowerhalf_s *lower, int id)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	int ret;
 
-  DEBUGASSERT(lower != NULL);
-  priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	DEBUGASSERT(lower != NULL);
+	priv = (struct stm32l4_lowerhalf_s *)lower;
 
-  DEBUGASSERT(id == 0);
+	DEBUGASSERT(id == 0);
 
-  ret = nxsem_wait(&priv->devsem);
-  if (ret < 0)
-    {
-      return ret;
-    }
+	ret = nxmutex_lock(&priv->devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  ret = stm32l4_rtc_cancelperiodic();
+	ret = stm32l4_rtc_cancelperiodic();
 
-  nxsem_post(&priv->devsem);
-
-  return ret;
+	nxmutex_unlock(&priv->devlock);
+	return ret;
 }
 #endif
 
@@ -718,11 +705,9 @@ static int stm32l4_cancelperiodic(FAR struct rtc_lowerhalf_s *lower, int id)
  *
  ****************************************************************************/
 
-FAR struct rtc_lowerhalf_s *stm32l4_rtc_lowerhalf(void)
+struct rtc_lowerhalf_s *stm32l4_rtc_lowerhalf(void)
 {
-  nxsem_init(&g_rtc_lowerhalf.devsem, 0, 1);
-
-  return (FAR struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
+	return (struct rtc_lowerhalf_s *)&g_rtc_lowerhalf;
 }
 
 #endif /* CONFIG_RTC_DRIVER */

@@ -1,3 +1,20 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 #
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
@@ -84,7 +101,66 @@ config STM32F429I_DISCO_RAMMTD_SIZE
 	---help---
 		Sets the size of static RAM allocation for the SMART RAM device
 
-config STM32F429I_DISCO_ILI9341
+config STM32F429IDISCO_USBHOST_STACKSIZE
+	int "USB host waiter stack size"
+	default 1024
+	depends on USBHOST
+
+config STM32F429IDISCO_USBHOST_PRIO
+	int "USB host waiter task priority"
+	default 100
+	depends on USBHOST
+
+config PM_BUTTONS
+	bool "PM Button support"
+	default n
+	depends on PM && ARCH_IRQBUTTONS
+	---help---
+		Enable PM button EXTI interrupts to support PM testing
+
+config PM_BUTTON_ACTIVITY
+	int "Button PM activity weight"
+	default 10
+	depends on PM_BUTTONS
+	---help---
+		The activity weight to report to the power management subsystem when a button is pressed.
+
+config PM_ALARM_SEC
+	int "PM_STANDBY delay (seconds)"
+	default 15
+	depends on PM && RTC_ALARM
+	---help---
+		Number of seconds to wait in PM_STANDBY before going to PM_STANDBY mode.
+
+config PM_ALARM_NSEC
+	int "PM_STANDBY delay (nanoseconds)"
+	default 0
+	depends on PM && RTC_ALARM
+	---help---
+		Number of additional nanoseconds to wait in PM_STANDBY before going to PM_STANDBY mode.
+
+config PM_SLEEP_WAKEUP
+	bool "PM_SLEEP wake-up alarm"
+	default n
+	depends on PM && RTC_ALARM
+	---help---
+		Wake-up of PM_SLEEP mode after a delay and resume normal operation.
+
+config PM_SLEEP_WAKEUP_SEC
+	int "PM_SLEEP delay (seconds)"
+	default 10
+	depends on PM && RTC_ALARM
+	---help---
+		Number of seconds to wait in PM_SLEEP before going to PM_STANDBY mode.
+
+config PM_SLEEP_WAKEUP_NSEC
+	int "PM_SLEEP delay (nanoseconds)"
+	default 0
+	depends on PM && RTC_ALARM
+	---help---
+		Number of additional nanoseconds to wait in PM_SLEEP before going to PM_STANDBY mode.
+
+menuconfig STM32F429I_DISCO_ILI9341
 	bool "LCD driver for ILI9341 Liquid Crystal Display Controller"
 	default n
 	---help---
@@ -92,28 +168,33 @@ config STM32F429I_DISCO_ILI9341
 		Driver. This sub driver supports only communication with the display driver
 		connected via 4-wire serial (spi) mcu interface.
 
-config STM32F429I_DISCO_ILI9341_SPIFREQUENCY
-	int "SPI frequency"
-	default 12000000
-	depends on STM32F429I_DISCO_ILI9341
-	---help---
-		Define the bus freqency of the spi device.
+if STM32F429I_DISCO_ILI9341
 
-config STM32F429I_DISCO_ILI9341_SPIBITS16
-	bool "Enable 16 bit pixel read/write"
-	default n
-	depends on STM32F429I_DISCO_ILI9341
-	---help---
-		This enables faster 16-bit spi mode for transmitting or receiving pixel data
-		to or from the display gram. But uses default 8-bit spi mode for all other
-		display operations.
+choice
+	prompt "LCD Interface Type"
+	default STM32F429I_DISCO_ILI9341_NONE if !LCD_ILI9341 && !STM32_LTDC
+	default STM32F429I_DISCO_ILI9341_LCDIFACE if LCD_ILI9341 && !STM32_LTDC
+	default STM32F429I_DISCO_ILI9341_FBIFACE if STM32_LTDC
+
+config STM32F429I_DISCO_ILI9341_NONE
+	bool "No LCD interface"
 
 config STM32F429I_DISCO_ILI9341_LCDIFACE
-	bool "Enable support for TinyAra lcd interface"
-	default n
-	depends on STM32F429I_DISCO_ILI9341 && LCD_ILI9341
+	bool "Enable support for nuttx LCD interface"
+	depends on LCD_ILI9341
 	---help---
-		Enable lcd driver support for the TinyAra lcd interface.
+		Enable lcd driver support for the nuttx lcd interface.
+
+config STM32F429I_DISCO_ILI9341_FBIFACE
+	bool "Enable support for nuttx framebuffer interface"
+	depends on STM32_LTDC
+	---help---
+		Enable lcd driver support for the nuttx framebuffer interface to displaying
+		data via ltdc controller of the stm32f429i mcu.
+
+endchoice # LCD Interface Type
+
+if STM32F429I_DISCO_ILI9341_LCDIFACE
 
 config STM32F429I_DISCO_ILI9341_LCDDEVICE
 	int "LCD interface"
@@ -122,16 +203,24 @@ config STM32F429I_DISCO_ILI9341_LCDDEVICE
 	depends on STM32F429I_DISCO_ILI9341_LCDIFACE
 	---help---
 		Define the lcd interface which should be used. This must be
-		corresponding to the configured ili9341 lcd device in the driver
+		corresponding to the configured ili9341 LCD device in the driver
 		section.
 
-config STM32F429I_DISCO_ILI9341_FBIFACE
-	bool "Enable support for TinyAra frambuffer interface"
-	default n
-	depends on STM32F429I_DISCO_ILI9341 && STM32_LTDC
+config STM32F429I_DISCO_ILI9341_SPIFREQUENCY
+	int "SPI frequency"
+	default 12000000
 	---help---
-		Enable lcd driver support for the TinyAra framebuffer interface to displaying
-		data via ltdc controller of the stm32f429i mcu.
+		Define the bus frequency of the SPI device.
+
+config STM32F429I_DISCO_ILI9341_SPIBITS16
+	bool "Enable 16 bit pixel read/write"
+	default n
+	---help---
+		This enables faster 16-bit SPI mode for transmitting or receiving pixel data
+		to or from the display gram. But uses default 8-bit SPI mode for all other
+		display operations.
+
+endif # STM32F429I_DISCO_ILI9341_LCDIFACE
 
 if STM32F429I_DISCO_ILI9341_FBIFACE
 
@@ -162,5 +251,12 @@ config STM32F429I_DISCO_ILI9341_FBIFACE_RORTRAIT
 		Define for "reverse portrait" orientation support.
 
 endchoice
-endif
-endif
+
+endif # STM32F429I_DISCO_ILI9341_FBIFACE
+endif # STM32F429I_DISCO_ILI9341
+
+config STM32F429I_DISCO_HIGHPRI
+	bool "High priority interrupt test"
+	default n
+
+endif # ARCH_BOARD_STM32F429I_DISCO

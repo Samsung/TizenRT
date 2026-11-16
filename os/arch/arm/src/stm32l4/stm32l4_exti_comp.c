@@ -1,8 +1,26 @@
 /****************************************************************************
- * arch/arm/src/stm32/stm32l4_exti_comp.c
  *
- *   Copyright (c) 2017 Gregory Nutt. All rights reserved
- *   Copyright (c) 2016 Motorola Mobility, LLC. All rights reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * arch/arm/src/stm32l4/stm32l4_exti_comp.c
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2017 Gregory Nutt. All rights reserved
+ * SPDX-FileCopyrightText: 2016 Motorola Mobility LLC. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,19 +60,18 @@
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "stm32l4_comp.h"
 #include "stm32l4_exti.h"
-#include "chip/stm32l4_exti.h"
+#include "hardware/stm32l4_exti.h"
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
-struct comp_callback_s
-{
-  xcpt_t callback;
-  void  *arg;
+struct comp_callback_s {
+	xcpt_t callback;
+	void  *arg;
 };
 
 /****************************************************************************
@@ -78,38 +95,35 @@ static const uint32_t g_comp_lines[STM32L4_COMP_NUM] =
 #endif
 };
 
- /****************************************************************************
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-static int stm32l4_exti_comp_isr(int irq, void *context, FAR void *arg)
+static int stm32l4_exti_comp_isr(int irq, void *context, void *arg)
 {
-  uint32_t pr;
-  uint32_t ln;
-  int ret = 0;
-  int i;
+	uint32_t pr;
+	uint32_t ln;
+	int ret = 0;
+	int i;
 
-  /* Examine the state of each comparator line and dispatch interrupts */
+	/* Examine the state of each comparator line and dispatch interrupts */
 
-  pr = getreg32(STM32L4_EXTI1_PR);
-  for (i = 0; i < STM32L4_COMP_NUM; i++)
-    {
-      ln = g_comp_lines[i];
-      if ((pr & ln) != 0)
-        {
-          /* Clear the pending interrupt */
+	pr = getreg32(STM32L4_EXTI1_PR);
+	for (i = 0; i < STM32L4_COMP_NUM; i++) {
+		ln = g_comp_lines[i];
+		if ((pr & ln) != 0) {
+			/* Clear the pending interrupt */
 
-          putreg32(ln, STM32L4_EXTI1_PR);
-          if (g_comp_handlers[i].callback != NULL)
-            {
-              xcpt_t callback = g_comp_handlers[i].callback;
-              void *callback_arg = g_comp_handlers[i].arg;
-              ret = callback(irq, context, callback_arg);
-            }
-        }
-    }
+			putreg32(ln, STM32L4_EXTI1_PR);
+			if (g_comp_handlers[i].callback != NULL) {
+				xcpt_t callback = g_comp_handlers[i].callback;
+				void *callback_arg = g_comp_handlers[i].arg;
+				ret = callback(irq, context, callback_arg);
+			}
+		}
+	}
 
-  return ret;
+	return ret;
 }
 
 /****************************************************************************
@@ -124,7 +138,7 @@ static int stm32l4_exti_comp_isr(int irq, void *context, FAR void *arg)
  *
  * Input Parameters:
  *  - cmp: comparator
- *  - rising/falling edge: enables interrupt on rising/falling edget
+ *  - rising/falling edge: enables interrupt on rising/falling edge
  *  - event:  generate event when set
  *  - func:   when non-NULL, generate interrupt
  *  - arg:    Argument passed to the interrupt callback
@@ -138,44 +152,43 @@ static int stm32l4_exti_comp_isr(int irq, void *context, FAR void *arg)
 int stm32l4_exti_comp(int cmp, bool risingedge, bool fallingedge,
                       bool event, xcpt_t func, void *arg)
 {
-  irqstate_t flags;
-  uint32_t ln = g_comp_lines[cmp];
+	irqstate_t flags;
+	uint32_t ln = g_comp_lines[cmp];
 
- /* Perform the following within a critical section so that the handler gets
-  * installed correctly before the next interrupt is received.
-  */
+	/* Perform the following within a critical section so that the handler gets
+	 * installed correctly before the next interrupt is received.
+	 */
 
-  flags = irqsave();
+	flags = enter_critical_section();
 
-  /* Install external interrupt handlers */
+	/* Install external interrupt handlers */
 
-  if (func != NULL)
-    {
-      irq_attach(STM32L4_IRQ_COMP, stm32l4_exti_comp_isr, NULL);
-      up_enable_irq(STM32L4_IRQ_COMP);
-    }
-  else
-    {
-      up_disable_irq(STM32L4_IRQ_COMP);
-    }
+	if (func != NULL) {
+		irq_attach(STM32L4_IRQ_COMP, stm32l4_exti_comp_isr, NULL);
+		up_enable_irq(STM32L4_IRQ_COMP);
+	} else {
+		up_disable_irq(STM32L4_IRQ_COMP);
+	}
 
-  /* Configure rising/falling edges */
+	/* Configure rising/falling edges */
 
-  modifyreg32(STM32L4_EXTI1_RTSR, risingedge  ? 0 : ln, risingedge  ? ln : 0);
-  modifyreg32(STM32L4_EXTI1_FTSR, fallingedge ? 0 : ln, fallingedge ? ln : 0);
+	modifyreg32(STM32L4_EXTI1_RTSR, risingedge ?
+	            0 : ln, risingedge ? ln : 0);
+	modifyreg32(STM32L4_EXTI1_FTSR, fallingedge ?
+	            0 : ln, fallingedge ? ln : 0);
 
-  /* Enable Events and Interrupts */
+	/* Enable Events and Interrupts */
 
-  modifyreg32(STM32L4_EXTI1_EMR, event ? 0 : ln, event ? ln : 0);
-  modifyreg32(STM32L4_EXTI1_IMR, func  ? 0 : ln, func  ? ln : 0);
+	modifyreg32(STM32L4_EXTI1_EMR, event ? 0 : ln, event ? ln : 0);
+	modifyreg32(STM32L4_EXTI1_IMR, func ? 0 : ln, func ? ln : 0);
 
-  /* Get the previous IRQ handler and save the new IRQ handler. */
+	/* Get the previous IRQ handler and save the new IRQ handler. */
 
-  g_comp_handlers[cmp].callback = func;
-  g_comp_handlers[cmp].arg      = arg;
+	g_comp_handlers[cmp].callback = func;
+	g_comp_handlers[cmp].arg      = arg;
 
-  /* Leave the critical section */
+	/* Leave the critical section */
 
-  irqrestore(flags);
-  return OK;
+	leave_critical_section(flags);
+	return OK;
 }

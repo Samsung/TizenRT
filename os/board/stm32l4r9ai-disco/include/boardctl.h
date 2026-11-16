@@ -1,8 +1,26 @@
-/************************************************************************************
- * configs/stm32l4r9ai-disco/include/boardctl.h
+/****************************************************************************
  *
- *   Copyright (C) 2016 dev@ziggurat29.com. All rights reserved.
- *   Author: dev@ziggurat29.com
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * boards/arm/stm32l4/stm32l4r9ai-disco/include/boardctl.h
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2016 dev@ziggurat29.com. All rights reserved.
+ * SPDX-FileContributor: Author: dev@ziggurat29.com
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,10 +49,10 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-#ifndef __CONFIGS_STM32L4R9AI_DISCO_INCLUDE_BOARDCTL_H
-#define __CONFIGS_STM32L4R9AI_DISCO_INCLUDE_BOARDCTL_H
+#ifndef __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_INCLUDE_BOARDCTL_H
+#define __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_INCLUDE_BOARDCTL_H
 
 /****************************************************************************
  * Included Files
@@ -49,4 +67,4 @@
 #define BIOC_ENTER_MEMMAP   BOARDIOC_USER+1
 #define BIOC_EXIT_MEMMAP    BOARDIOC_USER+2
 
-#endif  /* __CONFIGS_STM32L4R9AI_DISCO_INCLUDE_BOARDCTL_H */
+#endif /* __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_INCLUDE_BOARDCTL_H */

@@ -1,61 +1,66 @@
-/************************************************************************************
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * arch/arm/src/stm32l4/stm32l4_dac.h
  *
- *   Copyright (C) 2011, 2015, 2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_STM32L4_STM32L4_DAC_H
 #define __ARCH_ARM_SRC_STM32L4_STM32L4_DAC_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include "chip.h"
-#include "chip/stm32l4_dac.h"
+#include "hardware/stm32l4_dac.h"
 
 #include <tinyara/analog/dac.h>
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor definitions
- ************************************************************************************/
+ ****************************************************************************/
 
-/* Configuration ********************************************************************/
-/* Timer devices may be used for different purposes.  One special purpose is to
- * control periodic DAC outputs.  If CONFIG_STM32L4_TIMn is defined then
- * CONFIG_STM32L4_TIMn_DAC must also be defined to indicate that timer "n" is
- * intended to be used for that purpose.
+/* Configuration ************************************************************/
+
+/* Timer devices may be used for different purposes.  One special purpose is
+ * to control periodic DAC outputs.  If CONFIG_STM32L4_TIMn is defined then
+ * CONFIG_STM32L4_TIMn_DAC must also be defined to indicate that timer "n"
+ * is intended to be used for that purpose.
  */
 
 #ifndef CONFIG_STM32L4_TIM1
@@ -92,9 +97,66 @@
 #  undef CONFIG_STM32L4_TIM17_DAC
 #endif
 
-/************************************************************************************
+/* Low-level ops helpers ****************************************************/
+
+#define DAC_ENABLE(dac,d)                            \
+        (dac)->llops->enable(dac,d)
+#define DAC_WRITE_DRO(dac,d)                         \
+        (dac)->llops->write_dro(dac,d)
+#define DAC_START_DMA(dac)                           \
+        (dac)->llops->start_dma(dac)
+#define DAC_STOP_DMA(dac)                            \
+        (dac)->llops->stop_dma(dac)
+#define DAC_DUMP_REGS(dac)                           \
+        (dac)->llops->dump_regs(dac)
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32L4_DAC_LL_OPS
+
+/* This structure provides the publicly visible representation of the
+ * "lower-half" DAC driver structure.
+ */
+
+struct stm32_dac_dev_s {
+	/* Publicly visible portion of the "lower-half" ADC driver structure */
+
+	const struct stm32_dac_ops_s *llops;
+
+	/* Require cast-compatibility with private "lower-half" ADC structure */
+};
+
+/* Low-level operations for DAC */
+
+struct stm32_dac_ops_s {
+	/* Enable / Disable DAC */
+
+	void (*enable)(struct stm32_dac_dev_s *dev, bool enabled);
+
+	/* Write DRO */
+
+	void (*write_dro)(struct stm32_dac_dev_s *dev, uint16_t data);
+
+	/* Start DMA */
+
+	void (*start_dma)(struct stm32_dac_dev_s *dev);
+
+	/* Stop DMA */
+
+	void (*stop_dma)(struct stm32_dac_dev_s *dev);
+
+	/* Dump DAC regs */
+
+	void (*dump_regs)(struct stm32_dac_dev_s *dev);
+};
+
+#endif /* CONFIG_STM32L4_DAC_LL_OPS */
+
+/****************************************************************************
  * Public Data
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_STM32L4_DAC1_DMA
 extern uint16_t stm32l4_dac1_dmabuffer[];
@@ -103,9 +165,9 @@ extern uint16_t stm32l4_dac1_dmabuffer[];
 extern uint16_t stm32l4_dac2_dmabuffer[];
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Public Function Prototypes
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ASSEMBLY__
 #ifdef __cplusplus
@@ -131,7 +193,7 @@ extern "C"
  ****************************************************************************/
 
 struct dac_dev_s;
-FAR struct dac_dev_s *stm32l4_dacinitialize(int intf);
+struct dac_dev_s *stm32l4_dacinitialize(int intf);
 
 #undef EXTERN
 #ifdef __cplusplus

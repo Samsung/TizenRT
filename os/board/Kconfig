@@ -67,9 +67,9 @@ config ARCH_BOARD_CY4390x
 	---help---
 		Cypress 4390x IoT wifi MCU
 
-config ARCH_BOARD_STM32F407_DISC1
+config ARCH_BOARD_STM32F4_DISCOVERY
 	bool "STMicro STM32F407-Discovery board"
-	depends on ARCH_CHIP_STM32
+	depends on ARCH_CHIP_STM32F407VG
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
@@ -78,7 +78,7 @@ config ARCH_BOARD_STM32F407_DISC1
 
 config ARCH_BOARD_STM32F429I_DISCO
 	bool "STMicro STM32F429I-Discovery board"
-	depends on ARCH_CHIP_STM32
+	depends on ARCH_CHIP_STM32F429Z
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
@@ -127,7 +127,7 @@ config ARCH_BOARD_IMXRT1050_EVK
 
 config ARCH_BOARD_STM32L4R9AI_DISCO
 	bool "STMicro STM32L4R9AI-Discovery board"
-	depends on ARCH_CHIP_STM32L4
+	depends on ARCH_CHIP_STM32L4R9AI
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
@@ -155,9 +155,9 @@ config ARCH_BOARD_RTL8721CSM
 	---help---
 		Realtek RTL8721CSM-Discovery board based on the Realtek RTL8721CSM MCU.		
 
-config ARCH_BOARD_STM32H745ZI_NUCLEO
+config ARCH_BOARD_NUCLEO_H745ZI
 	bool "STMicro STM32H745ZI-Nucleo board"
-	depends on ARCH_CHIP_STM32H745
+	depends on ARCH_CHIP_STM32H745ZI
 	select ARCH_HAVE_LEDS
 	select ARCH_HAVE_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
@@ -222,7 +222,7 @@ config ARCH_BOARD
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
 	default "bk7239n"            if ARCH_BOARD_BK7239N
 	default "cy4390x"            if ARCH_BOARD_CY4390x
-	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
+	default "stm32f4discovery"     if ARCH_BOARD_STM32F4_DISCOVERY
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
 	default "esp32_devkit"       if ARCH_BOARD_ESP32_FAMILY
 	default "imxrt1020-evk"      if ARCH_BOARD_IMXRT1020_EVK
@@ -230,7 +230,7 @@ config ARCH_BOARD
 	default "stm32l4r9ai-disco"  if ARCH_BOARD_STM32L4R9AI_DISCO
 	default "rtl8730e"           if ARCH_BOARD_RTL8730E
 	default "rtl8721csm"         if ARCH_BOARD_RTL8721CSM
-	default "stm32h745zi-nucleo" if ARCH_BOARD_STM32H745ZI_NUCLEO
+	default "nucleo-h745zi"      if ARCH_BOARD_NUCLEO_H745ZI
 	default "sabre-6quad"	     if ARCH_BOARD_SABRE_6QUAD	
 	default "qemu-armv7a"        if ARCH_BOARD_QEMU_ARMV7A
 	default "qemu-armv7r"        if ARCH_BOARD_QEMU_ARMV7R
@@ -709,8 +709,8 @@ endif
 if ARCH_BOARD_RTL8721CSM
 source board/rtl8721csm/Kconfig
 endif
-if ARCH_BOARD_STM32H745ZI_NUCLEO
-source board/stm32h745zi-nucleo/Kconfig
+if ARCH_BOARD_NUCLEO_H745ZI
+source board/nucleo-h745zi/Kconfig
 endif
 if ARCH_BOARD_QEMU_ARMV7A
 source board/qemu-armv7a/Kconfig

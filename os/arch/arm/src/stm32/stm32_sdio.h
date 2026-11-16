@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,65 +15,53 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
+/****************************************************************************
  * arch/arm/src/stm32/stm32_sdio.h
  *
- *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_STM32_STM32_SDIO_H
 #define __ARCH_ARM_SRC_STM32_STM32_SDIO_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <sys/types.h>
 #include <stdbool.h>
 
 #include "chip.h"
-#include "chip/stm32_sdio.h"
+#include "hardware/stm32_sdio.h"
 
-/************************************************************************************
- * Public Functions
- ************************************************************************************/
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 #ifndef __ASSEMBLY__
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -87,19 +75,20 @@ extern "C" {
  * Input Parameters:
  *   slotno - Not used.
  *
- * Returned Values:
- *   A reference to an SDIO interface structure.  NULL is returned on failures.
+ * Returned Value:
+ *   A reference to an SDIO interface structure.  NULL is returned on
+ *   failures.
  *
  ****************************************************************************/
 
-struct sdio_dev_s;				/* See include/tinyara/sdio.h */
-EXTERN FAR struct sdio_dev_s *sdio_initialize(int slotno);
+struct sdio_dev_s; /* See include/nuttx/sdio.h */
+struct sdio_dev_s *sdio_initialize(int slotno);
 
 /****************************************************************************
  * Name: sdio_mediachange
  *
  * Description:
- *   Called by board-specific logic -- posssible from an interrupt handler --
+ *   Called by board-specific logic -- possibly from an interrupt handler --
  *   in order to signal to the driver that a card has been inserted or
  *   removed from the slot
  *
@@ -109,12 +98,12 @@ EXTERN FAR struct sdio_dev_s *sdio_initialize(int slotno);
  *                card has been removed from the slot.  Only transitions
  *                (inserted->removed or removed->inserted should be reported)
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-EXTERN void sdio_mediachange(FAR struct sdio_dev_s *dev, bool cardinslot);
+void sdio_mediachange(struct sdio_dev_s *dev, bool cardinslot);
 
 /****************************************************************************
  * Name: sdio_wrprotect
@@ -127,17 +116,38 @@ EXTERN void sdio_mediachange(FAR struct sdio_dev_s *dev, bool cardinslot);
  *   dev       - An instance of the SDIO driver device state structure.
  *   wrprotect - true is a card is writeprotected.
  *
- * Returned Values:
+ * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-EXTERN void sdio_wrprotect(FAR struct sdio_dev_s *dev, bool wrprotect);
+void sdio_wrprotect(struct sdio_dev_s *dev, bool wrprotect);
+
+/****************************************************************************
+ * Name: sdio_set_sdio_card_isr
+ *
+ * Description:
+ *   SDIO card generates interrupt via SDIO_DATA_1 pin.
+ *   Called by board-specific logic to register an ISR for SDIO card.
+ *
+ * Input Parameters:
+ *   func      - callback function.
+ *   arg       - arg to be passed to the function.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32_SDIO_CARD
+void sdio_set_sdio_card_isr(struct sdio_dev_s *dev,
+                            int (*func)(void *), void *arg);
+#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_STM32_STM32_SDIO_H */
+#endif /* __ASSEMBLY__ */
+#endif /* __ARCH_ARM_SRC_STM32_STM32_SDIO_H */

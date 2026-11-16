@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,44 +15,31 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * os/board/stm32f429i-disco/src/stm32_extmem.c
+/****************************************************************************
+ * boards/arm/stm32/stm32f429i-disco/src/stm32_extmem.c
  *
- *   Copyright (C) 2013 Ken Pettit. All rights reserved.
- *   Author: Ken Pettit <pettitkd@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -63,197 +50,146 @@
 #include <arch/board/board.h>
 
 #include "chip.h"
-#include "up_arch.h"
-
-#include "stm32_fsmc.h"
-#include "stm32_gpio.h"
+#include "arm_internal.h"
 #include "stm32.h"
 #include "stm32f429i-disco.h"
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 
-#ifndef CONFIG_STM32_FSMC
-#warning "FSMC is not enabled"
+#ifndef CONFIG_STM32_FMC
+#warning "FMC is not enabled"
 #endif
 
 #if STM32_NGPIO_PORTS < 6
 #error "Required GPIO ports not enabled"
 #endif
 
-#define STM32_FSMC_NADDRCONFIGS 22
-#define STM32_FSMC_NDATACONFIGS 16
+#define STM32_SDRAM_CLKEN     FMC_SDCMR_CMD_CLK_ENABLE | FMC_SDCMR_BANK_2
 
-#define STM32_SDRAM_CLKEN     FSMC_SDRAM_MODE_CMD_CLK_ENABLE | FSMC_SDRAM_CMD_BANK_2
-#define STM32_SDRAM_PALL      FSMC_SDRAM_MODE_CMD_PALL | FSMC_SDRAM_CMD_BANK_2
-#define STM32_SDRAM_REFRESH   FSMC_SDRAM_MODE_CMD_AUTO_REFRESH | FSMC_SDRAM_CMD_BANK_2 |\
-                                (3 << FSMC_SDRAM_AUTO_REFRESH_SHIFT)
-#define STM32_SDRAM_MODEREG   FSMC_SDRAM_MODE_CMD_LOAD_MODE | FSMC_SDRAM_CMD_BANK_2 |\
-                                FSMC_SDRAM_MODEREG_BURST_LENGTH_2 | \
-                                FSMC_SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL |\
-                                FSMC_SDRAM_MODEREG_CAS_LATENCY_3 |\
-                                FSMC_SDRAM_MODEREG_WRITEBURST_MODE_SINGLE
+#define STM32_SDRAM_PALL      FMC_SDCMR_CMD_PALL | FMC_SDCMR_BANK_2
 
-/************************************************************************************
+#define STM32_SDRAM_REFRESH   FMC_SDCMR_CMD_AUTO_REFRESH | FMC_SDCMR_BANK_2 |\
+                                FMC_SDCMR_NRFS(4)
+
+#define STM32_SDRAM_MODEREG   FMC_SDCMR_CMD_LOAD_MODE | FMC_SDCMR_BANK_2 |\
+                                FMC_SDCMR_MDR_BURST_LENGTH_2 | \
+                                FMC_SDCMR_MDR_BURST_TYPE_SEQUENTIAL |\
+                                FMC_SDCMR_MDR_CAS_LATENCY_3 |\
+                                FMC_SDCMR_MDR_WBL_SINGLE
+
+/****************************************************************************
  * Public Data
- ************************************************************************************/
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 /* GPIO configurations common to most external memories */
 
-static const uint32_t g_addressconfig[STM32_FSMC_NADDRCONFIGS] = {
-	GPIO_FSMC_A0, GPIO_FSMC_A1, GPIO_FSMC_A2, GPIO_FSMC_A3, GPIO_FSMC_A4, GPIO_FSMC_A5,
-	GPIO_FSMC_A6, GPIO_FSMC_A7, GPIO_FSMC_A8, GPIO_FSMC_A9, GPIO_FSMC_A10, GPIO_FSMC_A11,
+static const uint32_t g_sdram_config[] =
+{
+  /* 16 data lines */
 
-	GPIO_FSMC_SDCKE1, GPIO_FSMC_SDNE1, GPIO_FSMC_SDNWE, GPIO_FSMC_NBL0,
-	GPIO_FSMC_SDNRAS, GPIO_FSMC_NBL1, GPIO_FSMC_BA0, GPIO_FSMC_BA1,
-	GPIO_FSMC_SDCLK, GPIO_FSMC_SDNCAS
+  GPIO_FMC_D0, GPIO_FMC_D1, GPIO_FMC_D2, GPIO_FMC_D3,
+  GPIO_FMC_D4, GPIO_FMC_D5, GPIO_FMC_D6, GPIO_FMC_D7,
+  GPIO_FMC_D8, GPIO_FMC_D9, GPIO_FMC_D10, GPIO_FMC_D11,
+  GPIO_FMC_D12, GPIO_FMC_D13, GPIO_FMC_D14, GPIO_FMC_D15,
+
+  /* 12 address lines */
+
+  GPIO_FMC_A0, GPIO_FMC_A1, GPIO_FMC_A2, GPIO_FMC_A3,
+  GPIO_FMC_A4, GPIO_FMC_A5, GPIO_FMC_A6, GPIO_FMC_A7,
+  GPIO_FMC_A8, GPIO_FMC_A9, GPIO_FMC_A10, GPIO_FMC_A11,
+
+  /* control lines */
+
+  GPIO_FMC_SDCKE1, GPIO_FMC_SDNE1, GPIO_FMC_SDNWE, GPIO_FMC_NBL0,
+  GPIO_FMC_SDNRAS, GPIO_FMC_NBL1, GPIO_FMC_BA0, GPIO_FMC_BA1,
+  GPIO_FMC_SDCLK, GPIO_FMC_SDNCAS,
 };
 
-static const uint32_t g_dataconfig[STM32_FSMC_NDATACONFIGS] = {
-	GPIO_FSMC_D0, GPIO_FSMC_D1, GPIO_FSMC_D2, GPIO_FSMC_D3, GPIO_FSMC_D4, GPIO_FSMC_D5,
-	GPIO_FSMC_D6, GPIO_FSMC_D7, GPIO_FSMC_D8, GPIO_FSMC_D9, GPIO_FSMC_D10, GPIO_FSMC_D11,
-	GPIO_FSMC_D12, GPIO_FSMC_D13, GPIO_FSMC_D14, GPIO_FSMC_D15
-};
+#define NUM_SDRAM_GPIOS (sizeof(g_sdram_config) / sizeof(uint32_t))
 
-/************************************************************************************
- * Private Data
- ************************************************************************************/
-
-/************************************************************************************
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
- * Name: stm32_extmemgpios
+/****************************************************************************
+ * Name: stm32_sdram_initialize
  *
  * Description:
- *   Initialize GPIOs for external memory usage
+ *   Called from stm32_bringup to initialize external SDRAM access.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static void stm32_extmemgpios(const uint32_t *gpios, int ngpios)
+void stm32_sdram_initialize(void)
 {
-	int i;
+  uint32_t val;
+  int i;
+  volatile int count;
 
-	/* Configure GPIOs */
+  /* Enable GPIOs as FMC / memory pins */
 
-	for (i = 0; i < ngpios; i++) {
-		stm32_configgpio(gpios[i]);
-	}
-}
+  for (i = 0; i < NUM_SDRAM_GPIOS; i++)
+    {
+      stm32_configgpio(g_sdram_config[i]);
+    }
 
-/************************************************************************************
- * Name: stm32_sdramcommand
- *
- * Description:
- *   Initialize data line GPIOs for external memory access
- *
- ************************************************************************************/
+  /* Enable AHB clocking to the FMC */
 
-static void stm32_sdramcommand(uint32_t command)
-{
-	uint32_t regval;
-	volatile uint32_t timeout = 0xFFFF;
+  stm32_fmc_enable();
 
-	regval = getreg32(STM32_FSMC_SDSR) & 0x00000020;
-	while ((regval != 0) && timeout-- > 0) {
-		regval = getreg32(STM32_FSMC_SDSR) & 0x00000020;
-	}
-	putreg32(command, STM32_FSMC_SDCMR);
-	timeout = 0xFFFF;
-	regval = getreg32(STM32_FSMC_SDSR) & 0x00000020;
-	while ((regval != 0) && timeout-- > 0) {
-		regval = getreg32(STM32_FSMC_SDSR) & 0x00000020;
-	}
-}
+  /* Configure and enable the SDRAM bank1
+   *
+   *   FMC clock = 180MHz/2 = 90MHz
+   *   90MHz = 11,11 ns
+   *   All timings from the datasheet for Speedgrade -7 (=7ns)
+   */
 
-/************************************************************************************
- * Name: stm32_enablefsmc
- *
- * Description:
- *  enable clocking to the FSMC module
- *
- ************************************************************************************/
+  val = FMC_SDCR_RPIPE_1 |      /* rpipe = 1 hclk */
+    FMC_SDCR_SDCLK_2X |         /* sdclk = 2 hclk */
+    FMC_SDCR_CAS_LATENCY_3 |    /* cas latency = 3 cycles */
+    FMC_SDCR_NBANKS_4 |         /* 4 internal banks */
+    FMC_SDCR_WIDTH_16 |         /* width = 16 bits */
+    FMC_SDCR_ROWS_12 |          /* numrows = 12 */
+    FMC_SDCR_COLS_8;            /* numcols = 8 bits */
+  stm32_fmc_sdram_set_control(1, val);
+  stm32_fmc_sdram_set_control(2, val);
 
-void stm32_enablefsmc(void)
-{
-	uint32_t regval;
-	volatile int count;
+  val = FMC_SDTR_TRCD(3) |      /* tRCD min = 15ns */
+    FMC_SDTR_TRP(3) |           /* tRP  min = 15ns */
+    FMC_SDTR_TWR(3) |           /* tWR      = 2CLK */
+    FMC_SDTR_TRC(8) |           /* tRC  min = 63ns */
+    FMC_SDTR_TRAS(5) |          /* tRAS min = 42ns */
+    FMC_SDTR_TXSR(8) |          /* tXSR min = 70ns */
+    FMC_SDTR_TMRD(3);           /* tMRD     = 2CLK */
+  stm32_fmc_sdram_set_timing(2, val);
 
-	/* Enable GPIOs as FSMC / memory pins */
+  /* SDRAM Initialization sequence */
 
-	stm32_extmemgpios(g_addressconfig, STM32_FSMC_NADDRCONFIGS);
-	stm32_extmemgpios(g_dataconfig, STM32_FSMC_NDATACONFIGS);
+  stm32_fmc_sdram_command(STM32_SDRAM_CLKEN);   /* Clock enable command */
+  for (count = 0; count < 10000; count++);      /* Delay */
+  stm32_fmc_sdram_command(STM32_SDRAM_PALL);    /* Precharge ALL command */
+  stm32_fmc_sdram_command(STM32_SDRAM_REFRESH); /* Auto refresh command */
+  stm32_fmc_sdram_command(STM32_SDRAM_MODEREG); /* Mode Register program */
 
-	/* Enable AHB clocking to the FSMC */
+  /* Set refresh count
+   *
+   * FMC_CLK = 90MHz
+   * Refresh_Rate = 7.81us
+   * Counter = (FMC_CLK * Refresh_Rate) - 20
+   */
 
-	regval = getreg32(STM32_RCC_AHB3ENR);
-	regval |= RCC_AHB3ENR_FSMCEN;
-	putreg32(regval, STM32_RCC_AHB3ENR);
+  stm32_fmc_sdram_set_refresh_rate(683);
 
-	/* Configure and enable the SDRAM bank1
-	 *
-	 *   FMC clock = 180MHz/2 = 90MHz
-	 *   90MHz = 11,11 ns
-	 *   All timings from the datasheet for Speedgrade -7 (=7ns)
-	 */
+  /* Disable write protection */
 
-	putreg32(FSMC_SDRAM_CR_RPIPE_1 | FSMC_SDRAM_CR_SDCLK_2X | FSMC_SDRAM_CR_CASLAT_3 | FSMC_SDRAM_CR_BANKS_4 | FSMC_SDRAM_CR_WIDTH_16 | FSMC_SDRAM_CR_ROWBITS_12 | FSMC_SDRAM_CR_COLBITS_8, STM32_FSMC_SDCR1);
-
-	putreg32(FSMC_SDRAM_CR_RPIPE_1 | FSMC_SDRAM_CR_SDCLK_2X | FSMC_SDRAM_CR_CASLAT_3 | FSMC_SDRAM_CR_BANKS_4 | FSMC_SDRAM_CR_WIDTH_16 | FSMC_SDRAM_CR_ROWBITS_12 | FSMC_SDRAM_CR_COLBITS_8, STM32_FSMC_SDCR2);
-
-	putreg32((2 << FSMC_SDRAM_TR_TRCD_SHIFT) |	/* tRCD min = 15ns */
-			 (2 << FSMC_SDRAM_TR_TRP_SHIFT) |	/* tRP  min = 15ns */
-			 (2 << FSMC_SDRAM_TR_TWR_SHIFT) |	/* tWR      = 2CLK */
-			 (7 << FSMC_SDRAM_TR_TRC_SHIFT) |	/* tRC  min = 63ns */
-			 (4 << FSMC_SDRAM_TR_TRAS_SHIFT) |	/* tRAS min = 42ns */
-			 (7 << FSMC_SDRAM_TR_TXSR_SHIFT) |	/* tXSR min = 70ns */
-			 (2 << FSMC_SDRAM_TR_TMRD_SHIFT),	/* tMRD     = 2CLK */
-			 STM32_FSMC_SDTR2);
-
-	/* SDRAM Initialization sequence */
-
-	stm32_sdramcommand(STM32_SDRAM_CLKEN);	/* Clock enable command */
-	for (count = 0; count < 10000; count++) ;	/* Delay */
-	stm32_sdramcommand(STM32_SDRAM_PALL);	/* Precharge ALL command */
-	stm32_sdramcommand(STM32_SDRAM_REFRESH);	/* Auto refresh command */
-	stm32_sdramcommand(STM32_SDRAM_MODEREG);	/* Mode Register program */
-
-	/* Set refresh count
-	 *
-	 * FMC_CLK = 90MHz
-	 * Refresh_Rate = 7.81us
-	 * Counter = (FMC_CLK * Refresh_Rate) - 20
-	 */
-
-	putreg32(683 << 1, STM32_FSMC_SDRTR);
-
-	/* Disable write protection */
-
-//  regval = getreg32(STM32_FSMC_SDCR2);
-//  putreg32(regval & 0xFFFFFDFF, STM32_FSMC_SDCR2);
-}
-
-/************************************************************************************
- * Name: stm32_disablefsmc
- *
- * Description:
- *  enable clocking to the FSMC module
- *
- ************************************************************************************/
-
-void stm32_disablefsmc(void)
-{
-	uint32_t regval;
-
-	/* Disable AHB clocking to the FSMC */
-
-	regval = getreg32(STM32_RCC_AHB3ENR);
-	regval &= ~RCC_AHB3ENR_FSMCEN;
-	putreg32(regval, STM32_RCC_AHB3ENR);
+  /* stm32_fmc_sdram_write_protect(2, false); */
 }

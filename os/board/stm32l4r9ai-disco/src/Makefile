@@ -1,8 +1,25 @@
-############################################################################
-# configs/stm32l4r9ai-disco/src/Makefile
+###########################################################################
 #
-#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
-#   Author: dev@ziggurat29.com
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# board/stm32l4r9ai-disco/src/Makefile
+#
+#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -34,10 +51,11 @@
 ############################################################################
 
 -include $(TOPDIR)/Make.defs
-
-DEPPATH = --dep-path .
 ASRCS =
-CSRCS = stm32_boot.c
+DEPPATH = --dep-path .
+VPATH = .
+
+CSRCS = stm32_boot.c stm32_bringup.c
 
 ifeq ($(CONFIG_ARCH_BOARD_STM32L4_CUSTOM_CLOCKCONFIG),y)
 CSRCS += stm32_clockconfig.c
@@ -74,79 +92,58 @@ ifeq ($(CONFIG_STM32L4_OTGFS),y)
 CSRCS += stm32_usb.c
 endif
 
-ifeq ($(CONFIG_LIB_BOARDCTL),y)
+ifeq ($(CONFIG_BOARDCTL),y)
 CSRCS += stm32_appinit.c
+ifeq ($(CONFIG_BOARDCTL_IOCTL),y)
+CSRCS += stm32_ioctl.c
+endif
 endif
 
-ifeq ($(CONFIG_STM32L4_LTDC),y)
-CSRCS += stm32_lcd.c
-CSRCS += stm32l4r9i_lcd.c
+ifeq ($(CONFIG_ETC_ROMFS),y)
+CSRCS += etc_romfs.c
 endif
 
-ifeq ($(CONFIG_FLASH_PARTITION),y)
-DEPPATH += --dep-path $(TOPDIR)/board/common
-VPATH += :$(TOPDIR)/board/common
-CSRCS += partitions.c
+ifeq ($(CONFIG_BOARDCTL_UNIQUEID),y)
+CSRCS += stm32_uid.c
 endif
 
-DEPPATH += --dep-path $(TOPDIR)/board/common
-VPATH += :$(TOPDIR)/board/common
-
-ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
-CSRCS += crashdump.c
+ifneq ($(CONFIG_STM32_ETHMAC),y)
+ifeq ($(CONFIG_NETDEVICES),y)
+CSRCS += stm32_netinit.c
+endif
 endif
 
-CSRCS += stm32l4r9i_discovery.c
-CSRCS += stm32l4r9i_discovery_io.c
-CSRCS += stm32l4r9i_discovery_ts.c
-CSRCS += mfxstm32l152.c
-CSRCS += stm32_exflash.c
-CSRCS += stm32_psram.c
 
-CSRCS += ft3x67.c
-
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+CFLAGS += -I$(TOPDIR)/kernel -I$(TOPDIR)/arch/arm/src/common -I$(TOPDIR)/arch/arm/src/chip -I$(TOPDIR)/arch/arm/src/$(ARCH_FAMILY)
+AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src
-BOARD_SRCDIR = $(TOPDIR)/board
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  CFLAGS += -I$(ARCH_SRCDIR)\chip -I$(ARCH_SRCDIR)\common -I$(ARCH_SRCDIR)\armv7-m
-else
-ifeq ($(WINTOOL),y)
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
-  CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
-else
-  CFLAGS += -I$(ARCH_SRCDIR)/chip
-  CFLAGS += -I$(ARCH_SRCDIR)/common
-  CFLAGS += -I$(ARCH_SRCDIR)/armv7-m
-  CFLAGS += -I$(BOARD_SRCDIR)/common
-endif
-endif
+BIN = libboard$(LIBEXT)
 
-all: libboard$(LIBEXT)
+all: $(BIN)
+.PHONY: context depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
+$(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-libboard$(LIBEXT): $(OBJS)
+$(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
 
 clean:
-	$(call DELFILE, libboard$(LIBEXT))
+	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
 distclean: clean
@@ -155,4 +152,4 @@ distclean: clean
 
 -include Make.dep
 
-#include $(TOPDIR)/configs/Board.mk
+context:

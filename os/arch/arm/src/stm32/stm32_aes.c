@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,35 +18,22 @@
 /****************************************************************************
  * arch/arm/src/stm32/stm32_aes.c
  *
- *   Copyright (C) 2015 Haltian Ltd. All rights reserved.
- *   Author:  Juha Niskanen <juha.niskanen@haltian.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,16 +47,16 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <semaphore.h>
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/crypto/crypto.h>
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/semaphore.h>
 #include <arch/board/board.h>
 
-#include "up_internal.h"
-#include "up_arch.h"
-
+#include "arm_internal.h"
 #include "chip.h"
 #include "stm32_rcc.h"
 #include "stm32_aes.h"
@@ -88,18 +75,20 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static void aes_enable(bool on);
-static void aes_ccfc(void);
-static void aes_setkey(const void *key, size_t key_len);
-static void aes_setiv(const void *iv);
-static void aes_encryptblock(void *block_out, const void *block_in);
-static int aes_setup_cr(int mode, int encrypt);
+static void stm32aes_enable(bool on);
+static void stm32aes_ccfc(void);
+static void stm32aes_setkey(const void *key, size_t key_len);
+static void stm32aes_setiv(const void *iv);
+static void stm32aes_encryptblock(void *block_out,
+                                  const void *block_in);
+static int  stm32aes_setup_cr(int mode, int encrypt);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static sem_t aes_lock;
+static mutex_t g_stm32aes_lock = NXMUTEX_INITIALIZER;
+static bool    g_stm32aes_initdone = false;
 
 /****************************************************************************
  * Public Data
@@ -109,7 +98,7 @@ static sem_t aes_lock;
  * Private Functions
  ****************************************************************************/
 
-static void aes_enable(bool on)
+static void stm32aes_enable(bool on)
 {
 	uint32_t regval;
 
@@ -119,25 +108,26 @@ static void aes_enable(bool on)
 	} else {
 		regval &= ~AES_CR_EN;
 	}
+
 	putreg32(regval, STM32_AES_CR);
 }
 
 /* Clear AES_SR_CCF status register bit */
 
-static void aes_ccfc(void)
+static void stm32aes_ccfc(void)
 {
 	uint32_t regval;
 
-	regval = getreg32(STM32_AES_CR);
+	regval  = getreg32(STM32_AES_CR);
 	regval |= AES_CR_CCFC;
 	putreg32(regval, STM32_AES_CR);
 }
 
-static void aes_setkey(const void *key, size_t key_len)
+/* TODO: Handle other AES key lengths or fail if length is not valid */
+
+static void stm32aes_setkey(const void *key, size_t key_len)
 {
 	uint32_t *in = (uint32_t *)key;
-
-	(void)key_len;
 
 	putreg32(__builtin_bswap32(*in), STM32_AES_KEYR3);
 	in++;
@@ -148,7 +138,7 @@ static void aes_setkey(const void *key, size_t key_len)
 	putreg32(__builtin_bswap32(*in), STM32_AES_KEYR0);
 }
 
-static void aes_setiv(const void *iv)
+static void stm32aes_setiv(const void *iv)
 {
 	uint32_t *in = (uint32_t *)iv;
 
@@ -161,9 +151,10 @@ static void aes_setiv(const void *iv)
 	putreg32(__builtin_bswap32(*in), STM32_AES_IVR0);
 }
 
-static void aes_encryptblock(void *block_out, const void *block_in)
+static void stm32aes_encryptblock(void *block_out,
+                                  const void *block_in)
 {
-	uint32_t *in = (uint32_t *)block_in;
+	uint32_t *in  = (uint32_t *)block_in;
 	uint32_t *out = (uint32_t *)block_out;
 
 	putreg32(*in, STM32_AES_DINR);
@@ -174,8 +165,8 @@ static void aes_encryptblock(void *block_out, const void *block_in)
 	in++;
 	putreg32(*in, STM32_AES_DINR);
 
-	while (!(getreg32(STM32_AES_SR) & AES_SR_CCF)) ;
-	aes_ccfc();
+	while (!(getreg32(STM32_AES_SR) & AES_SR_CCF));
+	stm32aes_ccfc();
 
 	*out = getreg32(STM32_AES_DOUTR);
 	out++;
@@ -186,7 +177,7 @@ static void aes_encryptblock(void *block_out, const void *block_in)
 	*out = getreg32(STM32_AES_DOUTR);
 }
 
-static int aes_setup_cr(int mode, int encrypt)
+static int stm32aes_setup_cr(int mode, int encrypt)
 {
 	uint32_t regval = 0;
 
@@ -227,9 +218,66 @@ static int aes_setup_cr(int mode, int encrypt)
  * Public Functions
  ****************************************************************************/
 
-int aes_cypher(void *out, const void *in, uint32_t size, const void *iv, const void *key, uint32_t keysize, int mode, int encrypt)
+int stm32_aesreset(void)
+{
+	irqstate_t flags;
+	uint32_t regval;
+
+	flags = enter_critical_section();
+
+	regval  = getreg32(STM32_RCC_AHBRSTR);
+	regval |= RCC_AHBRSTR_AESRST;
+	putreg32(regval, STM32_RCC_AHBRSTR);
+	regval &= ~RCC_AHBRSTR_AESRST;
+	putreg32(regval, STM32_RCC_AHBRSTR);
+
+	leave_critical_section(flags);
+
+	return OK;
+}
+
+int stm32_aesinitialize(void)
+{
+	uint32_t regval;
+
+	regval  = getreg32(STM32_RCC_AHBENR);
+	regval |= RCC_AHBENR_AESEN;
+	putreg32(regval, STM32_RCC_AHBENR);
+
+	stm32aes_enable(false);
+
+	return OK;
+}
+
+int stm32_aesuninitialize(void)
+{
+	uint32_t regval;
+
+	stm32aes_enable(false);
+
+	regval  = getreg32(STM32_RCC_AHBENR);
+	regval &= ~RCC_AHBENR_AESEN;
+	putreg32(regval, STM32_RCC_AHBENR);
+
+	return OK;
+}
+
+int aes_cypher(void *out, const void *in, size_t size,
+               const void *iv, const void *key, size_t keysize,
+               int mode, int encrypt)
 {
 	int ret = OK;
+
+	/* Ensure initialization was done */
+
+	if (!g_stm32aes_initdone) {
+		ret = stm32_aesinitialize();
+		if (ret < 0) {
+			return ret; /* AES init failed */
+		}
+
+		g_stm32aes_initdone = true;
+	}
 
 	if ((size & (AES_BLOCK_SIZE - 1)) != 0) {
 		return -EINVAL;
@@ -239,83 +287,35 @@ int aes_cypher(void *out, const void *in, uint32_t size, const void *iv, const v
 		return -EINVAL;
 	}
 
-	ret = sem_wait(&aes_lock);
+	ret = nxmutex_lock(&g_stm32aes_lock);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* AES must be disabled before changing mode, key or IV. */
 
-	aes_enable(false);
-	ret = aes_setup_cr(mode, encrypt);
+	stm32aes_enable(false);
+	ret = stm32aes_setup_cr(mode, encrypt);
 	if (ret < 0) {
 		goto out;
 	}
 
-	aes_setkey(key, keysize);
-	if (iv) {
-		aes_setiv(iv);
+	stm32aes_setkey(key, keysize);
+	if (iv != NULL) {
+		stm32aes_setiv(iv);
 	}
 
-	aes_enable(true);
+	stm32aes_enable(true);
 	while (size) {
-		aes_encryptblock(out, in);
-		out = (uint8_t *)out + AES_BLOCK_SIZE;
-		in = (uint8_t *)in + AES_BLOCK_SIZE;
+		stm32aes_encryptblock(out, in);
+		out   = (uint8_t *)out + AES_BLOCK_SIZE;
+		in    = (uint8_t *)in + AES_BLOCK_SIZE;
 		size -= AES_BLOCK_SIZE;
 	}
 
-	aes_enable(false);
+	stm32aes_enable(false);
 
 out:
-	sem_post(&aes_lock);
+	nxmutex_unlock(&g_stm32aes_lock);
 	return ret;
-}
-
-int up_aesreset(void)
-{
-	irqstate_t flags;
-	uint32_t regval;
-
-	flags = irqsave();
-
-	regval = getreg32(STM32_RCC_AHBRSTR);
-	regval |= RCC_AHBRSTR_AESRST;
-	putreg32(regval, STM32_RCC_AHBRSTR);
-	regval &= ~RCC_AHBRSTR_AESRST;
-	putreg32(regval, STM32_RCC_AHBRSTR);
-
-	irqrestore(flags);
-
-	return OK;
-}
-
-int up_aesinitialize(void)
-{
-	uint32_t regval;
-
-	sem_init(&aes_lock, 0, 1);
-
-	regval = getreg32(STM32_RCC_AHBENR);
-	regval |= RCC_AHBENR_AESEN;
-	putreg32(regval, STM32_RCC_AHBENR);
-
-	aes_enable(false);
-
-	return OK;
-}
-
-int up_aesuninitialize(void)
-{
-	uint32_t regval;
-
-	aes_enable(false);
-
-	regval = getreg32(STM32_RCC_AHBENR);
-	regval &= ~RCC_AHBENR_AESEN;
-	putreg32(regval, STM32_RCC_AHBENR);
-
-	sem_destroy(&aes_lock);
-
-	return OK;
 }

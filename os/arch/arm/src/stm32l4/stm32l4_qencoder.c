@@ -1,42 +1,45 @@
-/************************************************************************************
- * arch/arm/src/stm32l4/stm32;4_qencoder.c
+/****************************************************************************
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
- *            Diego Sanchez <dsanchez@nx-engineering.com>
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
+/****************************************************************************
+ * arch/arm/src/stm32l4/stm32l4_qencoder.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -47,14 +50,13 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
+#include <tinyara/spinlock.h>
 #include <tinyara/sensors/qencoder.h>
 
 #include <arch/board/board.h>
 
 #include "chip.h"
-#include "up_internal.h"
-#include "up_arch.h"
-
+#include "arm_internal.h"
 #include "stm32l4.h"
 #include "stm32l4_gpio.h"
 #include "stm32l4_tim.h"
@@ -62,12 +64,13 @@
 
 #ifdef CONFIG_SENSORS_QENCODER
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
-/* Clocking *************************************************************************/
+ ****************************************************************************/
 
-/* Timers ***************************************************************************/
+/* Clocking *****************************************************************/
+
+/* Timers *******************************************************************/
 
 #undef HAVE_32BIT_TIMERS
 #undef HAVE_16BIT_TIMERS
@@ -87,7 +90,7 @@
 #  define HAVE_16BIT_TIMERS   1
 #endif
 
-   /* The width in bits of each timer */
+/* The width in bits of each timer */
 
 #define TIM1_BITWIDTH         16
 #define TIM2_BITWIDTH         32
@@ -103,7 +106,7 @@
 #  define HAVE_MIXEDWIDTH_TIMERS 1
 #endif
 
-/* Input filter *********************************************************************/
+/* Input filter *************************************************************/
 
 #ifdef CONFIG_STM32L4_QENCODER_FILTER
 #  if defined(CONFIG_STM32L4_QENCODER_SAMPLE_FDTS)
@@ -165,10 +168,13 @@
 
 #define STM32L4_GPIO_INPUT_FLOAT (GPIO_INPUT | GPIO_FLOAT)
 
-/* Debug ****************************************************************************/
-/* Non-standard debug that may be enabled just for testing the quadrature encoder */
+/* Debug ********************************************************************/
 
-#ifndef CONFIG_DEBUG
+/* Non-standard debug that may be enabled just for testing the quadrature
+ * encoder
+ */
+
+#ifndef CONFIG_DEBUG_FEATURES
 #  undef CONFIG_DEBUG_SENSORS
 #endif
 
@@ -182,90 +188,100 @@
 #  define qe_dumpgpio(p,m)
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Private Types
- ************************************************************************************/
+ ****************************************************************************/
 
 /* Constant configuration structure that is retained in FLASH */
 
-struct stm32l4_qeconfig_s
-{
-  uint8_t  timid;   /* Timer ID {1,2,3,4,5,8} */
-  uint8_t  irq;     /* Timer update IRQ */
+struct stm32l4_qeconfig_s {
+	uint8_t  timid;   /* Timer ID {1,2,3,4,5,8} */
+	uint8_t  irq;     /* Timer update IRQ */
 #ifdef HAVE_MIXEDWIDTH_TIMERS
-  uint8_t  width;   /* Timer width (16- or 32-bits) */
+	uint8_t  width;   /* Timer width (16- or 32-bits) */
 #endif
-  uint32_t ti1cfg;  /* TI1 input pin configuration (20-bit encoding) */
-  uint32_t ti2cfg;  /* TI2 input pin configuration (20-bit encoding) */
-  uint32_t base;    /* Register base address */
-  uint32_t psc;     /* Encoder pulses prescaler */
+	uint32_t ti1cfg;  /* TI1 input pin configuration (20-bit encoding) */
+	uint32_t ti2cfg;  /* TI2 input pin configuration (20-bit encoding) */
+	uint32_t base;    /* Register base address */
+	uint32_t psc;     /* Encoder pulses prescaler */
 };
 
 /* Overall, RAM-based state structure */
 
-struct stm32l4_lowerhalf_s
-{
-  /* The first field of this state structure must be a pointer to the lower-
-   * half callback structure:
-   */
+struct stm32l4_lowerhalf_s {
+	/* The first field of this state structure must be a pointer to the lower-
+	 * half callback structure:
+	 */
 
-  FAR const struct qe_ops_s *ops;  /* Lower half callback structure */
+	const struct qe_ops_s *ops;  /* Lower half callback structure */
 
-  /* STM32 driver-specific fields: */
+	/* STM32 driver-specific fields: */
 
-  FAR const struct stm32l4_qeconfig_s *config; /* static onfiguration */
+	const struct stm32l4_qeconfig_s *config; /* static onfiguration */
 
-  bool             inuse;    /* True: The lower-half driver is in-use */
+	bool             inuse;    /* True: The lower-half driver is in-use */
 
 #ifdef HAVE_16BIT_TIMERS
-  volatile int32_t position; /* The current position offset */
+	volatile int32_t position; /* The current position offset */
 #endif
+	spinlock_t       lock;     /* Spinlock */
 };
 
-/************************************************************************************
+/****************************************************************************
  * Private Function Prototypes
- ************************************************************************************/
+ ****************************************************************************/
+
 /* Helper functions */
 
-static uint16_t stm32l4_getreg16(FAR struct stm32l4_lowerhalf_s *priv, int offset);
-static void stm32l4_putreg16(FAR struct stm32l4_lowerhalf_s *priv, int offset, uint16_t value);
-static uint32_t stm32l4_getreg32(FAR struct stm32l4_lowerhalf_s *priv, int offset);
-static void stm32l4_putreg32(FAR struct stm32l4_lowerhalf_s *priv, int offset, uint32_t value);
+static uint16_t stm32l4_getreg16(struct stm32l4_lowerhalf_s *priv,
+                                 int offset);
+static void stm32l4_putreg16(struct stm32l4_lowerhalf_s *priv,
+                             int offset, uint16_t value);
+static uint32_t stm32l4_getreg32(struct stm32l4_lowerhalf_s *priv,
+                                 int offset);
+static void stm32l4_putreg32(struct stm32l4_lowerhalf_s *priv,
+                             int offset, uint32_t value);
 
 #if defined(CONFIG_DEBUG_SENSORS) && defined(CONFIG_DEBUG_INFO)
-static void stm32l4_dumpregs(FAR struct stm32l4_lowerhalf_s *priv, FAR const char *msg);
+static void stm32l4_dumpregs(struct stm32l4_lowerhalf_s *priv,
+                             const char *msg);
 #else
 #  define stm32l4_dumpregs(priv,msg)
 #endif
 
-static FAR struct stm32l4_lowerhalf_s *stm32l4_tim2lower(int tim);
+static struct stm32l4_lowerhalf_s *stm32l4_tim2lower(int tim);
 
 /* Interrupt handling */
 
 #ifdef HAVE_16BIT_TIMERS
-static int stm32l4_interrupt(int irq, FAR void *context, FAR void *arg);
+static int stm32l4_interrupt(int irq, void *context, void *arg);
 #endif
 
 /* Lower-half Quadrature Encoder Driver Methods */
 
-static int stm32l4_setup(FAR struct qe_lowerhalf_s *lower);
-static int stm32l4_shutdown(FAR struct qe_lowerhalf_s *lower);
-static int stm32l4_position(FAR struct qe_lowerhalf_s *lower, FAR int32_t *pos);
-static int stm32l4_reset(FAR struct qe_lowerhalf_s *lower);
-static int stm32l4_ioctl(FAR struct qe_lowerhalf_s *lower, int cmd, unsigned long arg);
+static int stm32l4_setup(struct qe_lowerhalf_s *lower);
+static int stm32l4_shutdown(struct qe_lowerhalf_s *lower);
+static int stm32l4_position(struct qe_lowerhalf_s *lower,
+                            int32_t *pos);
+static int stm32l4_reset(struct qe_lowerhalf_s *lower);
+static int stm32l4_ioctl(struct qe_lowerhalf_s *lower, int cmd,
+                         unsigned long arg);
 
-/************************************************************************************
+/****************************************************************************
  * Private Data
- ************************************************************************************/
+ ****************************************************************************/
+
 /* The lower half callback structure */
 
 static const struct qe_ops_s g_qecallbacks =
 {
-  .setup    = stm32l4_setup,
-  .shutdown = stm32l4_shutdown,
-  .position = stm32l4_position,
-  .reset    = stm32l4_reset,
-  .ioctl    = stm32l4_ioctl,
+  .setup     = stm32l4_setup,
+  .shutdown  = stm32l4_shutdown,
+  .position  = stm32l4_position,
+  .setposmax = NULL,            /* not supported yet */
+  .reset     = stm32l4_reset,
+  .setindex  = NULL,            /* not supported yet */
+  .ioctl     = stm32l4_ioctl,
 };
 
 /* Per-timer state structures */
@@ -289,6 +305,7 @@ static struct stm32l4_lowerhalf_s g_tim1lower =
   .ops      = &g_qecallbacks,
   .config   = &g_tim1config,
   .inuse    = false,
+  .lock     = SP_UNLOCKED,
 };
 
 #endif
@@ -312,6 +329,7 @@ static struct stm32l4_lowerhalf_s g_tim2lower =
   .ops      = &g_qecallbacks,
   .config   = &g_tim2config,
   .inuse    = false,
+  .lock     = SP_UNLOCKED,
 };
 
 #endif
@@ -335,6 +353,7 @@ static struct stm32l4_lowerhalf_s g_tim3lower =
   .ops      = &g_qecallbacks,
   .config   = &g_tim3config,
   .inuse    = false,
+  .lock     = SP_UNLOCKED,
 };
 
 #endif
@@ -358,6 +377,7 @@ static struct stm32l4_lowerhalf_s g_tim4lower =
   .ops      = &g_qecallbacks,
   .config   = &g_tim4config,
   .inuse    = false,
+  .lock     = SP_UNLOCKED,
 };
 
 #endif
@@ -381,6 +401,7 @@ static struct stm32l4_lowerhalf_s g_tim5lower =
   .ops      = &g_qecallbacks,
   .config   = &g_tim5config,
   .inuse    = false,
+  .lock     = SP_UNLOCKED,
 };
 
 #endif
@@ -404,15 +425,16 @@ static struct stm32l4_lowerhalf_s g_tim8lower =
   .ops      = &g_qecallbacks,
   .config   = &g_tim8config,
   .inuse    = false,
+  .lock     = SP_UNLOCKED,
 };
 
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_getreg16
  *
  * Description:
@@ -425,14 +447,15 @@ static struct stm32l4_lowerhalf_s g_tim8lower =
  * Returned Value:
  *   The current contents of the specified register
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static uint16_t stm32l4_getreg16(struct stm32l4_lowerhalf_s *priv, int offset)
+static uint16_t stm32l4_getreg16(struct stm32l4_lowerhalf_s *priv,
+                                 int offset)
 {
-  return getreg16(priv->config->base + offset);
+	return getreg16(priv->config->base + offset);
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_putreg16
  *
  * Description:
@@ -445,21 +468,23 @@ static uint16_t stm32l4_getreg16(struct stm32l4_lowerhalf_s *priv, int offset)
  * Returned Value:
  *   None
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static void stm32l4_putreg16(FAR struct stm32l4_lowerhalf_s *priv, int offset,
+static void stm32l4_putreg16(struct stm32l4_lowerhalf_s *priv,
+                             int offset,
                              uint16_t value)
 {
-  putreg16(value, priv->config->base + offset);
+	putreg16(value, priv->config->base + offset);
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_getreg32
  *
  * Description:
- *   Read the value of a 32-bit timer register.  This applies only for the STM32 F4
- *   32-bit registers (CNT, ARR, CRR1-4) in the 32-bit timers TIM2-5 (but works OK
- *   with the 16-bit TIM1,8 and F1 registers as well).
+ *   Read the value of a 32-bit timer register.
+ *   This applies only for the STM32 F4 32-bit registers (CNT, ARR, CRR1-4)
+ *   in the 32-bit timers TIM2-5 (but works OK with the 16-bit TIM1,8
+ *   and F1 registers as well).
  *
  * Input Parameters:
  *   priv - A reference to the lower half status
@@ -468,20 +493,22 @@ static void stm32l4_putreg16(FAR struct stm32l4_lowerhalf_s *priv, int offset,
  * Returned Value:
  *   The current contents of the specified register
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static uint32_t stm32l4_getreg32(FAR struct stm32l4_lowerhalf_s *priv, int offset)
+static uint32_t stm32l4_getreg32(struct stm32l4_lowerhalf_s *priv,
+                                 int offset)
 {
-  return getreg32(priv->config->base + offset);
+	return getreg32(priv->config->base + offset);
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_putreg16
  *
  * Description:
- *   Write a value to a 32-bit timer register.  This applies only for the STM32 F4
- *   32-bit registers (CNT, ARR, CRR1-4) in the 32-bit timers TIM2-5 (but works OK
- *   with the 16-bit TIM1,8 and F1 registers).
+ *   Write a value to a 32-bit timer register.
+ *   This applies only for the STM32 F4 32-bit registers (CNT, ARR, CRR1-4)
+ *   in the 32-bit timers TIM2-5 (but works OK with the 16-bit TIM1,8
+ *   and F1 registers).
  *
  * Input Parameters:
  *   priv - A reference to the lower half status
@@ -490,12 +517,13 @@ static uint32_t stm32l4_getreg32(FAR struct stm32l4_lowerhalf_s *priv, int offse
  * Returned Value:
  *   None
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static void stm32l4_putreg32(FAR struct stm32l4_lowerhalf_s *priv, int offset,
+static void stm32l4_putreg32(struct stm32l4_lowerhalf_s *priv,
+                             int offset,
                              uint32_t value)
 {
-  putreg32(value, priv->config->base + offset);
+	putreg32(value, priv->config->base + offset);
 }
 
 /****************************************************************************
@@ -513,136 +541,133 @@ static void stm32l4_putreg32(FAR struct stm32l4_lowerhalf_s *priv, int offset,
  ****************************************************************************/
 
 #if defined(CONFIG_DEBUG_SENSORS) && defined(CONFIG_DEBUG_INFO)
-static void stm32l4_dumpregs(FAR struct stm32l4_lowerhalf_s *priv,
-                             FAR const char *msg)
+static void stm32l4_dumpregs(struct stm32l4_lowerhalf_s *priv,
+                             const char *msg)
 {
-  sninfo("%s:\n", msg);
-  sninfo("  CR1: %04x CR2:  %04x SMCR:  %08x DIER:  %04x\n",
-         stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET),
-         stm32l4_getreg16(priv, STM32L4_GTIM_CR2_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_SMCR_OFFSET),
-         stm32l4_getreg16(priv, STM32L4_GTIM_DIER_OFFSET));
-  sninfo("   SR: %04x EGR:  %04x CCMR1: %08x CCMR2: %08x\n",
-         stm32l4_getreg16(priv, STM32L4_GTIM_SR_OFFSET),
-         stm32l4_getreg16(priv, STM32L4_GTIM_EGR_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_CCMR2_OFFSET));
-  sninfo(" CCER: %04x CNT:  %08x PSC:   %04x ARR:   %08x\n",
-         stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_CNT_OFFSET),
-         stm32l4_getreg16(priv, STM32L4_GTIM_PSC_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_ARR_OFFSET));
-  sninfo(" CCR1: %08x CCR2: %08x\n",
-         stm32l4_getreg32(priv, STM32L4_GTIM_CCR1_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_CCR2_OFFSET));
-  sninfo(" CCR3: %08x CCR4: %08x\n",
-         stm32l4_getreg32(priv, STM32L4_GTIM_CCR3_OFFSET),
-         stm32l4_getreg32(priv, STM32L4_GTIM_CCR4_OFFSET));
+	sninfo("%s:\n", msg);
+	sninfo("  CR1: %04x CR2:  %04x SMCR:  %08x DIER:  %04x\n",
+	       stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET),
+	       stm32l4_getreg16(priv, STM32L4_GTIM_CR2_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_SMCR_OFFSET),
+	       stm32l4_getreg16(priv, STM32L4_GTIM_DIER_OFFSET));
+	sninfo("   SR: %04x EGR:  %04x CCMR1: %08x CCMR2: %08x\n",
+	       stm32l4_getreg16(priv, STM32L4_GTIM_SR_OFFSET),
+	       stm32l4_getreg16(priv, STM32L4_GTIM_EGR_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CCMR2_OFFSET));
+	sninfo(" CCER: %04x CNT:  %08x PSC:   %04x ARR:   %08x\n",
+	       stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CNT_OFFSET),
+	       stm32l4_getreg16(priv, STM32L4_GTIM_PSC_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_ARR_OFFSET));
+	sninfo(" CCR1: %08x CCR2: %08x\n",
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CCR1_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CCR2_OFFSET));
+	sninfo(" CCR3: %08x CCR4: %08x\n",
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CCR3_OFFSET),
+	       stm32l4_getreg32(priv, STM32L4_GTIM_CCR4_OFFSET));
 #if defined(CONFIG_STM32L4_TIM1_QE) || defined(CONFIG_STM32L4_TIM8_QE)
-  if (priv->config->timid == 1 || priv->config->timid == 8)
-    {
-      sninfo("  RCR: %04x BDTR: %04x DCR:   %04x DMAR:  %04x\n",
-             stm32l4_getreg16(priv, STM32L4_ATIM_RCR_OFFSET),
-             stm32l4_getreg16(priv, STM32L4_ATIM_BDTR_OFFSET),
-             stm32l4_getreg16(priv, STM32L4_ATIM_DCR_OFFSET),
-             stm32l4_getreg16(priv, STM32L4_ATIM_DMAR_OFFSET));
-    }
-  else
+	if (priv->config->timid == 1 || priv->config->timid == 8) {
+		sninfo("  RCR: %04x BDTR: %04x DCR:   %04x DMAR:  %04x\n",
+		       stm32l4_getreg16(priv, STM32L4_ATIM_RCR_OFFSET),
+		       stm32l4_getreg16(priv, STM32L4_ATIM_BDTR_OFFSET),
+		       stm32l4_getreg16(priv, STM32L4_ATIM_DCR_OFFSET),
+		       stm32l4_getreg16(priv, STM32L4_ATIM_DMAR_OFFSET));
+	} else
 #endif
-    {
-      sninfo("  DCR: %04x DMAR: %04x\n",
-             stm32l4_getreg16(priv, STM32L4_GTIM_DCR_OFFSET),
-             stm32l4_getreg16(priv, STM32L4_GTIM_DMAR_OFFSET));
-    }
+	{
+		sninfo("  DCR: %04x DMAR: %04x\n",
+		       stm32l4_getreg16(priv, STM32L4_GTIM_DCR_OFFSET),
+		       stm32l4_getreg16(priv, STM32L4_GTIM_DMAR_OFFSET));
+	}
 }
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_tim2lower
  *
  * Description:
  *   Map a timer number to a device structure
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static FAR struct stm32l4_lowerhalf_s *stm32l4_tim2lower(int tim)
+static struct stm32l4_lowerhalf_s *stm32l4_tim2lower(int tim)
 {
-  switch (tim)
-    {
+	switch (tim) {
 #ifdef CONFIG_STM32L4_TIM1_QE
-    case 1:
-      return &g_tim1lower;
+	case 1:
+		return &g_tim1lower;
 #endif
 #ifdef CONFIG_STM32L4_TIM2_QE
-    case 2:
-      return &g_tim2lower;
+	case 2:
+		return &g_tim2lower;
 #endif
 #ifdef CONFIG_STM32L4_TIM3_QE
-    case 3:
-      return &g_tim3lower;
+	case 3:
+		return &g_tim3lower;
 #endif
 #ifdef CONFIG_STM32L4_TIM4_QE
-    case 4:
-      return &g_tim4lower;
+	case 4:
+		return &g_tim4lower;
 #endif
 #ifdef CONFIG_STM32L4_TIM5_QE
-    case 5:
-      return &g_tim5lower;
+	case 5:
+		return &g_tim5lower;
 #endif
 #ifdef CONFIG_STM32L4_TIM8_QE
-    case 8:
-      return &g_tim8lower;
+	case 8:
+		return &g_tim8lower;
 #endif
-    default:
-      return NULL;
-    }
+	default:
+		return NULL;
+	}
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_interrupt
  *
  * Description:
  *   Common timer interrupt handling.  NOTE: Only 16-bit timers require timer
  *   interrupts.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifdef HAVE_16BIT_TIMERS
-static int stm32l4_interrupt(int irq, FAR void *context, FAR void *arg)
+static int stm32l4_interrupt(int irq, void *context, void *arg)
 {
-  FAR struct stm32l4_lowerhalf_s *priv = (FAR struct stm32l4_lowerhalf_s *)arg;
-  uint16_t regval;
+	struct stm32l4_lowerhalf_s *priv =
+	                            (struct stm32l4_lowerhalf_s *)arg;
+	uint16_t regval;
 
-  DEBUGASSERT(priv != NULL);
+	DEBUGASSERT(priv != NULL);
 
-  /* Verify that this is an update interrupt.  Nothing else is expected. */
+	/* Verify that this is an update interrupt.
+	 * Nothing else is expected.
+	 */
 
-  regval = stm32l4_getreg16(priv, STM32L4_GTIM_SR_OFFSET);
-  DEBUGASSERT((regval & ATIM_SR_UIF) != 0);
+	regval = stm32l4_getreg16(priv, STM32L4_GTIM_SR_OFFSET);
+	DEBUGASSERT((regval & ATIM_SR_UIF) != 0);
 
-  /* Clear the UIF interrupt bit */
+	/* Clear the UIF interrupt bit */
 
-  stm32l4_putreg16(priv, STM32L4_GTIM_SR_OFFSET, regval & ~GTIM_SR_UIF);
+	stm32l4_putreg16(priv, STM32L4_GTIM_SR_OFFSET, regval & ~GTIM_SR_UIF);
 
-  /* Check the direction bit in the CR1 register and add or subtract the
-   * maximum value, as appropriate.
-   */
+	/* Check the direction bit in the CR1 register and add or subtract the
+	 * maximum value, as appropriate.
+	 */
 
-  regval = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
-  if ((regval & ATIM_CR1_DIR) != 0)
-    {
-      priv->position -= (int32_t)0x0000ffff;
-    }
-   else
-    {
-      priv->position += (int32_t)0x0000ffff;
-    }
+	regval = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
+	if ((regval & ATIM_CR1_DIR) != 0) {
+		priv->position -= (int32_t)0x0000ffff;
+	} else {
+		priv->position += (int32_t)0x0000ffff;
+	}
 
-  return OK;
+	return OK;
 }
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_setup
  *
  * Description:
@@ -650,508 +675,510 @@ static int stm32l4_interrupt(int irq, FAR void *context, FAR void *arg)
  *   should configure and initialize the device so that it is ready for use.
  *   The initial position value should be zero. *
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static int stm32l4_setup(FAR struct qe_lowerhalf_s *lower)
+static int stm32l4_setup(struct qe_lowerhalf_s *lower)
 {
-  FAR struct stm32l4_lowerhalf_s *priv = (FAR struct stm32l4_lowerhalf_s *)lower;
-  uint16_t dier;
-  uint32_t smcr;
-  uint32_t ccmr1;
-  uint16_t ccer;
-  uint16_t cr1;
+	struct stm32l4_lowerhalf_s *priv =
+	                                (struct stm32l4_lowerhalf_s *)lower;
+	uint16_t dier;
+	uint32_t smcr;
+	uint32_t ccmr1;
+	uint16_t ccer;
+	uint16_t cr1;
 #ifdef HAVE_16BIT_TIMERS
-  uint16_t regval;
-  int ret;
+	uint16_t regval;
+	int ret;
 #endif
 
-  /* NOTE: Clocking should have been enabled in the low-level RCC logic at boot-up */
+	/* NOTE:
+	 * Clocking should have been enabled in the low-level RCC logic at boot-up
+	 */
 
-  /* Timer base configuration */
+	/* Timer base configuration */
 
-  cr1 = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
+	cr1 = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
 
-  /* Clear the direction bit (0=count up) and select the Counter Mode (0=Edge aligned)
-   * (Timers 2-5 and 1-8 only)
-   */
+	/* Clear the direction bit (0=count up) and select the Counter Mode
+	 * (0=Edge aligned)
+	 * (Timers 2-5 and 1-8 only)
+	 */
 
-  cr1 &= ~(GTIM_CR1_DIR | GTIM_CR1_CMS_MASK);
-  stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
+	cr1 &= ~(GTIM_CR1_DIR | GTIM_CR1_CMS_MASK);
+	stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
 
-  /* Set the Autoreload value */
+	/* Set the Autoreload value */
 
 #if defined(HAVE_MIXEDWIDTH_TIMERS)
-  if (priv->config->width == 32)
-    {
-      stm32l4_putreg32(priv, STM32L4_GTIM_ARR_OFFSET, 0xffffffff);
-    }
-  else
-    {
-      stm32l4_putreg16(priv, STM32L4_GTIM_ARR_OFFSET, 0xffff);
-    }
+	if (priv->config->width == 32) {
+		stm32l4_putreg32(priv, STM32L4_GTIM_ARR_OFFSET, 0xffffffff);
+	} else {
+		stm32l4_putreg16(priv, STM32L4_GTIM_ARR_OFFSET, 0xffff);
+	}
 #elif defined(HAVE_32BIT_TIMERS)
-  stm32l4_putreg32(priv, STM32L4_GTIM_ARR_OFFSET, 0xffffffff);
+	stm32l4_putreg32(priv, STM32L4_GTIM_ARR_OFFSET, 0xffffffff);
 #else
-  stm32l4_putreg16(priv, STM32L4_GTIM_ARR_OFFSET, 0xffff);
+	stm32l4_putreg16(priv, STM32L4_GTIM_ARR_OFFSET, 0xffff);
 #endif
 
-  /* Set the timer prescaler value.
-   *
-   * Previously, and still in the stm32fx driver, the clock input value (CLKIN)
-   * was based on the peripheral clock (PCLK) and a multiplier.
-   * These CLKIN values are provided in the board.h file.
-   * The prescaler value is then that CLKIN value divided by the configured
-   * CLKOUT value (minus one).
-   *
-   * It was determined that this configuration makes no sense for a qencoder.
-   * If we are doing precise shaft positioning, each qe pulse is important.
-   * So the STM32L4 has direct config control on the pulse count prescaler,
-   * instead of deriving this value from an obscure "output" setting AND the
-   * timer input clock. This input clock just limits the incoming pulse rate,
-   * which should be lower than the peripheral clock due to resynchronization,
-   * but it is the responsibility of the system designer to decide the
-   * correct prescaler value, because it has a direct influence on the
-   * encoder resolution.
-   */
+	/* Set the timer prescaler value.
+	 *
+	 * Previously, and still in the stm32fx driver, the clock input value
+	 * (CLKIN) was based on the peripheral clock (PCLK) and a multiplier.
+	 * These CLKIN values are provided in the board.h file.
+	 * The prescaler value is then that CLKIN value divided by the configured
+	 * CLKOUT value (minus one).
+	 *
+	 * It was determined that this configuration makes no sense for a qencoder.
+	 * If we are doing precise shaft positioning, each qe pulse is important.
+	 * So the STM32L4 has direct config control on the pulse count prescaler,
+	 * instead of deriving this value from an obscure "output" setting AND the
+	 * timer input clock. This input clock just limits the incoming pulse rate,
+	 * which should be lower than the peripheral clock due to
+	 * resynchronization, but it is the responsibility of the system designer
+	 * to decide the correct prescaler value, because it has a direct influence
+	 * on the encoder resolution.
+	 */
 
-  stm32l4_putreg16(priv, STM32L4_GTIM_PSC_OFFSET, (uint16_t)priv->config->psc);
+	stm32l4_putreg16(priv,
+	                 STM32L4_GTIM_PSC_OFFSET, (uint16_t)priv->config->psc);
 
 #if defined(CONFIG_STM32L4_TIM1_QE) || defined(CONFIG_STM32L4_TIM8_QE)
-  if (priv->config->timid == 1 || priv->config->timid == 8)
-    {
-      /* Clear the Repetition Counter value */
+	if (priv->config->timid == 1 || priv->config->timid == 8) {
+		/* Clear the Repetition Counter value */
 
-      stm32l4_putreg16(priv, STM32L4_ATIM_RCR_OFFSET, 0);
-    }
+		stm32l4_putreg16(priv, STM32L4_ATIM_RCR_OFFSET, 0);
+	}
 #endif
 
-  /* Generate an update event to reload the Prescaler
-   * and the repetition counter (only for TIM1 and TIM8) value immediately
-   */
+	/* Generate an update event to reload the Prescaler
+	 * and the repetition counter (only for TIM1 and TIM8) value immediately
+	 */
 
-  stm32l4_putreg16(priv, STM32L4_GTIM_EGR_OFFSET, GTIM_EGR_UG);
+	stm32l4_putreg16(priv, STM32L4_GTIM_EGR_OFFSET, GTIM_EGR_UG);
 
-  /* GPIO pin configuration */
+	/* GPIO pin configuration */
 
-  stm32l4_configgpio(priv->config->ti1cfg);
-  stm32l4_configgpio(priv->config->ti2cfg);
+	stm32l4_configgpio(priv->config->ti1cfg);
+	stm32l4_configgpio(priv->config->ti2cfg);
 
-  /* Set the encoder Mode 3 */
+	/* Set the encoder Mode 3 */
 
-  smcr = stm32l4_getreg32(priv, STM32L4_GTIM_SMCR_OFFSET);
-  smcr &= ~GTIM_SMCR_SMS_MASK;
-  smcr |= GTIM_SMCR_ENCMD3;
-  stm32l4_putreg32(priv, STM32L4_GTIM_SMCR_OFFSET, smcr);
+	smcr = stm32l4_getreg32(priv, STM32L4_GTIM_SMCR_OFFSET);
+	smcr &= ~GTIM_SMCR_SMS_MASK;
+	smcr |= GTIM_SMCR_ENCMD3;
+	stm32l4_putreg32(priv, STM32L4_GTIM_SMCR_OFFSET, smcr);
 
-  /* TI1 Channel Configuration */
-  /* Disable the Channel 1: Reset the CC1E Bit */
+	/* TI1 Channel Configuration */
 
-  ccer  = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
-  ccer &= ~GTIM_CCER_CC1E;
-  stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
+	/* Disable the Channel 1: Reset the CC1E Bit */
 
-  ccmr1 = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
-  ccer = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
+	ccer  = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
+	ccer &= ~GTIM_CCER_CC1E;
+	stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
 
-  /* Select the Input IC1=TI1 and set the filter fSAMPLING=fDTS/4, N=6 */
+	ccmr1 = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
+	ccer = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
 
-  ccmr1 &= ~(GTIM_CCMR1_CC1S_MASK | GTIM_CCMR1_IC1F_MASK);
-  ccmr1 |= GTIM_CCMR_CCS_CCIN1 << GTIM_CCMR1_CC1S_SHIFT;
-  ccmr1 |= STM32L4_QENCODER_ICF << GTIM_CCMR1_IC1F_SHIFT;
+	/* Select the Input IC1=TI1 and set the filter fSAMPLING=fDTS/4, N=6 */
 
-  /* Select the Polarity=rising and set the CC1E Bit */
+	ccmr1 &= ~(GTIM_CCMR1_CC1S_MASK | GTIM_CCMR1_IC1F_MASK);
+	ccmr1 |= GTIM_CCMR_CCS_CCIN1 << GTIM_CCMR1_CC1S_SHIFT;
+	ccmr1 |= STM32L4_QENCODER_ICF << GTIM_CCMR1_IC1F_SHIFT;
 
-  ccer &= ~(GTIM_CCER_CC1P | GTIM_CCER_CC1NP);
-  ccer |= GTIM_CCER_CC1E;
+	/* Select the Polarity=rising and set the CC1E Bit */
 
-  /* Write to TIM CCMR1 and CCER registers */
+	ccer &= ~(GTIM_CCER_CC1P | GTIM_CCER_CC1NP);
+	ccer |= GTIM_CCER_CC1E;
 
-  stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
-  stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
+	/* Write to TIM CCMR1 and CCER registers */
 
-  /* Set the Input Capture Prescaler value: Capture performed each time an
-   * edge is detected on the capture input.
-   */
+	stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
+	stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
 
-  ccmr1  = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
-  ccmr1 &= ~GTIM_CCMR1_IC1PSC_MASK;
-  ccmr1 |= (GTIM_CCMR_ICPSC_NOPSC << GTIM_CCMR1_IC1PSC_SHIFT);
-  stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
+	/* Set the Input Capture Prescaler value: Capture performed each time an
+	 * edge is detected on the capture input.
+	 */
 
-  /* TI2 Channel Configuration */
-  /* Disable the Channel 2: Reset the CC2E Bit */
+	ccmr1  = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
+	ccmr1 &= ~GTIM_CCMR1_IC1PSC_MASK;
+	ccmr1 |= (GTIM_CCMR_ICPSC_NOPSC << GTIM_CCMR1_IC1PSC_SHIFT);
+	stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
 
-  ccer  = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
-  ccer &= ~GTIM_CCER_CC2E;
-  stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
+	/* TI2 Channel Configuration */
 
-  ccmr1 = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
-  ccer  = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
+	/* Disable the Channel 2: Reset the CC2E Bit */
 
-  /* Select the Input IC2=TI2 and set the filter fSAMPLING=fDTS/4, N=6 */
+	ccer  = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
+	ccer &= ~GTIM_CCER_CC2E;
+	stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
 
-  ccmr1 &= ~(GTIM_CCMR1_CC2S_MASK | GTIM_CCMR1_IC2F_MASK);
-  ccmr1 |= GTIM_CCMR_CCS_CCIN1 << GTIM_CCMR1_CC2S_SHIFT;
-  ccmr1 |= STM32L4_QENCODER_ICF << GTIM_CCMR1_IC2F_SHIFT;
+	ccmr1 = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
+	ccer  = stm32l4_getreg16(priv, STM32L4_GTIM_CCER_OFFSET);
 
-  /* Select the Polarity=rising and set the CC2E Bit */
+	/* Select the Input IC2=TI2 and set the filter fSAMPLING=fDTS/4, N=6 */
 
-  ccer &= ~(GTIM_CCER_CC2P | GTIM_CCER_CC2NP);
-  ccer |= GTIM_CCER_CC2E;
+	ccmr1 &= ~(GTIM_CCMR1_CC2S_MASK | GTIM_CCMR1_IC2F_MASK);
+	ccmr1 |= GTIM_CCMR_CCS_CCIN1 << GTIM_CCMR1_CC2S_SHIFT;
+	ccmr1 |= STM32L4_QENCODER_ICF << GTIM_CCMR1_IC2F_SHIFT;
 
-  /* Write to TIM CCMR1 and CCER registers */
+	/* Select the Polarity=rising and set the CC2E Bit */
 
-  stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
-  stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
+	ccer &= ~(GTIM_CCER_CC2P | GTIM_CCER_CC2NP);
+	ccer |= GTIM_CCER_CC2E;
 
-  /* Set the Input Capture Prescaler value: Capture performed each time an
-   * edge is detected on the capture input.
-   */
+	/* Write to TIM CCMR1 and CCER registers */
 
-  ccmr1  = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
-  ccmr1 &= ~GTIM_CCMR1_IC2PSC_MASK;
-  ccmr1 |= (GTIM_CCMR_ICPSC_NOPSC << GTIM_CCMR1_IC2PSC_SHIFT);
-  stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
+	stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
+	stm32l4_putreg16(priv, STM32L4_GTIM_CCER_OFFSET, ccer);
 
-  /* Disable the update interrupt */
+	/* Set the Input Capture Prescaler value: Capture performed each time an
+	 * edge is detected on the capture input.
+	 */
 
-  dier = stm32l4_getreg16(priv, STM32L4_GTIM_DIER_OFFSET);
-  dier &= ~GTIM_DIER_UIE;
-  stm32l4_putreg16(priv, STM32L4_GTIM_DIER_OFFSET, dier);
+	ccmr1  = stm32l4_getreg32(priv, STM32L4_GTIM_CCMR1_OFFSET);
+	ccmr1 &= ~GTIM_CCMR1_IC2PSC_MASK;
+	ccmr1 |= (GTIM_CCMR_ICPSC_NOPSC << GTIM_CCMR1_IC2PSC_SHIFT);
+	stm32l4_putreg32(priv, STM32L4_GTIM_CCMR1_OFFSET, ccmr1);
 
-  /* There is no need for interrupts with 32-bit timers */
+	/* Disable the update interrupt */
+
+	dier = stm32l4_getreg16(priv, STM32L4_GTIM_DIER_OFFSET);
+	dier &= ~GTIM_DIER_UIE;
+	stm32l4_putreg16(priv, STM32L4_GTIM_DIER_OFFSET, dier);
+
+	/* There is no need for interrupts with 32-bit timers */
 
 #ifdef HAVE_16BIT_TIMERS
 #ifdef HAVE_MIXEDWIDTH_TIMERS
-  if (priv->config->width != 32)
+	if (priv->config->width != 32)
 #endif
-    {
-      /* Attach the interrupt handler */
+	{
+		/* Attach the interrupt handler */
 
-      ret = irq_attach(priv->config->irq, stm32l4_interrupt, priv);
-      if (ret < 0)
-        {
-          stm32l4_shutdown(lower);
-          return ret;
-        }
+		ret = irq_attach(priv->config->irq, stm32l4_interrupt, priv);
+		if (ret < 0) {
+			stm32l4_shutdown(lower);
+			return ret;
+		}
 
-      /* Enable the update/global interrupt at the NVIC */
+		/* Enable the update/global interrupt at the NVIC */
 
-      up_enable_irq(priv->config->irq);
-    }
+		up_enable_irq(priv->config->irq);
+	}
 #endif
 
-  /* Reset the Update Disable Bit */
+	/* Reset the Update Disable Bit */
 
-  cr1 = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
-  cr1 &= ~GTIM_CR1_UDIS;
-  stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
+	cr1 = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
+	cr1 &= ~GTIM_CR1_UDIS;
+	stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
 
-  /* Reset the URS Bit */
+	/* Reset the URS Bit */
 
-  cr1 &= ~GTIM_CR1_URS;
-  stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
+	cr1 &= ~GTIM_CR1_URS;
+	stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
 
-  /* There is no need for interrupts with 32-bit timers */
+	/* There is no need for interrupts with 32-bit timers */
 
 #ifdef HAVE_16BIT_TIMERS
 #ifdef HAVE_MIXEDWIDTH_TIMERS
-  if (priv->config->width != 32)
+	if (priv->config->width != 32)
 #endif
-    {
-      /* Clear any pending update interrupts */
+	{
+		/* Clear any pending update interrupts */
 
-      regval = stm32l4_getreg16(priv, STM32L4_GTIM_SR_OFFSET);
-      stm32l4_putreg16(priv, STM32L4_GTIM_SR_OFFSET, regval & ~GTIM_SR_UIF);
+		regval = stm32l4_getreg16(priv, STM32L4_GTIM_SR_OFFSET);
+		stm32l4_putreg16(priv, STM32L4_GTIM_SR_OFFSET, regval & ~GTIM_SR_UIF);
 
-      /* Then enable the update interrupt */
+		/* Then enable the update interrupt */
 
-      dier = stm32l4_getreg16(priv, STM32L4_GTIM_DIER_OFFSET);
-      dier |= GTIM_DIER_UIE;
-      stm32l4_putreg16(priv, STM32L4_GTIM_DIER_OFFSET, dier);
-    }
+		dier = stm32l4_getreg16(priv, STM32L4_GTIM_DIER_OFFSET);
+		dier |= GTIM_DIER_UIE;
+		stm32l4_putreg16(priv, STM32L4_GTIM_DIER_OFFSET, dier);
+	}
 #endif
 
-  /* Enable the TIM Counter */
+	/* Enable the TIM Counter */
 
-  cr1 = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
-  cr1 |= GTIM_CR1_CEN;
-  stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
+	cr1 = stm32l4_getreg16(priv, STM32L4_GTIM_CR1_OFFSET);
+	cr1 |= GTIM_CR1_CEN;
+	stm32l4_putreg16(priv, STM32L4_GTIM_CR1_OFFSET, cr1);
 
-  stm32l4_dumpregs(priv, "After setup");
+	stm32l4_dumpregs(priv, "After setup");
 
-  return OK;
+	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_shutdown
  *
  * Description:
  *   This method is called when the driver is closed.  The lower half driver
- *   should stop data collection, free any resources, disable timer hardware, and
- *   put the system into the lowest possible power usage state *
+ *   should stop data collection, free any resources, disable timer hardware,
+ *   and put the system into the lowest possible power usage state *
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static int stm32l4_shutdown(FAR struct qe_lowerhalf_s *lower)
+static int stm32l4_shutdown(struct qe_lowerhalf_s *lower)
 {
-  FAR struct stm32l4_lowerhalf_s *priv = (FAR struct stm32l4_lowerhalf_s *)lower;
-  irqstate_t flags;
-  uint32_t regaddr;
-  uint32_t regval;
-  uint32_t resetbit;
-  uint32_t pincfg;
+	struct stm32l4_lowerhalf_s *priv =
+	                               (struct stm32l4_lowerhalf_s *)lower;
+	irqstate_t flags;
+	uint32_t regaddr;
+	uint32_t regval;
+	uint32_t resetbit;
+	uint32_t pincfg;
 
-  /* Disable the update/global interrupt at the NVIC */
+	/* Disable the update/global interrupt at the NVIC */
 
-  flags = irqsave();
-  up_disable_irq(priv->config->irq);
+	flags = enter_critical_section();
+	up_disable_irq(priv->config->irq);
 
-  /* Detach the interrupt handler */
+	/* Detach the interrupt handler */
 
-  (void)irq_detach(priv->config->irq);
+	irq_detach(priv->config->irq);
 
-  /* Disable interrupts momentary to stop any ongoing timer processing and
-   * to prevent any concurrent access to the reset register.
-   */
+	/* Disable interrupts momentary to stop any ongoing timer processing and
+	 * to prevent any concurrent access to the reset register.
+	 */
 
-  /* Disable further interrupts and stop the timer */
+	/* Disable further interrupts and stop the timer */
 
-  stm32l4_putreg16(priv, STM32L4_GTIM_DIER_OFFSET, 0);
-  stm32l4_putreg16(priv, STM32L4_GTIM_SR_OFFSET, 0);
+	stm32l4_putreg16(priv, STM32L4_GTIM_DIER_OFFSET, 0);
+	stm32l4_putreg16(priv, STM32L4_GTIM_SR_OFFSET, 0);
 
-  /* Determine which timer to reset */
+	/* Determine which timer to reset */
 
-  switch (priv->config->timid)
-    {
+	switch (priv->config->timid) {
 #ifdef CONFIG_STM32L4_TIM1_QE
-      case 1:
-        regaddr  = STM32L4_RCC_APB2RSTR;
-        resetbit = RCC_APB2RSTR_TIM1RST;
-        break;
+	case 1:
+		regaddr  = STM32L4_RCC_APB2RSTR;
+		resetbit = RCC_APB2RSTR_TIM1RST;
+		break;
 #endif
 #ifdef CONFIG_STM32L4_TIM2_QE
-      case 2:
-        regaddr  = STM32L4_RCC_APB1RSTR1;
-        resetbit = RCC_APB1RSTR1_TIM2RST;
-        break;
+	case 2:
+		regaddr  = STM32L4_RCC_APB1RSTR1;
+		resetbit = RCC_APB1RSTR1_TIM2RST;
+		break;
 #endif
 #ifdef CONFIG_STM32L4_TIM3_QE
-      case 3:
-        regaddr  = STM32L4_RCC_APB1RSTR1;
-        resetbit = RCC_APB1RSTR1_TIM3RST;
-        break;
+	case 3:
+		regaddr  = STM32L4_RCC_APB1RSTR1;
+		resetbit = RCC_APB1RSTR1_TIM3RST;
+		break;
 #endif
 #ifdef CONFIG_STM32L4_TIM4_QE
-      case 4:
-        regaddr  = STM32L4_RCC_APB1RSTR1;
-        resetbit = RCC_APB1RSTR1_TIM4RST;
-        break;
+	case 4:
+		regaddr  = STM32L4_RCC_APB1RSTR1;
+		resetbit = RCC_APB1RSTR1_TIM4RST;
+		break;
 #endif
 #ifdef CONFIG_STM32L4_TIM5_QE
-      case 5:
-        regaddr  = STM32L4_RCC_APB1RSTR1;
-        resetbit = RCC_APB1RSTR1_TIM5RST;
-        break;
+	case 5:
+		regaddr  = STM32L4_RCC_APB1RSTR1;
+		resetbit = RCC_APB1RSTR1_TIM5RST;
+		break;
 #endif
 #ifdef CONFIG_STM32L4_TIM8_QE
-      case 8:
-        regaddr  = STM32L4_RCC_APB2RSTR;
-        resetbit = RCC_APB2RSTR_TIM8RST;
-        break;
+	case 8:
+		regaddr  = STM32L4_RCC_APB2RSTR;
+		resetbit = RCC_APB2RSTR_TIM8RST;
+		break;
 #endif
-      default:
-        return -EINVAL;
-    }
+	default:
+		leave_critical_section(flags);
+		return -EINVAL;
+	}
 
-  /* Reset the timer - stopping the output and putting the timer back
-   * into a state where stm32l4_start() can be called.
-   */
+	/* Reset the timer - stopping the output and putting the timer back
+	 * into a state where stm32l4_start() can be called.
+	 */
 
-  regval  = getreg32(regaddr);
-  regval |= resetbit;
-  putreg32(regval, regaddr);
+	regval  = getreg32(regaddr);
+	regval |= resetbit;
+	putreg32(regval, regaddr);
 
-  regval &= ~resetbit;
-  putreg32(regval, regaddr);
-  irqrestore(flags);
+	regval &= ~resetbit;
+	putreg32(regval, regaddr);
+	leave_critical_section(flags);
 
-  sninfo("regaddr: %08x resetbit: %08x\n", regaddr, resetbit);
-  stm32l4_dumpregs(priv, "After stop");
+	sninfo("regaddr: %08x resetbit: %08x\n", regaddr, resetbit);
+	stm32l4_dumpregs(priv, "After stop");
 
-  /* Put the TI1 GPIO pin back to its default state */
+	/* Put the TI1 GPIO pin back to its default state */
 
-  pincfg  = priv->config->ti1cfg & (GPIO_PORT_MASK | GPIO_PIN_MASK);
-  pincfg |= STM32L4_GPIO_INPUT_FLOAT;
+	pincfg  = priv->config->ti1cfg & (GPIO_PORT_MASK | GPIO_PIN_MASK);
+	pincfg |= STM32L4_GPIO_INPUT_FLOAT;
 
-  stm32l4_configgpio(pincfg);
+	stm32l4_configgpio(pincfg);
 
-  /* Put the TI2 GPIO pin back to its default state */
+	/* Put the TI2 GPIO pin back to its default state */
 
-  pincfg  = priv->config->ti2cfg & (GPIO_PORT_MASK | GPIO_PIN_MASK);
-  pincfg |= STM32L4_GPIO_INPUT_FLOAT;
+	pincfg  = priv->config->ti2cfg & (GPIO_PORT_MASK | GPIO_PIN_MASK);
+	pincfg |= STM32L4_GPIO_INPUT_FLOAT;
 
-  stm32l4_configgpio(pincfg);
-  return OK;
+	stm32l4_configgpio(pincfg);
+	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_position
  *
  * Description:
  *   Return the current position measurement.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static int stm32l4_position(FAR struct qe_lowerhalf_s *lower, FAR int32_t *pos)
+static int stm32l4_position(struct qe_lowerhalf_s *lower,
+                            int32_t *pos)
 {
-  FAR struct stm32l4_lowerhalf_s *priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	struct stm32l4_lowerhalf_s *priv =
+	                            (struct stm32l4_lowerhalf_s *)lower;
 #ifdef HAVE_16BIT_TIMERS
-  int32_t position;
-  int32_t verify;
-  uint32_t count;
+	irqstate_t flags;
+	int32_t position;
+	int32_t verify;
+	uint32_t count;
 
-  DEBUGASSERT(lower && priv->inuse);
+	DEBUGASSERT(lower && priv->inuse);
 
-  /* Loop until we are certain that no interrupt occurred between samples */
+	/* Loop until we are certain that no interrupt occurred between samples */
 
-  do
-    {
-      /* Don't let another task pre-empt us until we get the measurement.  The timer
-       * interrupt may still be processed
-       */
+	flags = spin_lock_irqsave(&priv->lock);
+	do {
+		position = priv->position;
+		count    = stm32l4_getreg32(priv, STM32L4_GTIM_CNT_OFFSET);
+		verify   = priv->position;
+	} while (position != verify);
+	spin_unlock_irqrestore(&priv->lock, flags);
 
-      sched_lock();
-      position = priv->position;
-      count    = stm32l4_getreg32(priv, STM32L4_GTIM_CNT_OFFSET);
-      verify   = priv->position;
-      sched_unlock();
-    }
-  while (position != verify);
+	/* Return the position measurement */
 
-  /* Return the position measurement */
-
-  *pos = position + (int32_t)count;
+	*pos = position + (int32_t)count;
 #else
-  /* Return the counter value */
+	/* Return the counter value */
 
-  *pos = (int32_t)stm32l4_getreg32(priv, STM32L4_GTIM_CNT_OFFSET);
+	*pos = (int32_t)stm32l4_getreg32(priv, STM32L4_GTIM_CNT_OFFSET);
 #endif
-  return OK;
+	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_reset
  *
  * Description:
  *   Reset the position measurement to zero.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static int stm32l4_reset(FAR struct qe_lowerhalf_s *lower)
+static int stm32l4_reset(struct qe_lowerhalf_s *lower)
 {
-  FAR struct stm32l4_lowerhalf_s *priv = (FAR struct stm32l4_lowerhalf_s *)lower;
+	struct stm32l4_lowerhalf_s *priv =
+	                               (struct stm32l4_lowerhalf_s *)lower;
 #ifdef HAVE_16BIT_TIMERS
-  irqstate_t flags;
+	irqstate_t flags;
 
-  sninfo("Resetting position to zero\n");
-  DEBUGASSERT(lower && priv->inuse);
+	sninfo("Resetting position to zero\n");
+	DEBUGASSERT(lower && priv->inuse);
 
-  /* Reset the timer and the counter.  Interrupts are disabled to make this atomic
-   * (if possible)
-   */
+	/* Reset the timer and the counter.
+	 * Interrupts are disabled to make this atomic (if possible)
+	 */
 
-  flags = irqsave();
-  stm32l4_putreg32(priv, STM32L4_GTIM_CNT_OFFSET, 0);
-  priv->position = 0;
-  irqrestore(flags);
+	flags = spin_lock_irqsave(&priv->lock);
+	stm32l4_putreg32(priv, STM32L4_GTIM_CNT_OFFSET, 0);
+	priv->position = 0;
+	spin_unlock_irqrestore(&priv->lock, flags);
 #else
-  sninfo("Resetting position to zero\n");
-  DEBUGASSERT(lower && priv->inuse);
+	sninfo("Resetting position to zero\n");
+	DEBUGASSERT(lower && priv->inuse);
 
-  /* Reset the counter to zero */
+	/* Reset the counter to zero */
 
-  stm32l4_putreg32(priv, STM32L4_GTIM_CNT_OFFSET, 0);
+	stm32l4_putreg32(priv, STM32L4_GTIM_CNT_OFFSET, 0);
 #endif
-  return OK;
+	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_ioctl
  *
  * Description:
  *   Lower-half logic may support platform-specific ioctl commands
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-static int stm32l4_ioctl(FAR struct qe_lowerhalf_s *lower, int cmd, unsigned long arg)
+static int stm32l4_ioctl(struct qe_lowerhalf_s *lower,
+                         int cmd, unsigned long arg)
 {
-  /* No ioctl commands supported */
+	/* No ioctl commands supported */
 
-  /* TODO add an IOCTL to control the encoder pulse count prescaler */
+	/* TODO add an IOCTL to control the encoder pulse count prescaler */
 
-  return -ENOTTY;
+	return -ENOTTY;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_qeinitialize
  *
  * Description:
- *   Initialize a quadrature encoder interface.  This function must be called from
- *   board-specific logic.
+ *   Initialize a quadrature encoder interface.
+ *   This function must be called from board-specific logic.
  *
  * Input Parameters:
  *   devpath - The full path to the driver to register. E.g., "/dev/qe0"
- *   tim     - The timer number to used.  'tim' must be an element of {1,2,3,4,5,8}
+ *   tim     - The timer number to used.  'tim' must be an element of
+ *               {1,2,3,4,5,8}
  *
  * Returned Value:
  *   Zero on success; A negated errno value is returned on failure.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-int stm32l4_qeinitialize(FAR const char *devpath, int tim)
+int stm32l4_qeinitialize(const char *devpath, int tim)
 {
-  FAR struct stm32l4_lowerhalf_s *priv;
-  int ret;
+	struct stm32l4_lowerhalf_s *priv;
+	int ret;
 
-  /* Find the pre-allocated timer state structure corresponding to this timer */
+	/* Find the pre-allocated timer state structure corresponding to this
+	 * timer
+	 */
 
-  priv = stm32l4_tim2lower(tim);
-  if (!priv)
-    {
-      snerr("ERROR: TIM%d support not configured\n", tim);
-      return -ENXIO;
-    }
+	priv = stm32l4_tim2lower(tim);
+	if (!priv) {
+		snerr("ERROR: TIM%d support not configured\n", tim);
+		return -ENXIO;
+	}
 
-  /* Make sure that it is available */
+	/* Make sure that it is available */
 
-  if (priv->inuse)
-    {
-      snerr("ERROR: TIM%d is in-use\n", tim);
-      return -EBUSY;
-    }
+	if (priv->inuse) {
+		snerr("ERROR: TIM%d is in-use\n", tim);
+		return -EBUSY;
+	}
 
-  /* Register the priv-half driver */
+	/* Register the priv-half driver */
 
-  ret = qe_register(devpath, (FAR struct qe_lowerhalf_s *)priv);
-  if (ret < 0)
-    {
-      snerr("ERROR: qe_register failed: %d\n", ret);
-      return ret;
-    }
+	ret = qe_register(devpath, (struct qe_lowerhalf_s *)priv);
+	if (ret < 0) {
+		snerr("ERROR: qe_register failed: %d\n", ret);
+		return ret;
+	}
 
-  /* Make sure that the timer is in the shutdown state */
+	/* Make sure that the timer is in the shutdown state */
 
-  stm32l4_shutdown((FAR struct qe_lowerhalf_s *)priv);
+	stm32l4_shutdown((struct qe_lowerhalf_s *)priv);
 
-  /* The driver is now in-use */
+	/* The driver is now in-use */
 
-  priv->inuse = true;
-  return OK;
+	priv->inuse = true;
+	return OK;
 }
 
 #endif /* CONFIG_SENSORS_QENCODER */

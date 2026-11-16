@@ -1,57 +1,61 @@
-/************************************************************************************
- * configs/stm32l476vg-disco/src/stm32l476vg-disco.h
+/****************************************************************************
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
- *   Authors: Frank Bennett
- *            Gregory Nutt <gnutt@nuttx.org>
- *            Sebastien Lorquet <sebastien@lorquet.fr>
- *            dev@ziggurat29.com
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
+/****************************************************************************
+ * boards/arm/stm32l4/stm32l4r9ai-disco/src/stm32l4r9ai-disco.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
-#ifndef __CONFIGS_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H
-#define __CONFIGS_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H
+#ifndef __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H
+#define __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
 
-/************************************************************************************
+#include "stm32l4_gpio.h"
+
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
-/* Configuration ********************************************************************/
+ ****************************************************************************/
+
+/* Configuration ************************************************************/
 
 #define HAVE_PROC             1
 #define HAVE_RTC_DRIVER       1
@@ -74,7 +78,7 @@
 #  undef HAVE_RTC_DRIVER
 #endif
 
-/* This is the on-chip progmem memroy driver minor number */
+/* This is the on-chip progmem memory driver minor number */
 
 #define PROGMEM_MTD_MINOR 1
 
@@ -83,14 +87,12 @@
 #ifndef CONFIG_STM32L4_OTGFS
 #  undef HAVE_USBDEV
 #  undef HAVE_USBHOST
-#  undef HAVE_USBMONITOR
 #endif
 
-/* Can't support USB device monitor if USB device is not enabled */
+/* Can't support USB device if USB device is not enabled */
 
 #ifndef CONFIG_USBDEV
 #  undef HAVE_USBDEV
-#  undef HAVE_USBMONITOR
 #endif
 
 /* Can't support USB host is USB host is not enabled */
@@ -101,7 +103,19 @@
 
 /* Check if we should enable the USB monitor before starting NSH */
 
-#if !defined(CONFIG_USBDEV_TRACE) || !defined(CONFIG_SYSTEM_USBMONITOR)
+#ifndef CONFIG_USBMONITOR
+#  undef HAVE_USBMONITOR
+#endif
+
+#ifndef HAVE_USBDEV
+#  undef CONFIG_USBDEV_TRACE
+#endif
+
+#ifndef HAVE_USBHOST
+#  undef CONFIG_USBHOST_TRACE
+#endif
+
+#if !defined(CONFIG_USBDEV_TRACE) && !defined(CONFIG_USBHOST_TRACE)
 #  undef HAVE_USBMONITOR
 #endif
 
@@ -166,6 +180,7 @@
   (GPIO_INPUT |GPIO_PULLDOWN |GPIO_EXTI | GPIO_PORTB | GPIO_PIN1)
 
 /* SPI1 off */
+
 /* XXX is this used on disco? */
 
 #define GPIO_SPI1_MOSI_OFF (GPIO_INPUT | GPIO_PULLDOWN | \
@@ -184,9 +199,9 @@
 #define DISCO_I2C_OBDEV_CAMERA    0x60
 #define DISCO_I2C_OBDEV_MFX_V3    0x84
 
-/************************************************************************************
+/****************************************************************************
  * Public Data
- ************************************************************************************/
+ ****************************************************************************/
 
 /* Global driver instances */
 
@@ -197,100 +212,88 @@ extern struct spi_dev_s *g_spi1;
 extern struct spi_dev_s *g_spi2;
 #endif
 
-struct stm32l4_lcd_s {
-	/*  to control STM32L4R9I DISCOVERY Board Round LCD
-	 *
-	 *  - sendsparam    Send a multi length parameter for LCD configuration
-	 *  - sendlparam    Send a multi length parameter for LCD configuration
-	 */
-	uint8_t (*sendsparam)(uint32_t Mode, uint32_t Param1, uint32_t Param2);
-	uint8_t (*sendlparam)(uint32_t Mode, uint32_t NbParams, uint32_t Param1, uint8_t *ParametersTable);
-	void    (*enablewap)(void);
-	void    (*poweron)(void);
-	void    (*poweroff)(void);
-	void    (*refresh)(void);
-};
+/****************************************************************************
+ * Public Functions Definitions
+ ****************************************************************************/
 
+/****************************************************************************
+ * Name: stm32_bringup
+ *
+ * Description:
+ *   Perform architecture-specific initialization
+ *
+ *   CONFIG_BOARD_LATE_INITIALIZE=y :
+ *     Called from board_late_initialize().
+ *
+ *   CONFIG_BOARD_LATE_INITIALIZE=y && CONFIG_BOARDCTL=y :
+ *     Called from the NSH library
+ *
+ ****************************************************************************/
 
-/************************************************************************************
- * Public Functions
- ************************************************************************************/
+int stm32_bringup(void);
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_adc_setup
  *
  * Description:
  *   Initialize ADC and register the ADC driver.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 int stm32l4_adc_setup(void);
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_adc_measure_voltages
  *
  * Description:
  *   Read internal reference voltage, internal VBAT and one external voltage.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *vext);
+int stm32l4_adc_measure_voltages(uint32_t *vrefint,
+                                 uint32_t *vbat,
+                                 uint32_t *vext);
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_dac_setup
  *
  * Description:
  *   Initialize DAC and register the DAC driver.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 int stm32l4_dac_setup(void);
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32_dfsdm_setup
  *
  * Description:
  *   Initialize DFSDM and register the ADC drivers for DFSDM filters.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #if defined(CONFIG_ADC) && defined(CONFIG_STM32L4_DFSDM)
 int stm32_dfsdm_setup(void);
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32_spiinitialize
  *
  * Description:
  *   Called to configure SPI chip select GPIO pins.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 void stm32_spiinitialize(void);
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_usbinitialize
  *
  * Description:
  *   Called to setup USB-related GPIO pins.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 void stm32l4_usbinitialize(void);
 
-/************************************************************************************
- * Name: stm32l4_lcdinitialize
- *
- * Description:
- *   Called to setup LTDC and DSI.
- *
- ************************************************************************************/
-uint8_t stm32l4_lcdinitialize(void);
-
-/* To use functions of stm32l4r9i_lcd.c */
-
-FAR struct stm32l4_lcd_s *stm32l4_lcd_function(void);
-void LCD_PowerOn(void);
-uint8_t STM32L4_LCD_IsFBAvailable(void);
-
-#endif /* __CONFIGS_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H */
+#endif /* __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_SRC_STM32L4R9AI_DISCO_H */

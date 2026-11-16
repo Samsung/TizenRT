@@ -1,9 +1,27 @@
 /****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * arch/arm/src/stm32l4/stm32l4_pmstandby.c
  *
- *   Copyright (C) 2012, 2017 Gregory Nutt. All rights reserved.
- *   Copyright (C) 2015 Motorola Mobility, LLC. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2012, 2017 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2015 Motorola Mobility LLC. All rights reserved.
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,7 +60,7 @@
 
 #include <stdbool.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "nvic.h"
 #include "stm32l4_pwr.h"
 #include "stm32l4_pm.h"
@@ -70,31 +88,32 @@
 
 int stm32l4_pmstandby(void)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* Clear the Wake-Up Flags by setting the CWUFx bits in the power status
-   * clear register
-   */
-  regval = PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 |
-           PWR_SCR_CWUF4 | PWR_SCR_CWUF5;
-  putreg32(regval, STM32L4_PWR_SCR);
+	/* Clear the Wake-Up Flags by setting the CWUFx bits in the power status
+	 * clear register
+	 */
 
-  /* Select Standby mode */
+	regval = PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 |
+	         PWR_SCR_CWUF4 | PWR_SCR_CWUF5;
+	putreg32(regval, STM32L4_PWR_SCR);
 
-  regval  = getreg32(STM32L4_PWR_CR1);
-  regval &= ~PWR_CR1_LPMS_MASK;
-  regval |= PWR_CR1_LPMS_STANDBY;
+	/* Select Standby mode */
 
-  putreg32(regval, STM32L4_PWR_CR1);
+	regval  = getreg32(STM32L4_PWR_CR1);
+	regval &= ~PWR_CR1_LPMS_MASK;
+	regval |= PWR_CR1_LPMS_STANDBY;
 
-  /* Set SLEEPDEEP bit of Cortex System Control Register */
+	putreg32(regval, STM32L4_PWR_CR1);
 
-  regval  = getreg32(NVIC_SYSCON);
-  regval |= NVIC_SYSCON_SLEEPDEEP;
-  putreg32(regval, NVIC_SYSCON);
+	/* Set SLEEPDEEP bit of Cortex System Control Register */
 
-  /* Sleep until the wakeup reset occurs */
+	regval  = getreg32(NVIC_SYSCON);
+	regval |= NVIC_SYSCON_SLEEPDEEP;
+	putreg32(regval, NVIC_SYSCON);
 
-  asm("wfi");
-  return OK;  /* Won't get here */
+	/* Sleep until the wakeup reset occurs */
+
+	asm("wfi");
+	return OK;  /* Won't get here */
 }

@@ -1,36 +1,39 @@
 /****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * arch/arm/src/stm32l4/stm32l4_oneshot.c
  *
- *   Copyright (C) 2016-2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           dev@ziggurat29.com
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the names NuttX nor Atmel nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -89,35 +92,35 @@ static struct stm32l4_oneshot_s *g_oneshot[CONFIG_STM32L4_ONESHOT_MAXTIMERS];
 
 static int stm32l4_oneshot_handler(int irq, void *context, void *arg)
 {
-  struct stm32l4_oneshot_s *oneshot = (struct stm32l4_oneshot_s *) arg;
-  oneshot_handler_t oneshot_handler;
-  FAR void *oneshot_arg;
+	struct stm32l4_oneshot_s *oneshot = (struct stm32l4_oneshot_s *)arg;
+	oneshot_handler_t oneshot_handler;
+	void *oneshot_arg;
 
-  tmrinfo("Expired...\n");
-  DEBUGASSERT(oneshot != NULL && oneshot->handler);
+	tmrinfo("Expired...\n");
+	DEBUGASSERT(oneshot != NULL && oneshot->handler);
 
-  /* The clock was stopped, but not disabled when the RC match occurred.
-   * Disable the TC now and disable any further interrupts.
-   */
+	/* The clock was stopped, but not disabled when the RC match occurred.
+	 * Disable the TC now and disable any further interrupts.
+	 */
 
-  STM32L4_TIM_SETISR(oneshot->tch, NULL, NULL, 0);
-  STM32L4_TIM_DISABLEINT(oneshot->tch, 0);
-  STM32L4_TIM_SETMODE(oneshot->tch, STM32L4_TIM_MODE_DISABLED);
-  STM32L4_TIM_ACKINT(oneshot->tch, 0);
+	STM32L4_TIM_SETISR(oneshot->tch, NULL, NULL, 0);
+	STM32L4_TIM_DISABLEINT(oneshot->tch, 0);
+	STM32L4_TIM_SETMODE(oneshot->tch, STM32L4_TIM_MODE_DISABLED);
+	STM32L4_TIM_ACKINT(oneshot->tch, 0);
 
-  /* The timer is no longer running */
+	/* The timer is no longer running */
 
-  oneshot->running = false;
+	oneshot->running = false;
 
-  /* Forward the event, clearing out any vestiges */
+	/* Forward the event, clearing out any vestiges */
 
-  oneshot_handler  = (oneshot_handler_t)oneshot->handler;
-  oneshot->handler = NULL;
-  oneshot_arg      = (void *)oneshot->arg;
-  oneshot->arg     = NULL;
+	oneshot_handler  = (oneshot_handler_t)oneshot->handler;
+	oneshot->handler = NULL;
+	oneshot_arg      = (void *)oneshot->arg;
+	oneshot->arg     = NULL;
 
-  oneshot_handler(oneshot_arg);
-  return OK;
+	oneshot_handler(oneshot_arg);
+	return OK;
 }
 
 /****************************************************************************
@@ -138,38 +141,33 @@ static int stm32l4_oneshot_handler(int irq, void *context, void *arg)
 static inline int stm32l4_allocate_handler(struct stm32l4_oneshot_s *oneshot)
 {
 #if CONFIG_STM32L4_ONESHOT_MAXTIMERS > 1
-  int ret = -EBUSY;
-  int i;
+	int ret = -EBUSY;
+	int i;
 
-  /* Search for an unused handler */
+	/* Search for an unused handler */
 
-  sched_lock();
-  for (i = 0; i < CONFIG_STM32L4_ONESHOT_MAXTIMERS; i++)
-    {
-      /* Is this handler available? */
+	for (i = 0; i < CONFIG_STM32L4_ONESHOT_MAXTIMERS; i++) {
+		/* Is this handler available? */
 
-      if (g_oneshot[i] == NULL)
-        {
-          /* Yes... assign it to this oneshot */
+		if (g_oneshot[i] == NULL) {
+			/* Yes... assign it to this oneshot */
 
-          g_oneshot[i]   = oneshot;
-          oneshot->cbndx = i;
-          ret            = OK;
-          break;
-        }
-    }
+			g_oneshot[i]   = oneshot;
+			oneshot->cbndx = i;
+			ret            = OK;
+			break;
+		}
+	}
 
-  sched_unlock();
-  return ret;
+	return ret;
 
 #else
-  if (g_oneshot[0] == NULL)
-    {
-      g_oneshot[0] = oneshot;
-      return OK;
-    }
+	if (g_oneshot[0] == NULL) {
+		g_oneshot[0] = oneshot;
+		return OK;
+	}
 
-  return -EBUSY;
+	return -EBUSY;
 #endif
 }
 
@@ -196,38 +194,37 @@ static inline int stm32l4_allocate_handler(struct stm32l4_oneshot_s *oneshot)
  *
  ****************************************************************************/
 
-int stm32l4_oneshot_initialize(FAR struct stm32l4_oneshot_s *oneshot,
+int stm32l4_oneshot_initialize(struct stm32l4_oneshot_s *oneshot,
                                int chan, uint16_t resolution)
 {
-  uint32_t frequency;
+	uint32_t frequency;
 
-  tmrinfo("chan=%d resolution=%d usec\n", chan, resolution);
-  DEBUGASSERT(oneshot && resolution > 0);
+	tmrinfo("chan=%d resolution=%d usec\n", chan, resolution);
+	DEBUGASSERT(oneshot && resolution > 0);
 
-  /* Get the TC frequency the corresponds to the requested resolution */
+	/* Get the TC frequency the corresponds to the requested resolution */
 
-  frequency = USEC_PER_SEC / (uint32_t)resolution;
-  oneshot->frequency = frequency;
+	frequency = USEC_PER_SEC / (uint32_t)resolution;
+	oneshot->frequency = frequency;
 
-  oneshot->tch = stm32l4_tim_init(chan);
-  if (!oneshot->tch)
-    {
-      tmrerr("ERROR: Failed to allocate TIM%d\n", chan);
-      return -EBUSY;
-    }
+	oneshot->tch = stm32l4_tim_init(chan);
+	if (!oneshot->tch) {
+		tmrerr("ERROR: Failed to allocate TIM%d\n", chan);
+		return -EBUSY;
+	}
 
-  STM32L4_TIM_SETCLOCK(oneshot->tch, frequency);
+	STM32L4_TIM_SETCLOCK(oneshot->tch, frequency);
 
-  /* Initialize the remaining fields in the state structure. */
+	/* Initialize the remaining fields in the state structure. */
 
-  oneshot->chan       = chan;
-  oneshot->running    = false;
-  oneshot->handler    = NULL;
-  oneshot->arg        = NULL;
+	oneshot->chan       = chan;
+	oneshot->running    = false;
+	oneshot->handler    = NULL;
+	oneshot->arg        = NULL;
 
-  /* Assign a callback handler to the oneshot */
+	/* Assign a callback handler to the oneshot */
 
-  return stm32l4_allocate_handler(oneshot);
+	return stm32l4_allocate_handler(oneshot);
 }
 
 /****************************************************************************
@@ -238,14 +235,14 @@ int stm32l4_oneshot_initialize(FAR struct stm32l4_oneshot_s *oneshot,
  *
  ****************************************************************************/
 
-int stm32l4_oneshot_max_delay(FAR struct stm32l4_oneshot_s *oneshot,
-                              FAR uint64_t *usec)
+int stm32l4_oneshot_max_delay(struct stm32l4_oneshot_s *oneshot,
+                              uint64_t *usec)
 {
-  DEBUGASSERT(oneshot != NULL && usec != NULL);
+	DEBUGASSERT(oneshot != NULL && usec != NULL);
 
-  *usec = (uint64_t)(UINT32_MAX / oneshot->frequency) *
-          (uint64_t)USEC_PER_SEC;
-  return OK;
+	*usec = (uint64_t)(UINT32_MAX / oneshot->frequency) *
+	        (uint64_t)USEC_PER_SEC;
+	return OK;
 }
 
 /****************************************************************************
@@ -268,76 +265,77 @@ int stm32l4_oneshot_max_delay(FAR struct stm32l4_oneshot_s *oneshot,
  *
  ****************************************************************************/
 
-int stm32l4_oneshot_start(FAR struct stm32l4_oneshot_s *oneshot,
-                          oneshot_handler_t handler, FAR void *arg,
-                          FAR const struct timespec *ts)
+int stm32l4_oneshot_start(struct stm32l4_oneshot_s *oneshot,
+                          oneshot_handler_t handler, void *arg,
+                          const struct timespec *ts)
 {
-  uint64_t usec;
-  uint64_t period;
-  irqstate_t flags;
+	uint64_t usec;
+	uint64_t period;
+	irqstate_t flags;
 
-  tmrinfo("handler=%p arg=%p, ts=(%lu, %lu)\n",
-         handler, arg, (unsigned long)ts->tv_sec, (unsigned long)ts->tv_nsec);
-  DEBUGASSERT(oneshot && handler && ts);
-  DEBUGASSERT(oneshot->tch);
+	tmrinfo("handler=%p arg=%p, ts=(%lu, %lu)\n",
+	       handler, arg, (unsigned long)ts->tv_sec,
+	        (unsigned long)ts->tv_nsec);
+	DEBUGASSERT(oneshot && handler && ts);
+	DEBUGASSERT(oneshot->tch);
 
-  /* Was the oneshot already running? */
+	/* Was the oneshot already running? */
 
-  flags = irqsave();
-  if (oneshot->running)
-    {
-      /* Yes.. then cancel it */
+	flags = enter_critical_section();
+	if (oneshot->running) {
+		/* Yes.. then cancel it */
 
-      tmrinfo("Already running... cancelling\n");
-      (void)stm32l4_oneshot_cancel(oneshot, NULL);
-    }
+		tmrinfo("Already running... cancelling\n");
+		stm32l4_oneshot_cancel(oneshot, NULL);
+	}
 
-  /* Save the new handler and its argument */
+	/* Save the new handler and its argument */
 
-  oneshot->handler = handler;
-  oneshot->arg     = arg;
+	oneshot->handler = handler;
+	oneshot->arg     = arg;
 
-  /* Express the delay in microseconds */
+	/* Express the delay in microseconds */
 
-  usec = (uint64_t)ts->tv_sec * USEC_PER_SEC +
-         (uint64_t)(ts->tv_nsec / NSEC_PER_USEC);
+	usec = (uint64_t)ts->tv_sec * USEC_PER_SEC +
+	       (uint64_t)(ts->tv_nsec / NSEC_PER_USEC);
 
-  /* Get the timer counter frequency and determine the number of counts need
-   * to achieve the requested delay.
-   *
-   *   frequency = ticks / second
-   *   ticks     = seconds * frequency
-   *             = (usecs * frequency) / USEC_PER_SEC;
-   */
+	/* Get the timer counter frequency and determine the number of counts need
+	 * to achieve the requested delay.
+	 *
+	 *   frequency = ticks / second
+	 *   ticks     = seconds * frequency
+	 *             = (usecs * frequency) / USEC_PER_SEC;
+	 */
 
-  period = (usec * (uint64_t)oneshot->frequency) / USEC_PER_SEC;
+	period = (usec * (uint64_t)oneshot->frequency) / USEC_PER_SEC;
 
-  tmrinfo("usec=%llu period=%08llx\n", usec, period);
-  DEBUGASSERT(period <= UINT32_MAX);
+	tmrinfo("usec=%llu period=%08llx\n", usec, period);
+	DEBUGASSERT(period > 0);
+	DEBUGASSERT(period <= UINT32_MAX);
 
-  /* Set up to receive the callback when the interrupt occurs */
+	/* Set up to receive the callback when the interrupt occurs */
 
-  STM32L4_TIM_SETISR(oneshot->tch, stm32l4_oneshot_handler, oneshot, 0);
+	STM32L4_TIM_SETISR(oneshot->tch, stm32l4_oneshot_handler, oneshot, 0);
 
-  /* Set timer period */
+	/* Set timer period */
 
-  oneshot->period = (uint32_t)period;
-  STM32L4_TIM_SETPERIOD(oneshot->tch, (uint32_t)period);
+	oneshot->period = (uint32_t)period;
+	STM32L4_TIM_SETPERIOD(oneshot->tch, (uint32_t)period);
 
-  /* Start the counter */
+	/* Start the counter */
 
-  STM32L4_TIM_SETMODE(oneshot->tch, STM32L4_TIM_MODE_PULSE);
+	STM32L4_TIM_SETMODE(oneshot->tch, STM32L4_TIM_MODE_PULSE);
 
-  STM32L4_TIM_ACKINT(oneshot->tch, 0);
-  STM32L4_TIM_ENABLEINT(oneshot->tch, 0);
+	STM32L4_TIM_ACKINT(oneshot->tch, 0);
+	STM32L4_TIM_ENABLEINT(oneshot->tch, 0);
 
-  /* Enable interrupts.  We should get the callback when the interrupt
-   * occurs.
-   */
+	/* Enable interrupts.  We should get the callback when the interrupt
+	 * occurs.
+	 */
 
-  oneshot->running = true;
-  irqrestore(flags);
-  return OK;
+	oneshot->running = true;
+	leave_critical_section(flags);
+	return OK;
 }
 
 /****************************************************************************
@@ -365,111 +363,106 @@ int stm32l4_oneshot_start(FAR struct stm32l4_oneshot_s *oneshot,
  *
  ****************************************************************************/
 
-int stm32l4_oneshot_cancel(FAR struct stm32l4_oneshot_s *oneshot,
-                           FAR struct timespec *ts)
+int stm32l4_oneshot_cancel(struct stm32l4_oneshot_s *oneshot,
+                           struct timespec *ts)
 {
-  irqstate_t flags;
-  uint64_t usec;
-  uint64_t sec;
-  uint64_t nsec;
-  uint32_t count;
-  uint32_t period;
+	irqstate_t flags;
+	uint64_t usec;
+	uint64_t sec;
+	uint64_t nsec;
+	uint32_t count;
+	uint32_t period;
 
-  /* Was the timer running? */
+	/* Was the timer running? */
 
-  flags = irqsave();
-  if (!oneshot->running)
-    {
-      /* No.. Just return zero timer remaining and successful cancellation.
-       * This function may execute at a high rate with no timer running
-       * (as when pre-emption is enabled and disabled).
-       */
+	flags = enter_critical_section();
+	if (!oneshot->running) {
+		/* No.. Just return zero timer remaining and successful cancellation.
+		 * This function may execute at a high rate with no timer running
+		 * (as when pre-emption is enabled and disabled).
+		 */
 
-      ts->tv_sec  = 0;
-      ts->tv_nsec = 0;
-      irqrestore(flags);
-      return OK;
-    }
+		ts->tv_sec  = 0;
+		ts->tv_nsec = 0;
+		leave_critical_section(flags);
+		return OK;
+	}
 
-  /* Yes.. Get the timer counter and period registers and stop the counter.
-   * If the counter expires while we are doing this, the counter clock will
-   * be stopped, but the clock will not be disabled.
-   *
-   * The expected behavior is that the counter register will freezes at
-   * a value equal to the RC register when the timer expires.  The counter
-   * should have values between 0 and RC in all other cased.
-   *
-   * REVISIT:  This does not appear to be the case.
-   */
+	/* Yes.. Get the timer counter and period registers and stop the counter.
+	 * If the counter expires while we are doing this, the counter clock will
+	 * be stopped, but the clock will not be disabled.
+	 *
+	 * The expected behavior is that the counter register will freezes at
+	 * a value equal to the RC register when the timer expires.  The counter
+	 * should have values between 0 and RC in all other cased.
+	 *
+	 * REVISIT:  This does not appear to be the case.
+	 */
 
-  tmrinfo("Cancelling...\n");
+	tmrinfo("Cancelling...\n");
 
-  count  = STM32L4_TIM_GETCOUNTER(oneshot->tch);
-  period = oneshot->period;
+	count  = STM32L4_TIM_GETCOUNTER(oneshot->tch);
+	period = oneshot->period;
 
-  /* Now we can disable the interrupt and stop the timer. */
+	/* Now we can disable the interrupt and stop the timer. */
 
-  STM32L4_TIM_DISABLEINT(oneshot->tch, 0);
-  STM32L4_TIM_SETISR(oneshot->tch, NULL, NULL, 0);
-  STM32L4_TIM_SETMODE(oneshot->tch, STM32L4_TIM_MODE_DISABLED);
+	STM32L4_TIM_DISABLEINT(oneshot->tch, 0);
+	STM32L4_TIM_SETISR(oneshot->tch, NULL, NULL, 0);
+	STM32L4_TIM_SETMODE(oneshot->tch, STM32L4_TIM_MODE_DISABLED);
 
-  oneshot->running = false;
-  oneshot->handler = NULL;
-  oneshot->arg     = NULL;
-  irqrestore(flags);
+	oneshot->running = false;
+	oneshot->handler = NULL;
+	oneshot->arg     = NULL;
+	leave_critical_section(flags);
 
-  /* Did the caller provide us with a location to return the time
-   * remaining?
-   */
+	/* Did the caller provide us with a location to return the time
+	 * remaining?
+	 */
 
-  if (ts)
-    {
-      /* Yes.. then calculate and return the time remaining on the
-       * oneshot timer.
-       */
+	if (ts) {
+		/* Yes.. then calculate and return the time remaining on the
+		 * oneshot timer.
+		 */
 
-      tmrinfo("period=%lu count=%lu\n",
-             (unsigned long)period, (unsigned long)count);
+		tmrinfo("period=%lu count=%lu\n",
+		       (unsigned long)period, (unsigned long)count);
 
-      /* REVISIT: I am not certain why the timer counter value sometimes
-       * exceeds RC.  Might be a bug, or perhaps the counter does not stop
-       * in all cases.
-       */
+		/* REVISIT: I am not certain why the timer counter value sometimes
+		 * exceeds RC.  Might be a bug, or perhaps the counter does not stop
+		 * in all cases.
+		 */
 
-      if (count >= period)
-        {
-          /* No time remaining (?) */
+		if (count >= period) {
+			/* No time remaining (?) */
 
-          ts->tv_sec  = 0;
-          ts->tv_nsec = 0;
-        }
-      else
-        {
-          /* The total time remaining is the difference.  Convert the that
-           * to units of microseconds.
-           *
-           *   frequency = ticks / second
-           *   seconds   = ticks * frequency
-           *   usecs     = (ticks * USEC_PER_SEC) / frequency;
-           */
+			ts->tv_sec  = 0;
+			ts->tv_nsec = 0;
+		} else {
+			/* The total time remaining is the difference.  Convert that
+			 * to units of microseconds.
+			 *
+			 *   frequency = ticks / second
+			 *   seconds   = ticks * frequency
+			 *   usecs     = (ticks * USEC_PER_SEC) / frequency;
+			 */
 
-          usec        = (((uint64_t)(period - count)) * USEC_PER_SEC) /
-                        oneshot->frequency;
+			usec        = (((uint64_t)(period - count)) * USEC_PER_SEC) /
+			              oneshot->frequency;
 
-          /* Return the time remaining in the correct form */
+			/* Return the time remaining in the correct form */
 
-          sec         = usec / USEC_PER_SEC;
-          nsec        = ((usec) - (sec * USEC_PER_SEC)) * NSEC_PER_USEC;
+			sec         = usec / USEC_PER_SEC;
+			nsec        = ((usec) - (sec * USEC_PER_SEC)) * NSEC_PER_USEC;
 
-          ts->tv_sec  = (time_t)sec;
-          ts->tv_nsec = (unsigned long)nsec;
-        }
+			ts->tv_sec  = (time_t)sec;
+			ts->tv_nsec = (unsigned long)nsec;
+		}
 
-      tmrinfo("remaining (%lu, %lu)\n",
-             (unsigned long)ts->tv_sec, (unsigned long)ts->tv_nsec);
-    }
+		tmrinfo("remaining (%lu, %lu)\n",
+		       (unsigned long)ts->tv_sec, (unsigned long)ts->tv_nsec);
+	}
 
-  return OK;
+	return OK;
 }
 
 #endif /* CONFIG_STM32L4_ONESHOT */
