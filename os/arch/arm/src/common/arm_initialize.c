@@ -44,6 +44,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <arch/board/board.h>
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#  include <arch/reboot_reason.h>
+#endif
 
 #include "arm_internal.h"
 
@@ -78,6 +81,12 @@ volatile bool g_interrupt_context[CONFIG_SMP_NCPUS];
 
 void up_initialize(void)
 {
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	/* Initialize the reboot reason from the boot-time backup registers */
+
+	up_reboot_reason_init();
+#endif
+
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
 	/* Reinitializes the stack pointer */
 

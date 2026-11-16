@@ -60,6 +60,11 @@
 #  include "preference/preference.h"
 #endif
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#  include <arch/reboot_reason.h>
+#  include <tinyara/reboot_reason.h>
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -247,6 +252,32 @@ int prctl(int option, ...)
 		ret = preference_unregister_callback(key, type);
 		va_end(ap);
 		return ret;
+	}
+#endif
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	case PR_REBOOT_REASON_READ:
+	{
+		va_end(ap);
+		return up_reboot_reason_read();
+	}
+
+	case PR_REBOOT_REASON_WRITE:
+	{
+		reboot_reason_code_t reason = (reboot_reason_code_t)va_arg(ap, int);
+
+		up_reboot_reason_write(reason);
+
+		va_end(ap);
+		return OK;
+	}
+
+	case PR_REBOOT_REASON_CLEAR:
+	{
+		up_reboot_reason_clear();
+
+		va_end(ap);
+		return OK;
 	}
 #endif
 
