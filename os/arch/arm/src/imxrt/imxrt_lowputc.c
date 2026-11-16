@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/arch/arm/src/imxrt/imxrt_lowputc.c
+ * arch/arm/src/imxrt/imxrt_lowputc.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,83 +47,106 @@
 #include <fixedmath.h>
 #include <assert.h>
 
-#include "up_arch.h"
-
-#include "chip/imxrt_iomuxc.h"
-#include "chip/imxrt_pinmux.h"
-#include "chip/imxrt_ccm.h"
-#include "chip/imxrt_lpuart.h"
+#include "hardware/imxrt_iomuxc.h"
+#include "hardware/imxrt_pinmux.h"
+#include "hardware/imxrt_ccm.h"
+#include "hardware/imxrt_lpuart.h"
 #include "imxrt_config.h"
+#include "imxrt_clockconfig.h"
 #include "imxrt_periphclks.h"
 #include "imxrt_iomuxc.h"
+
 #include "imxrt_gpio.h"
 #include "imxrt_lowputc.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
-#include <arch/board/board.h>	/* Include last:  has dependencies */
+#include <arch/board/board.h> /* Include last:  has dependencies */
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define LPUART_CTRL_PT_EVEN          (0 << 0)	/*         Even parity */
-#define LPUART_CTRL_PT_ODD           (1 << 0)	/*         Odd parity */
 
 /* Configuration ************************************************************/
 
 #ifdef HAVE_LPUART_CONSOLE
-#if defined(CONFIG_LPUART1_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART1_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART1_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART1_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART1_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART1_2STOP
-#elif defined(CONFIG_LPUART2_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART2_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART2_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART2_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART2_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART2_2STOP
-#elif defined(CONFIG_LPUART3_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART3_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART3_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART3_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART3_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART3_2STOP
-#elif defined(CONFIG_LPUART4_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART4_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART4_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART4_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART4_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART4_2STOP
-#elif defined(CONFIG_LPUART5_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART5_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART5_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART5_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART5_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART5_2STOP
-#elif defined(CONFIG_LPUART6_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART6_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART6_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART6_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART6_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART6_2STOP
-#elif defined(CONFIG_LPUART7_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART7_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART7_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART7_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART7_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART7_2STOP
-#elif defined(CONFIG_LPUART8_SERIAL_CONSOLE)
-#define IMXRT_CONSOLE_BASE     IMXRT_LPUART8_BASE
-#define IMXRT_CONSOLE_BAUD     CONFIG_LPUART8_BAUD
-#define IMXRT_CONSOLE_BITS     CONFIG_LPUART8_BITS
-#define IMXRT_CONSOLE_PARITY   CONFIG_LPUART8_PARITY
-#define IMXRT_CONSOLE_2STOP    CONFIG_LPUART8_2STOP
-#endif
+#  if defined(CONFIG_LPUART1_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART1_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART1_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART1_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART1_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART1_2STOP
+#  elif defined(CONFIG_LPUART2_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART2_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART2_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART2_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART2_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART2_2STOP
+#  elif defined(CONFIG_LPUART3_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART3_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART3_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART3_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART3_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART3_2STOP
+#  elif defined(CONFIG_LPUART4_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART4_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART4_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART4_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART4_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART4_2STOP
+#  elif defined(CONFIG_LPUART5_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART5_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART5_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART5_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART5_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART5_2STOP
+#  elif defined(CONFIG_LPUART6_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART6_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART6_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART6_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART6_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART6_2STOP
+#  elif defined(CONFIG_LPUART7_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART7_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART7_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART7_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART7_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART7_2STOP
+#  elif defined(CONFIG_LPUART8_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART8_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART8_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART8_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART8_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART8_2STOP
+#  elif defined(CONFIG_LPUART9_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART9_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART9_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART9_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART9_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART9_2STOP
+#  elif defined(CONFIG_LPUART10_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART10_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART10_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART10_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART10_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART10_2STOP
+#  elif defined(CONFIG_LPUART11_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART11_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART11_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART11_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART11_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART11_2STOP
+#  elif defined(CONFIG_LPUART12_SERIAL_CONSOLE)
+#    define IMXRT_CONSOLE_BASE     IMXRT_LPUART12_BASE
+#    define IMXRT_CONSOLE_BAUD     CONFIG_LPUART12_BAUD
+#    define IMXRT_CONSOLE_BITS     CONFIG_LPUART12_BITS
+#    define IMXRT_CONSOLE_PARITY   CONFIG_LPUART12_PARITY
+#    define IMXRT_CONSOLE_2STOP    CONFIG_LPUART12_2STOP
+#  endif
 #endif
 
 /* Clocking *****************************************************************/
-/* the UART module receives two clocks, a peripheral_clock (ipg_clk) and the
+
+/* The UART module receives two clocks, a peripheral_clock (ipg_clk) and the
  * module_clock (ipg_perclk).   The peripheral_clock is used as write clock
  * of the TxFIFO, read clock of the RxFIFO and synchronization of the modem
  * control input pins. It must always be running when UART is enabled.
@@ -172,11 +182,12 @@
  ****************************************************************************/
 
 #ifdef HAVE_LPUART_CONSOLE
-static const struct uart_config_s g_console_config = {
-	.baud = IMXRT_CONSOLE_BAUD,	/* Configured baud */
-	.parity = IMXRT_CONSOLE_PARITY,	/* 0=none, 1=odd, 2=even */
-	.bits = IMXRT_CONSOLE_BITS,	/* Number of bits (5-9) */
-	.stopbits2 = IMXRT_CONSOLE_2STOP,	/* true: Configure with 2 stop bits instead of 1 */
+static const struct uart_config_s g_console_config =
+{
+  .baud      = IMXRT_CONSOLE_BAUD,    /* Configured baud */
+  .parity    = IMXRT_CONSOLE_PARITY,  /* 0=none, 1=odd, 2=even */
+  .bits      = IMXRT_CONSOLE_BITS,    /* Number of bits (5-9) */
+  .stopbits2 = IMXRT_CONSOLE_2STOP,   /* true: Configure with 2 stop bits instead of 1 */
 };
 #endif
 
@@ -203,6 +214,26 @@ void imxrt_lpuart_clock_enable(uint32_t base)
 	} else if (base == IMXRT_LPUART8_BASE) {
 		imxrt_clockall_lpuart8();
 	}
+#ifdef CONFIG_IMXRT_LPUART9
+	else if (base == IMXRT_LPUART9_BASE) {
+		imxrt_clockall_lpuart9();
+	}
+#endif
+#ifdef CONFIG_IMXRT_LPUART10
+	else if (base == IMXRT_LPUART10_BASE) {
+		imxrt_clockall_lpuart10();
+	}
+#endif
+#ifdef CONFIG_IMXRT_LPUART11
+	else if (base == IMXRT_LPUART11_BASE) {
+		imxrt_clockall_lpuart11();
+	}
+#endif
+#ifdef CONFIG_IMXRT_LPUART12
+	else if (base == IMXRT_LPUART12_BASE) {
+		imxrt_clockall_lpuart12();
+	}
+#endif
 }
 
 /****************************************************************************
@@ -231,13 +262,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART1_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART1_TX);
+	imxrt_config_gpio(GPIO_LPUART1_RX);
+	imxrt_config_gpio(GPIO_LPUART1_TX);
 #ifdef CONFIG_LPUART1_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART1_CTS);
+	imxrt_config_gpio(GPIO_LPUART1_CTS);
 #endif
-#ifdef CONFIG_LPUART1_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART1_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART1_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART1_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART1_RTS);
 #endif
 #endif
 
@@ -247,13 +279,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART2_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART2_TX);
+	imxrt_config_gpio(GPIO_LPUART2_RX);
+	imxrt_config_gpio(GPIO_LPUART2_TX);
 #ifdef CONFIG_LPUART2_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART2_CTS);
+	imxrt_config_gpio(GPIO_LPUART2_CTS);
 #endif
-#ifdef CONFIG_LPUART2_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART2_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART2_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART2_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART2_RTS);
 #endif
 #endif
 
@@ -263,13 +296,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART3_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART3_TX);
+	imxrt_config_gpio(GPIO_LPUART3_RX);
+	imxrt_config_gpio(GPIO_LPUART3_TX);
 #ifdef CONFIG_LPUART3_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART3_CTS);
+	imxrt_config_gpio(GPIO_LPUART3_CTS);
 #endif
-#ifdef CONFIG_LPUART3_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART3_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART3_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART3_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART3_RTS);
 #endif
 #endif
 
@@ -279,13 +313,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART4_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART4_TX);
+	imxrt_config_gpio(GPIO_LPUART4_RX);
+	imxrt_config_gpio(GPIO_LPUART4_TX);
 #ifdef CONFIG_LPUART4_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART4_CTS);
+	imxrt_config_gpio(GPIO_LPUART4_CTS);
 #endif
-#ifdef CONFIG_LPUART4_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART4_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART4_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART4_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART4_RTS);
 #endif
 #endif
 
@@ -295,13 +330,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART5_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART5_TX);
+	imxrt_config_gpio(GPIO_LPUART5_RX);
+	imxrt_config_gpio(GPIO_LPUART5_TX);
 #ifdef CONFIG_LPUART5_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART5_CTS);
+	imxrt_config_gpio(GPIO_LPUART5_CTS);
 #endif
-#ifdef CONFIG_LPUART5_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART5_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART5_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART5_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART5_RTS);
 #endif
 #endif
 
@@ -311,13 +347,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART6_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART6_TX);
+	imxrt_config_gpio(GPIO_LPUART6_RX);
+	imxrt_config_gpio(GPIO_LPUART6_TX);
 #ifdef CONFIG_LPUART6_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART6_CTS);
+	imxrt_config_gpio(GPIO_LPUART6_CTS);
 #endif
-#ifdef CONFIG_LPUART6_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART6_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART6_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART6_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART6_RTS);
 #endif
 #endif
 
@@ -327,13 +364,14 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART7_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART7_TX);
+	imxrt_config_gpio(GPIO_LPUART7_RX);
+	imxrt_config_gpio(GPIO_LPUART7_TX);
 #ifdef CONFIG_LPUART7_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART7_CTS);
+	imxrt_config_gpio(GPIO_LPUART7_CTS);
 #endif
-#ifdef CONFIG_LPUART7_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART7_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART7_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART7_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART7_RTS);
 #endif
 #endif
 
@@ -343,23 +381,92 @@ void imxrt_lowsetup(void)
 	 * control is enabled.
 	 */
 
-	(void)imxrt_config_gpio(GPIO_LPUART8_RX);
-	(void)imxrt_config_gpio(GPIO_LPUART8_TX);
+	imxrt_config_gpio(GPIO_LPUART8_RX);
+	imxrt_config_gpio(GPIO_LPUART8_TX);
 #ifdef CONFIG_LPUART8_OFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART8_CTS);
+	imxrt_config_gpio(GPIO_LPUART8_CTS);
 #endif
-#ifdef CONFIG_LPUART8_IFLOWCONTROL
-	(void)imxrt_config_gpio(GPIO_LPUART8_RTS);
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART8_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART8_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART8_RTS);
+#endif
+#endif
+
+#ifdef CONFIG_IMXRT_LPUART9
+
+	/* Configure LPUART9 pins: RXD and TXD.
+	 * Also configure RTS and CTS if flow control is enabled.
+	 */
+
+	imxrt_config_gpio(GPIO_LPUART9_RX);
+	imxrt_config_gpio(GPIO_LPUART9_TX);
+#ifdef CONFIG_LPUART9_OFLOWCONTROL
+	imxrt_config_gpio(GPIO_LPUART9_CTS);
+#endif
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART9_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART9_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART9_RTS);
+#endif
+#endif
+
+#ifdef CONFIG_IMXRT_LPUART10
+
+	/* Configure LPUART10 pins: RXD and TXD.
+	 * Also configure RTS and CTS if flow control is enabled.
+	 */
+
+	imxrt_config_gpio(GPIO_LPUART10_RX);
+	imxrt_config_gpio(GPIO_LPUART10_TX);
+#ifdef CONFIG_LPUART10_OFLOWCONTROL
+	imxrt_config_gpio(GPIO_LPUART10_CTS);
+#endif
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART10_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART10_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART10_RTS);
+#endif
+#endif
+
+#ifdef CONFIG_IMXRT_LPUART11
+
+	/* Configure LPUART11 pins: RXD and TXD.
+	 * Also configure RTS and CTS if flow control is enabled.
+	 */
+
+	imxrt_config_gpio(GPIO_LPUART11_RX);
+	imxrt_config_gpio(GPIO_LPUART11_TX);
+#ifdef CONFIG_LPUART11_OFLOWCONTROL
+	imxrt_config_gpio(GPIO_LPUART11_CTS);
+#endif
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART11_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART11_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART11_RTS);
+#endif
+#endif
+
+#ifdef CONFIG_IMXRT_LPUART12
+
+	/* Configure LPUART12 pins: RXD and TXD.
+	 * Also configure RTS and CTS if flow control is enabled.
+	 */
+
+	imxrt_config_gpio(GPIO_LPUART12_RX);
+	imxrt_config_gpio(GPIO_LPUART12_TX);
+#ifdef CONFIG_LPUART12_OFLOWCONTROL
+	imxrt_config_gpio(GPIO_LPUART12_CTS);
+#endif
+#if ((defined(CONFIG_SERIAL_RS485CONTROL) && defined(CONFIG_LPUART12_RS485RTSCONTROL)) || \
+     (defined(CONFIG_SERIAL_IFLOWCONTROL) && defined(CONFIG_LPUART12_IFLOWCONTROL)))
+	imxrt_config_gpio(GPIO_LPUART12_RTS);
 #endif
 #endif
 
 #ifdef HAVE_LPUART_CONSOLE
 	/* Configure the serial console for initial, non-interrupt driver mode */
 
-	(void)imxrt_lpuart_configure(IMXRT_CONSOLE_BASE, &g_console_config);
+	imxrt_lpuart_configure(IMXRT_CONSOLE_BASE, &g_console_config);
 #endif
-#endif							/* HAVE_LPUART_DEVICE */
-#endif							/* CONFIG_SUPPRESS_LPUART_CONFIG */
+#endif /* HAVE_LPUART_DEVICE */
+#endif /* CONFIG_SUPPRESS_LPUART_CONFIG */
 }
 
 /****************************************************************************
@@ -371,11 +478,14 @@ void imxrt_lowsetup(void)
  ****************************************************************************/
 
 #ifdef HAVE_LPUART_DEVICE
-int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config)
+int imxrt_lpuart_configure(uint32_t base,
+                           const struct uart_config_s *config)
 {
+#ifndef CONFIG_ARCH_FAMILY_IMXRT117x
 	uint32_t src_freq = 0;
 	uint32_t pll3_div = 0;
 	uint32_t uart_div = 0;
+#endif
 	uint32_t lpuart_freq = 0;
 	uint16_t sbr;
 	uint16_t temp_sbr;
@@ -385,11 +495,65 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 	uint32_t calculated_baud;
 	uint32_t baud_diff;
 	uint32_t regval;
+	uint32_t regval2;
 
-	if ((getreg32(IMXRT_CCM_CSCDR1) & CCM_CSCDR1_UART_CLK_SEL(1U)) != 0) {
+#ifdef CONFIG_ARCH_FAMILY_IMXRT117x
+	if (base == IMXRT_LPUART1_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART1, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART2_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART2, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART3_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART3, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART4_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART4, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART5_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART5, &lpuart_freq) != OK) {
+			return ERROR;
+		};
+	} else if (base == IMXRT_LPUART6_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART6, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART7_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART7, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART8_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART8, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART9_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART9, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART10_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART10, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART11_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART11, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	} else if (base == IMXRT_LPUART12_BASE) {
+		if (imxrt_get_rootclock(CCM_CR_LPUART12, &lpuart_freq) != OK) {
+			return ERROR;
+		}
+	}
+
+#else
+	if ((getreg32(IMXRT_CCM_CSCDR1) & CCM_CSCDR1_UART_CLK_SEL) != 0) {
 		src_freq = BOARD_XTAL_FREQUENCY;
 	} else {
-		if ((getreg32(IMXRT_CCM_ANALOG_PLL_USB1) & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) != 0) {
+		if ((getreg32(IMXRT_CCM_ANALOG_PLL_USB1) &
+		     CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) != 0) {
 			pll3_div = 22;
 		} else {
 			pll3_div = 20;
@@ -398,8 +562,10 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 		src_freq = (BOARD_XTAL_FREQUENCY * pll3_div) / 6;
 	}
 
-	uart_div = (getreg32(IMXRT_CCM_CSCDR1) & CCM_CSCDR1_UART_CLK_PODF_MASK) + 1;
+	uart_div    = (getreg32(IMXRT_CCM_CSCDR1) &
+	               CCM_CSCDR1_UART_CLK_PODF_MASK) + 1;
 	lpuart_freq = src_freq / uart_div;
+#endif
 
 	/* This LPUART instantiation uses a slightly different baud rate
 	 * calculation.  The idea is to use the best OSR (over-sampling rate)
@@ -411,8 +577,8 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 	 */
 
 	baud_diff = config->baud;
-	osr = 0;
-	sbr = 0;
+	osr       = 0;
+	sbr       = 0;
 
 	for (temp_osr = 4; temp_osr <= 32; temp_osr++) {
 		/* Calculate the temporary sbr value   */
@@ -430,19 +596,21 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 		/* Calculate the baud rate based on the temporary OSR and SBR values */
 
 		calculated_baud = (lpuart_freq / (temp_osr * temp_sbr));
-		temp_diff = calculated_baud - config->baud;
+		temp_diff       = calculated_baud - config->baud;
 
 		/* Select the better value between srb and (sbr + 1) */
 
-		if (temp_diff > (config->baud - (lpuart_freq / (temp_osr * (temp_sbr + 1))))) {
-			temp_diff = config->baud - (lpuart_freq / (temp_osr * (temp_sbr + 1)));
+		if (temp_diff > (config->baud -
+		                (lpuart_freq / (temp_osr * (temp_sbr + 1))))) {
+			temp_diff = config->baud -
+			            (lpuart_freq / (temp_osr * (temp_sbr + 1)));
 			temp_sbr++;
 		}
 
 		if (temp_diff <= baud_diff) {
 			baud_diff = temp_diff;
-			osr = temp_osr;
-			sbr = temp_sbr;
+			osr       = temp_osr;
+			sbr       = temp_sbr;
 		}
 	}
 
@@ -458,151 +626,121 @@ int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config
 
 	/* Reset all internal logic and registers, except the Global Register */
 
-	regval = getreg32(base + IMXRT_LPUART_GLOBAL_OFFSET);
-	regval |= LPUART_GLOBAL_RST(1U);
+	regval  = getreg32(base + IMXRT_LPUART_GLOBAL_OFFSET);
+	regval |= LPUART_GLOBAL_RST;
 	putreg32(regval, base + IMXRT_LPUART_GLOBAL_OFFSET);
 
-	regval &= ~LPUART_GLOBAL_RST(1U);
+	regval &= ~LPUART_GLOBAL_RST;
 	putreg32(regval, base + IMXRT_LPUART_GLOBAL_OFFSET);
+
+	/* Construct MODIR register */
+
+	regval = 0;
+
+	if (config->userts) {
+		regval |= LPUART_MODIR_RXRTSE;
+	} else if (config->users485) {
+		/* Both TX and RX side can't control RTS, so this gives
+		 * the RX side precedence. This should have been filtered
+		 * in layers above anyway, but it's just a precaution.
+		 */
+
+		regval |= LPUART_MODIR_TXRTSE;
+	}
+
+	if (config->usects) {
+		regval |= LPUART_MODIR_TXCTSE;
+	}
+
+	if (config->invrts) {
+		regval |= LPUART_MODIR_TXRTSPOL;
+	}
+
+	putreg32(regval, base + IMXRT_LPUART_MODIR_OFFSET);
 
 	regval = 0;
 
 	if ((osr > 3) && (osr < 8)) {
-		regval |= LPUART_BAUD_BOTHEDGE(1U);
+		regval |= LPUART_BAUD_BOTHEDGE;
 	}
 
 	if (config->stopbits2) {
-		regval |= LPUART_BAUD_SBNS(1U);
+		regval |= LPUART_BAUD_SBNS;
 	}
 
-	regval |= LPUART_BAUD_OSR(osr-1) | LPUART_BAUD_SBR(sbr);
+	regval |= LPUART_BAUD_OSR(osr) | LPUART_BAUD_SBR(sbr);
 	putreg32(regval, base + IMXRT_LPUART_BAUD_OFFSET);
 
 	regval = 0;
 	if (config->parity == 1) {
-		regval |= LPUART_CTRL_PE(1U) | LPUART_CTRL_PT_ODD;
+		regval |= LPUART_CTRL_PE | LPUART_CTRL_PT_ODD;
 	} else if (config->parity == 2) {
-		regval |= LPUART_CTRL_PE(1U) | LPUART_CTRL_PT_EVEN;
+		regval |= LPUART_CTRL_PE | LPUART_CTRL_PT_EVEN;
 	}
 
-	if (config->bits == 8) {
-		regval &= ~LPUART_CTRL_M(1U);
-	} else if (config->bits == 9) {
-		regval |= LPUART_CTRL_M(1U);
+	if (config->bits == 9 || (config->bits == 8 && config->parity != 0)) {
+		regval |= LPUART_CTRL_M;
+	} else if ((config->bits == 8)) {
+		regval &= ~LPUART_CTRL_M;
 	} else {
 		/* Here should be added support of other bit modes. */
 
+#warning missing logic
 		return ERROR;
 	}
 
-	regval |= LPUART_CTRL_RE(1U) | LPUART_CTRL_TE(1U);
+	regval2  = getreg32(base + IMXRT_LPUART_FIFO_OFFSET);
+	regval2 |= LPUART_FIFO_RXFLUSH | LPUART_FIFO_TXFLUSH |
+	           LPUART_FIFO_RXFE | LPUART_FIFO_RXIDEN_1 | LPUART_FIFO_TXFE;
+	putreg32(regval2, base + IMXRT_LPUART_FIFO_OFFSET);
+
+	regval |= LPUART_CTRL_RE | LPUART_CTRL_TE;
 	putreg32(regval, base + IMXRT_LPUART_CTRL_OFFSET);
 
 	return OK;
 }
-#endif							/* HAVE_LPUART_DEVICE */
+#endif /* HAVE_LPUART_DEVICE */
 
-#if defined(HAVE_LPUART_DEVICE)
 /****************************************************************************
- * Name: up_lowputc
- *
- * Description:
- *   Output one character to he UART
- *
- ****************************************************************************/
-void up_lowputc(char ch)
-{
-	imxrt_lowputc(ch);
-}
-
-/************************************************************************************
  * Name: imxrt_lowputc
  *
  * Description:
- *   Output a byte with as few system dependencies as possible.  This will even work
- *   BEFORE the console is initialized if we are booting from U-Boot (and the same
- *   UART is used for the console, of course.)
+ *   Output a byte with as few system dependencies as possible.  This will
+ *   even work BEFORE the console is initialized if we are booting from U-
+ *   Boot (and the same UART is used for the console, of course.)
  *
- ************************************************************************************/
-void imxrt_lowputc(char ch)
+ ****************************************************************************/
+
+#if defined(HAVE_LPUART_DEVICE)
+void imxrt_lowputc(int ch)
 {
-	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
+#ifdef HAVE_LPUART_CONSOLE
+	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) &
+	       LPUART_STAT_TDRE) == 0) {
+	}
+
+	/* If the character to output is a newline, then prepend a carriage
+	 * return.
+	 */
+
+	if (ch == '\n') {
+		/* Send the carriage return by writing it into the UART_TXD register. */
+
+		putreg32((uint32_t)'\r', IMXRT_CONSOLE_BASE +
+		                         IMXRT_LPUART_DATA_OFFSET);
+
+		/* Wait for the transmit register to be emptied. When the TXFE bit is
+		 * non-zero, the TX Buffer FIFO is empty.
+		 */
+
+		while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) &
+		       LPUART_STAT_TDRE) == 0) {
+		}
 	}
 
 	/* Send the character by writing it into the UART_TXD register. */
 
 	putreg32((uint32_t)ch, IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
-
-	/* Wait for the transmit register to be emptied. When the TXFE bit is non-zero,
-	 * the TX Buffer FIFO is empty.
-	 */
-
-	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_TDRE(1U)) == 0) {
-	}
-}
-
-/****************************************************************************
- * Name: imxrt_set_rxint
- *
- * Description:
- *   Call to enable or disable RX interrupts
- *
- ****************************************************************************/
-void imxrt_set_rxint(bool enable)
-{
-	uint32_t regval;
-	uint32_t mask;
-
-	if (enable) {
-		mask = (LPUART_CTRL_RIE(1U) | LPUART_CTRL_FEIE(1U) | LPUART_CTRL_ORIE(1U));
-		regval = getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
-		regval &= ~LPUART_ALL_INTS;
-		regval |= mask;
-		putreg32(regval, IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
-	} else {
-		mask = ~(LPUART_CTRL_RIE(1U) | LPUART_CTRL_FEIE(1U) | LPUART_CTRL_ORIE(1U));
-		regval = getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
-		regval &= ~LPUART_ALL_INTS;
-		regval &= mask;
-		putreg32(regval, IMXRT_CONSOLE_BASE + IMXRT_LPUART_CTRL_OFFSET);
-	}
-}
-
-/****************************************************************************
- * Name: up_getc
- *
- * Description:
- *   Get one character from the UART
- *
- ****************************************************************************/
-uint8_t up_getc(void)
-{
-	uint8_t ch;
-
-	imxrt_set_rxint(0);
-	ch = imxrt_lowgetc();
-	imxrt_set_rxint(1);
-	return ch;
-}
-
-/************************************************************************************
- * Name: imxrt_lowgetc
- *
- * Description:
- *   Receive a byte from UART with as few system dependencies as possible.  This will even work
- *   BEFORE the console is initialized if we are booting from U-Boot (and the same
- *   UART is used for the console, of course.)
- *
- ************************************************************************************/
-uint8_t imxrt_lowgetc(void)
-{
-	uint32_t rxd;
-
-	/* Receive the character written into the UART_RXD register. */
-	while ((getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_STAT_OFFSET) & LPUART_STAT_RDRF(1U)) == 0) {
-	}
-
-	rxd = getreg32(IMXRT_CONSOLE_BASE + IMXRT_LPUART_DATA_OFFSET);
-	return (rxd & LPUART_DATA_MASK) >> LPUART_DATA_SHIFT;
+#endif
 }
 #endif

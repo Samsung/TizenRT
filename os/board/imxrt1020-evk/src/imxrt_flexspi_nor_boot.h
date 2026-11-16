@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/board/imxrt1020-evk/src/imxrt_flexspi_nor_boot.h
+ * boards/arm/imxrt/imxrt1020-evk/src/imxrt_flexspi_nor_boot.h
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name TinyARA nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __CONFIGS_IMXRT1020_EVK_SRC_IMXRT_FLEXSPI_NOR_BOOT_H
-#define __CONFIGS_IMXRT1020_EVK_SRC_IMXRT_FLEXSPI_NOR_BOOT_H
+#ifndef __BOARDS_ARM_IMXRT1020_EVK_SRC_IMXRT_FLEXSPI_NOR_BOOT_H
+#define __BOARDS_ARM_IMXRT1020_EVK_SRC_IMXRT_FLEXSPI_NOR_BOOT_H
 
 /****************************************************************************
  * Included Files
@@ -73,10 +60,10 @@
 #define IVT_MINOR_VERSION_MASK      0xf
 
 #define IVT_VERSION(major, minor)   \
-	((((major) & IVT_MAJOR_VERSION_MASK) << IVT_MAJOR_VERSION_SHIFT) |  \
-	 (((minor) & IVT_MINOR_VERSION_MASK) << IVT_MINOR_VERSION_SHIFT))
+  ((((major) & IVT_MAJOR_VERSION_MASK) << IVT_MAJOR_VERSION_SHIFT) |  \
+  (((minor) & IVT_MINOR_VERSION_MASK) << IVT_MINOR_VERSION_SHIFT))
 
-#define IVT_TAG_HEADER              (0xd1)	/* Image Vector Table */
+#define IVT_TAG_HEADER              (0xd1)       /* Image Vector Table */
 #define IVT_SIZE                    0x2000
 #define IVT_PAR                     IVT_VERSION(IVT_MAJOR_VERSION, IVT_MINOR_VERSION)
 
@@ -94,8 +81,9 @@
 #define FLASH_END                   0x7f7fffff
 #define SCLK 1
 
-#define DCD_ADDRESS                 0
-#define BOOT_DATA_ADDRESS           &boot_data
+#  define DCD_ADDRESS               0
+
+#define BOOT_DATA_ADDRESS           &g_boot_data
 #define CSF_ADDRESS                 0
 #define PLUGIN_FLAG                 (uint32_t)0
 
@@ -105,59 +93,61 @@
 
 /* IVT Data */
 
-struct ivt_s {
-	/* Header with tag #HAB_TAG_IVT, length and HAB version fields
-	 * (see data)
-	 */
+struct ivt_s
+{
+  /* Header with tag #HAB_TAG_IVT, length and HAB version fields
+   * (see data)
+   */
 
-	uint32_t hdr;
+  uint32_t hdr;
 
-	/* Absolute address of the first instruction to execute from the
-	 * image
-	 */
+  /* Absolute address of the first instruction to execute from the
+   * image
+   */
 
-	uint32_t entry;
+  uint32_t entry;
 
-	/* Reserved in this version of HAB: should be NULL. */
+  /* Reserved in this version of HAB: should be NULL. */
 
-	uint32_t reserved1;
+  uint32_t reserved1;
 
-	/* Absolute address of the image DCD: may be NULL. */
+  /* Absolute address of the image DCD: may be NULL. */
 
-	uint32_t dcd;
+  uint32_t dcd;
 
-	/* Absolute address of the Boot Data: may be NULL, but not interpreted
-	 * any further by HAB
-	 */
+  /* Absolute address of the Boot Data: may be NULL, but not interpreted
+   * any further by HAB
+   */
 
-	uint32_t boot_data;
+  uint32_t boot_data;
 
-	/* Absolute address of the IVT. */
+  /* Absolute address of the IVT. */
 
-	uint32_t self;
+  uint32_t self;
 
-	/* Absolute address of the image CSF. */
+  /* Absolute address of the image CSF. */
 
-	uint32_t csf;
+  uint32_t csf;
 
-	/* Reserved in this version of HAB: should be zero. */
+  /* Reserved in this version of HAB: should be zero. */
 
-	uint32_t reserved2;
+  uint32_t reserved2;
 };
 
 /* Boot Data */
 
-struct boot_data_s {
-	uint32_t start;				/* boot start location */
-	uint32_t size;				/* size */
-	uint32_t plugin;			/* plugin flag - 1 if downloaded application is plugin */
-	uint32_t placeholder;		/* placehoder to make even 0x10 size */
+struct boot_data_s
+{
+  uint32_t start;           /* boot start location */
+  uint32_t size;            /* size */
+  uint32_t plugin;          /* plugin flag - 1 if downloaded application is plugin */
+  uint32_t placeholder;     /* placeholder to make even 0x10 size */
 };
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-extern const struct boot_data_s boot_data;
+extern const struct boot_data_s g_boot_data;
 
-#endif							/* __CONFIGS_IMXRT1050_EVK_SRC_IMXRT_FLEXSPI_NOR_BOOT_H */
+#endif /* __BOARDS_ARM_IMXRT1020_EVK_SRC_IMXRT_FLEXSPI_NOR_BOOT_H */

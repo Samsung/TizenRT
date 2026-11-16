@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/arch/arm/src/imxrt/imxrt_irq.c
+ * arch/arm/src/imxrt/imxrt_irq.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,20 +43,23 @@
 
 #include <tinyara/config.h>
 
+#include <inttypes.h>
 #include <stdint.h>
+#include <assert.h>
 #include <debug.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+
 #include <arch/irq.h>
+#include <arch/armv7-m/nvicpri.h>
 
 #include "nvic.h"
 #include "ram_vectors.h"
-#include "up_arch.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 #ifdef CONFIG_IMXRT_GPIO_IRQ
-#include "imxrt_gpio.h"
+#  include "imxrt_gpio.h"
 #endif
 
 /****************************************************************************
@@ -79,10 +69,10 @@
 /* Get a 32-bit version of the default priority */
 
 #define DEFPRIORITY32 \
-	(NVIC_SYSH_PRIORITY_DEFAULT << 24 | \
-	 NVIC_SYSH_PRIORITY_DEFAULT << 16 | \
-	 NVIC_SYSH_PRIORITY_DEFAULT << 8  | \
-	 NVIC_SYSH_PRIORITY_DEFAULT)
+  (NVIC_SYSH_PRIORITY_DEFAULT << 24 | \
+   NVIC_SYSH_PRIORITY_DEFAULT << 16 | \
+   NVIC_SYSH_PRIORITY_DEFAULT << 8  | \
+   NVIC_SYSH_PRIORITY_DEFAULT)
 
 /* Given the address of a NVIC ENABLE register, this is the offset to
  * the corresponding CLEAR ENABLE register.
@@ -90,29 +80,6 @@
 
 #define NVIC_ENA_OFFSET    (0)
 #define NVIC_CLRENA_OFFSET (NVIC_IRQ0_31_CLEAR - NVIC_IRQ0_31_ENABLE)
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/* g_current_regs[] holds a references to the current interrupt level
- * register storage structure.  If is non-NULL only during interrupt
- * processing.  Access to g_current_regs[] must be through the macro
- * CURRENT_REGS for portability.
- */
-
-volatile uint32_t *g_current_regs[1];
-volatile uint32_t *current_regs;
-
-/* This is the address of the  exception vector table (determined by the
- * linker script).
- */
-
-extern uint32_t _vectors[];
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -134,56 +101,139 @@ static void imxrt_dumpnvic(const char *msg, int irq)
 	flags = enter_critical_section();
 
 	irqinfo("NVIC (%s, irq=%d):\n", msg, irq);
-	irqinfo("  INTCTRL:    %08x VECTAB:  %08x\n", getreg32(NVIC_INTCTRL), getreg32(NVIC_VECTAB));
+	irqinfo("  INTCTRL:    %08x VECTAB:  %08x\n",
+	      getreg32(NVIC_INTCTRL), getreg32(NVIC_VECTAB));
 #if 0
-	irqinfo("  SYSH ENABLE MEMFAULT: %08x BUSFAULT: %08x USGFAULT: %08x SYSTICK: %08x\n", getreg32(NVIC_SYSHCON_MEMFAULTENA), getreg32(NVIC_SYSHCON_BUSFAULTENA), getreg32(NVIC_SYSHCON_USGFAULTENA), getreg32(NVIC_SYSTICK_CTRL_ENABLE));
+	irqinfo("  SYSH ENABLE MEMFAULT: %08x BUSFAULT: %08x USGFAULT: %08x "
+	        "SYSTICK: %08x\n",
+	        getreg32(NVIC_SYSHCON_MEMFAULTENA),
+	        getreg32(NVIC_SYSHCON_BUSFAULTENA),
+	        getreg32(NVIC_SYSHCON_USGFAULTENA),
+	        getreg32(NVIC_SYSTICK_CTRL_ENABLE));
 #endif
-	irqinfo("  IRQ ENABLE: %08x %08x %08x %08x\n", getreg32(NVIC_IRQ0_31_ENABLE), getreg32(NVIC_IRQ32_63_ENABLE), getreg32(NVIC_IRQ64_95_ENABLE), getreg32(NVIC_IRQ96_127_ENABLE));
+	irqinfo("  IRQ ENABLE: %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ0_31_ENABLE),
+	        getreg32(NVIC_IRQ32_63_ENABLE),
+	        getreg32(NVIC_IRQ64_95_ENABLE),
+	        getreg32(NVIC_IRQ96_127_ENABLE));
 #if IMXRT_IRQ_NEXTINT > 128
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ128_159_ENABLE), getreg32(NVIC_IRQ160_191_ENABLE), getreg32(NVIC_IRQ192_223_ENABLE), getreg32(NVIC_IRQ224_239_ENABLE));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ128_159_ENABLE),
+	        getreg32(NVIC_IRQ160_191_ENABLE),
+	        getreg32(NVIC_IRQ192_223_ENABLE),
+	        getreg32(NVIC_IRQ224_239_ENABLE));
 #endif
-	irqinfo("  SYSH_PRIO:  %08x %08x %08x\n", getreg32(NVIC_SYSH4_7_PRIORITY), getreg32(NVIC_SYSH8_11_PRIORITY), getreg32(NVIC_SYSH12_15_PRIORITY));
-	irqinfo("  IRQ PRIO:   %08x %08x %08x %08x\n", getreg32(NVIC_IRQ0_3_PRIORITY), getreg32(NVIC_IRQ4_7_PRIORITY), getreg32(NVIC_IRQ8_11_PRIORITY), getreg32(NVIC_IRQ12_15_PRIORITY));
+	irqinfo("  SYSH_PRIO:  %08x %08x %08x\n",
+	        getreg32(NVIC_SYSH4_7_PRIORITY),
+	        getreg32(NVIC_SYSH8_11_PRIORITY),
+	        getreg32(NVIC_SYSH12_15_PRIORITY));
+	irqinfo("  IRQ PRIO:   %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ0_3_PRIORITY),
+	        getreg32(NVIC_IRQ4_7_PRIORITY),
+	        getreg32(NVIC_IRQ8_11_PRIORITY),
+	        getreg32(NVIC_IRQ12_15_PRIORITY));
 #if IMXRT_IRQ_NEXTINT > 16
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ16_19_PRIORITY), getreg32(NVIC_IRQ20_23_PRIORITY), getreg32(NVIC_IRQ24_27_PRIORITY), getreg32(NVIC_IRQ28_31_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ16_19_PRIORITY),
+	        getreg32(NVIC_IRQ20_23_PRIORITY),
+	        getreg32(NVIC_IRQ24_27_PRIORITY),
+	        getreg32(NVIC_IRQ28_31_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 32
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ32_35_PRIORITY), getreg32(NVIC_IRQ36_39_PRIORITY), getreg32(NVIC_IRQ40_43_PRIORITY), getreg32(NVIC_IRQ44_47_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ32_35_PRIORITY),
+	        getreg32(NVIC_IRQ36_39_PRIORITY),
+	        getreg32(NVIC_IRQ40_43_PRIORITY),
+	        getreg32(NVIC_IRQ44_47_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 48
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ48_51_PRIORITY), getreg32(NVIC_IRQ52_55_PRIORITY), getreg32(NVIC_IRQ56_59_PRIORITY), getreg32(NVIC_IRQ60_63_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ48_51_PRIORITY),
+	        getreg32(NVIC_IRQ52_55_PRIORITY),
+	        getreg32(NVIC_IRQ56_59_PRIORITY),
+	        getreg32(NVIC_IRQ60_63_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 64
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ64_67_PRIORITY), getreg32(NVIC_IRQ68_71_PRIORITY), getreg32(NVIC_IRQ72_75_PRIORITY), getreg32(NVIC_IRQ76_79_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ64_67_PRIORITY),
+	        getreg32(NVIC_IRQ68_71_PRIORITY),
+	        getreg32(NVIC_IRQ72_75_PRIORITY),
+	        getreg32(NVIC_IRQ76_79_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 80
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ80_83_PRIORITY), getreg32(NVIC_IRQ84_87_PRIORITY), getreg32(NVIC_IRQ88_91_PRIORITY), getreg32(NVIC_IRQ92_95_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ80_83_PRIORITY),
+	        getreg32(NVIC_IRQ84_87_PRIORITY),
+	        getreg32(NVIC_IRQ88_91_PRIORITY),
+	        getreg32(NVIC_IRQ92_95_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 96
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ96_99_PRIORITY), getreg32(NVIC_IRQ100_103_PRIORITY), getreg32(NVIC_IRQ104_107_PRIORITY), getreg32(NVIC_IRQ108_111_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ96_99_PRIORITY),
+	        getreg32(NVIC_IRQ100_103_PRIORITY),
+	        getreg32(NVIC_IRQ104_107_PRIORITY),
+	        getreg32(NVIC_IRQ108_111_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 112
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ112_115_PRIORITY), getreg32(NVIC_IRQ116_119_PRIORITY), getreg32(NVIC_IRQ120_123_PRIORITY), getreg32(NVIC_IRQ124_127_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ112_115_PRIORITY),
+	        getreg32(NVIC_IRQ116_119_PRIORITY),
+	        getreg32(NVIC_IRQ120_123_PRIORITY),
+	        getreg32(NVIC_IRQ124_127_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 128
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ128_131_PRIORITY), getreg32(NVIC_IRQ132_135_PRIORITY), getreg32(NVIC_IRQ136_139_PRIORITY), getreg32(NVIC_IRQ140_143_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ128_131_PRIORITY),
+	        getreg32(NVIC_IRQ132_135_PRIORITY),
+	        getreg32(NVIC_IRQ136_139_PRIORITY),
+	        getreg32(NVIC_IRQ140_143_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 144
-	irqinfo("              %08x %08x %08x %08x\n", getreg32(NVIC_IRQ144_147_PRIORITY), getreg32(NVIC_IRQ148_151_PRIORITY), getreg32(NVIC_IRQ152_155_PRIORITY), getreg32(NVIC_IRQ156_159_PRIORITY));
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ144_147_PRIORITY),
+	        getreg32(NVIC_IRQ148_151_PRIORITY),
+	        getreg32(NVIC_IRQ152_155_PRIORITY),
+	        getreg32(NVIC_IRQ156_159_PRIORITY));
 #endif
 #if IMXRT_IRQ_NEXTINT > 160
-#warning Missing logic
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ160_163_PRIORITY),
+	        getreg32(NVIC_IRQ164_167_PRIORITY),
+	        getreg32(NVIC_IRQ168_171_PRIORITY),
+	        getreg32(NVIC_IRQ172_175_PRIORITY));
+#endif
+#if IMXRT_IRQ_NEXTINT > 176
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ176_179_PRIORITY),
+	        getreg32(NVIC_IRQ180_183_PRIORITY),
+	        getreg32(NVIC_IRQ184_187_PRIORITY),
+	        getreg32(NVIC_IRQ188_191_PRIORITY));
+#endif
+#if IMXRT_IRQ_NEXTINT > 192
+	irqinfo("              %08x %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ192_195_PRIORITY),
+	        getreg32(NVIC_IRQ196_199_PRIORITY),
+	        getreg32(NVIC_IRQ200_203_PRIORITY),
+	        getreg32(NVIC_IRQ204_207_PRIORITY));
+#endif
+#if IMXRT_IRQ_NEXTINT > 208
+	irqinfo("              %08x %08x %08x\n",
+	        getreg32(NVIC_IRQ208_211_PRIORITY),
+	        getreg32(NVIC_IRQ212_215_PRIORITY),
+	        getreg32(NVIC_IRQ216_219_PRIORITY));
+#endif
+#if IMXRT_IRQ_NEXTINT > 218
+#  warning Missing logic
 #endif
 
 	leave_critical_section(flags);
 }
 #else
-#define imxrt_dumpnvic(msg, irq)
+#  define imxrt_dumpnvic(msg, irq)
 #endif
 
 /****************************************************************************
- * Name: imxrt_nmi, imxrt_pendsv, imxrt_dbgmonitor,
- *       imxrt_pendsv, imxrt_reserved
+ * Name: imxrt_nmi, imxrt_pendsv, imxrt_pendsv, imxrt_reserved
  *
  * Description:
  *   Handlers for various exceptions.  None are handled and all are fatal
@@ -193,33 +243,25 @@ static void imxrt_dumpnvic(const char *msg, int irq)
  ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_FEATURES
-static int imxrt_nmi(int irq, FAR void *context, FAR void *arg)
+static int imxrt_nmi(int irq, void *context, void *arg)
 {
-	(void)irqsave();
+	up_irq_save();
 	_err("PANIC!!! NMI received\n");
 	PANIC();
 	return 0;
 }
 
-static int imxrt_pendsv(int irq, FAR void *context, FAR void *arg)
+static int imxrt_pendsv(int irq, void *context, void *arg)
 {
-	(void)irqsave();
+	up_irq_save();
 	_err("PANIC!!! PendSV received\n");
 	PANIC();
 	return 0;
 }
 
-static int imxrt_dbgmonitor(int irq, FAR void *context, FAR void *arg)
+static int imxrt_reserved(int irq, void *context, void *arg)
 {
-	(void)irqsave();
-	_err("PANIC!!! Debug Monitor received\n");
-	PANIC();
-	return 0;
-}
-
-static int imxrt_reserved(int irq, FAR void *context, FAR void *arg)
-{
-	(void)irqsave();
+	up_irq_save();
 	_err("PANIC!!! Reserved interrupt\n");
 	PANIC();
 	return 0;
@@ -235,19 +277,17 @@ static int imxrt_reserved(int irq, FAR void *context, FAR void *arg)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARMV7M_USEBASEPRI
 static inline void imxrt_prioritize_syscall(int priority)
 {
 	uint32_t regval;
 
 	/* SVCALL is system handler 11 */
 
-	regval = getreg32(NVIC_SYSH8_11_PRIORITY);
+	regval  = getreg32(NVIC_SYSH8_11_PRIORITY);
 	regval &= ~NVIC_SYSH_PRIORITY_PR11_MASK;
 	regval |= (priority << NVIC_SYSH_PRIORITY_PR11_SHIFT);
 	putreg32(regval, NVIC_SYSH8_11_PRIORITY);
 }
-#endif
 
 /****************************************************************************
  * Name: imxrt_irqinfo
@@ -258,7 +298,8 @@ static inline void imxrt_prioritize_syscall(int priority)
  *
  ****************************************************************************/
 
-static int imxrt_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit, uintptr_t offset)
+static int imxrt_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit,
+                       uintptr_t offset)
 {
 	unsigned int extint = irq - IMXRT_IRQ_EXTINT;
 
@@ -269,37 +310,49 @@ static int imxrt_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit, uintptr_t o
 	if (irq >= IMXRT_IRQ_EXTINT) {
 		if (extint < 32) {
 			*regaddr = (NVIC_IRQ0_31_ENABLE + offset);
-			*bit = 1 << extint;
+			*bit     = 1 << extint;
 		} else
 #if IMXRT_IRQ_NEXTINT > 32
 		if (extint < 64) {
 			*regaddr = (NVIC_IRQ32_63_ENABLE + offset);
-			*bit = 1 << (extint - 32);
+			*bit     = 1 << (extint - 32);
 		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 64
 		if (extint < 96) {
 			*regaddr = (NVIC_IRQ64_95_ENABLE + offset);
-			*bit = 1 << (extint - 64);
+			*bit     = 1 << (extint - 64);
 		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 96
 		if (extint < 128) {
 			*regaddr = (NVIC_IRQ96_127_ENABLE + offset);
-			*bit = 1 << (extint - 96);
+			*bit     = 1 << (extint - 96);
 		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 128
 		if (extint < 160) {
 			*regaddr = (NVIC_IRQ128_159_ENABLE + offset);
-			*bit = 1 << (extint - 128);
+			*bit     = 1 << (extint - 128);
 		} else
 #endif
 #if IMXRT_IRQ_NEXTINT > 160
-#error Missing logic
+		if (extint < 192) {
+			*regaddr = (NVIC_IRQ160_191_ENABLE + offset);
+			*bit     = 1 << (extint - 160);
+		} else
+#endif
+#if IMXRT_IRQ_NEXTINT > 192
+		if (extint < 219) {
+			*regaddr = (NVIC_IRQ192_223_ENABLE + offset);
+			*bit     = 1 << (extint - 192);
+		} else
+#endif
+#if IMXRT_IRQ_NEXTINT > 218
+#  error Missing logic
 #endif
 		{
-			return ERROR;		/* Invalid interrupt */
+			return ERROR; /* Invalid interrupt */
 		}
 	}
 
@@ -317,7 +370,7 @@ static int imxrt_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit, uintptr_t o
 			*regaddr = NVIC_SYSTICK_CTRL;
 			*bit = NVIC_SYSTICK_CTRL_ENABLE;
 		} else {
-			return ERROR;		/* Invalid or unsupported exception */
+			return ERROR; /* Invalid or unsupported exception */
 		}
 	}
 
@@ -335,13 +388,10 @@ static int imxrt_irqinfo(int irq, uintptr_t *regaddr, uint32_t *bit, uintptr_t o
 void up_irqinitialize(void)
 {
 	uintptr_t regaddr;
-#if defined(CONFIG_DEBUG_SYMBOLS) && !defined(CONFIG_ARMV7M_USEBASEPRI)
-	uint32_t regval;
-#endif
 	int nintlines;
 	int i;
 
-	/* The NVIC ICTR register (bits 0-4) holds the number of of interrupt
+	/* The NVIC ICTR register (bits 0-4) holds the number of interrupt
 	 * lines that the NVIC supports, defined in groups of 32. That is,
 	 * the total number of interrupt lines is up to (32*(INTLINESNUM+1)).
 	 *
@@ -357,7 +407,9 @@ void up_irqinitialize(void)
 	 * registers.
 	 */
 
-	for (i = nintlines, regaddr = NVIC_IRQ0_31_CLEAR; i > 0; i--, regaddr += 4) {
+	for (i = nintlines, regaddr = NVIC_IRQ0_31_CLEAR;
+	     i > 0;
+	     i--, regaddr += 4) {
 		putreg32(0xffffffff, regaddr);
 	}
 
@@ -375,7 +427,7 @@ void up_irqinitialize(void)
 	 * vector table that requires special initialization.
 	 */
 
-	up_ramvec_initialize();
+	putreg32((uint32_t)g_ram_vectors, NVIC_VECTAB);
 #endif
 
 	/* Set all interrupts (and exceptions) to the default priority */
@@ -388,13 +440,11 @@ void up_irqinitialize(void)
 	 * nintlines * 8 priority registers.
 	 */
 
-	for (i = (nintlines << 3), regaddr = NVIC_IRQ0_3_PRIORITY; i > 0; i--, regaddr += 4) {
+	for (i = (nintlines << 3), regaddr = NVIC_IRQ0_3_PRIORITY;
+	     i > 0;
+	     i--, regaddr += 4) {
 		putreg32(DEFPRIORITY32, regaddr);
 	}
-
-	/* currents_regs is non-NULL only while processing an interrupt */
-
-	current_regs = NULL;
 
 	/* Attach the SVCall and Hard Fault exception handlers.  The SVCall
 	 * exception is used for performing context switches; The Hard Fault
@@ -402,52 +452,42 @@ void up_irqinitialize(void)
 	 * under certain conditions.
 	 */
 
-	irq_attach(IMXRT_IRQ_SVCALL, up_svcall, NULL);
-	irq_attach(IMXRT_IRQ_HARDFAULT, up_hardfault, NULL);
+	irq_attach(IMXRT_IRQ_SVCALL, arm_svcall, NULL);
+	irq_attach(IMXRT_IRQ_HARDFAULT, arm_hardfault, NULL);
 
 	/* Set the priority of the SVCall interrupt */
 
 #ifdef CONFIG_ARCH_IRQPRIO
 	/* up_prioritize_irq(IMXRT_IRQ_PENDSV, NVIC_SYSH_PRIORITY_MIN); */
 #endif
-#ifdef CONFIG_ARMV7M_USEBASEPRI
+
 	imxrt_prioritize_syscall(NVIC_SYSH_SVCALL_PRIORITY);
-#endif
 
 	/* If the MPU is enabled, then attach and enable the Memory Management
 	 * Fault handler.
 	 */
 
-#ifdef CONFIG_ARMV7M_MPU
-	irq_attach(IMXRT_IRQ_MEMFAULT, up_memfault, NULL);
+#ifdef CONFIG_ARM_MPU
+	irq_attach(IMXRT_IRQ_MEMFAULT, arm_memfault, NULL);
 	up_enable_irq(IMXRT_IRQ_MEMFAULT);
-#else
-	irq_attach(IMXRT_IRQ_MEMFAULT, up_memfault, NULL);
 #endif
-	irq_attach(IMXRT_IRQ_BUSFAULT, up_busfault, NULL);
-	irq_attach(IMXRT_IRQ_USAGEFAULT, up_usagefault, NULL);
 
 	/* Attach all other processor exceptions (except reset and sys tick) */
 
 #ifdef CONFIG_DEBUG_FEATURES
 	irq_attach(IMXRT_IRQ_NMI, imxrt_nmi, NULL);
+#ifndef CONFIG_ARM_MPU
+	irq_attach(IMXRT_IRQ_MEMFAULT, arm_memfault, NULL);
+#endif
+	irq_attach(IMXRT_IRQ_BUSFAULT, arm_busfault, NULL);
+	irq_attach(IMXRT_IRQ_USAGEFAULT, arm_usagefault, NULL);
 	irq_attach(IMXRT_IRQ_PENDSV, imxrt_pendsv, NULL);
-	irq_attach(IMXRT_IRQ_DBGMONITOR, imxrt_dbgmonitor, NULL);
+	arm_enable_dbgmonitor();
+	irq_attach(IMXRT_IRQ_DBGMONITOR, arm_dbgmonitor, NULL);
 	irq_attach(IMXRT_IRQ_RESERVED, imxrt_reserved, NULL);
 #endif
 
 	imxrt_dumpnvic("initial", NR_IRQS);
-
-	/* If a debugger is connected, try to prevent it from catching hardfaults.
-	 * If CONFIG_ARMV7M_USEBASEPRI, no hardfaults are expected in normal
-	 * operation.
-	 */
-
-#if defined(CONFIG_DEBUG_SYMBOLS) && !defined(CONFIG_ARMV7M_USEBASEPRI)
-	regval = getreg32(NVIC_DEMCR);
-	regval &= ~NVIC_DEMCR_VCHARDERR;
-	putreg32(regval, NVIC_DEMCR);
-#endif
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 	/* Initialize logic to support a second level of interrupt decoding for
@@ -460,7 +500,8 @@ void up_irqinitialize(void)
 
 	/* And finally, enable interrupts */
 
-	irqenable();
+	arm_color_intstack();
+	up_irq_enable();
 #endif
 }
 
@@ -488,7 +529,7 @@ void up_disable_irq(int irq)
 		if (irq >= IMXRT_IRQ_EXTINT) {
 			putreg32(bit, regaddr);
 		} else {
-			regval = getreg32(regaddr);
+			regval  = getreg32(regaddr);
 			regval &= ~bit;
 			putreg32(regval, regaddr);
 		}
@@ -501,7 +542,7 @@ void up_disable_irq(int irq)
 	}
 #endif
 
-#if 0							/* Might be useful in early bring-up */
+#if 0 /* Might be useful in early bring-up */
 	imxrt_dumpnvic("disable", irq);
 #endif
 }
@@ -530,7 +571,7 @@ void up_enable_irq(int irq)
 		if (irq >= IMXRT_IRQ_EXTINT) {
 			putreg32(bit, regaddr);
 		} else {
-			regval = getreg32(regaddr);
+			regval  = getreg32(regaddr);
 			regval |= bit;
 			putreg32(regval, regaddr);
 		}
@@ -543,20 +584,20 @@ void up_enable_irq(int irq)
 	}
 #endif
 
-#if 0							/* Might be useful in early bring-up */
+#if 0 /* Might be useful in early bring-up */
 	imxrt_dumpnvic("enable", irq);
 #endif
 }
 
 /****************************************************************************
- * Name: up_ack_irq
+ * Name: arm_ack_irq
  *
  * Description:
  *   Acknowledge the IRQ
  *
  ****************************************************************************/
 
-void up_ack_irq(int irq)
+void arm_ack_irq(int irq)
 {
 }
 
@@ -578,7 +619,8 @@ int up_prioritize_irq(int irq, int priority)
 	uint32_t regval;
 	int shift;
 
-	DEBUGASSERT(irq >= IMXRT_IRQ_MEMFAULT && irq < NR_IRQS && (unsigned)priority <= NVIC_SYSH_PRIORITY_MIN);
+	DEBUGASSERT(irq >= IMXRT_IRQ_MEMFAULT && irq < NR_IRQS &&
+	            (unsigned)priority <= NVIC_SYSH_PRIORITY_MIN);
 
 	if (irq < IMXRT_IRQ_EXTINT) {
 		/* NVIC_SYSH_PRIORITY() maps {0..15} to one of three priority
@@ -586,18 +628,18 @@ int up_prioritize_irq(int irq, int priority)
 		 */
 
 		regaddr = NVIC_SYSH_PRIORITY(irq);
-		irq -= 4;
+		irq    -= 4;
 	} else {
 		/* NVIC_IRQ_PRIORITY() maps {0..} to one of many priority registers */
 
-		irq -= IMXRT_IRQ_EXTINT;
+		irq    -= IMXRT_IRQ_EXTINT;
 		regaddr = NVIC_IRQ_PRIORITY(irq);
 	}
 
-	regval = getreg32(regaddr);
-	shift = ((irq & 3) << 3);
-	regval &= ~(0xff << shift);
-	regval |= (priority << shift);
+	regval      = getreg32(regaddr);
+	shift       = ((irq & 3) << 3);
+	regval     &= ~(0xff << shift);
+	regval     |= (priority << shift);
 	putreg32(regval, regaddr);
 
 	imxrt_dumpnvic("prioritize", irq);

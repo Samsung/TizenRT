@@ -1,3 +1,20 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 #
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
@@ -12,71 +29,142 @@ choice
 	default ARCH_CHIP_MIMXRT1052DVL6A
 	depends on ARCH_CHIP_IMXRT
 
-config ARCH_CHIP_MIMXRT1021CAF4A
-	bool "MIMXRT1021CAF4A"
-	select ARCH_FAMILY_MIMXRT102xCA4A
-
 config ARCH_CHIP_MIMXRT1021CAG4A
 	bool "MIMXRT1021CAG4A"
-	select ARCH_FAMILY_MIMXRT102xCA4A
+	select ARCH_FAMILY_MIMXRT1021C
+	select IMXRT_HAVE_USBOTG1
+
+config ARCH_CHIP_MIMXRT1021CAF4A
+	bool "MIMXRT1021CAF4A"
+	select ARCH_FAMILY_MIMXRT1021C
+	select IMXRT_HAVE_USBOTG1
 
 config ARCH_CHIP_MIMXRT1021DAF5A
 	bool "MIMXRT1021DAF5A"
-	select ARCH_FAMILY_MIMXRT102xDA5A
+	select ARCH_FAMILY_MIMXRT1021D
+	select IMXRT_HAVE_USBOTG1
 
 config ARCH_CHIP_MIMXRT1021DAG5A
 	bool "MIMXRT1021DAG5A"
-	select ARCH_FAMILY_MIMXRT102xDA5A
+	select ARCH_FAMILY_MIMXRT1021D
+	select IMXRT_HAVE_USBOTG1
 
 config ARCH_CHIP_MIMXRT1051DVL6A
 	bool "MIMXRT1051DVL6A"
-	select ARCH_FAMILY_MXRT105xDVL6A
+	select ARCH_FAMILY_MIMXRT105xDVL6A
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
 
 config ARCH_CHIP_MIMXRT1051CVL5A
 	bool "MIMXRT1051CVL5A"
 	select ARCH_FAMILY_MIMXRT105xCVL5A
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
 
 config ARCH_CHIP_MIMXRT1052DVL6A
 	bool "MIMXRT1052DVL6A"
-	select ARCH_FAMILY_MXRT105xDVL6A
+	select ARCH_FAMILY_MIMXRT105xDVL6A
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
 
 config ARCH_CHIP_MIMXRT1052CVL5A
-	bool "MIMXRT1052DVL6A"
+	bool "MIMXRT1052CVL5A"
 	select ARCH_FAMILY_MIMXRT105xCVL5A
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1061DVL6A
+	bool "MIMXRT1061DVL6A"
+	select ARCH_FAMILY_MXRT106xDVL6A
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1061CVL5A
+	bool "MIMXRT1061CVL5A"
+	select ARCH_FAMILY_MIMXRT106xCVL5A
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1062DVL6A
+	bool "MIMXRT1062DVL6A"
+	select ARCH_FAMILY_MXRT106xDVL6A
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1062CVL5A
+	bool "MIMXRT1062DVL6A"
+	select ARCH_FAMILY_MIMXRT106xCVL5A
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1064DVL6A
+	bool "MIMXRT1064DVL6A"
+	select ARCH_FAMILY_MXRT106xDVL6A
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1064CVL5A
+	bool "MIMXRT1064DVL6A"
+	select ARCH_FAMILY_MIMXRT106xCVL5A
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
+
+config ARCH_CHIP_MIMXRT1176DVMAA
+	bool "MIMXRT1176DVMAA"
+	select ARCH_FAMILY_IMXRT117x
+	select IMXRT_HAVE_LCD
+	select IMXRT_HAVE_USBOTG1
+	select IMXRT_HAVE_USBOTG2
 
 endchoice # i.MX RT Chip Selection
 
 # i.MX RT Families
 
-config ARCH_FAMILY_MIMXRT102xCA4A
+config ARCH_FAMILY_MIMXRT1021D
 	bool
 	default n
-	select ARCH_CHIP_FAMILY_IMXRT102x
+	select ARCH_FAMILY_IMXRT102x
 	---help---
 		i.MX RT1020 Crossover Processors for Consumer Products
 
-config ARCH_FAMILY_MIMXRT102xDA5A
+config ARCH_FAMILY_MIMXRT1021C
 	bool
 	default n
-	select ARCH_CHIP_FAMILY_IMXRT102x
+	select ARCH_FAMILY_IMXRT102x
 	---help---
 		i.MX RT1020 Crossover Processors for Industrial Products
 
-config ARCH_FAMILY_MXRT105xDVL6A
+config ARCH_FAMILY_IMXRT102x
 	bool
 	default n
-	select ARCH_CHIP_FAMILY_IMXRT105x
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_DPFPU # REVISIT
+	select ARMV7M_HAVE_ICACHE
+	select ARMV7M_HAVE_DCACHE
+	select ARMV7M_HAVE_ITCM
+	select ARMV7M_HAVE_DTCM
+
+config ARCH_FAMILY_MIMXRT105xDVL6A
+	bool
+	default n
+	select ARCH_FAMILY_IMXRT105x
 	---help---
 		i.MX RT1050 Crossover Processors for Consumer Products
 
 config ARCH_FAMILY_MIMXRT105xCVL5A
 	bool
 	default n
-	select ARCH_CHIP_FAMILY_IMXRT105x
+	select ARCH_FAMILY_IMXRT105x
 	---help---
 		i.MX RT1050 Crossover Processors for Industrial Products
 
-config ARCH_CHIP_FAMILY_IMXRT102x
+config ARCH_FAMILY_IMXRT105x
 	bool
 	default n
 	select ARCH_HAVE_FPU
@@ -86,7 +174,21 @@ config ARCH_CHIP_FAMILY_IMXRT102x
 	select ARMV7M_HAVE_ITCM
 	select ARMV7M_HAVE_DTCM
 
-config ARCH_CHIP_FAMILY_IMXRT105x
+config ARCH_FAMILY_MXRT106xDVL6A
+	bool
+	default n
+	select ARCH_FAMILY_IMXRT106x
+	---help---
+		i.MX RT1060 Crossover Processors for Consumer Products
+
+config ARCH_FAMILY_MIMXRT106xCVL5A
+	bool
+	default n
+	select ARCH_FAMILY_IMXRT106x
+	---help---
+		i.MX RT1060 Crossover Processors for Industrial Products
+
+config ARCH_FAMILY_IMXRT117x
 	bool
 	default n
 	select ARCH_HAVE_FPU
@@ -95,12 +197,125 @@ config ARCH_CHIP_FAMILY_IMXRT105x
 	select ARMV7M_HAVE_DCACHE
 	select ARMV7M_HAVE_ITCM
 	select ARMV7M_HAVE_DTCM
+	select IMXRT_HIGHSPEED_GPIO
+	select IMXRT_HAVE_FLEXSPI2
+	select IMXRT_ADC_VER2
+	select IMXRT_CLOCKCONFIG_VER2
+	select IMXRT_IOMUX_VER2
+	select IMXRT_HAVE_LPUART9
+	select IMXRT_HAVE_LPUART10
+	select IMXRT_HAVE_LPUART11
+	select IMXRT_HAVE_LPUART12
+	select IMXRT_FLEXCAN_ECC
+	select IMXRT_FLEXCAN1_FD
+	select IMXRT_FLEXCAN2_FD
+
+config ARCH_FAMILY_IMXRT106x
+	bool
+	default n
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_DPFPU # REVISIT
+	select ARMV7M_HAVE_ICACHE
+	select ARMV7M_HAVE_DCACHE
+	select ARMV7M_HAVE_ITCM
+	select ARMV7M_HAVE_DTCM
+	select IMXRT_HIGHSPEED_GPIO
+	select IMXRT_HAVE_FLEXSPI2
+	select IMXRT_HAVE_FLEXIO3
+
+config IMXRT_HAVE_OTA_PARTITION
+	bool
+	default n
+
+config IMXRT_PROGMEM
+	bool "Flash progmem support"
+	default n
+	select ARCH_HAVE_PROGMEM
+	---help---
+		Add progmem support, start block and end block options are provided to
+		obtain an uniform flash memory mapping.
+
+menu "Application Image Configuration"
+choice
+	prompt "Application Image Format"
+	default IMXRT_APP_FORMAT_LEGACY
+	---help---
+		Depending on the chosen 2nd stage bootloader, the application may
+		be required to be perform a specific startup routine. Furthermore,
+		the image binary must be formatted according to the definition from
+		the 2nd stage bootloader.
+
+config IMXRT_APP_FORMAT_LEGACY
+	bool "Legacy format"
+	---help---
+		This is the legacy application image format.
+
+config IMXRT_APP_FORMAT_MCUBOOT
+	bool "MCUboot-bootable format"
+	select IMXRT_HAVE_OTA_PARTITION
+	depends on EXPERIMENTAL
+	---help---
+		The MCUboot support of loading the firmware images.
+
+comment "MCUboot support depends on CONFIG_EXPERIMENTAL"
+	depends on !EXPERIMENTAL
+
+endchoice # Application Image Format
+
+endmenu # Application Image Configuration
 
 # Peripheral support
+
+config IMXRT_USDHC
+	bool
+	default n
+	select ARCH_HAVE_SDIO_PREFLIGHT
+
+config IMXRT_FLEXIO
+	bool
+	default n
 
 config IMXRT_HAVE_LPUART
 	bool
 	default n
+
+config IMXRT_HAVE_LPUART9
+	bool
+	default n
+
+config IMXRT_HAVE_LPUART10
+	bool
+	default n
+
+config IMXRT_HAVE_LPUART11
+	bool
+	default n
+
+config IMXRT_HAVE_LPUART12
+	bool
+	default n
+
+config IMXRT_FLEXCAN
+	bool
+	default n
+	select ARCH_HAVE_NETDEV_STATISTICS
+
+config IMXRT_FLEXCAN_ECC
+	bool
+	default n
+
+config IMXRT_FLEXCAN1_FD
+	bool
+	default n
+
+config IMXRT_FLEXCAN2_FD
+	bool
+	default n
+
+config IMXRT_FLEXPWM
+	bool
+	default n
+	select ARCH_HAVE_PWM_MULTICHAN
 
 config IMXRT_LPI2C
 	bool
@@ -109,9 +324,60 @@ config IMXRT_LPI2C
 config IMXRT_LPSPI
 	bool
 	default n
-	select SPI
+
+config IMXRT_FLEXSPI
+	bool
+	default n
+
+config IMXRT_HAVE_FLEXIO3
+	bool
+	default n
+
+config IMXRT_HAVE_FLEXSPI2
+	bool
+	default n
+
+config IMXRT_ADC
+	bool
+	default n
+
+config IMXRT_ENC
+	bool
+	default n
+
+config IMXRT_USBOTG
+	bool
+	default n
 
 config IMXRT_HIGHSPEED_GPIO
+	bool
+	default n
+
+config IMXRT_HAVE_LCD
+	bool
+	default n
+
+config IMXRT_HAVE_USBOTG1
+	bool
+	default n
+
+config IMXRT_HAVE_USBOTG2
+	bool
+	default n
+
+config IMXRT_SEMC_INIT_DONE
+	bool
+	default n
+
+config IMXRT_ADC_VER2
+	bool
+	default n
+
+config IMXRT_CLOCKCONFIG_VER2
+	bool
+	default n
+
+config IMXRT_IOMUX_VER2
 	bool
 	default n
 
@@ -122,65 +388,168 @@ config IMXRT_EDMA
 	default n
 	select ARCH_DMA
 
-config IMXRT_ADC
-	bool "ADC"
+config IMXRT_USBOTG1
+	bool "USB EHCI OTG1"
 	default n
-	select ANALOG
-	select ADC
+	depends on IMXRT_HAVE_USBOTG1
+	select IMXRT_USBOTG
+	select USBHOST_HAVE_ASYNCH if USBHOST
+	select USBHOST_ASYNCH
+	select USBHOST_WAITER
 
-config IMXRT_USBHOST
-	bool "USB host"
-	select USBHOST
-	select USBHOST_HAVE_ASYNCH
+config IMXRT_USBOTG2
+	bool "USB EHCI OTG2: NOT SUPPORTED YET"
 	default n
+	depends on IMXRT_HAVE_USBOTG2
+	select IMXRT_USBOTG
+	select USBHOST_HAVE_ASYNCH if USBHOST
+	select USBHOST_ASYNCH
+	select USBHOST_WAITER
 
-config IMXRT_USBOTG
-	bool "USB OTG"
+config IMXRT_USBDEV
+	bool "USB Device"
 	default n
-	depends on IMXRT_USBHOST
 
 config IMXRT_ENET
 	bool "Ethernet"
 	default n
 	select ARCH_HAVE_PHY
-	select ARCH_PHY_INTERRUPT
-	select IMXRT_ENET_PHYINIT
+	select ARCH_HAVE_NETDEV_STATISTICS
 
-menu "Ethernet Configuration"
-	depends on IMXRT_ENET
-
-config MXRT_ENET_NRXBUFFERS
-	int "Number Rx buffers"
-	default 6
-
-config IMXRT_ENET_NTXBUFFERS
-	int "Number Tx buffers"
-	default 2
-
-config IMXRT_ENET_ENHANCEDBD
-	bool # not optional
+config IMXRT_LCD
+	bool "LCD controller"
 	default n
+	depends on IMXRT_HAVE_LCD
 
-config IMXRT_ENET_NETHIFS
-	int  # Not optional
-	default 1
-
-config IMXRT_ENET_PHYINIT
-	bool "Board-specific PHY Initialization"
+config IMXRT_WDOG
+	bool "Watchdog 1"
 	default n
-	select IMXRT_GPIO_IRQ
-	select IMXRT_GPIO1_0_15_IRQ
-	---help---
-		Some boards require specialized initialization of the PHY before it
-		can be used.  This may include such things as configuring GPIOs,
-		resetting the PHY, etc.  If CONFIG_IMXRT_ENET_PHYINIT is defined in
-		the configuration then the board specific logic must provide
-		imxrt_phy_boardinitialize();  The i.MXRT ENET driver will call this
-		function one time before it first uses the PHY.
-
-endmenu # IMXRT_ENET
+	depends on WATCHDOG
 
 menu "FlexIO Peripherals"
+
+config IMXRT_FLEXIO1
+	bool "FLEXIO1"
+	default n
+	select IMXRT_FLEXIO
+
+if (IMXRT_FLEXIO1 && !IMXRT_CLOCKCONFIG_VER2)
+
+choice
+	prompt "FLEXIO1 Clock Source"
+	default FLEXIO1_CLK_PLL3_SW
+	---help---
+		The clock source that drives the FLEXIO.
+		Used to set FLEXIO1_CLK_SEL.
+
+config FLEXIO1_CLK_PLL4
+	bool "PLL4"
+
+config FLEXIO1_CLK_PLL3_PFD2
+	bool "PLL3_PFD2"
+
+if ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+config FLEXIO1_CLK_PLL5
+	bool "PLL5"
+
+endif # ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x
+
+config FLEXIO1_CLK_PLL3_SW
+	bool "PLL3_SW_CLK"
+
+endchoice # FLEXIO1 Clock Source
+
+config FLEXIO1_CLK
+	int
+	default 0 if FLEXIO1_CLK_PLL4
+	default 1 if FLEXIO1_CLK_PLL3_PFD2
+	default 2 if FLEXIO1_CLK_PLL5
+	default 3 if FLEXIO1_CLK_PLL3_SW
+
+config FLEXIO1_PRED_DIVIDER
+	int "FLEXIO1 Predivider"
+	range 1 8
+	default 2
+	---help---
+		The clock source predivider value (FLEXIO1_PRED). [1-8]
+
+config FLEXIO1_PODF_DIVIDER
+	int "FLEXIO1 Divider"
+	range 1 8
+	default 8
+	---help---
+		The clock source divider value (FLEXIO1_PODF). [1-8]
+
+endif # IMXRT_FLEXIO1
+
+if ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+config IMXRT_FLEXIO2
+	bool "FLEXIO2"
+	default n
+	select IMXRT_FLEXIO
+
+if (IMXRT_FLEXIO2 || IMXRT_FLEXIO3) && !IMXRT_CLOCKCONFIG_VER2
+
+choice
+	prompt "FLEXIO2 Clock Source"
+	default FLEXIO2_CLK_PLL3_SW
+	---help---
+		The clock source that drives the FLEXIO.
+		Used to set FLEXIO2_CLK_SEL.
+
+config FLEXIO2_CLK_PLL4
+	bool "PLL4"
+
+config FLEXIO2_CLK_PLL3_PFD2
+	bool "PLL3_PFD2"
+
+config FLEXIO2_CLK_PLL5
+	bool "PLL5"
+
+config FLEXIO2_CLK_PLL3_SW
+	bool "PLL3_SW_CLK"
+
+endchoice # FLEXIO2 Clock Source
+
+config FLEXIO2_CLK
+	int
+	default 0 if FLEXIO2_CLK_PLL4
+	default 1 if FLEXIO2_CLK_PLL3_PFD2
+	default 2 if FLEXIO2_CLK_PLL5
+	default 3 if FLEXIO2_CLK_PLL3_SW
+
+config FLEXIO2_PRED_DIVIDER
+	int
+	prompt "FLEXIO2 Predivider"
+	range 1 8
+	default 2
+	---help---
+		The clock source predivider value (FLEXIO2_PRED). [1-8]
+
+config FLEXIO2_PODF_DIVIDER
+	int
+	prompt "FLEXIO2 Divider"
+	range 1 8
+	default 8
+	---help---
+		The clock source divider value (FLEXIO2_PODF). [1-8]
+
+endif # IMXRT_FLEXIO2 || IMXRT_FLEXIO3
+
+if ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+config IMXRT_FLEXIO3
+	bool "FLEXIO3"
+	default n
+	select IMXRT_FLEXIO
+	depends on IMXRT_HAVE_FLEXIO3
+	---help---
+		FLEXIO3 uses the FLEXIO2 clock settings.
+
+endif # ARCH_FAMILY_IMXRT106x
+endif # ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x
 
 endmenu # FlexIO Peripherals
 
@@ -242,7 +611,1136 @@ config IMXRT_LPUART8
 	select ARCH_HAVE_SERIAL_TERMIOS
 	select IMXRT_HAVE_LPUART
 
+config IMXRT_LPUART9
+	bool "LPUART9"
+	default n
+	select LPUART9_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select IMXRT_HAVE_LPUART
+	depends on IMXRT_HAVE_LPUART9
+
+config IMXRT_LPUART10
+	bool "LPUART10"
+	default n
+	select LPUART10_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select IMXRT_HAVE_LPUART
+	depends on IMXRT_HAVE_LPUART10
+
+config IMXRT_LPUART11
+	bool "LPUART11"
+	default n
+	select LPUART11_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select IMXRT_HAVE_LPUART
+	depends on IMXRT_HAVE_LPUART11
+
+config IMXRT_LPUART12
+	bool "LPUART12"
+	default n
+	select LPUART12_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select IMXRT_HAVE_LPUART
+	depends on IMXRT_HAVE_LPUART12
+
 endmenu # LPUART Peripherals
+
+menu "LPUART Configuration"
+	depends on IMXRT_HAVE_LPUART
+
+config IMXRT_LPUART_INVERT
+	bool "Signal Invert Support"
+	default n
+	depends on IMXRT_HAVE_LPUART
+	---help---
+		Enable signal inversion UART support. The option enables support for the
+		TIOCSINVERT ioctl in the IMXRT serial driver.
+
+config IMXRT_LPUART_SINGLEWIRE
+	bool "Single Wire Support"
+	default n
+	depends on IMXRT_HAVE_LPUART
+	---help---
+		Enable single wire UART support.  The option enables support for the
+		TIOCSSINGLEWIRE ioctl in the IMXRT serial driver.
+
+endmenu # LPUART Configuration
+
+menu "FLEXCAN Peripherals"
+
+config IMXRT_FLEXCAN1
+	bool "FLEXCAN1"
+	default n
+	select IMXRT_FLEXCAN
+	select NET_CAN_HAVE_TX_DEADLINE
+
+config IMXRT_FLEXCAN2
+	bool "FLEXCAN2"
+	default n
+	select IMXRT_FLEXCAN
+	select NET_CAN_HAVE_TX_DEADLINE
+
+config IMXRT_FLEXCAN3
+	bool "FLEXCAN3"
+	default n
+	select IMXRT_FLEXCAN
+	select NET_CAN_HAVE_TX_DEADLINE
+	select NET_CAN_HAVE_CANFD
+
+if IMXRT_FLEXCAN1 || IMXRT_FLEXCAN2 || IMXRT_FLEXCAN3
+
+config IMXRT_FLEXCAN_TXMB
+	int "Number of TX message buffers"
+	default 3
+	---help---
+	This defines number of TX messages buffers. Please note that
+	maximum number of all message buffers is 13 (one MB has to
+	be reserved for chip errata ERR005829).
+
+config IMXRT_FLEXCAN_RXMB
+	int "Number of RX message buffers"
+	default 10
+	---help---
+	This defines number of RX messages buffers. Please note that
+	maximum number of all message buffers is 13 (one MB has to
+	be reserved for chip errata ERR005829).
+
+endif
+
+endmenu # FLEXCAN Peripherals
+
+menu "FLEXCAN1 Configuration"
+	depends on IMXRT_FLEXCAN1
+
+config FLEXCAN1_BITRATE
+	int "CAN bitrate"
+	depends on !(NET_CAN_CANFD && IMXRT_FLEXCAN1_FD)
+	default 1000000
+
+config FLEXCAN1_SAMPLEP
+	int "CAN sample point"
+	depends on !(NET_CAN_CANFD && IMXRT_FLEXCAN1_FD)
+	default 80
+
+config FLEXCAN1_ARBI_BITRATE
+	int "CAN FD Arbitration phase bitrate"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN1_FD
+	default 1000000
+
+config FLEXCAN1_ARBI_SAMPLEP
+	int "CAN FD Arbitration phase sample point"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN1_FD
+	default 80
+
+config FLEXCAN1_DATA_BITRATE
+	int "CAN FD Data phase bitrate"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN1_FD
+	default 4000000
+
+config FLEXCAN1_DATA_SAMPLEP
+	int "CAN FD Data phase sample point"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN1_FD
+	default 90
+
+endmenu # IMXRT_FLEXCAN1
+
+menu "FLEXCAN2 Configuration"
+	depends on IMXRT_FLEXCAN2
+
+config FLEXCAN2_BITRATE
+	int "CAN bitrate"
+	depends on !(NET_CAN_CANFD && IMXRT_FLEXCAN2_FD)
+	default 1000000
+
+config FLEXCAN2_SAMPLEP
+	int "CAN sample point"
+	depends on !(NET_CAN_CANFD && IMXRT_FLEXCAN2_FD)
+	default 80
+
+config FLEXCAN2_ARBI_BITRATE
+	int "CAN FD Arbitration phase bitrate"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN2_FD
+	default 1000000
+
+config FLEXCAN2_ARBI_SAMPLEP
+	int "CAN FD Arbitration phase sample point"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN2_FD
+	default 80
+
+config FLEXCAN2_DATA_BITRATE
+	int "CAN FD Data phase bitrate"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN2_FD
+	default 4000000
+
+config FLEXCAN2_DATA_SAMPLEP
+	int "CAN FD Data phase sample point"
+	depends on NET_CAN_CANFD && IMXRT_FLEXCAN2_FD
+	default 90
+
+endmenu # IMXRT_FLEXCAN2
+
+menu "FLEXCAN3 Configuration"
+	depends on IMXRT_FLEXCAN3
+
+config FLEXCAN3_BITRATE
+	int "CAN bitrate"
+	depends on !NET_CAN_CANFD
+	default 1000000
+
+config FLEXCAN3_SAMPLEP
+	int "CAN sample point"
+	depends on !NET_CAN_CANFD
+	default 80
+
+config FLEXCAN3_ARBI_BITRATE
+	int "CAN FD Arbitration phase bitrate"
+	depends on NET_CAN_CANFD
+	default 1000000
+
+config FLEXCAN3_ARBI_SAMPLEP
+	int "CAN FD Arbitration phase sample point"
+	depends on NET_CAN_CANFD
+	default 80
+
+config FLEXCAN3_DATA_BITRATE
+	int "CAN FD Data phase bitrate"
+	depends on NET_CAN_CANFD
+	default 4000000
+
+config FLEXCAN3_DATA_SAMPLEP
+	int "CAN FD Data phase sample point"
+	depends on NET_CAN_CANFD
+	default 90
+
+endmenu # IMXRT_FLEXCAN3
+
+menu "FLEXPWM Peripherals"
+
+config IMXRT_FLEXPWM1
+	bool "FLEXPWM1"
+	default n
+	select IMXRT_FLEXPWM
+
+config IMXRT_FLEXPWM2
+	bool "FLEXPWM2"
+	default n
+	select IMXRT_FLEXPWM
+
+if ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+config IMXRT_FLEXPWM3
+	bool "FLEXPWM3"
+	default n
+	select IMXRT_FLEXPWM
+
+config IMXRT_FLEXPWM4
+	bool "FLEXPWM4"
+	default n
+	select IMXRT_FLEXPWM
+
+endif # ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+endmenu # FLEXPWM Peripherals
+
+menu "FLEXPWM1 Configuration"
+	depends on IMXRT_FLEXPWM1
+
+config IMXRT_FLEXPWM1_MOD1
+	bool "FLEXPWM1 Module 1"
+	default n
+
+if IMXRT_FLEXPWM1_MOD1
+
+config IMXRT_FLEXPWM1_MOD1_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM1_MOD1_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM1_MOD1_USE_OUT_B
+
+config IMXRT_FLEXPWM1_MOD1_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM1_PWM1_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM1_MOD1_TRIG_PER
+	depends on IMXRT_FLEXPWM1_MOD1_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM1_MOD1_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM1_MOD1_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM1_MOD1_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM1_MOD1_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM1_MOD2
+	bool "FLEXPWM1 Module 2"
+	default n
+
+if IMXRT_FLEXPWM1_MOD2
+
+config IMXRT_FLEXPWM1_MOD2_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM1_MOD2_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM1_MOD2_USE_OUT_B
+
+config IMXRT_FLEXPWM1_MOD2_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM1_PWM2_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM1_MOD2_TRIG_PER
+	depends on IMXRT_FLEXPWM1_MOD1_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM1_MOD2_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM1_MOD2_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM1_MOD2_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM1_MOD2_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM1_MOD3
+	bool "FLEXPWM1 Module 3"
+	default n
+
+if IMXRT_FLEXPWM1_MOD3
+
+config IMXRT_FLEXPWM1_MOD3_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM1_MOD3_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM1_MOD3_USE_OUT_B
+
+config IMXRT_FLEXPWM1_MOD3_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM1_PWM3_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM1_MOD3_TRIG_PER
+	depends on IMXRT_FLEXPWM1_MOD3_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM1_MOD3_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM1_MOD3_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM1_MOD3_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM1_MOD3_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM1_MOD4
+	bool "FLEXPWM1 Module 4"
+	default n
+
+if IMXRT_FLEXPWM1_MOD4
+
+config IMXRT_FLEXPWM1_MOD4_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM1_MOD4_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM1_MOD4_USE_OUT_B
+
+config IMXRT_FLEXPWM1_MOD4_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM1_PWM4_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM1_MOD4_TRIG_PER
+	depends on IMXRT_FLEXPWM1_MOD4_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM1_MOD4_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM1_MOD4_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM1_MOD4_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM1_MOD4_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+endmenu # IMXRT_FLEXPWM1
+
+menu "FLEXPWM2 Configuration"
+	depends on IMXRT_FLEXPWM2
+
+config IMXRT_FLEXPWM2_MOD1
+	bool "FLEXPWM2 Module 1"
+	default n
+
+if IMXRT_FLEXPWM2_MOD1
+
+config IMXRT_FLEXPWM2_MOD1_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM2_MOD1_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM2_MOD1_USE_OUT_B
+
+config IMXRT_FLEXPWM2_MOD1_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM2_PWM1_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM2_MOD1_TRIG_PER
+	depends on IMXRT_FLEXPWM2_MOD1_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM2_MOD1_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM2_MOD1_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM2_MOD1_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM2_MOD1_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM2_MOD2
+	bool "FLEXPWM2 Module 2"
+	default n
+
+if IMXRT_FLEXPWM2_MOD2
+
+config IMXRT_FLEXPWM2_MOD2_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM2_MOD2_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM2_MOD2_USE_OUT_B
+
+config IMXRT_FLEXPWM2_MOD2_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM2_PWM2_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM2_MOD2_TRIG_PER
+	depends on IMXRT_FLEXPWM2_MOD2_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM2_MOD2_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM2_MOD2_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM2_MOD2_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM2_MOD2_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM2_MOD3
+	bool "FLEXPWM2 Module 3"
+	default n
+
+if IMXRT_FLEXPWM2_MOD3
+
+config IMXRT_FLEXPWM2_MOD3_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM2_MOD3_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM2_MOD3_USE_OUT_B
+
+config IMXRT_FLEXPWM2_MOD3_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM2_PWM3_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM2_MOD3_TRIG_PER
+	depends on IMXRT_FLEXPWM2_MOD3_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM2_MOD3_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM2_MOD3_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM2_MOD3_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM2_MOD3_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM2_MOD4
+	bool "FLEXPWM2 Module 4"
+	default n
+
+if IMXRT_FLEXPWM2_MOD4
+
+config IMXRT_FLEXPWM2_MOD4_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM2_MOD4_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM2_MOD4_USE_OUT_B
+
+config IMXRT_FLEXPWM2_MOD4_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM2_PWM4_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM2_MOD4_TRIG_PER
+	depends on IMXRT_FLEXPWM2_MOD1_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM2_MOD4_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM2_MOD4_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM2_MOD4_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM2_MOD4_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+endmenu # IMXRT_FLEXPWM2
+
+menu "FLEXPWM3 Configuration"
+	depends on IMXRT_FLEXPWM3
+
+config IMXRT_FLEXPWM3_MOD1
+	bool "FLEXPWM3 Module 1"
+	default n
+
+if IMXRT_FLEXPWM3_MOD1
+
+config IMXRT_FLEXPWM3_MOD1_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM3_MOD1_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM3_MOD1_USE_OUT_B
+
+config IMXRT_FLEXPWM3_MOD1_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM3_PWM1_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM3_MOD1_TRIG_PER
+	depends on IMXRT_FLEXPWM3_MOD1_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM3_MOD1_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM3_MOD1_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM3_MOD1_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM3_MOD1_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM3_MOD2
+	bool "FLEXPWM3 Module 2"
+	default n
+
+if IMXRT_FLEXPWM3_MOD2
+
+config IMXRT_FLEXPWM3_MOD2_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM3_MOD2_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM3_MOD2_USE_OUT_B
+
+config IMXRT_FLEXPWM3_MOD2_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM3_PWM2_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM3_MOD2_TRIG_PER
+	depends on IMXRT_FLEXPWM3_MOD2_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM3_MOD2_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM3_MOD2_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM3_MOD2_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM3_MOD2_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM3_MOD3
+	bool "FLEXPWM3 Module 3"
+	default n
+
+if IMXRT_FLEXPWM3_MOD3
+
+config IMXRT_FLEXPWM3_MOD3_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM3_MOD3_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM3_MOD3_USE_OUT_B
+
+config IMXRT_FLEXPWM3_MOD3_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM3_PWM3_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM3_MOD3_TRIG_PER
+	depends on IMXRT_FLEXPWM3_MOD3_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM3_MOD3_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM3_MOD3_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM3_MOD3_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM3_MOD3_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM3_MOD4
+	bool "FLEXPWM3 Module 4"
+	default n
+
+if IMXRT_FLEXPWM3_MOD4
+
+config IMXRT_FLEXPWM3_MOD4_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM3_MOD4_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM3_MOD4_USE_OUT_B
+
+config IMXRT_FLEXPWM3_MOD4_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM3_PWM4_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM3_MOD4_TRIG_PER
+	depends on IMXRT_FLEXPWM3_MOD4_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM3_MOD4_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM3_MOD4_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM3_MOD4_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM3_MOD4_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+endmenu # IMXRT_FLEXPWM3
+
+menu "FLEXPWM4 Configuration"
+	depends on IMXRT_FLEXPWM4
+
+config IMXRT_FLEXPWM4_MOD1
+	bool "FLEXPWM4 Module 1"
+	default n
+
+if IMXRT_FLEXPWM4_MOD1
+
+config IMXRT_FLEXPWM4_MOD1_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM4_MOD1_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM4_MOD1_USE_OUT_B
+
+config IMXRT_FLEXPWM4_MOD1_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM4_PWM1_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM4_MOD1_TRIG_PER
+	depends on IMXRT_FLEXPWM4_MOD1_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM4_MOD1_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM4_MOD1_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM4_MOD1_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM4_MOD1_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM4_MOD2
+	bool "FLEXPWM4 Module 2"
+	default n
+
+if IMXRT_FLEXPWM4_MOD2
+
+config IMXRT_FLEXPWM4_MOD2_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM4_MOD2_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM4_MOD2_USE_OUT_B
+
+config IMXRT_FLEXPWM4_MOD2_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM4_PWM2_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM4_MOD2_TRIG_PER
+	depends on IMXRT_FLEXPWM4_MOD2_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM4_MOD2_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM4_MOD2_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM4_MOD2_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM4_MOD2_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM4_MOD3
+	bool "FLEXPWM4 Module 3"
+	default n
+
+if IMXRT_FLEXPWM4_MOD3
+
+config IMXRT_FLEXPWM4_MOD3_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM4_MOD3_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM4_MOD3_USE_OUT_B
+
+config IMXRT_FLEXPWM4_MOD3_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM4_PWM3_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM4_MOD3_TRIG_PER
+	depends on IMXRT_FLEXPWM4_MOD3_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM4_MOD3_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM4_MOD3_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM4_MOD3_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM4_MOD3_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+config IMXRT_FLEXPWM4_MOD4
+	bool "FLEXPWM4 Module 4"
+	default n
+
+if IMXRT_FLEXPWM4_MOD4
+
+config IMXRT_FLEXPWM4_MOD4_USE_OUT_B
+	bool "Use output B"
+	default n
+
+config IMXRT_FLEXPWM4_MOD4_COMP
+	bool "Use complementary output"
+	default n
+	depends on IMXRT_FLEXPWM4_MOD4_USE_OUT_B
+
+config IMXRT_FLEXPWM4_MOD4_TRIG
+	bool "Enable trigger generation"
+	default n
+	---help---
+		Use PWM submodule to trigger FLEXPWM4_PWM4_OUT_TRIG01 output
+		from submodule 1. This can be used to generate an
+		interrupt that can trigger ADC conversion or synchronize
+		other PWMs for example.
+
+choice
+	prompt "Trigger value source"
+	default IMXRT_FLEXPWM4_MOD4_TRIG_PER
+	depends on IMXRT_FLEXPWM4_MOD4_TRIG
+	---help---
+		PWM can use either duty cycle value or period value register
+		to generate the trigger. The trigger is generated when the timer
+		reaches the corresponding value.
+
+config IMXRT_FLEXPWM4_MOD4_TRIG_PER
+	bool "Period value"
+
+config IMXRT_FLEXPWM4_MOD4_TRIG_DUTY
+	bool "Duty cycle value"
+
+endchoice
+
+config IMXRT_FLEXPWM4_MOD4_SYNC_SRC
+	int "Synchronization source signal"
+	default -1
+	range -1 130
+	---help---
+		PWM module can be synchronized by an external signal. This
+		config option selects the signal's source. The number in
+		IMXRT_FLEXPWM4_MOD4_SYNC_SRC corresponds with the XBAR
+		number (please refer to the documentation for XBAR numbers).
+
+		-1 (default value) means the module is not to be synchronized.
+
+endif
+
+endmenu # IMXRT_FLEXPWM4
 
 menu "LPI2C Peripherals"
 
@@ -253,17 +1751,22 @@ menuconfig IMXRT_LPI2C1
 
 if IMXRT_LPI2C1
 
-	config LPI2C1_BUSYIDLE
-		int "Bus idle timeout period in clock cycles"
-		default 0
+config LPI2C1_BUSYIDLE
+	int "Bus idle timeout period in clock cycles"
+	default 0
 
-	config LPI2C1_FILTSCL
-		int "I2C master digital glitch filters for SCL input in clock cycles"
-		default 0
+config LPI2C1_DMA
+	bool "Enable DMA for I2C1"
+	default n
+	depends on IMXRT_LPI2C_DMA
 
-	config LPI2C1_FILTSDA
-		int "I2C master digital glitch filters for SDA input in clock cycles"
-		default 0
+config LPI2C1_FILTSCL
+	int "I2C master digital glitch filters for SCL input in clock cycles"
+	default 0
+
+config LPI2C1_FILTSDA
+	int "I2C master digital glitch filters for SDA input in clock cycles"
+	default 0
 
 endif # IMXRT_LPI2C1
 
@@ -274,17 +1777,22 @@ menuconfig IMXRT_LPI2C2
 
 if IMXRT_LPI2C2
 
-	config LPI2C2_BUSYIDLE
-		int "Bus idle timeout period in clock cycles"
-		default 0
+config LPI2C2_BUSYIDLE
+	int "Bus idle timeout period in clock cycles"
+	default 0
 
-	config LPI2C2_FILTSCL
-		int "I2C master digital glitch filters for SCL input in clock cycles"
-		default 0
+config LPI2C2_DMA
+	bool "Enable DMA for I2C2"
+	default n
+	depends on IMXRT_LPI2C_DMA
 
-	config LPI2C2_FILTSDA
-		int "I2C master digital glitch filters for SDA input in clock cycles"
-		default 0
+config LPI2C2_FILTSCL
+	int "I2C master digital glitch filters for SCL input in clock cycles"
+	default 0
+
+config LPI2C2_FILTSDA
+	int "I2C master digital glitch filters for SDA input in clock cycles"
+	default 0
 
 endif # IMXRT_LPI2C2
 
@@ -298,6 +1806,11 @@ if IMXRT_LPI2C3
 config LPI2C3_BUSYIDLE
 	int "Bus idle timeout period in clock cycles"
 	default 0
+
+config LPI2C3_DMA
+	bool "Enable DMA for I2C3"
+	default n
+	depends on IMXRT_LPI2C_DMA
 
 config LPI2C3_FILTSCL
 	int "I2C master digital glitch filters for SCL input in clock cycles"
@@ -316,19 +1829,68 @@ menuconfig IMXRT_LPI2C4
 
 if IMXRT_LPI2C4
 
-	config LPI2C4_BUSYIDLE
-		int "Bus idle timeout period in clock cycles"
-		default 0
+config LPI2C4_BUSYIDLE
+	int "Bus idle timeout period in clock cycles"
+	default 0
 
-	config LPI2C4_FILTSCL
-		int "I2C master digital glitch filters for SCL input in clock cycles"
-		default 0
+config LPI2C4_DMA
+	bool "Enable DMA for I2C4"
+	default n
+	depends on IMXRT_LPI2C_DMA
 
-	config LPI2C4_FILTSDA
-		int "I2C master digital glitch filters for SDA input in clock cycles"
-		default 0
+config LPI2C4_FILTSCL
+	int "I2C master digital glitch filters for SCL input in clock cycles"
+	default 0
+
+config LPI2C4_FILTSDA
+	int "I2C master digital glitch filters for SDA input in clock cycles"
+	default 0
 
 endif # IMXRT_LPI2C4
+
+menuconfig IMXRT_LPI2C5
+	bool "LPI2C5"
+	default n
+	select IMXRT_LPI2C
+	depends on ARCH_FAMILY_IMXRT117x
+
+if IMXRT_LPI2C5
+
+config LPI2C5_BUSYIDLE
+	int "Bus idle timeout period in clock cycles"
+	default 0
+
+config LPI2C5_FILTSCL
+	int "I2C master digital glitch filters for SCL input in clock cycles"
+	default 0
+
+config LPI2C5_FILTSDA
+	int "I2C master digital glitch filters for SDA input in clock cycles"
+	default 0
+
+endif # IMXRT_LPI2C5
+
+menuconfig IMXRT_LPI2C6
+	bool "LPI2C6"
+	default n
+	select IMXRT_LPI2C
+	depends on ARCH_FAMILY_IMXRT117x
+
+if IMXRT_LPI2C6
+
+config LPI2C6_BUSYIDLE
+	int "Bus idle timeout period in clock cycles"
+	default 0
+
+config LPI2C6_FILTSCL
+	int "I2C master digital glitch filters for SCL input in clock cycles"
+	default 0
+
+config LPI2C6_FILTSDA
+	int "I2C master digital glitch filters for SDA input in clock cycles"
+	default 0
+
+endif # IMXRT_LPI2C6
 endmenu # LPI2C Peripherals
 
 menu "LPSPI Peripherals"
@@ -338,397 +1900,115 @@ menuconfig IMXRT_LPSPI1
 	default n
 	select IMXRT_LPSPI
 
-config IMXRT_LPSPI2
+menuconfig IMXRT_LPSPI2
 	bool "LPSPI2"
 	default n
 	select IMXRT_LPSPI
 
-config IMXRT_LPSPI3
+menuconfig IMXRT_LPSPI3
 	bool "LPSPI3"
 	default n
 	select IMXRT_LPSPI
 
-config IMXRT_LPSPI4
+menuconfig IMXRT_LPSPI4
 	bool "LPSPI4"
 	default n
 	select IMXRT_LPSPI
 
+if ARCH_FAMILY_IMXRT117x
+
+menuconfig IMXRT_LPSPI5
+	bool "LPSPI5"
+	default n
+	select IMXRT_LPSPI
+
+menuconfig IMXRT_LPSPI6
+	bool "LPSPI6"
+	default n
+	select IMXRT_LPSPI
+
+endif
+
 endmenu # LPSPI Peripherals
 
-config IMXRT_I2S
-	bool "Audio I2S"
-	select I2S
+menu "FLEXSPI Peripherals"
+
+menuconfig IMXRT_FLEXSPI1
+	bool "FLEXSPI1"
 	default n
+	select IMXRT_FLEXSPI
 
-if IMXRT_I2S
-
-	config IMXRT_I2S_TX
-		bool "Audio I2S_TX"
-		default n
-
-	config IMXRT_I2S_RX
-		bool "Audio I2S_RX"
-		default n
-endif # IMXRT_I2S
-
-config IMXRT_PWM
-	bool "PWM"
-	select PWM
+menuconfig IMXRT_FLEXSPI1_XIP
+	bool "FLEXSPI1 is used for XIP"
 	default n
+	depends on IMXRT_FLEXSPI1
+	---help---
+		FlexSPI1 is used as XIP thus already
+		initialized by the bootloader
 
-if IMXRT_PWM
+menuconfig IMXRT_FLEXSPI2
+	bool "FLEXSPI2"
+	default n
+	select IMXRT_FLEXSPI
+	depends on IMXRT_HAVE_FLEXSPI2
 
-	config IMXRT_PWM1
-		bool "PWM Controller 1, Channel 1 to Channel 8"
-		default n
-	
-	if IMXRT_PWM1
-		choice
-			prompt "** PWM Submodule1 Clock"
-			default PWM1_SUB1_CLOCK1
+menuconfig IMXRT_FLEXSPI2_XIP
+	bool "FLEXSPI2 is used for XIP"
+	default n
+	depends on IMXRT_FLEXSPI2
+	---help---
+		FlexSPI2 is used as XIP thus already
+		initialized by the bootloader
 
-		config PWM1_SUB1_CLOCK1
-			bool "fclk/1"
-		config PWM1_SUB1_CLOCK2
-			bool "fclk/2"
-		config PWM1_SUB1_CLOCK3
-			bool "fclk/4"
-		config PWM1_SUB1_CLOCK4
-			bool "fclk/8"
-		config PWM1_SUB1_CLOCK5
-			bool "fclk/16"
-		config PWM1_SUB1_CLOCK6
-			bool "fclk/32"
-		config PWM1_SUB1_CLOCK7
-			bool "fclk/64"
-		config PWM1_SUB1_CLOCK8
-			bool "fclk/128"
+endmenu # FLEXSPI Peripherals
 
-		endchoice
+menu "ADC Peripherals"
 
-		config PWM1_SUB1_CLOCK
-			int
-			default 0 if PWM1_SUB1_CLOCK1
-			default 1 if PWM1_SUB1_CLOCK2
-			default 2 if PWM1_SUB1_CLOCK3
-			default 3 if PWM1_SUB1_CLOCK4
-			default 4 if PWM1_SUB1_CLOCK5
-			default 5 if PWM1_SUB1_CLOCK6
-			default 6 if PWM1_SUB1_CLOCK7
-			default 7 if PWM1_SUB1_CLOCK8
+menuconfig IMXRT_ADC1
+	bool "ADC1"
+	default n
+	select IMXRT_ADC
 
-		config IMXRT_PWM_CHANNEL1
-			bool "PWM Controller 1, Channel 1"
-			default n
-		config IMXRT_PWM_CHANNEL2
-			bool "PWM Controller 1, Channel 2"
-			default n
-		
-		choice
-			prompt "** PWM Submodule2 Clock"
-			default PWM1_SUB2_CLOCK1
+if IMXRT_ADC1
 
-		config PWM1_SUB2_CLOCK1
-			bool "fclk/1"
-		config PWM1_SUB2_CLOCK2
-			bool "fclk/2"
-		config PWM1_SUB2_CLOCK3
-			bool "fclk/4"
-		config PWM1_SUB2_CLOCK4
-			bool "fclk/8"
-		config PWM1_SUB2_CLOCK5
-			bool "fclk/16"
-		config PWM1_SUB2_CLOCK6
-			bool "fclk/32"
-		config PWM1_SUB2_CLOCK7
-			bool "fclk/64"
-		config PWM1_SUB2_CLOCK8
-			bool "fclk/128"
+config IMXRT_ADC1_ETC
+	int "ADC1 External Trigger"
+	range -1 130
+	default -1
+	---help---
+		ADC module can be triggered by an external source (timer, PWM, etc).
+		This config option selects the signal's source. The number in
+		IMXRT_ADC1_ETC corresponds with the XBAR number of the source (please
+		refer to the documentation for XBAR numbers).
 
-		endchoice
+		-1 (default value) means the conversion is not to be triggered by an
+		external source.
 
-		config PWM1_SUB2_CLOCK
-			int
-			default 0 if PWM1_SUB2_CLOCK1
-			default 1 if PWM1_SUB2_CLOCK2
-			default 2 if PWM1_SUB2_CLOCK3
-			default 3 if PWM1_SUB2_CLOCK4
-			default 4 if PWM1_SUB2_CLOCK5
-			default 5 if PWM1_SUB2_CLOCK6
-			default 6 if PWM1_SUB2_CLOCK7
-			default 7 if PWM1_SUB2_CLOCK8
+endif
 
-		config IMXRT_PWM_CHANNEL3
-			bool "PWM Controller 1, Channel 3"
-			default n
-		config IMXRT_PWM_CHANNEL4
-			bool "PWM Controller 1, Channel 4"
-			default n
-		
-		choice
-			prompt "** PWM Submodule3 Clock"
-			default PWM1_SUB3_CLOCK1
+menuconfig IMXRT_ADC2
+	bool "ADC2"
+	default n
+	select IMXRT_ADC
 
-		config PWM1_SUB3_CLOCK1
-			bool "fclk/1"
-		config PWM1_SUB3_CLOCK2
-			bool "fclk/2"
-		config PWM1_SUB3_CLOCK3
-			bool "fclk/4"
-		config PWM1_SUB3_CLOCK4
-			bool "fclk/8"
-		config PWM1_SUB3_CLOCK5
-			bool "fclk/16"
-		config PWM1_SUB3_CLOCK6
-			bool "fclk/32"
-		config PWM1_SUB3_CLOCK7
-			bool "fclk/64"
-		config PWM1_SUB3_CLOCK8
-			bool "fclk/128"
+if IMXRT_ADC2
 
-		endchoice
+config IMXRT_ADC2_ETC
+	int "ADC2 External Trigger"
+	range -1 130
+	default -1
+	---help---
+		ADC module can be triggered by an external source (timer, PWM, etc).
+		This config option selects the signal's source. The number in
+		IMXRT_ADC2_ETC corresponds with the XBAR number of the source (please
+		refer to the documentation for XBAR numbers).
 
-		config PWM1_SUB3_CLOCK
-			int
-			default 0 if PWM1_SUB3_CLOCK1
-			default 1 if PWM1_SUB3_CLOCK2
-			default 2 if PWM1_SUB3_CLOCK3
-			default 3 if PWM1_SUB3_CLOCK4
-			default 4 if PWM1_SUB3_CLOCK5
-			default 5 if PWM1_SUB3_CLOCK6
-			default 6 if PWM1_SUB3_CLOCK7
-			default 7 if PWM1_SUB3_CLOCK8
+		-1 (default value) means the conversion is not to be triggered by an
+		external source.
 
-		config IMXRT_PWM_CHANNEL5
-			bool "PWM Controller 1, Channel 5"
-			default n
-		config IMXRT_PWM_CHANNEL6
-			bool "PWM Controller 1, Channel 6"
-			default n
-		
-		choice
-			prompt "** PWM Submodule4 Clock"
-			default PWM1_SUB4_CLOCK1
+endif
 
-		config PWM1_SUB4_CLOCK1
-			bool "fclk/1"
-		config PWM1_SUB4_CLOCK2
-			bool "fclk/2"
-		config PWM1_SUB4_CLOCK3
-			bool "fclk/4"
-		config PWM1_SUB4_CLOCK4
-			bool "fclk/8"
-		config PWM1_SUB4_CLOCK5
-			bool "fclk/16"
-		config PWM1_SUB4_CLOCK6
-			bool "fclk/32"
-		config PWM1_SUB4_CLOCK7
-			bool "fclk/64"
-		config PWM1_SUB4_CLOCK8
-			bool "fclk/128"
-
-		endchoice
-
-		config PWM1_SUB4_CLOCK
-			int
-			default 0 if PWM1_SUB4_CLOCK1
-			default 1 if PWM1_SUB4_CLOCK2
-			default 2 if PWM1_SUB4_CLOCK3
-			default 3 if PWM1_SUB4_CLOCK4
-			default 4 if PWM1_SUB4_CLOCK5
-			default 5 if PWM1_SUB4_CLOCK6
-			default 6 if PWM1_SUB4_CLOCK7
-			default 7 if PWM1_SUB4_CLOCK8
-
-		config IMXRT_PWM_CHANNEL7
-			bool "PWM Controller 1, Channel 7"
-			default n
-		config IMXRT_PWM_CHANNEL8
-			bool "PWM Controller 1, Channel 8"
-			default n
-	endif
-
-	config IMXRT_PWM2
-		bool "PWM Controller 2, Channel 9 to Channel 16"
-		default n
-
-	if IMXRT_PWM2
-
-		choice
-			prompt "** PWM Submodule1 Clock"
-			default PWM2_SUB1_CLOCK1
-
-		config PWM2_SUB1_CLOCK1
-			bool "fclk/1"
-		config PWM2_SUB1_CLOCK2
-			bool "fclk/2"
-		config PWM2_SUB1_CLOCK3
-			bool "fclk/4"
-		config PWM2_SUB1_CLOCK4
-			bool "fclk/8"
-		config PWM2_SUB1_CLOCK5
-			bool "fclk/16"
-		config PWM2_SUB1_CLOCK6
-			bool "fclk/32"
-		config PWM2_SUB1_CLOCK7
-			bool "fclk/64"
-		config PWM2_SUB1_CLOCK8
-			bool "fclk/128"
-
-		endchoice
-
-		config PWM2_SUB1_CLOCK
-			int
-			default 0 if PWM2_SUB1_CLOCK1
-			default 1 if PWM2_SUB1_CLOCK2
-			default 2 if PWM2_SUB1_CLOCK3
-			default 3 if PWM2_SUB1_CLOCK4
-			default 4 if PWM2_SUB1_CLOCK5
-			default 5 if PWM2_SUB1_CLOCK6
-			default 6 if PWM2_SUB1_CLOCK7
-			default 7 if PWM2_SUB1_CLOCK8
-
-		config IMXRT_PWM_CHANNEL9
-			bool "PWM Controller 2, Channel 1"
-			default n
-		config IMXRT_PWM_CHANNEL10
-			bool "PWM Controller 2, Channel 2"
-			default n
-
-		choice
-			prompt "** PWM Submodule2 Clock"
-			default PWM2_SUB2_CLOCK1
-
-		config PWM2_SUB2_CLOCK1
-			bool "fclk/1"
-		config PWM2_SUB2_CLOCK2
-			bool "fclk/2"
-		config PWM2_SUB2_CLOCK3
-			bool "fclk/4"
-		config PWM2_SUB2_CLOCK4
-			bool "fclk/8"
-		config PWM2_SUB2_CLOCK5
-			bool "fclk/16"
-		config PWM2_SUB2_CLOCK6
-			bool "fclk/32"
-		config PWM2_SUB2_CLOCK7
-			bool "fclk/64"
-		config PWM2_SUB2_CLOCK8
-			bool "fclk/128"
-
-		endchoice
-
-		config PWM2_SUB1_CLOCK
-			int
-			default 0 if PWM2_SUB2_CLOCK1
-			default 1 if PWM2_SUB2_CLOCK2
-			default 2 if PWM2_SUB2_CLOCK3
-			default 3 if PWM2_SUB2_CLOCK4
-			default 4 if PWM2_SUB2_CLOCK5
-			default 5 if PWM2_SUB2_CLOCK6
-			default 6 if PWM2_SUB2_CLOCK7
-			default 7 if PWM2_SUB2_CLOCK8
-
-		config IMXRT_PWM_CHANNEL11
-			bool "PWM Controller 2, Channel 3"
-			default n
-		config IMXRT_PWM_CHANNEL12
-			bool "PWM Controller 2, Channel 4"
-			default n
-
-		choice
-			prompt "** PWM Submodule3 Clock"
-			default PWM2_SUB3_CLOCK1
-
-		config PWM2_SUB3_CLOCK1
-			bool "fclk/1"
-		config PWM2_SUB3_CLOCK2
-			bool "fclk/2"
-		config PWM2_SUB3_CLOCK3
-			bool "fclk/4"
-		config PWM2_SUB3_CLOCK4
-			bool "fclk/8"
-		config PWM2_SUB3_CLOCK5
-			bool "fclk/16"
-		config PWM2_SUB3_CLOCK6
-			bool "fclk/32"
-		config PWM2_SUB3_CLOCK7
-			bool "fclk/64"
-		config PWM2_SUB3_CLOCK8
-			bool "fclk/128"
-
-		endchoice
-
-		config PWM2_SUB3_CLOCK
-			int
-			default 0 if PWM2_SUB3_CLOCK1
-			default 1 if PWM2_SUB3_CLOCK2
-			default 2 if PWM2_SUB3_CLOCK3
-			default 3 if PWM2_SUB3_CLOCK4
-			default 4 if PWM2_SUB3_CLOCK5
-			default 5 if PWM2_SUB3_CLOCK6
-			default 6 if PWM2_SUB3_CLOCK7
-			default 7 if PWM2_SUB3_CLOCK8
-
-		config IMXRT_PWM_CHANNEL13
-			bool "PWM Controller 2, Channel 5"
-			default n
-		config IMXRT_PWM_CHANNEL14
-			bool "PWM Controller 2, Channel 6"
-			default n
-
-		choice
-			prompt "** PWM Submodule4 Clock"
-			default PWM2_SUB4_CLOCK1
-
-		config PWM2_SUB4_CLOCK1
-			bool "fclk/1"
-		config PWM2_SUB4_CLOCK2
-			bool "fclk/2"
-		config PWM2_SUB4_CLOCK3
-			bool "fclk/4"
-		config PWM2_SUB4_CLOCK4
-			bool "fclk/8"
-		config PWM2_SUB4_CLOCK5
-			bool "fclk/16"
-		config PWM2_SUB4_CLOCK6
-			bool "fclk/32"
-		config PWM2_SUB4_CLOCK7
-			bool "fclk/64"
-		config PWM2_SUB4_CLOCK8
-			bool "fclk/128"
-
-		endchoice
-
-		config PWM2_SUB4_CLOCK
-			int
-			default 0 if PWM2_SUB4_CLOCK1
-			default 1 if PWM2_SUB4_CLOCK2
-			default 2 if PWM2_SUB4_CLOCK3
-			default 3 if PWM2_SUB4_CLOCK4
-			default 4 if PWM2_SUB4_CLOCK5
-			default 5 if PWM2_SUB4_CLOCK6
-			default 6 if PWM2_SUB4_CLOCK7
-			default 7 if PWM2_SUB4_CLOCK8
-
-		config IMXRT_PWM_CHANNEL15
-			bool "PWM Controller 2, Channel 7 (UART1 Pins)"
-			default n
-		config IMXRT_PWM_CHANNEL16
-			bool "PWM Controller 2, Channel 8 (UART1 Pins)"
-			default n
-	endif
-	
-	if ARCH_CHIP_FAMILY_IMXRT105x
-	config IMXRT_PWM3
-		bool "PWM Controller 3, Channel 17 to Channel 24"
-		default n
-
-	config IMXRT_PWM4
-		bool "PWM Controller 4, Channel 25 to Channel 32"
-		default n
-	endif
-endif # IMXRT_PWM
+endmenu
 
 config IMXRT_SEMC
 	bool "Smart External Memory Controller (SEMC)"
@@ -743,18 +2023,351 @@ config IMXRT_SNVS_HPRTC
 	bool "HP RTC"
 	default n
 
-config IMXRT_USDHC
-	bool "USDHC"
+config IMXRT_USDHC1
+	bool "USDHC1"
 	default n
 	select ARCH_HAVE_SDIO
+	select IMXRT_USDHC
 	---help---
-		Support SD host controller
+		Support USDHC host controller 1
+
+config IMXRT_USDHC2
+	bool "USDHC2"
+	default n
+	select ARCH_HAVE_SDIO
+	select IMXRT_USDHC
+	---help---
+		Support USDHC host controller 2
+
+menu "ENC Peripherals"
+
+menuconfig IMXRT_ENC1
+	bool "ENC1"
+	default n
+	select IMXRT_ENC
+
+if IMXRT_ENC1
+
+config ENC1_INITVAL
+	int "Initial position counter value"
+	default 0
+
+config ENC1_DIR
+	bool "Reverse positive rotation direction"
+	default n
+	---help---
+		Select if PHASEB leading PHASEA pulses is positive rotation
+
+config ENC1_FILTPER
+	int "Input filter sample period in clock cycles"
+	default 0
+
+config ENC1_FILTCNT
+	int "Number of input samples that filter will compare"
+	default 0
+
+config ENC1_MOD
+	bool "Enable modulo counting"
+	default n
+
+if ENC1_MOD
+
+config ENC1_MODULUS
+	hex "Modulus to wrap around"
+	default 0xffffffff
+
+endif # ENC1_MOD
+
+config ENC1_HIP
+	bool "HOME signal initializes position counter"
+	default n
+
+if ENC1_HIP
+
+config ENC1_HNE
+	bool "Initialize on negedge of HOME"
+	default n
+
+endif # ENC1_HIP
+
+config ENC1_XIE
+	bool "INDEX signal position capture"
+	default n
+
+config ENC1_XIP
+	bool "INDEX signal initializes position counter"
+	default n
+
+if ENC1_XIP
+
+config ENC1_XNE
+	bool "Initialize on negedge of INDEX"
+	default n
+
+endif # ENC1_XIP
+
+if DEBUG_SENSORS
+
+config ENC1_TST_DIR
+	bool "Generate negative test counter advances"
+	default n
+
+config ENC1_TST_PER
+	int "Period of test pulses in clock cycles"
+	default 31
+
+endif # DEBUG_SENSORS
+
+endif # IMXRT_ENC1
+
+menuconfig IMXRT_ENC2
+	bool "ENC2"
+	default n
+	select IMXRT_ENC
+
+if IMXRT_ENC2
+
+config ENC2_INITVAL
+	int "Initial position counter value"
+	default 0
+
+config ENC2_DIR
+	bool "Reverse positive rotation direction"
+	default n
+	---help---
+		Select if PHASEB leading PHASEA pulses is positive rotation
+
+config ENC2_FILTPER
+	int "Input filter sample period in clock cycles"
+	default 0
+
+config ENC2_FILTCNT
+	int "Number of input samples that filter will compare"
+	default 0
+
+config ENC2_MOD
+	bool "Enable modulo counting"
+	default n
+
+if ENC2_MOD
+
+config ENC2_MODULUS
+	hex "Modulus to wrap around"
+	default 0xffffffff
+
+endif # ENC2_MOD
+
+config ENC2_HIP
+	bool "HOME signal initializes position counter"
+	default n
+
+if ENC2_HIP
+
+config ENC2_HNE
+	bool "Initialize on negedge of HOME"
+	default n
+
+endif # ENC2_HIP
+
+config ENC2_XIE
+	bool "INDEX signal position capture"
+	default n
+
+config ENC2_XIP
+	bool "INDEX signal initializes position counter"
+	default n
+
+if ENC2_XIP
+
+config ENC2_XNE
+	bool "Initialize on negedge of INDEX"
+	default n
+
+endif # ENC2_XIP
+
+if DEBUG_SENSORS
+
+config ENC2_TST_DIR
+	bool "Generate negative test counter advances"
+	default n
+
+config ENC2_TST_PER
+	int "Period of test pulses in clock cycles"
+	default 31
+
+endif # DEBUG_SENSORS
+
+endif # IMXRT_ENC2
+
+if ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+menuconfig IMXRT_ENC3
+	bool "ENC3"
+	default n
+	select IMXRT_ENC
+
+if IMXRT_ENC3
+
+config ENC3_INITVAL
+	int "Initial position counter value"
+	default 0
+
+config ENC3_DIR
+	bool "Reverse positive rotation direction"
+	default n
+	---help---
+		Select if PHASEB leading PHASEA pulses is positive rotation
+
+config ENC3_FILTPER
+	int "Input filter sample period in clock cycles"
+	default 0
+
+config ENC3_FILTCNT
+	int "Number of input samples that filter will compare"
+	default 0
+
+config ENC3_MOD
+	bool "Enable modulo counting"
+	default n
+
+if ENC3_MOD
+
+config ENC3_MODULUS
+	hex "Modulus to wrap around"
+	default 0xffffffff
+
+endif # ENC3_MOD
+
+config ENC3_HIP
+	bool "HOME signal initializes position counter"
+	default n
+
+if ENC3_HIP
+
+config ENC3_HNE
+	bool "Initialize on negedge of HOME"
+	default n
+
+endif # ENC3_HIP
+
+config ENC3_XIE
+	bool "INDEX signal position capture"
+	default n
+
+config ENC3_XIP
+	bool "INDEX signal initializes position counter"
+	default n
+
+if ENC3_XIP
+
+config ENC3_XNE
+	bool "Initialize on negedge of INDEX"
+	default n
+
+endif # ENC3_XIP
+
+if DEBUG_SENSORS
+
+config ENC3_TST_DIR
+	bool "Generate negative test counter advances"
+	default n
+
+config ENC3_TST_PER
+	int "Period of test pulses in clock cycles"
+	default 31
+
+endif # DEBUG_SENSORS
+
+endif # IMXRT_ENC3
+
+menuconfig IMXRT_ENC4
+	bool "ENC4"
+	default n
+	select IMXRT_ENC
+
+if IMXRT_ENC4
+
+config ENC4_INITVAL
+	int "Initial position counter value"
+	default 0
+
+config ENC4_DIR
+	bool "Reverse positive rotation direction"
+	default n
+	---help---
+		Select if PHASEB leading PHASEA pulses is positive rotation
+
+config ENC4_FILTPER
+	int "Input filter sample period in clock cycles"
+	default 0
+
+config ENC4_FILTCNT
+	int "Number of input samples that filter will compare"
+	default 0
+
+config ENC4_MOD
+	bool "Enable modulo counting"
+	default n
+
+if ENC4_MOD
+
+config ENC4_MODULUS
+	hex "Modulus to wrap around"
+	default 0xffffffff
+
+endif # ENC4_MOD
+
+config ENC4_HIP
+	bool "HOME signal initializes position counter"
+	default n
+
+if ENC4_HIP
+
+config ENC4_HNE
+	bool "Initialize on negedge of HOME"
+	default n
+
+endif # ENC4_HIP
+
+config ENC4_XIE
+	bool "INDEX signal position capture"
+	default n
+
+config ENC4_XIP
+	bool "INDEX signal initializes position counter"
+	default n
+
+if ENC4_XIP
+
+config ENC4_XNE
+	bool "Initialize on negedge of INDEX"
+	default n
+
+endif # ENC4_XIP
+
+if DEBUG_SENSORS
+
+config ENC4_TST_DIR
+	bool "Generate negative test counter advances"
+	default n
+
+config ENC4_TST_PER
+	int "Period of test pulses in clock cycles"
+	default 31
+
+endif # DEBUG_SENSORS
+
+endif # IMXRT_ENC4
+
+endif # ARCH_FAMILY_IMXRT105x || ARCH_FAMILY_IMXRT106x || ARCH_FAMILY_IMXRT117x
+
+endmenu # ENC Peripherals
 
 endmenu # i.MX RT Peripheral Selection
 
 menuconfig IMXRT_GPIO_IRQ
 	bool "GPIO Interrupt Support"
-	default y
+	default n
 
 if IMXRT_GPIO_IRQ
 
@@ -799,7 +2412,7 @@ config IMXRT_GPIO5_16_31_IRQ
 	default n
 
 config IMXRT_GPIO6_0_15_IRQ
-	bool "GPIO6 Pins 8-15 interrupts"
+	bool "GPIO6 Pins 0-15 interrupts"
 	default n
 	depends on IMXRT_HIGHSPEED_GPIO
 
@@ -838,62 +2451,114 @@ config IMXRT_GPIO9_16_31_IRQ
 	default n
 	depends on IMXRT_HIGHSPEED_GPIO
 
+config IMXRT_GPIO13_IRQ
+	bool "GPIO13 Pins 0-31 interrupts"
+	default n
+	depends on ARCH_FAMILY_IMXRT117x
+
 endif # IMXRT_GPIO_IRQ
 
-menuconfig IMXRT_TIMER
-	bool "H/W Timer support"
-	default n
+menu "Ethernet Configuration"
+	depends on IMXRT_ENET
 
-if IMXRT_TIMER
-config IMXRT_GPT
-	bool "Enable General Purpose Timer"
-	default n
-	select IMXRT_TIMER_INTERFACE if TIMER
+choice
+	prompt "i.MX RT Ethernet Interface"
+	default IMXRT_ENET1
+	depends on IMXRT_ENET
 
-config IMXRT_PIT
-	bool "Enable Periodic Interrupt Timer"
-	default n
-	select IMXRT_TIMER_INTERFACE if TIMER
+config IMXRT_ENET1
+	bool "ENET 1"
 
-config IMXRT_QTMR
-	bool "Enable Quad Timer"
-	default n
-	select IMXRT_TIMER_INTERFACE if TIMER
+config IMXRT_ENET2
+	bool "ENET 2"
 
-config IMXRT_TIMER_INTERFACE
-	bool
-	default n
-	depends on TIMER
+endchoice # i.MX RT Ethernet Interface
 
-endif # IMXRT_TIMER
+choice
+	prompt "i.MX RT Ethernet TX Clock Source"
+	default IMXRT_MAC_PROVIDES_TXC
+	depends on IMXRT_ENET
+
+config IMXRT_MAC_PROVIDES_TXC
+	bool "i.MX RT Ethernet provides TX Clock"
+
+config IMXRT_PHY_PROVIDES_TXC
+	bool "External PHY provides TX Clock"
+
+endchoice # i.MX RT Ethernet TX Clock Source
+
+
+config IMXRT_ENET_NRXBUFFERS
+	int "Number Rx buffers"
+	default 6
+
+config IMXRT_ENET_NTXBUFFERS
+	int "Number Tx buffers"
+	default 2
+
+config IMXRT_ENET_ENHANCEDBD
+	bool # not optional
+	default !ARMV7M_DCACHE_WRITETHROUGH
+
+config IMXRT_ENET_NETHIFS
+	int # Not optional
+	default 1
+
+config IMXRT_ENET_PHYINIT
+	bool "Board-specific PHY Initialization"
+	default n
+	---help---
+		Some boards require specialized initialization of the PHY before it
+		can be used.  This may include such things as configuring GPIOs,
+		resetting the PHY, etc.  If CONFIG_IMXRT_ENET_PHYINIT is defined in
+		the configuration then the board specific logic must provide
+		imxrt_phy_boardinitialize();  The i.MXRT ENET driver will call this
+		function one time before it first uses the PHY.
+
+config IMXRT_PHY_POLLING
+	bool "Support network monitoring by polling the PHY"
+	default n
+	depends on IMXRT_ENET
+	select ARCH_PHY_POLLED
+	---help---
+		Some boards may not have an interrupt connected to the PHY.
+		This option allows the network monitor to be used by polling the
+		the PHY for status.
+
+endmenu # IMXRT_ENET
 
 menu "Memory Configuration"
 
+config IMXRT_INIT_FLEXRAM
+	bool "Calls out to the board code to set GPR16-18"
+	---help---
+		Some configuration will need to map flexRAM
+		this must be done prior to data/bss etc init.
+
 config IMXRT_DTCM
-	bool "Enable DTCM"
-	default n
-	depends on !IMXRT_OCRAM_PRIMARY && EXPERIMENTAL
+	int "FLEXRAM DTCM Size in K"
+	default 128
+	depends on ARMV7M_HAVE_DTCM
 
 config IMXRT_ITCM
-	bool "Enable ITCM"
-	default n
-	depends on !IMXRT_OCRAM_PRIMARY && EXPERIMENTAL
+	int "FLEXRAM ITCM Size in K"
+	default 128
+	depends on ARMV7M_HAVE_ITCM
 
 config IMXRT_SEMC_SDRAM
 	bool "External SDRAM installed"
 	default n
 	depends on IMXRT_SEMC
-	select C99_BOOL8
 
 if IMXRT_SEMC_SDRAM
 
 config IMXRT_SDRAM_START
 	hex "SDRAM start address"
-	default 0x80000000
+	default 0x10000000
 
 config IMXRT_SDRAM_SIZE
 	int "SDRAM size (bytes)"
-	default 33554432
+	default 268435456
 
 endif # IMXRT_SEMC_SDRAM
 
@@ -923,8 +2588,8 @@ choice
 	prompt "i.MX RT Boot Configuration"
 	default IMXRT_BOOT_NOR if IMXRT_SEMC_NOR
 	default IMXRT_BOOT_SDRAM if IMXRT_SEMC_SDRAM && !IMXRT_SEMC_NOR
-	default IMXRT_BOOT_SRAM if IMXRT_SEMC_SRAM && !IMXRT_SEMC_SDRAM  && !IMXRT_SEMC_NOR
-	default IMXRT_BOOT_OCRAM if !IMXRT_SEMC_SRAM && !IMXRT_SEMC_SDRAM  && !IMXRT_SEMC_NOR
+	default IMXRT_BOOT_SRAM if IMXRT_SEMC_SRAM && !IMXRT_SEMC_SDRAM && !IMXRT_SEMC_NOR
+	default IMXRT_BOOT_OCRAM if !IMXRT_SEMC_SRAM && !IMXRT_SEMC_SDRAM && !IMXRT_SEMC_NOR
 	---help---
 		The startup code needs to know if the code is running from internal
 		OCRAM, external SDRAM, external NOR, or external SDRAM in order to
@@ -933,21 +2598,21 @@ choice
 
 config IMXRT_BOOT_OCRAM
 	bool "Running from internal OCRAM"
-	select BOOT_RUNFROMISRAM
+	depends on BOOT_RUNFROMISRAM
 
 config IMXRT_BOOT_SDRAM
 	bool "Running from external SDRAM"
-	select BOOT_RUNFROMSDRAM
+	depends on BOOT_RUNFROMSDRAM
 	depends on IMXRT_SEMC_SDRAM
 
 config IMXRT_BOOT_NOR
 	bool "Running from external NOR FLASH"
-	select BOOT_RUNFROMFLASH
+	depends on BOOT_RUNFROMFLASH
 	depends on IMXRT_SEMC_NOR
 
 config IMXRT_BOOT_SRAM
 	bool "Running from external SRAM"
-	select BOOT_RUNFROMEXTSRAM
+	depends on BOOT_RUNFROMEXTSRAM
 	depends on IMXRT_SEMC_SRAM
 
 endchoice # i.MX RT Boot Configuration
@@ -980,6 +2645,29 @@ config IMXRT_OCRAM_HEAP
 	depends on !IMXRT_OCRAM_PRIMARY
 	---help---
 		Select to add the entire OCRAM to the heap
+
+config IMXRT_DTCM_HEAP
+	bool "Add DTCM to heap"
+	depends on IMXRT_DTCM > 0
+	---help---
+		Select to add the DTCM to the heap
+
+config IMXRT_DTCM_HEAP_SIZE
+	int "DTCM heap Size in K"
+	depends on IMXRT_DTCM_HEAP
+	default IMXRT_DTCM
+	---help---
+		By default, the full configured DTCM region is assigned to the heap for
+		dynamic allocation. In scenarios requiring deterministic memory regions
+		for static buffers or control structures, you can reduce the heap
+		allocation to reserve part of DTCM for manual/static use.
+
+config IMXRT_BOOTLOADER_HEAP
+	bool "Add ROM bootloader 40Kib RAM to heap"
+	default false
+	depends on BOOT_RUNFROMISRAM
+	---help---
+		Select to add the memory used by the ROM bootloader to heap
 
 config IMXRT_SDRAM_HEAP
 	bool "Add SDRAM to heap"
@@ -1019,8 +2707,67 @@ config IMXRT_SRAM_HEAPOFFSET
 		Used to reserve memory at the beginning of SRAM for, as an example,
 		a framebuffer.
 
-endmenu  # i.MX RT Heap Configuration
+endmenu # i.MX RT Heap Configuration
+
+config IMXRT_FLEXRAM_PARTITION
+	bool "Set FlexRAM Partitioning"
+	depends on ARCH_FAMILY_IMXRT117x
+
 endmenu # Memory Configuration
+
+menu "LPI2C Configuration"
+	depends on IMXRT_LPI2C
+
+config IMXRT_LPI2C_DMA
+	bool "I2C DMA Support"
+	default n
+	depends on IMXRT_LPI2C && IMXRT_EDMA && !I2C_POLLED
+	---help---
+		This option enables the DMA for I2C transfers.
+		Note: The user can define CONFIG_I2C_DMAPRIO: a custom priority value
+		for the I2C dma streams, else the default priority level is set to
+		medium.
+
+config IMXRT_LPI2C_DMA_MAXMSG
+	int "Maximum number messages that will be DMAed"
+	default 8
+	depends on IMXRT_LPI2C_DMA
+	---help---
+		This option set the number of mesg that can be in a transfer.
+		It is used to allocate space for the 16 bit LPI2C commands
+		that will be DMA-ed to the LPI2C device.
+
+config IMXRT_LPI2C_DYNTIMEO
+	bool "Use dynamic timeouts"
+	default n
+	depends on IMXRT_LPI2C
+
+config IMXRT_LPI2C_DYNTIMEO_USECPERBYTE
+	int "Timeout Microseconds per Byte"
+	default 500
+	depends on IMXRT_LPI2C_DYNTIMEO
+
+config IMXRT_LPI2C_DYNTIMEO_STARTSTOP
+	int "Timeout for Start/Stop (Milliseconds)"
+	default 1000
+	depends on IMXRT_LPI2C_DYNTIMEO
+
+config IMXRT_LPI2C_TIMEOSEC
+	int "Timeout seconds"
+	default 0
+	depends on IMXRT_LPI2C
+
+config IMXRT_LPI2C_TIMEOMS
+	int "Timeout Milliseconds"
+	default 500
+	depends on IMXRT_LPI2C && !IMXRT_LPI2C_DYNTIMEO
+
+config IMXRT_LPI2C_TIMEOTICKS
+	int "Timeout for Done and Stop (ticks)"
+	default 500
+	depends on IMXRT_LPI2C && !IMXRT_LPI2C_DYNTIMEO
+
+endmenu # LPI2C Configuration
 
 menu "USDHC Configuration"
 	depends on IMXRT_USDHC
@@ -1035,12 +2782,57 @@ config IMXRT_USDHC_DMA
 		For most usages, SD accesses will cause data overruns if used without
 		DMA.
 
-config IMXRT_USDHC_WIDTH_D1_ONLY
-	bool "Use D1 only"
+choice
+	prompt "Bus width for USDHC1"
+	default IMXRT_USDHC1_WIDTH_D1_ONLY
+	depends on IMXRT_USDHC1
+
+config IMXRT_USDHC1_WIDTH_D1_ONLY
+	bool "One bit"
+
+config IMXRT_USDHC1_WIDTH_D1_D4
+	bool "Four bit"
+endchoice
+
+config IMXRT_USDHC1_INVERT_CD
+	bool "Invert the USDHC1 CD"
 	default n
+	depends on IMXRT_USDHC1
 	---help---
-		Select 1-bit transfer mode.  Default: 4-bit transfer mode.
-		
+		If the board defines PIN_USDHC1_CD the CD_B input to the USDHC it is
+		assumed to be active low. Selecting IMXRT_USDHC1_INVERT_CD will make it
+		active high.
+
+		If the board defines PIN_USDHC1_CD_GPIO it is assumed to be active low.
+		Selecting IMXRT_USDHC1_INVERT_CD will make it active high.
+
+choice
+	depends on IMXRT_USDHC2
+	prompt "Bus width for USDHC2"
+	default IMXRT_USDHC2_WIDTH_D1_D4
+
+config IMXRT_USDHC2_WIDTH_D1_ONLY
+	bool "One bit"
+
+config IMXRT_USDHC2_WIDTH_D1_D4
+	bool "Four bit"
+
+config IMXRT_USDHC2_WIDTH_D1_D8
+	bool "Eight bit"
+endchoice
+
+config IMXRT_USDHC2_INVERT_CD
+	bool "Invert the USDHC2 CD"
+	default n
+	depends on IMXRT_USDHC2
+	---help---
+		If the board defines PIN_USDHC2_CD the CD_B input to the USDHC it is
+		assumed to be active low. Selecting IMXRT_USDHC_INVERT_CD will make it
+		active high.
+
+		If the board defines PIN_USDHC2_CD_GPIO it is assumed to be active low.
+		Selecting IMXRT_USDHC2_INVERT_CD will make it active high.
+
 endmenu # USDHC Configuration
 
 menu "eDMA Configuration"
@@ -1124,13 +2916,73 @@ config IMXRT_EDMA_EDBG
 
 endmenu # eDMA Global Configuration
 
+menu "LPSPI Configuration"
+	depends on IMXRT_LPSPI
+
+config IMXRT_LPSPI_DMA
+	bool "LPSPI DMA"
+	depends on IMXRT_EDMA
+	default n
+	---help---
+		Use DMA to improve LPSPI transfer performance.
+
+config IMXRT_LPSPI_DMATHRESHOLD
+	int "LPSPI DMA threshold"
+	default 4
+	depends on IMXRT_LPSPI_DMA
+	---help---
+		When SPI DMA is enabled, small DMA transfers will still be performed
+		by polling logic.  But we need a threshold value to determine what
+		is small.
+
+config IMXRT_LPSPI1_DMA
+	bool "LPSPI1 DMA"
+	default n
+	depends on IMXRT_LPSPI1 && IMXRT_LPSPI_DMA
+	---help---
+		Use DMA to improve LPSPI1 transfer performance.
+
+config IMXRT_LPSPI2_DMA
+	bool "LPSPI2 DMA"
+	default n
+	depends on IMXRT_LPSPI2 && IMXRT_LPSPI_DMA
+	---help---
+		Use DMA to improve LPSPI2 transfer performance.
+
+config IMXRT_LPSPI3_DMA
+	bool "LPSPI3 DMA"
+	default n
+	depends on IMXRT_LPSPI3 && IMXRT_LPSPI_DMA
+	---help---
+		Use DMA to improve LPSPI3 transfer performance.
+
+config IMXRT_LPSPI4_DMA
+	bool "LPSPI4 DMA"
+	default n
+	depends on IMXRT_LPSPI4 && IMXRT_LPSPI_DMA
+	---help---
+		Use DMA to improve SPI4 transfer performance.
+
+endmenu # LPSPI Configuration
+
+if PM
+
+config IMXRT_PM_SERIAL_ACTIVITY
+	int "PM serial activity"
+	default 10
+	---help---
+		PM activity reported to power management logic on every serial
+		interrupt.
+
+endif
+
 menu "RTC Configuration"
 	depends on IMXRT_SNVS_HPRTC
 
 config IMXRT_RTC_MAGIC_REG
 	int "RTC SNVS GPR"
 	default 0
-	range  0 3
+	range 0 3
 	---help---
 		The BKP register used to store/check the Magic value to determine if
 		RTC is already setup
@@ -1142,9 +2994,351 @@ config IMXRT_RTC_MAGIC
 		Value used as Magic to determine if the RTC is already setup
 
 endmenu
-config IMXRT_USB
-	bool "IMXRT USB Host Support"
+
+menu "LCD Configuration"
+	depends on IMXRT_LCD
+
+config IMXRT_LCD_VIDEO_PLL_FREQ
+	int "Video PLL Frequency"
+	default 92000000
+	range 41500000 1300000000
+	---help---
+		Frequency of Video PLL.
+
+config IMXRT_LCD_VRAMBASE
+	hex "Video RAM base address"
+	default 0x80000000
+	---help---
+		Base address of the video RAM frame buffer.
+		Default: SDRAM
+
+config IMXRT_LCD_REFRESH_FREQ
+	int "LCD refresh rate (Hz)"
+	default 60
+	---help---
+		LCD refresh rate (Hz)
+
+config IMXRT_LCD_BACKLIGHT
+	bool "Enable backlight"
+	default y
+	---help---
+		Enable backlight support.  If IMXRT_LCD_BACKLIGHT is selected, then
+		the board-specific logic must provide this IMXRT_backlight()
+		interface so that the LCD driver can turn the backlight on and off
+		as necessary.  You should select this option and implement
+		IMXRT_backlight() if your board provides GPIO control over the
+		backlight.  This interface provides only ON/OFF control of the
+		backlight.  If you want finer control over the backlight level (for
+		example, using PWM), then this interface would need to be extended.
+
+choice
+	prompt "Input Bits per pixel"
+	default IMXRT_LCD_INPUT_BPP16
+
+config IMXRT_LCD_INPUT_BPP8_LUT
+	bool "8 BPP Color Map"
+	select FB_CMAP
+
+config IMXRT_LCD_INPUT_BPP8
+	bool "8 BPP RGB_332"
+
+config IMXRT_LCD_INPUT_BPP15
+	bool "16 BPP RGB_555"
+
+config IMXRT_LCD_INPUT_BPP16
+	bool "16 BPP RGB_565"
+
+config IMXRT_LCD_INPUT_BPP24
+	bool "24 BPP RGB_888"
+
+config IMXRT_LCD_INPUT_BPP32
+	bool "32 BPP RGB_0888"
+
+endchoice
+
+config IMXRT_LCD_BGR
+	bool "Blue-Green-Red color order"
 	default n
 	---help---
-		USB Host driver for IMXRT.
+		This option selects BGR color order vs. default RGB
+
+choice
+	prompt "Output Bus width"
+	default IMXRT_LCD_OUTPUT_16
+
+config IMXRT_LCD_OUTPUT_8
+	bool "8 Bit LCD Bus"
+
+config IMXRT_LCD_OUTPUT_16
+	bool "16 Bit LCD Bus"
+
+config IMXRT_LCD_OUTPUT_18
+	bool "18 Bit LCD Bus"
+
+config IMXRT_LCD_OUTPUT_24
+	bool "24 Bit LCD Bus"
+
+endchoice
+
+config IMXRT_LCD_BACKCOLOR
+	hex "Initial background color"
+	default 0x0
+	---help---
+		Initial background color
+
+config IMXRT_LCD_HWIDTH
+	int "Display width (pixels)"
+	default 480
+	---help---
+		Horizontal width the display in pixels
+
+config IMXRT_LCD_HPULSE
+	int "Horizontal pulse"
+	default 41
+
+config IMXRT_LCD_HFRONTPORCH
+	int "Horizontal front porch"
+	default 4
+
+config IMXRT_LCD_HBACKPORCH
+	int "Horizontal back porch"
+	default 8
+
+config IMXRT_LCD_VHEIGHT
+	int "Display height (rows)"
+	default 272
+	---help---
+		Vertical height of the display in rows
+
+config IMXRT_LCD_VPULSE
+	int "Vertical pulse"
+	default 10
+
+config IMXRT_LCD_VFRONTPORCH
+	int "Vertical front porch"
+	default 4
+
+config IMXRT_LCD_VBACKPORCH
+	int "Vertical back porch"
+	default 2
+
+config IMXRT_VSYNC_ACTIVE_HIGH
+	bool "V-sync active high"
+	default n
+
+config IMXRT_HSYNC_ACTIVE_HIGH
+	bool "H-sync active high"
+	default n
+
+config IMXRT_DATAEN_ACTIVE_HIGH
+	bool "Data enable active high"
+	default y
+
+config IMXRT_DATA_RISING_EDGE
+	bool "Data clock rising edge"
+	default y
+
+endmenu # LCD Configuration
+
+menu "Timer Configuration"
+
+if SCHED_TICKLESS
+
+config IMXRT_TICKLESS_TIMER
+	int "Tickless hardware timer"
+	default 1
+	range 1 2
+	---help---
+		If the Tickless OS feature is enabled, then one clock must be
+		assigned to provided the GPT timer needed by the OS.
+
+config IMXRT_TICKLESS_CHANNEL
+	int "Tickless timer channel"
+	default 1
+	range 1 3
+	---help---
+		If the Tickless OS feature is enabled, the one clock must be
+		assigned to provided the free-running timer needed by the OS
+		and one channel on that clock is needed to handle intervals.
+
+endif # SCHED_TICKLESS
+
+endmenu # Timer Configuration
+
+if IMXRT_USBOTG1 && USBHOST
+
+menu "USB OTG1 Host Controller Driver (HCD) options"
+
+config IMXRT_EHCI_USB1_NQHS
+	int "Number of Queue Head (QH) structures"
+	default 4
+	---help---
+		Configurable number of Queue Head (QH) structures.  The default is
+		one per Root hub port plus one for EP0 (4).
+
+config IMXRT_EHCI_USB1_NQTDS
+	int "Number of Queue Element Transfer Descriptor (qTDs)"
+	default 6
+	---help---
+		Configurable number of Queue Element Transfer Descriptor (qTDs).
+		The default is one per root hub plus three from EP0 (6).
+
+config IMXRT_EHCI_USB1_BUFSIZE
+	int "Size of one request/descriptor buffer"
+	default 128
+	---help---
+		The size of one request/descriptor buffer in bytes.  The TD buffe
+		size must be an even number of 32-bit words and must be large enough
+		to hangle the largest transfer via a SETUP request.
+
+config IMXRT_EHCI_USB1_PREALLOCATE
+	bool "Preallocate descriptor pool"
+	default y
+	---help---
+		Select this option to pre-allocate EHCI queue and descriptor
+		structure pools in .bss.  Otherwise, these pools will be
+		dynamically allocated using kmm_memalign().
+
+endmenu # USB host controller driver (HCD) options
+endif # IMXRT_USBOTG1 && USBHOST
+
+if IMXRT_USBOTG2 && USBHOST
+
+menu "USB OTG2 Host Controller Driver (HCD) options: NOT SUPPORTED YET"
+
+config IMXRT_EHCI_USB2_NQHS
+	int "Number of Queue Head (QH) structures"
+	default 4
+	---help---
+		Configurable number of Queue Head (QH) structures.  The default is
+		one per Root hub port plus one for EP0 (4).
+
+config IMXRT_EHCI_USB2_NQTDS
+	int "Number of Queue Element Transfer Descriptor (qTDs)"
+	default 6
+	---help---
+		Configurable number of Queue Element Transfer Descriptor (qTDs).
+		The default is one per root hub plus three from EP0 (6).
+
+config IMXRT_EHCI_USB2_BUFSIZE
+	int "Size of one request/descriptor buffer"
+	default 128
+	---help---
+		The size of one request/descriptor buffer in bytes.  The TD buffe
+		size must be an even number of 32-bit words and must be large enough
+		to hangle the largest transfer via a SETUP request.
+
+config IMXRT_EHCI_USB2_PREALLOCATE
+	bool "Preallocate descriptor pool"
+	default y
+	---help---
+		Select this option to pre-allocate EHCI queue and descriptor
+		structure pools in .bss.  Otherwise, these pools will be
+		dynamically allocated using kmm_memalign().
+
+endmenu # USB host controller driver (HCD) options
+endif # IMXRT_USBOTG2
+
+if IMXRT_USBDEV
+
+menu "USB device controller driver (DCD) options"
+
+config IMXRT_USBDEV_NOVBUS
+	bool "No USB VBUS sensing"
+	default n
+
+config IMXRT_USBDEV_FRAME_INTERRUPT
+	bool "USB frame interrupt"
+	default n
+	---help---
+		Handle USB Start-Of-Frame events.  Enable reading SOF from interrupt
+		handler vs. simply reading on demand. Probably a bad idea... Unless
+		there is some issue with sampling the SOF from hardware asynchronously.
+
+config IMXRT_USBDEV_REGDEBUG
+	bool "Register level debug"
+	depends on DEBUG_USB_INFO
+	default n
+	---help---
+		Output detailed register-level USB device debug information.  Requires
+		also CONFIG_DEBUG_USB_INFO.
+
+endmenu # USB device controller driver (DCD) options
+endif # IMXRT_USBDEV
+
+menu "Progmem MTD configuration"
+
+if IMXRT_PROGMEM
+
+comment "Progmem instance support"
+
+config IMXRT_PROGMEM_FLEXSPI_INSTANCE
+	int "FlexSPI instance number (0 or 1)"
+	default 1
+	---help---
+		FlexSPI instance number. Base address 0x60000000 is used for instance 0
+		and 0x70000000 for instance 1. Other values are not supported.
+
+endif # IMXRT_PROGMEM
+
+if IMXRT_HAVE_OTA_PARTITION
+
+comment "Application Image OTA Update support"
+
+config IMXRT_PROGMEM_OTA_PARTITION
+	bool "MTD driver"
+	default n
+	select BCH
+	select MTD
+	select MTD_BYTE_WRITE
+	select MTD_PARTITION
+	select MTD_PROGMEM
+	select IMXRT_PROGMEM
+	---help---
+		Initialize an MTD driver for the Flash, which will
+		add an entry at /dev for application access from userspace.
+
+if IMXRT_PROGMEM_OTA_PARTITION
+config IMXRT_MCUBOOT_HEADER_SIZE
+	hex
+	default 0x200
+	depends on IMXRT_APP_FORMAT_MCUBOOT
+
+config IMXRT_OTA_PRIMARY_SLOT_DEVPATH
+	string "Application image primary slot device path"
+	default "/dev/ota0"
+
+config IMXRT_OTA_SECONDARY_SLOT_DEVPATH
+	string "Application image secondary slot device path"
+	default "/dev/ota1"
+
+config IMXRT_OTA_SCRATCH_DEVPATH
+	string "Scratch partition device path"
+	default "/dev/otascratch"
+
+config IMXRT_OTA_PRIMARY_SLOT_OFFSET
+	hex "MCUboot application image primary slot offset"
+	default "0x40000"
+
+config IMXRT_OTA_SECONDARY_SLOT_OFFSET
+	hex "MCUboot application image secondary slot offset"
+	default "0x200000"
+
+config IMXRT_OTA_SCRATCH_OFFSET
+	hex "MCUboot scratch partition offset"
+	default "0x3c0000"
+
+config IMXRT_OTA_SLOT_SIZE
+	hex "MCUboot application image slot size (in bytes)"
+	default "0x1c0000"
+
+config IMXRT_OTA_SCRATCH_SIZE
+	hex "MCUboot scratch partition size (in bytes)"
+	default "0x40000"
+
+endif # IMXRT_PROGMEM_OTA_PARTITION
+endif # IMXRT_HAVE_OTA_PARTITION
+
+endmenu # Progmem configuration
+
 endif # ARCH_CHIP_IMXRT

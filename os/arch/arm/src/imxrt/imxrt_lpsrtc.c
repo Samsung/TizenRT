@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,44 +15,31 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * os/arch/arm/src/imxrt/imxrt_lpsrtc.c
+/****************************************************************************
+ * arch/arm/src/imxrt/imxrt_lpsrtc.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -60,6 +47,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -69,20 +57,19 @@
 
 #include <arch/board/board.h>
 
-#include "up_arch.h"
-
-#include "chip/imxrt_snvs.h"
+#include "arm_internal.h"
+#include "hardware/imxrt_snvs.h"
 #include "imxrt_periphclks.h"
 #include "imxrt_hprtc.h"
 #include "imxrt_lpsrtc.h"
 
 #ifdef CONFIG_IMXRT_SNVS_LPSRTC
 
-/************************************************************************************
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: imxrt_lpsrtc_enable
  *
  * Description:
@@ -94,7 +81,7 @@
  * Returned Value:
  *   None
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static void imxrt_lpsrtc_enable(void)
 {
@@ -102,7 +89,7 @@ static void imxrt_lpsrtc_enable(void)
 
 	/* Enable the LPSRTC */
 
-	regval = getreg32(IMXRT_SNVS_LPCR);
+	regval  = getreg32(IMXRT_SNVS_LPCR);
 	regval |= SVNS_LPCR_SRTCENV;
 	putreg32(regval, IMXRT_SNVS_LPCR);
 
@@ -110,20 +97,20 @@ static void imxrt_lpsrtc_enable(void)
 	}
 }
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: imxrt_lpsrtc_initialize
  *
  * Description:
- *   Initialize the LPSRTC per the selected configuration.  This function is called
- *   via up_rtc_initialize (see imxrt_hprtc.c).
+ *   Initialize the LPSRTC per the selected configuration.
+ *    This function is called via up_rtc_initialize (see imxrt_hprtc.c).
  *
- *   NOTE that the LPSRTC is always configured synchronized with the HPRTC.  This
- *   means that the time is set via the LPSRTC but read via the HPRTC.  Also, only
- *   the alarms from the HPRTC are used.
+ *   NOTE that the LPSRTC is always configured synchronized with the HPRTC.
+ *    This means that the time is set via the LPSRTC but read via the HPRTC.
+ *    Also, only the alarms from the HPRTC are used.
  *
  * Input Parameters:
  *   None
@@ -131,7 +118,7 @@ static void imxrt_lpsrtc_enable(void)
  * Returned Value:
  *   Zero (OK) on success; a negated errno on failure
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 int imxrt_lpsrtc_initialize(void)
 {
@@ -143,7 +130,7 @@ int imxrt_lpsrtc_initialize(void)
 
 	imxrt_hprtc_initialize();
 
-	/* Enable clocking to the SNVS LP module.
+	/* Enable clocking to the the SNVS LP module.
 	 * Clock is on during all modes, except STOP mode.
 	 */
 
@@ -152,7 +139,7 @@ int imxrt_lpsrtc_initialize(void)
 #ifdef CONFIG_IMXRTC_LPSRTC_CALENABLE
 	/* Set the LPSRTC calibration value */
 
-	regval = getreg32(IMXRT_SNVS_LPCR);
+	regval  = getreg32(IMXRT_SNVS_LPCR);
 	regval &= ~SNVS_LPCR_LPCALBVAL_MASK;
 	regval |= SNVS_LPCR_LPCALBVAL(CONFIG_IMXRTC_LPSRTC_CALVALUE);
 	regval |= SNVS_LPCR_LPCALBEN;
@@ -173,15 +160,15 @@ int imxrt_lpsrtc_initialize(void)
 	return OK;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: up_rtc_time
  *
  * Description:
  *   Get the current time in seconds.  This is similar to the standard time()
- *   function.  This interface is only required if the low-resolution RTC/counter
- *   hardware implementation selected.  It is only used by the RTOS during
- *   initialization to set up the system time when CONFIG_RTC is set but neither
- *   CONFIG_RTC_HIRES nor CONFIG_RTC_DATETIME are set.
+ *   function.  This interface is only required if the low-resolution
+ *   RTC/counter hardware implementation selected.  It is only used by the
+ *   RTOS during initialization to set up the system time when CONFIG_RTC is
+ *   set but neither CONFIG_RTC_HIRES nor CONFIG_RTC_DATETIME are set.
  *
  * Input Parameters:
  *   None
@@ -189,7 +176,7 @@ int imxrt_lpsrtc_initialize(void)
  * Returned Value:
  *   The current time in seconds
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef CONFIG_RTC_HIRES
 time_t up_rtc_time(void)
@@ -200,12 +187,12 @@ time_t up_rtc_time(void)
 }
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Name: up_rtc_settime
  *
  * Description:
- *   Set the RTC to the provided time.  All RTC implementations must be able to
- *   set their time based on a standard timespec.
+ *   Set the RTC to the provided time.  All RTC implementations must be able
+ *   to set their time based on a standard timespec.
  *
  * Input Parameters:
  *   tp - the time to use
@@ -213,9 +200,9 @@ time_t up_rtc_time(void)
  * Returned Value:
  *   Zero (OK) on success; a negated errno on failure
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-int up_rtc_settime(FAR const struct timespec *ts)
+int up_rtc_settime(const struct timespec *ts)
 {
 	uint32_t regval;
 
@@ -223,11 +210,11 @@ int up_rtc_settime(FAR const struct timespec *ts)
 
 	/* Disable the LPSRTC */
 
-	regval = getreg32(IMXRT_SNVS_LPCR);
-	regval &= ~SNVS_LPCR_MCENV;
+	regval  = getreg32(IMXRT_SNVS_LPCR);
+	regval &= ~SVNS_LPCR_SRTCENV;
 	putreg32(regval, IMXRT_SNVS_LPCR);
 
-	while ((getreg32(IMXRT_SNVS_LPCR) & SNVS_LPCR_MCENV) != 0) {
+	while ((getreg32(IMXRT_SNVS_LPCR) & SVNS_LPCR_SRTCENV) != 0) {
 	}
 
 	/* Set LPSRTC time in seconds.  We could do better by accounting for the
@@ -237,12 +224,13 @@ int up_rtc_settime(FAR const struct timespec *ts)
 	 * IMXRT_SNVS_LPSMCLR 32-bit LSB of alarm setting.
 	 */
 
-	putreg32((uint32_t)ts->tv_sec >> 17, IMXRT_SNVS_LPSMCMR);
-	putreg32((uint32_t)ts->tv_sec << 15, IMXRT_SNVS_LPSMCLR);
+	putreg32((uint32_t)ts->tv_sec >> 17, IMXRT_SNVS_LPSRTCMR);
+	putreg32((uint32_t)ts->tv_sec << 15, IMXRT_SNVS_LPSRTCLR);
 
 	/* The time has been set */
 
-	putreg32(CONFIG_IMXRT_RTC_MAGIC, IMXRT_SNVS_LPGPR(CONFIG_IMXRT_RTC_MAGIC_REG));
+	putreg32(CONFIG_IMXRT_RTC_MAGIC,
+	         IMXRT_SNVS_LPGPR(CONFIG_IMXRT_RTC_MAGIC_REG));
 
 	/* Unconditionally re-enable the LPSRTC */
 
@@ -266,6 +254,7 @@ int up_rtc_settime(FAR const struct timespec *ts)
 
 bool imxrt_lpsrtc_havesettime(void)
 {
-	return (getreg32(IMXRT_SNVS_LPGPR(CONFIG_IMXRT_RTC_MAGIC_REG)) == CONFIG_IMXRT_RTC_MAGIC);
+	return (getreg32(IMXRT_SNVS_LPGPR(CONFIG_IMXRT_RTC_MAGIC_REG)) ==
+	        CONFIG_IMXRT_RTC_MAGIC);
 }
-#endif							/* CONFIG_IMXRT_SNVS_LPSRTC */
+#endif /* CONFIG_IMXRT_SNVS_LPSRTC */

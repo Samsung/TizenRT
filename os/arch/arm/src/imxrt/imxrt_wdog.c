@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/arch/arm/src/imxrt/imxrt_wdog.c
+ * arch/arm/src/imxrt/imxrt_wdog.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author:  Janne Rosberg <janne@offcode.fi>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,216 +44,343 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-#include <fixedmath.h>
+#include <stdbool.h>
+
+#include <debug.h>
 #include <assert.h>
+#include <errno.h>
 
-#include "up_arch.h"
+#include <tinyara/spinlock.h>
+#include <tinyara/timers/watchdog.h>
 
-#include "chip/imxrt_wdog.h"
-#include "imxrt_config.h"
-#include "imxrt_clock.h"
+#include "arm_internal.h"
+#include "hardware/imxrt_wdog.h"
 #include "imxrt_wdog.h"
-#include <arch/board/board.h>	/* Include last:  has dependencies */
+
+#include <arch/board/board.h> /* Include last:  has dependencies */
+
+#if defined(CONFIG_WATCHDOG) && defined(CONFIG_IMXRT_WDOG)
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Configuration ************************************************************/
+
+/* Select the path to the registered watchdog timer device */
+
+#ifdef CONFIG_WATCHDOG_DEVPATH
+#define DEVPATH CONFIG_WATCHDOG_DEVPATH
+#else
+#define DEVPATH "/dev/watchdog0"
+#endif
+
+/* Time out range is from 0 to 128 seconds in 0.5s intervals */
+
+#define WDOG_MIN              (500)
+#define WDOG_MAX              (128000)
+
+#define WDOG_KEEP_ALIVE_KEY1  (0x5555u)
+#define WDOG_KEEP_ALIVE_KEY2  (0xaaaau)
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct imxrt_wdog_lower {
+	const struct watchdog_ops_s  *ops;  /* Lower half operations */
+	uint32_t     timeout;
+	uint32_t     enabled;
+	spinlock_t   lock;
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+/* Timeout to register field helper */
+
+uint32_t imxrt_wdog_ms_to_reg(uint32_t timeout);
+
+/* Lower half driver methods */
+
+static int      imxrt_wdog_start(struct watchdog_lowerhalf_s *lower);
+static int      imxrt_wdog_stop(struct watchdog_lowerhalf_s *lower);
+static int      imxrt_wdog_keepalive(struct watchdog_lowerhalf_s *lower);
+static int      imxrt_wdog_getstatus(struct watchdog_lowerhalf_s *lower,
+                                     struct watchdog_status_s *status);
+static int      imxrt_wdog_settimeout(struct watchdog_lowerhalf_s *lower,
+                                      uint32_t timeout);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-/*******************************************************************************
- * Variables
- ******************************************************************************/
-static WDOG_Type *const s_wdogBases[] = WDOG_BASE_PTRS;
-#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-/* Array of WDOG clock name. */
-static const clock_ip_name_t s_wdogClock[] = WDOG_CLOCKS;
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-static const IRQn_Type s_wdogIRQ[] = WDOG_IRQS;
+/* "Lower half" driver ops */
 
-#define IMXRT_WATCHDOG_RESOLUTION 500
-/*******************************************************************************
- * Code
- ******************************************************************************/
-static uint32_t imxrt_wdog_getinstance(WDOG_Type *base)
+static const struct watchdog_ops_s g_wdgops =
 {
-	uint32_t instance;
+  .start      = imxrt_wdog_start,
+  .stop       = imxrt_wdog_stop,
+  .keepalive  = imxrt_wdog_keepalive,
+  .getstatus  = imxrt_wdog_getstatus,
+  .settimeout = imxrt_wdog_settimeout,
+  .capture    = NULL,
+  .ioctl      = NULL,
+};
 
-	/* Find the instance index from base address mappings. */
-	for (instance = 0; instance < ARRAY_SIZE(s_wdogBases); instance++) {
-		if (s_wdogBases[instance] == base) {
-			break;
-		}
+/* "Lower half" driver state */
+
+static struct imxrt_wdog_lower g_wdgdev;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: imxrt_wdog_ms_to_reg
+ *
+ * Description:
+ *   Start the watchdog timer, resetting the time to the current timeout,
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the
+ *           lower-half driver state structure.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+uint32_t imxrt_wdog_ms_to_reg(uint32_t ms)
+{
+	uint32_t reg = ms / 500; /* This gives the value needed for
+                            * ms rounded up to the nearest 500ms of timeout
+                            */
+
+	if (reg != 0 && ms % 500 == 0) {
+		/* If the number is divisible by 500ms we subtract 1.
+		 * Else we will set the timeout to the smallest achievable timeout
+		 * that is greater than the requested value.
+		 */
+
+		reg--;
 	}
 
-	assert(instance < ARRAY_SIZE(s_wdogBases));
-
-	return instance;
+	return reg;
 }
 
-/*!
- * brief Initializes the WDOG configuration sturcture.
+/****************************************************************************
+ * Name: imxrt_wdog
  *
- * This function initializes the WDOG configuration structure to default values. The default
- * values are as follows.
- * code
- *   wdogConfig->enableWdog = true;
- *   wdogConfig->workMode.enableWait = true;
- *   wdogConfig->workMode.enableStop = false;
- *   wdogConfig->workMode.enableDebug = false;
- *   wdogConfig->enableInterrupt = false;
- *   wdogConfig->enablePowerdown = false;
- *   wdogConfig->resetExtension = flase;
- *   wdogConfig->timeoutValue = 0xFFU;
- *   wdogConfig->interruptTimeValue = 0x04u;
- * endcode
+ * Description:
+ *   Start the watchdog timer, setting the time to the current timeout,
  *
- * param config Pointer to the WDOG configuration structure.
- * see wdog_config_t
- */
-void imxrt_wdog_getdefaultconfig(wdog_config_t *config)
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the
+ *           lower-half driver state structure.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int imxrt_wdog_start(struct watchdog_lowerhalf_s *lower)
 {
-	assert(config);
+	struct imxrt_wdog_lower *priv = (struct imxrt_wdog_lower *)lower;
+	uint16_t regval;
 
-	/* Initializes the configure structure to zero. */
-	memset(config, 0, sizeof(*config));
+	if (priv->enabled == false) {
+		priv->enabled = true;
 
-	config->enableWdog = true;
-	config->workMode.enableWait = false;
-	config->workMode.enableStop = false;
-	config->workMode.enableDebug = false;
-	config->enableInterrupt = false;
-	config->softwareResetExtension = false;
-	config->enablePowerDown = false;
-	config->timeoutValue = 0xffu;
-	config->interruptTimeValue = 0x04u;
-	config->enableTimeOutAssert = false;
-}
+		regval  = getreg16(IMXRT_WDOG1_WCR);
+		regval |= WDOG_WCR_WT(imxrt_wdog_ms_to_reg(priv->timeout));
+		putreg16(regval, IMXRT_WDOG1_WCR);
 
-/*!
- * brief Initializes the WDOG.
- *
- * This function initializes the WDOG. When called, the WDOG runs according to the configuration.
- *
- * This is an example.
- * code
- *   wdog_config_t config;
- *   WDOG_GetDefaultConfig(&config);
- *   config.timeoutValue = 0xffU;
- *   config->interruptTimeValue = 0x04u;
- *   WDOG_Init(wdog_base,&config);
- * endcode
- *
- * param base   WDOG peripheral base address
- * param config The configuration of WDOG
- */
-void imxrt_wdog_init(WDOG_Type *base, const wdog_config_t *config)
-{
-	assert(config);
+		/* Now that the timeout field is properly set, start the watchdog. */
 
-	uint16_t value = 0u;
-
-	value = WDOG_WCR_WDE(config->enableWdog) | WDOG_WCR_WDW(config->workMode.enableWait) |
-			WDOG_WCR_WDZST(config->workMode.enableStop) | WDOG_WCR_WDBG(config->workMode.enableDebug) |
-			WDOG_WCR_SRE(config->softwareResetExtension) | WDOG_WCR_WT(config->timeoutValue) |
-			WDOG_WCR_WDT(config->enableTimeOutAssert) | WDOG_WCR_SRS_MASK | WDOG_WCR_WDA_MASK;
-
-#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-	/* Set configruation */
-	imxrt_clock_enableclock(s_wdogClock[imxrt_wdog_getinstance(base)]);
-#endif
-
-	base->WICR = WDOG_WICR_WICT(config->interruptTimeValue) | WDOG_WICR_WIE(config->enableInterrupt);
-	base->WMCR = WDOG_WMCR_PDE(config->enablePowerDown);
-	base->WCR = value;
-	if (config->enableInterrupt) {
-		up_enable_irq(s_wdogIRQ[imxrt_wdog_getinstance(base)]);
+		regval |= WDOG_WCR_WDE;
+		putreg16(regval, IMXRT_WDOG1_WCR);
 	}
+
+	return OK;
 }
 
-/*!
- * brief Shuts down the WDOG.
+/****************************************************************************
+ * Name: imxrt_wdog_stop
  *
- * This function shuts down the WDOG.
- * Watchdog Enable bit is a write one once only bit. It is not
- * possible to clear this bit by a software write, once the bit is set.
- * This bit(WDE) can be set/reset only in debug mode(exception).
- */
-void imxrt_wdog_deinit(WDOG_Type *base)
+ * Description:
+ *   Exists since it is a required function for the watchdog lower-half
+ *   driver. On the IMXRT you cannot disable the watchdog once it is started.
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the
+ *           lower-half driver state structure.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int imxrt_wdog_stop(struct watchdog_lowerhalf_s *lower)
 {
-	if (base->WCR & WDOG_WCR_WDBG_MASK) {
-		imxrt_wdog_disable(base);
+	struct imxrt_wdog_lower *priv = (struct imxrt_wdog_lower *)lower;
+
+	if (priv->enabled) {
+		/* We cannot disable the watchdog once it is enabled. */
+
+		wderr("ERROR: Cannot stop Wdog once started\n");
+		return -ENOSYS;
 	}
+
+	return OK;
 }
 
-/*!
- * brief Gets the WDOG all reset status flags.
+/****************************************************************************
+ * Name: imxrt_wdog_keepalive
  *
- * This function gets all reset status flags.
+ * Description:
+ *   Reset the watchdog timer to the current timeout value, prevent any
+ *   imminent watchdog timeouts.  This is sometimes referred as "pinging"
+ *   the watchdog timer or "petting the dog".
  *
- * code
- * uint16_t status;
- * status = WDOG_GetStatusFlags (wdog_base);
- * endcode
- * param base        WDOG peripheral base address
- * return            State of the status flag: asserted (true) or not-asserted (false).see _wdog_status_flags
- *                    - true: a related status flag has been set.
- *                    - false: a related status flag is not set.
- */
-uint16_t imxrt_wdog_getstatusflags(WDOG_Type *base)
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the
+ *           lower-half driver state structure.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int imxrt_wdog_keepalive(struct watchdog_lowerhalf_s *lower)
 {
-	uint16_t status_flag = 0U;
+	struct imxrt_wdog_lower *priv = (struct imxrt_wdog_lower *)lower;
 
-	status_flag |= (base->WCR & WDOG_WCR_WDE_MASK);
-	status_flag |= (base->WRSR & WDOG_WRSR_POR_MASK);
-	status_flag |= (base->WRSR & WDOG_WRSR_TOUT_MASK);
-	status_flag |= (base->WRSR & WDOG_WRSR_SFTW_MASK);
-	status_flag |= (base->WICR & WDOG_WICR_WTIS_MASK);
+	irqstate_t flags = spin_lock_irqsave(&priv->lock);
 
-	return status_flag;
+	putreg16(WDOG_KEEP_ALIVE_KEY1, IMXRT_WDOG1_WSR);
+	putreg16(WDOG_KEEP_ALIVE_KEY2, IMXRT_WDOG1_WSR);
+
+	spin_unlock_irqrestore(&priv->lock, flags);
+
+	return OK;
 }
 
-/*!
- * brief Clears the WDOG flag.
+/****************************************************************************
+ * Name: imxrt_wdog_getstatus
  *
- * This function clears the WDOG status flag.
+ * Description:
+ *   Get the current watchdog timer status
  *
- * This is an example for clearing the interrupt flag.
- * code
- *   WDOG_ClearStatusFlags(wdog_base,KWDOG_InterruptFlag);
- * endcode
- * param base        WDOG peripheral base address
- * param mask        The status flags to clear.
- *                    The parameter could be any combination of the following values.
- *                    kWDOG_TimeoutFlag
- */
-void imxrt_wdog_clearinterruptstatus(WDOG_Type *base, uint16_t mask)
+ * Input Parameters:
+ *   lower  - A pointer the publicly visible representation of the
+ *            lower-half driver state structure.
+ *   status - The location to return the watchdog status information.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int imxrt_wdog_getstatus(struct watchdog_lowerhalf_s *lower,
+                                struct watchdog_status_s *status)
 {
-	if (mask & kWDOG_InterruptFlag) {
-		base->WICR |= WDOG_WICR_WTIS_MASK;
+	struct imxrt_wdog_lower *priv = (struct imxrt_wdog_lower *)lower;
+
+	status->flags = WDFLAGS_RESET;
+
+	if (priv->enabled) {
+		status->flags |= WDFLAGS_ACTIVE;
 	}
+
+	status->timeout = priv->timeout;
+	status->timeleft = 0; /* not supported for WDOG1 */
+
+	return OK;
 }
 
-/*!
- * brief Refreshes the WDOG timer.
+/****************************************************************************
+ * Name: imxrt_wdog_settimeout
  *
- * This function feeds the WDOG.
- * This function should be called before the WDOG timer is in timeout. Otherwise, a reset is asserted.
+ * Description:
+ *   Set a new timeout value (and reset the watchdog timer)
  *
- * param base WDOG peripheral base address
- */
-void imxrt_wdog_refresh(WDOG_Type *base)
+ * Input Parameters:
+ *   lower   - A pointer the publicly visible representation of the
+ *             "lower-half" driver state structure.
+ *   timeout - The new timeout value in milliseconds.
+ *
+ * Returned Values:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int imxrt_wdog_settimeout(struct watchdog_lowerhalf_s *lower,
+                                 uint32_t timeout)
 {
-	base->WSR = WDOG_REFRESH_KEY & 0xFFFFU;
-	base->WSR = (WDOG_REFRESH_KEY >> 16U) & 0xFFFFU;
+	uint32_t regval;
+	struct imxrt_wdog_lower *priv = (struct imxrt_wdog_lower *)lower;
+
+	if (timeout < WDOG_MIN || timeout > WDOG_MAX) {
+		wderr("ERROR: Cannot represent timeout=%d. Range=[%d, %d]\n",
+		      timeout, WDOG_MIN, WDOG_MAX);
+		return -ERANGE;
+	}
+
+	priv->timeout = timeout;
+
+	irqstate_t flags = spin_lock_irqsave(&priv->lock);
+
+	/* write timer value to WCR WT register */
+
+	regval  = getreg16(IMXRT_WDOG1_WCR);
+	regval &= ~WDOG_WCR_WT_MASK;  /* clear previous count value */
+	regval |= WDOG_WCR_WT(priv->timeout);
+	putreg16(regval, IMXRT_WDOG1_WCR);
+
+	/* reload the Wdog counter by petting it */
+
+	putreg16(WDOG_KEEP_ALIVE_KEY1, IMXRT_WDOG1_WSR);
+	putreg16(WDOG_KEEP_ALIVE_KEY2, IMXRT_WDOG1_WSR);
+
+	spin_unlock_irqrestore(&priv->lock, flags);
+
+	return OK;
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: imxrt_wdog_initialize
+ *
+ * Description:
+ *   Initialize the watchdog time.  The watchdog timer is initialized and
+ *   registered at devpath.  The initial state of the watchdog time is
+ *   disabled.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Values:
+ *   None
+ *
+ ****************************************************************************/
+
+void imxrt_wdog_initialize(void)
+{
+	struct imxrt_wdog_lower *priv = &g_wdgdev;
+
+	priv->ops = &g_wdgops;
+	priv->timeout = WDOG_MIN;
+
+	spin_lock_init(&g_wdgdev.lock);
+
+	/* Register the watchdog driver at the path */
+
+	wdinfo("Entry: devpath=%s\n", DEVPATH);
+	watchdog_register(DEVPATH, (struct watchdog_lowerhalf_s *)priv);
+}
 
 /****************************************************************************
  * Name: imxrt_wdog_disable
@@ -282,119 +396,22 @@ void imxrt_wdog_disable_all(void)
 	irqstate_t flags;
 
 	reg = getreg16(IMXRT_WDOG1_WCR);
-	if (reg & WDOG_WCR_WDT_MASK) {
-		reg &= ~WDOG_WCR_WDT_MASK;
+	if (reg & WDOG_WCR_WDE) {
+		reg &= ~WDOG_WCR_WDE;
 		putreg16(reg, IMXRT_WDOG1_WCR);
 	}
 
 	reg = getreg16(IMXRT_WDOG2_WCR);
-	if (reg & WDOG_WCR_WDE_MASK) {
-		reg &= ~WDOG_WCR_WDE_MASK;
+	if (reg & WDOG_WCR_WDE) {
+		reg &= ~WDOG_WCR_WDE;
 		putreg16(reg, IMXRT_WDOG2_WCR);
 	}
 
-	flags = irqsave();
+	flags = spin_lock_irqsave(&g_wdgdev.lock);
 	putreg32(RTWDOG_UPDATE_KEY, IMXRT_RTWDOG_CNT);
-	putreg32(0xFFFF, IMXRT_RTWDOG_TOVAL);
-	modifyreg32(IMXRT_RTWDOG_CS, RTWDOG_CS_EN_MASK, RTWDOG_CS_UPDATE_MASK);
-	irqrestore(flags);
+	putreg32(0xffff, IMXRT_RTWDOG_TOVAL);
+	modifyreg32(IMXRT_RTWDOG_CS, RTWDOG_CS_EN, RTWDOG_CS_UPDATE);
+	spin_unlock_irqrestore(&g_wdgdev.lock, flags);
 }
 
-/****************************************************************************
- * Name: imxrt_wdog_hwreset
- *
- * Description:
- *   Called to do hw reset in source code
- *
- ****************************************************************************/
-void imxrt_wdog_hwreset(void)
-{
-	uint32_t reg;
-
-	reg = getreg16(IMXRT_WDOG1_WCR);
-	if (reg & ~WDOG_WCR_WDT_MASK) {
-		reg &= WDOG_WCR_WDT_MASK;
-		putreg16(reg, IMXRT_WDOG1_WCR);
-	}
-
-	reg = getreg16(IMXRT_WDOG1_WCR);
-	if (reg & WDOG_WCR_WDA_MASK) {
-		reg &= ~WDOG_WCR_WDA_MASK;
-		putreg16(reg, IMXRT_WDOG1_WCR);
-	}
-}
-
-/****************************************************************************
- * Name: board_reset
- *
- * Description:
- *   Reset board.  This function may or may not be supported by a
- *   particular board architecture.
- *
- * Input Parameters:
- *   status - Status information provided with the reset event.  This
- *     meaning of this status information is board-specific.  If not used by
- *     a board, the value zero may be provided in calls to board_reset.
- *
- * Returned Value:
- *   If this function returns, then it was not possible to power-off the
- *   board due to some constraints.  The return value int this case is a
- *   board-specific reason for the failure to shutdown.
- *
- ****************************************************************************/
-#ifdef CONFIG_BOARDCTL_RESET
-int board_reset(int status)
-{
-	imxrt_wdog_hwreset();
-
-	return 0;
-}
-#endif
-#ifdef CONFIG_WATCHDOG_FOR_IRQ
-/****************************************************************************
- * Name: up_wdog_init
- *
- * Description:
- *   Initialize the watchdog for irq
- *
- ****************************************************************************/
-void up_wdog_init(uint16_t timeout)
-{
-#if ((CONFIG_WATCHDOG_FOR_IRQ_INTERVAL % 500) != 0) || (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL < 500) || (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL > 128000)
-#error "IMXRT WATCHDOG supports timeout periods from 500ms to 128000ms with a time resolution of 500ms."
-#endif
-	wdog_config_t config;
-
-	imxrt_wdog_getdefaultconfig(&config);
-	config.timeoutValue = (uint16_t)(timeout / IMXRT_WATCHDOG_RESOLUTION) - 1;
-
-	imxrt_wdog_init(WDOG1, &config);
-}
-
-/****************************************************************************
- * Name: up_wdog_keepalive
- *
- * Description:
- *   Reset the watchdog timer for preventing timeouts.
- *
- ****************************************************************************/
-void up_wdog_keepalive(void)
-{
-	imxrt_wdog_refresh(WDOG1);
-}
-#endif
-
-/****************************************************************************
- * Name: up_watchdog_disable
- *
- * Description:
- *   Disable board specific watchdog
- *
- * Cautions:
- *   This can be only used if we cannot use driver structure like assert.
- *
- ****************************************************************************/
-void up_watchdog_disable(void)
-{
-	imxrt_wdog_disable_all();
-}
+#endif /* CONFIG_WATCHDOG && CONFIG_IMXRT_WDOG */
