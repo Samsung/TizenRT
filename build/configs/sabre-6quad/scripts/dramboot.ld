@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * boards/arm/imx6/sabre-6quad/scripts/dramboot.ld
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -47,10 +49,7 @@
 MEMORY
 {
     oscram (W!RX) : ORIGIN = 0x00900000, LENGTH = 256K - 16K
-    ddr3 (W!RX)   : ORIGIN = 0x10800000, LENGTH = 8M
-/*
- * ddr3 (W!RX)   : ORIGIN = 0x10800000, LENGTH = 1024M - 8M
-*/
+    ddr3 (W!RX)   : ORIGIN = 0x10800000, LENGTH = 1024M - 8M
 }
 
 ENTRY(entry)
@@ -60,9 +59,8 @@ SECTIONS
 {
     .text :
     {
-    	_stext = ABSOLUTE(.);
-        _stext_ram = ABSOLUTE(.);
-        KEEP(*(.vectors))
+        _stext = ABSOLUTE(.);
+        *(.vectors)
         *(.text .text.*)
         *(.fixup)
         *(.gnu.warning)
@@ -75,14 +73,14 @@ SECTIONS
         *(.gnu.linkonce.r.*)
         *(.ARM.extab*)
         *(.gnu.linkonce.armextab.*)
-	_etext = ABSOLUTE(.);
-        _etext_ram = ABSOLUTE(.);
+        _etext = ABSOLUTE(.);
     } > ddr3
 
     .init_section :
     {
         _sinit = ABSOLUTE(.);
-        KEEP(*(.init_array .init_array.*))
+        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+        KEEP(*(.init_array EXCLUDE_FILE(*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o) .ctors))
         _einit = ABSOLUTE(.);
     } > ddr3
 
@@ -104,14 +102,19 @@ SECTIONS
 
     .data :
     {
-
-        _eronly = ABSOLUTE(.);
         _sdata = ABSOLUTE(.);
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
         CONSTRUCTORS
         . = ALIGN(4);
         _edata = ABSOLUTE(.);
+    } > ddr3
+
+    .noinit :
+    {
+        _snoinit = ABSOLUTE(.);
+        *(.noinit*)
+        _enoinit = ABSOLUTE(.);
     } > ddr3
 
     .bss :
@@ -122,13 +125,6 @@ SECTIONS
         *(COMMON)
         . = ALIGN(4);
         _ebss = ABSOLUTE(.);
-    } > ddr3
-
-    .noinit :
-    {
-        _snoinit = ABSOLUTE(.);
-        *(.noinit*)
-        _enoinit = ABSOLUTE(.);
     } > ddr3
 
     /* Stabs debugging sections. */
