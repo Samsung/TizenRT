@@ -150,7 +150,20 @@ int up_rtc_gettime(FAR struct timespec *tp)
 
 time_t up_rtc_time(void)
 {
-	return rtc_read();
+		time_t timer;
+
+	timer = rtc_read();
+
+	/* An unset RTC counter makes the vendor calendar conversion fail and
+	 * rtc_read() returns (time_t)-1. Seed the system clock at the epoch
+	 * instead of propagating garbage (mbed HAL mktime() failure value).
+	 */
+
+	if (timer < 0) {
+		return 0;
+	}
+
+	return timer;
 }
 
 /************************************************************************************
