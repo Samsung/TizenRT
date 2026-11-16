@@ -86,6 +86,7 @@
 #include <tinyara/serial/pty.h>
 #include <tinyara/serial/uart_hostfs.h>
 #include <tinyara/serial/uart_ram.h>
+#include <tinyara/silent_reboot.h>
 #include <tinyara/syslog/syslog.h>
 #include <tinyara/syslog/syslog_console.h>
 #include <tinyara/thermal.h>
@@ -361,6 +362,11 @@ void drivers_initialize(void)
 
 #ifdef CONFIG_FAKE_CAPTURE
 	fake_capture_initialize(2);
+#endif
+
+#ifdef CONFIG_SILENT_REBOOT
+	silent_reboot_initialize();
+	silent_reboot_driver_register();
 #endif
 
 	drivers_trace_end();

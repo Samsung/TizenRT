@@ -40,15 +40,9 @@ static ssize_t silent_reboot_write(FAR struct file *filep, FAR const char *buffe
  * Private Data
  ****************************************************************************/
 static const struct file_operations silent_reboot_fops = {
-	0,                          /* open */
-	0,                          /* close */
-	silent_reboot_read,         /* read */
-	silent_reboot_write,        /* write */
-	0,                          /* seek */
-	silent_reboot_ioctl         /* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	, 0                         /* poll */
-#endif
+	.read  = silent_reboot_read,
+	.write = silent_reboot_write,
+	.ioctl = silent_reboot_ioctl,
 };
 
 /****************************************************************************
