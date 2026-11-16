@@ -1,35 +1,39 @@
 /****************************************************************************
- *  arch/arm/src/stm32l4/stm32l4_hsi48.c
  *
- *   Copyright (C) 2019 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * arch/arm/src/stm32l4/stm32l4_hsi48.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -39,10 +43,10 @@
 
 #include <tinyara/config.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "chip.h"
 #include "stm32l4_rcc.h"
-#include "chip/stm32l4_crs.h"
+#include "hardware/stm32l4_crs.h"
 
 #include "stm32l4_hsi48.h"
 
@@ -69,7 +73,7 @@
  *   frequency which is subject to manufacturing process variations.
  *
  * Input Parameters:
- *   Identifies the syncrhonization source for the HSI48.  When used as the
+ *   Identifies the synchronization source for the HSI48.  When used as the
  *   USB source clock, this must be set to SYNCSRC_USB.
  *
  * Returned Value:
@@ -79,70 +83,68 @@
 
 void stm32l4_enable_hsi48(enum syncsrc_e syncsrc)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* Enable the HSI48 clock.
-   *
-   * The HSI48 RC can be switched on and off using the HSI48ON bit in the
-   * Clock control register (RCC_CRRCR).
-   *
-   * The USB clock may be derived from either the PLL clock or from the
-   * HSI48 clock.  This oscillator will be also automatically enabled (by
-   * hardware forcing HSI48ON bit to one) as soon as it is chosen as a clock
-   * source for the USB and the peripheral is
-   * enabled.
-   */
+	/* Enable the HSI48 clock.
+	 *
+	 * The HSI48 RC can be switched on and off using the HSI48ON bit in the
+	 * Clock control register (RCC_CRRCR).
+	 *
+	 * The USB clock may be derived from either the PLL clock or from the
+	 * HSI48 clock.  This oscillator will be also automatically enabled (by
+	 * hardware forcing HSI48ON bit to one) as soon as it is chosen as a clock
+	 * source for the USB and the peripheral is
+	 * enabled.
+	 */
 
-  regval  = getreg32(STM32L4_RCC_CRRCR);
-  regval |= RCC_CRRCR_HSI48ON;
-  putreg32(regval, STM32L4_RCC_CRRCR);
+	regval  = getreg32(STM32L4_RCC_CRRCR);
+	regval |= RCC_CRRCR_HSI48ON;
+	putreg32(regval, STM32L4_RCC_CRRCR);
 
-  /* Wait for the HSI48 clock to stabilize */
+	/* Wait for the HSI48 clock to stabilize */
 
-  while ((getreg32(STM32L4_RCC_CRRCR) & RCC_CRRCR_HSI48RDY) == 0);
+	while ((getreg32(STM32L4_RCC_CRRCR) & RCC_CRRCR_HSI48RDY) == 0);
 
-  /* Return if no synchronization */
+	/* Return if no synchronization */
 
-  if (syncsrc == SYNCSRC_NONE)
-    {
-      return;
-    }
+	if (syncsrc == SYNCSRC_NONE) {
+		return;
+	}
 
-  /* The CRS synchronization (SYNC) source, selectable through the CRS_CFGR
-   * register, can be the signal from the external CRS_SYNC pin, the LSE
-   * clock or the USB SOF signal.
-   */
+	/* The CRS synchronization (SYNC) source, selectable through the CRS_CFGR
+	 * register, can be the signal from the external CRS_SYNC pin, the LSE
+	 * clock or the USB SOF signal.
+	 */
 
-  regval = getreg32(STM32L4_CRS_CFGR);
-  regval &= ~CRS_CFGR_SYNCSRC_MASK;
+	regval = getreg32(STM32L4_CRS_CFGR);
+	regval &= ~CRS_CFGR_SYNCSRC_MASK;
 
-  switch (syncsrc)
-    {
-      default:
-      case SYNCSRC_GPIO: /* GPIO selected as SYNC signal source */
-        regval |= CRS_CFGR_SYNCSRC_GPIO;
-        break;
+	switch (syncsrc) {
+	default:
+	case SYNCSRC_GPIO: /* GPIO selected as SYNC signal source */
+		regval |= CRS_CFGR_SYNCSRC_GPIO;
+		break;
 
-      case SYNCSRC_LSE:  /* LSE selected as SYNC signal source */
-        regval |= CRS_CFGR_SYNCSRC_LSE;
-        break;
+	case SYNCSRC_LSE:  /* LSE selected as SYNC signal source */
+		regval |= CRS_CFGR_SYNCSRC_LSE;
+		break;
 
-      case SYNCSRC_USB:  /* USB SOF selected as SYNC signal source */
-        regval |= CRS_CFGR_SYNCSRC_USBSOF;
-        break;
-    }
+	case SYNCSRC_USB:  /* USB SOF selected as SYNC signal source */
+		regval |= CRS_CFGR_SYNCSRC_USBSOF;
+		break;
+	}
 
-  putreg32(regval, STM32L4_CRS_CFGR);
+	putreg32(regval, STM32L4_CRS_CFGR);
 
-  /* Set the AUTOTRIMEN bit the CRS_CR register to enables the automatic
-   * hardware adjustment of TRIM bits according to the measured frequency
-   * error between the selected SYNC event. Also enable CEN bit to enable
-   * frequency error counter and SYNC events.
-   */
+	/* Set the AUTOTRIMEN bit the CRS_CR register to enables the automatic
+	 * hardware adjustment of TRIM bits according to the measured frequency
+	 * error between the selected SYNC event. Also enable CEN bit to enable
+	 * frequency error counter and SYNC events.
+	 */
 
-  regval  = getreg32(STM32L4_CRS_CR);
-  regval |= CRS_CR_AUTOTRIMEN | CRS_CR_CEN;
-  putreg32(regval, STM32L4_CRS_CR);
+	regval  = getreg32(STM32L4_CRS_CR);
+	regval |= CRS_CR_AUTOTRIMEN | CRS_CR_CEN;
+	putreg32(regval, STM32L4_CRS_CR);
 }
 
 /****************************************************************************
@@ -161,21 +163,21 @@ void stm32l4_enable_hsi48(enum syncsrc_e syncsrc)
 
 void stm32l4_disable_hsi48(void)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* Disable the HSI48 clock */
+	/* Disable the HSI48 clock */
 
-  regval  = getreg32(STM32L4_RCC_CRRCR);
-  regval &= ~RCC_CRRCR_HSI48ON;
-  putreg32(regval, STM32L4_RCC_CRRCR);
+	regval  = getreg32(STM32L4_RCC_CRRCR);
+	regval &= ~RCC_CRRCR_HSI48ON;
+	putreg32(regval, STM32L4_RCC_CRRCR);
 
-  /* Set other registers to the default settings. */
+	/* Set other registers to the default settings. */
 
-  regval  = getreg32(STM32L4_CRS_CFGR);
-  regval &= ~CRS_CFGR_SYNCSRC_MASK;
-  putreg32(regval, STM32L4_CRS_CFGR);
+	regval  = getreg32(STM32L4_CRS_CFGR);
+	regval &= ~CRS_CFGR_SYNCSRC_MASK;
+	putreg32(regval, STM32L4_CRS_CFGR);
 
-  regval  = getreg32(STM32L4_CRS_CR);
-  regval &= ~CRS_CR_AUTOTRIMEN;
-  putreg32(regval, STM32L4_CRS_CR);
+	regval  = getreg32(STM32L4_CRS_CR);
+	regval &= ~CRS_CR_AUTOTRIMEN;
+	putreg32(regval, STM32L4_CRS_CR);
 }

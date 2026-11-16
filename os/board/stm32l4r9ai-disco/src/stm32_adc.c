@@ -1,41 +1,45 @@
-/*****************************************************************************
- * configs/stm32l4r9ai-disco/src/stm32_adc.c
+/****************************************************************************
  *
- *   Copyright (C) 2017-2018 Haltian Ltd. All rights reserved.
- *   Authors: Juha Niskanen <juha.niskanen@haltian.com>
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
+/****************************************************************************
+ * boards/arm/stm32l4/stm32l4r9ai-disco/src/stm32_adc.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -57,13 +61,13 @@
 
 #include <arch/board/board.h>
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 
-/* STM32 chip specific calibration values *******************************************/
+/* STM32 chip specific calibration values ***********************************/
 
-/* Voltage used for calibration of internal analog reference voltage (Vrefint) */
+/* Voltage used for calibration of internal analog reference voltage */
 
 #if defined(CONFIG_ARCH_CHIP_STM32F7) \
  || defined(CONFIG_ARCH_CHIP_STM32F4) \
@@ -74,7 +78,7 @@
 #endif
 
 /* Internal reference voltage calibration value locations. Taken from
- * https://github.com/micropython/micropython/commit/87215a0f0480dd0324a1b9c1d3fc3a5c2806249d
+ * https://github.com/micropython/micropython/commit/87215a0f0480dd0324a1b9c1
  *
  * F0 value from DM00115237 Rev 4 p. 19. for STM32F091xB and STM32F091xC
  *
@@ -110,7 +114,7 @@
 #  define STM32_TSENSE_TSCAL2 (*(int16_t *)((uint32_t)0x1fff75ca))
 #endif
 
-/* Configuration ********************************************************************/
+/* Configuration ************************************************************/
 
 /* These are internal to STM32L4 */
 
@@ -128,9 +132,9 @@
 #  warning "Reading multiple channels without DMA might cause overruns!"
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Private Data
- ************************************************************************************/
+ ****************************************************************************/
 
 static struct adc_dev_s *g_adc;
 
@@ -146,28 +150,29 @@ static const uint8_t g_chanlist[ADC1_NCHANNELS] =
 
 static const uint32_t g_pinlist[ADC1_NCHANNELS] =
 {
-  0xffffffffU,
-  0xffffffffU,
-  0xffffffffU,
+  0xffffffffu,
+  0xffffffffu,
+  0xffffffffu,
   GPIO_MEASURE_ADC,
 };
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_adc_measure_voltages
  *
  * Description:
  *   Read internal reference voltage, internal VBAT and one external voltage.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *vext)
+int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat,
+                                 uint32_t *vext)
 {
-  struct adc_msg_s sample[ADC1_NCHANNELS] = { 0 };
-  FAR struct file filestruct;
+  struct adc_msg_s sample[ADC1_NCHANNELS];
+  struct file filestruct;
   ssize_t nbytes;
   int nsamples;
   int ret;
@@ -191,7 +196,7 @@ int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *ve
     {
       if (nbytes != -EINTR)
         {
-          aerr("ERROR: nx_read() failed: %d\n", nbytes);
+          aerr("ERROR: file_read() failed: %d\n", nbytes);
           ret = (int)nbytes;
           goto out_close;
         }
@@ -223,7 +228,7 @@ int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *ve
       for (i = 0; i < nsamples ; i++)
         {
           ainfo("%d: channel: %d value: %d\n",
-                i+1, sample[i].am_channel, sample[i].am_data);
+                i + 1, sample[i].am_channel, sample[i].am_data);
 
           /* Add the raw value to entropy pool. */
 
@@ -232,9 +237,11 @@ int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *ve
           switch (sample[i].am_channel)
             {
               case ADC1_INTERNAL_VREFINT_CHANNEL:
-                /* Calculate corrected Vrefint with factory calibration value. */
 
-                *vrefint = STM32_VREFINT_MVOLTS * STM32_VREFINT_CAL / sample[i].am_data;
+                /* Calculate corrected Vrefint with factory value. */
+
+                *vrefint = STM32_VREFINT_MVOLTS * STM32_VREFINT_CAL /
+                           sample[i].am_data;
                 ainfo("VREFINT: %d -> %u mV\n", sample[i].am_data, *vrefint);
                 break;
 
@@ -243,8 +250,9 @@ int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *ve
                  * so it does not matter much if we use integer type here.
                  */
 
-                tsense = (110 - 30) * (sample[i].am_data - STM32_TSENSE_TSCAL1)
-                                    / (STM32_TSENSE_TSCAL2 - STM32_TSENSE_TSCAL1) + 30;
+                tsense = 30 + (110 - 30) *
+                         (sample[i].am_data - STM32_TSENSE_TSCAL1) /
+                         (STM32_TSENSE_TSCAL2 - STM32_TSENSE_TSCAL1);
                 ainfo("TSENSE: %d -> %d °C\n", sample[i].am_data, tsense);
                 UNUSED(tsense);
                 break;
@@ -260,7 +268,8 @@ int stm32l4_adc_measure_voltages(uint32_t *vrefint, uint32_t *vbat, uint32_t *ve
                 break;
 
               default:
-                aerr("ERROR: ADC got value from unknown channel %d\n", sample[i].am_channel);
+                aerr("ERROR: ADC got value from unknown channel %d\n",
+                     sample[i].am_channel);
                 break;
             }
         }
@@ -272,9 +281,9 @@ out:
   return ret;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32l4_adc_setup
- ************************************************************************************/
+ ****************************************************************************/
 
 int stm32l4_adc_setup(void)
 {
@@ -283,19 +292,20 @@ int stm32l4_adc_setup(void)
   if (!initialized)
     {
 #ifdef CONFIG_STM32L4_ADC1
-      int ret, i;
+      int ret;
+      int i;
 
       /* Configure the pins as analog inputs for the selected channels */
 
       for (i = 0; i < ADC1_NCHANNELS; i++)
         {
-          if (g_pinlist[i] != 0xffffffffU)
+          if (g_pinlist[i] != 0xffffffffu)
             {
               stm32l4_configgpio(g_pinlist[i]);
             }
         }
 
-      /* Call stm32l4_adc_initialize() to get an instance of the ADC interface */
+      /* Call stm32l4_adc_initialize() to get an instance of the ADC */
 
       g_adc = stm32l4_adc_initialize(1, g_chanlist, ADC1_NCHANNELS);
       if (g_adc == NULL)
@@ -313,6 +323,7 @@ int stm32l4_adc_setup(void)
           return ret;
         }
 #endif
+
       initialized = true;
     }
 

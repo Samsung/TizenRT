@@ -1,40 +1,45 @@
-/************************************************************************************
- * configs/stm32l4r9ai-disco/src/stm32_clockconfig.c
+/****************************************************************************
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
+/****************************************************************************
+ * boards/arm/stm32l4/stm32l4r9ai-disco/src/stm32_clockconfig.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -43,25 +48,26 @@
 #include <arch/board/board.h>
 #include <arch/board/stm32l4r9ai-disco-clocking.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "stm32l4r9ai-disco.h"
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: stm32_board_clockconfig
  *
  * Description:
- *   I provided this module when I was doing some debugging of a problem I had with
- *  clocking (it was helpful to do A/B tests).  I'm leaving it here in the config
- *  partially because I expect to have similar problems again as I develop more of
- *  the various peripheral support, but also because it may become necessary in the
- *  end for certain project configurations which have specialized clock configurations
- *  that aren't appropriate to expose in the 'arch' default code.
+ *   I provided this module when I was doing some debugging of a problem I
+ *  had with clocking (it was helpful to do A/B tests).  I'm leaving it here
+ *  in the config partially because I expect to have similar problems again
+ *  as I develop more of the various peripheral support, but also because it
+ *  may become necessary in the end for certain project configurations which
+ *  have specialized clock configurations that aren't appropriate to expose
+ *  in the 'arch' default code.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #if defined(CONFIG_ARCH_BOARD_STM32L4_CUSTOM_CLOCKCONFIG)
 void stm32l4_board_clockconfig(void)
@@ -106,6 +112,7 @@ void stm32l4_board_clockconfig(void)
   regval  = getreg32(STM32L4_RCC_PLLCFG);
 
   /* Configure Main PLL */
+
   /* Set the PLL dividers and multipliers to configure the main PLL */
 
   regval = (STM32L4_PLLCFG_PLLM | STM32L4_PLLCFG_PLLN | STM32L4_PLLCFG_PLLP
@@ -162,6 +169,7 @@ void stm32l4_board_clockconfig(void)
   regval  = getreg32(STM32L4_RCC_PLLSAI2CFG);
 
   /* Enable the SAI2 PLL */
+
   /* Set the PLL dividers and multipliers to configure the SAI2 PLL */
 
   regval = (STM32L4_PLLSAI2CFG_PLLN | STM32L4_PLLSAI2CFG_PLLP |
@@ -180,7 +188,9 @@ void stm32l4_board_clockconfig(void)
     {
     }
 
-  /* Enable FLASH prefetch, instruction cache, data cache, and 5 wait states */
+  /* Enable FLASH prefetch, instruction cache,
+   * data cache, and 5 wait states
+   */
 
 #ifdef CONFIG_STM32L4_FLASH_PREFETCH
   regval = (FLASH_ACR_LATENCY_4 | FLASH_ACR_ICEN | FLASH_ACR_DCEN |
@@ -199,7 +209,8 @@ void stm32l4_board_clockconfig(void)
 
   /* Wait until the PLL source is used as the system clock source */
 
-  while ((getreg32(STM32L4_RCC_CFGR) & RCC_CFGR_SWS_MASK) != RCC_CFGR_SWS_PLL)
+  while ((getreg32(STM32L4_RCC_CFGR) & RCC_CFGR_SWS_MASK) !=
+          RCC_CFGR_SWS_PLL)
     {
     }
 
@@ -207,7 +218,7 @@ void stm32l4_board_clockconfig(void)
 
   /* Low speed internal clock source LSI */
 
-   stm32l4_rcc_enablelsi();
+  stm32l4_rcc_enablelsi();
 #endif
 
 #if defined(STM32L4_USE_LSE)

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,36 +18,22 @@
 /****************************************************************************
  * arch/arm/src/stm32/stm32_exti_alarm.c
  *
- *   Copyright (C) 2009, 2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           Diego Sanchez <dsanchez@nx-engineering.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -65,14 +51,10 @@
 
 #include <arch/irq.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "chip.h"
 #include "stm32_gpio.h"
 #include "stm32_exti.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
 
 /****************************************************************************
  * Private Data
@@ -80,15 +62,12 @@
 
 /* Interrupt handlers attached to the ALARM EXTI */
 
-static xcpt_t stm32_exti_callback;
+static xcpt_t g_alarm_callback;
+static void  *g_callback_arg;
 
 /****************************************************************************
- * Public Data
+ * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
-* Private Functions
-****************************************************************************/
 
 /****************************************************************************
  * Name: stm32_exti_alarm_isr
@@ -98,7 +77,7 @@ static xcpt_t stm32_exti_callback;
  *
  ****************************************************************************/
 
-static int stm32_exti_alarm_isr(int irq, void *context)
+static int stm32_exti_alarm_isr(int irq, void *context, void *arg)
 {
 	int ret = OK;
 
@@ -108,8 +87,8 @@ static int stm32_exti_alarm_isr(int irq, void *context)
 
 	/* And dispatch the interrupt to the handler */
 
-	if (stm32_exti_callback) {
-		ret = stm32_exti_callback(irq, context);
+	if (g_alarm_callback) {
+		ret = g_alarm_callback(irq, context, g_callback_arg);
 	}
 
 	return ret;
@@ -125,26 +104,23 @@ static int stm32_exti_alarm_isr(int irq, void *context)
  * Description:
  *   Sets/clears EXTI alarm interrupt.
  *
- * Parameters:
- *  - rising/falling edge: enables interrupt on rising/falling edget
+ * Input Parameters:
+ *  - rising/falling edge: enables interrupt on rising/falling edge
  *  - event:  generate event when set
  *  - func:   when non-NULL, generate interrupt
+ *  - arg:    Argument passed to the interrupt callback
  *
- * Returns:
- *   The previous value of the interrupt handler function pointer.  This
- *   value may, for example, be used to restore the previous handler when
- *   multiple handlers are used.
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure indicating the
+ *   nature of the failure.
  *
  ****************************************************************************/
 
-xcpt_t stm32_exti_alarm(bool risingedge, bool fallingedge, bool event, xcpt_t func)
+int stm32_exti_alarm(bool risingedge, bool fallingedge, bool event,
+                     xcpt_t func, void *arg)
 {
-	xcpt_t oldhandler;
-
-	/* Get the previous GPIO IRQ handler; Save the new IRQ handler. */
-
-	oldhandler = stm32_exti_callback;
-	stm32_exti_callback = func;
+	g_alarm_callback = func;
+	g_callback_arg   = arg;
 
 	/* Install external interrupt handlers (if not already attached) */
 
@@ -157,15 +133,21 @@ xcpt_t stm32_exti_alarm(bool risingedge, bool fallingedge, bool event, xcpt_t fu
 
 	/* Configure rising/falling edges */
 
-	modifyreg32(STM32_EXTI_RTSR, risingedge ? 0 : EXTI_RTC_ALARM, risingedge ? EXTI_RTC_ALARM : 0);
-	modifyreg32(STM32_EXTI_FTSR, fallingedge ? 0 : EXTI_RTC_ALARM, fallingedge ? EXTI_RTC_ALARM : 0);
+	modifyreg32(STM32_EXTI_RTSR,
+	            risingedge ? 0 : EXTI_RTC_ALARM,
+	            risingedge ? EXTI_RTC_ALARM : 0);
+	modifyreg32(STM32_EXTI_FTSR,
+	            fallingedge ? 0 : EXTI_RTC_ALARM,
+	            fallingedge ? EXTI_RTC_ALARM : 0);
 
 	/* Enable Events and Interrupts */
 
-	modifyreg32(STM32_EXTI_EMR, event ? 0 : EXTI_RTC_ALARM, event ? EXTI_RTC_ALARM : 0);
-	modifyreg32(STM32_EXTI_IMR, func ? 0 : EXTI_RTC_ALARM, func ? EXTI_RTC_ALARM : 0);
+	modifyreg32(STM32_EXTI_EMR,
+	            event ? 0 : EXTI_RTC_ALARM,
+	            event ? EXTI_RTC_ALARM : 0);
+	modifyreg32(STM32_EXTI_IMR,
+	            func ? 0 : EXTI_RTC_ALARM,
+	            func ? EXTI_RTC_ALARM : 0);
 
-	/* Return the old IRQ handler */
-
-	return oldhandler;
+	return OK;
 }

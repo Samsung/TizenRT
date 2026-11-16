@@ -136,6 +136,7 @@ config ARCH_CHIP_IMXRT
 
 config ARCH_CHIP_STM32L4
 	bool "STMicro STM32L4"
+	select ARCH_CORTEXM4
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_I2CRESET
 	select ARCH_HAVE_HEAPCHECK if DEBUG
@@ -159,7 +160,7 @@ config ARCH_CHIP_ARMINO
 	---help---
 		Beken ARMINO architectures (ARM Cortex-M33).
 
-config ARCH_CHIP_STM32H745
+config ARCH_CHIP_STM32H7
 	bool "STMicro STM32H745"
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_I2CRESET
@@ -561,7 +562,7 @@ config ARCH_CHIP
 	default "amebad"	if ARCH_CHIP_AMEBAD
 	default "armino"	if ARCH_CHIP_ARMINO
 	default "amebasmart"	if ARCH_CHIP_AMEBASMART
-	default "stm32h745"     if ARCH_CHIP_STM32H745
+	default "stm32h7"      if ARCH_CHIP_STM32H7
 	default "imx6"		if ARCH_CHIP_IMX6
 
 config ARM_THUMB
@@ -949,8 +950,8 @@ endif
 if ARCH_CHIP_ARMINO
 source arch/arm/src/armino/Kconfig
 endif
-if ARCH_CHIP_STM32H745
-source arch/arm/src/stm32h745/Kconfig
+if ARCH_CHIP_STM32H7
+source arch/arm/src/stm32h7/Kconfig
 endif
 endif # ARCH_ARM
 

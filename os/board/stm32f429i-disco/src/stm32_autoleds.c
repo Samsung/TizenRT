@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/board/stm32f429i-disco/src/stm32_autoleds.c
+ * boards/arm/stm32/stm32f429i-disco/src/stm32_autoleds.c
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,31 +47,19 @@
 #include <stdbool.h>
 #include <debug.h>
 
+#include <tinyara/board.h>
 #include <arch/board/board.h>
 
 #include "chip.h"
-#include "up_arch.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "stm32.h"
 #include "stm32f429i-disco.h"
 
 #ifdef CONFIG_ARCH_LEDS
 
 /****************************************************************************
- * Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
-
-/* CONFIG_DEBUG_LEDS enables debug output from this file (needs CONFIG_DEBUG
- * with CONFIG_DEBUG_VERBOSE too)
- */
-
-#ifdef CONFIG_DEBUG_LEDS
-#define leddbg  lldbg
-#define ledvdbg llvdbg
-#else
-#define leddbg(x...)
-#define ledvdbg(x...)
-#endif
 
 /* The following definitions map the encoded LED setting to GPIO settings */
 
@@ -150,22 +125,31 @@
  * Private Data
  ****************************************************************************/
 
-static const uint16_t g_ledbits[8] = {
-	(LED_STARTED_ON_SETBITS | LED_STARTED_ON_CLRBITS | LED_STARTED_OFF_SETBITS | LED_STARTED_OFF_CLRBITS),
+static const uint16_t g_ledbits[8] =
+{
+  (LED_STARTED_ON_SETBITS       | LED_STARTED_ON_CLRBITS |
+  LED_STARTED_OFF_SETBITS      | LED_STARTED_OFF_CLRBITS),
 
-	(LED_HEAPALLOCATE_ON_SETBITS | LED_HEAPALLOCATE_ON_CLRBITS | LED_HEAPALLOCATE_OFF_SETBITS | LED_HEAPALLOCATE_OFF_CLRBITS),
+  (LED_HEAPALLOCATE_ON_SETBITS  | LED_HEAPALLOCATE_ON_CLRBITS |
+  LED_HEAPALLOCATE_OFF_SETBITS | LED_HEAPALLOCATE_OFF_CLRBITS),
 
-	(LED_IRQSENABLED_ON_SETBITS | LED_IRQSENABLED_ON_CLRBITS | LED_IRQSENABLED_OFF_SETBITS | LED_IRQSENABLED_OFF_CLRBITS),
+  (LED_IRQSENABLED_ON_SETBITS   | LED_IRQSENABLED_ON_CLRBITS |
+  LED_IRQSENABLED_OFF_SETBITS  | LED_IRQSENABLED_OFF_CLRBITS),
 
-	(LED_STACKCREATED_ON_SETBITS | LED_STACKCREATED_ON_CLRBITS | LED_STACKCREATED_OFF_SETBITS | LED_STACKCREATED_OFF_CLRBITS),
+  (LED_STACKCREATED_ON_SETBITS  | LED_STACKCREATED_ON_CLRBITS |
+  LED_STACKCREATED_OFF_SETBITS | LED_STACKCREATED_OFF_CLRBITS),
 
-	(LED_INIRQ_ON_SETBITS | LED_INIRQ_ON_CLRBITS | LED_INIRQ_OFF_SETBITS | LED_INIRQ_OFF_CLRBITS),
+  (LED_INIRQ_ON_SETBITS         | LED_INIRQ_ON_CLRBITS |
+  LED_INIRQ_OFF_SETBITS        | LED_INIRQ_OFF_CLRBITS),
 
-	(LED_SIGNAL_ON_SETBITS | LED_SIGNAL_ON_CLRBITS | LED_SIGNAL_OFF_SETBITS | LED_SIGNAL_OFF_CLRBITS),
+  (LED_SIGNAL_ON_SETBITS        | LED_SIGNAL_ON_CLRBITS |
+  LED_SIGNAL_OFF_SETBITS       | LED_SIGNAL_OFF_CLRBITS),
 
-	(LED_ASSERTION_ON_SETBITS | LED_ASSERTION_ON_CLRBITS | LED_ASSERTION_OFF_SETBITS | LED_ASSERTION_OFF_CLRBITS),
+  (LED_ASSERTION_ON_SETBITS     | LED_ASSERTION_ON_CLRBITS |
+  LED_ASSERTION_OFF_SETBITS    | LED_ASSERTION_OFF_CLRBITS),
 
-	(LED_PANIC_ON_SETBITS | LED_PANIC_ON_CLRBITS | LED_PANIC_OFF_SETBITS | LED_PANIC_OFF_CLRBITS)
+  (LED_PANIC_ON_SETBITS         | LED_PANIC_ON_CLRBITS |
+  LED_PANIC_OFF_SETBITS        | LED_PANIC_OFF_CLRBITS)
 };
 
 /****************************************************************************
@@ -174,32 +158,34 @@ static const uint16_t g_ledbits[8] = {
 
 static inline void led_clrbits(unsigned int clrbits)
 {
-	if ((clrbits & STM32F4_LED1) != 0) {
-		stm32_gpiowrite(GPIO_LED1, false);
-	}
+  if ((clrbits & STM32F4_LED1) != 0)
+    {
+      stm32_gpiowrite(GPIO_LED1, false);
+    }
 
-	if ((clrbits & STM32F4_LED2) != 0) {
-		stm32_gpiowrite(GPIO_LED2, false);
-	}
-
+  if ((clrbits & STM32F4_LED2) != 0)
+    {
+      stm32_gpiowrite(GPIO_LED2, false);
+    }
 }
 
 static inline void led_setbits(unsigned int setbits)
 {
-	if ((setbits & STM32F4_LED1) != 0) {
-		stm32_gpiowrite(GPIO_LED1, true);
-	}
+  if ((setbits & STM32F4_LED1) != 0)
+    {
+      stm32_gpiowrite(GPIO_LED1, true);
+    }
 
-	if ((setbits & STM32F4_LED2) != 0) {
-		stm32_gpiowrite(GPIO_LED2, true);
-	}
-
+  if ((setbits & STM32F4_LED2) != 0)
+    {
+      stm32_gpiowrite(GPIO_LED2, true);
+    }
 }
 
 static void led_setonoff(unsigned int bits)
 {
-	led_clrbits(CLRBITS(bits));
-	led_setbits(SETBITS(bits));
+  led_clrbits(CLRBITS(bits));
+  led_setbits(SETBITS(bits));
 }
 
 /****************************************************************************
@@ -207,33 +193,33 @@ static void led_setonoff(unsigned int bits)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: board_led_initialize
+ * Name: board_autoled_initialize
  ****************************************************************************/
 
-void board_led_initialize(void)
+void board_autoled_initialize(void)
 {
-	/* Configure LED1-4 GPIOs for output */
+  /* Configure LED1-4 GPIOs for output */
 
-	stm32_configgpio(GPIO_LED1);
-	stm32_configgpio(GPIO_LED2);
+  stm32_configgpio(GPIO_LED1);
+  stm32_configgpio(GPIO_LED2);
 }
 
 /****************************************************************************
- * Name: board_led_on
+ * Name: board_autoled_on
  ****************************************************************************/
 
-void board_led_on(int led)
+void board_autoled_on(int led)
 {
-	led_setonoff(ON_BITS(g_ledbits[led]));
+  led_setonoff(ON_BITS(g_ledbits[led]));
 }
 
 /****************************************************************************
- * Name: board_led_off
+ * Name: board_autoled_off
  ****************************************************************************/
 
-void board_led_off(int led)
+void board_autoled_off(int led)
 {
-	led_setonoff(OFF_BITS(g_ledbits[led]));
+  led_setonoff(OFF_BITS(g_ledbits[led]));
 }
 
-#endif							/* CONFIG_ARCH_LEDS */
+#endif /* CONFIG_ARCH_LEDS */

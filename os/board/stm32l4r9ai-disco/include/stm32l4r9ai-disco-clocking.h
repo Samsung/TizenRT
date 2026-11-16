@@ -1,61 +1,66 @@
-/************************************************************************************
- * configs/stm32l4r9ai-disco/include/stm32l4r9ai-disco-clocking.h
+/****************************************************************************
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Juha Niskanen <juha.niskanen@haltian.com>
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
+/****************************************************************************
+ * boards/arm/stm32l4/stm32l4r9ai-disco/include/stm32l4r9ai-disco-clocking.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
-#ifndef __CONFIGS_STM32L4R9AI_DISCO_INCLUDE_STM32L4R9AI_DISCO_CLOCKING_H
-#define __CONFIGS_STM32L4R9AI_DISCO_INCLUDE_STM32L4R9AI_DISCO_CLOCKING_H
+#ifndef __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_INCLUDE_STM32L4R9AI_DISCO_CLOCKING_H
+#define __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_INCLUDE_STM32L4R9AI_DISCO_CLOCKING_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #ifndef __ASSEMBLY__
-# include <stdint.h>
+#  include <stdint.h>
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 
-/* Clocking *************************************************************************/
+/* Clocking *****************************************************************/
 
-/* The stm32l4r9ai-disco supports both HSE and LSE crystals.  As shipped, the HSE
- * is a 16 MHz crystal X2. Therefore the stm32l4r9ai-disco can run off the 16MHz
- * HSI clock, or the MSI, or the HSE. Here we configure HSE to give us 120MHz system
- * clock (maximum supported for STM32L4+ chips) instead of the more traditional 80MHz
- * that is used by most STM32L4 boards supported by NuttX.
+/* The stm32l4r9ai-disco supports both HSE and LSE crystals.  As shipped,
+ * the HSE is a 16 MHz crystal X2. Therefore the stm32l4r9ai-disco can run
+ * off the 16MHz HSI clock, or the MSI, or the HSE. Here we configure HSE
+ * to give us 120MHz system clock (maximum supported for STM32L4+ chips)
+ * instead of the more traditional 80MHz that is used by most STM32L4 boards
+ * supported by NuttX.
  */
 
 /* HSI - 16 MHz RC factory-trimmed
@@ -73,7 +78,7 @@
 #define STM32L4_SYSCLK_FREQUENCY  120000000ul
 #define BOARD_AHB_FREQUENCY       STM32L4_SYSCLK_FREQUENCY
 
-/* Higher SYSCLK reguires more flash wait states. */
+/* Higher SYSCLK requires more flash wait states. */
 
 #define BOARD_FLASH_WAITSTATES    5
 
@@ -102,9 +107,10 @@
 /* 'main' PLL config; we use this to generate our system clock via the R
  *  output.  We set it up as 16 MHz / 1 * 15 / 2 = 120 MHz
  *
- * XXX NOTE:  currently the main PLL is implicitly turned on and is implicitly
- * the system clock; this should be configurable since not all applications may
- * want things done this way.
+ * XXX NOTE:
+ * currently the main PLL is implicitly turned on and is implicitly
+ * the system clock; this should be configurable since not all
+ * applications may want things done this way.
  */
 
 #define STM32L4_PLLCFG_PLLN             RCC_PLLCFG_PLLN(15)
@@ -163,7 +169,6 @@
 
 #define STM32L4_RCC_CFGR_HPRE     RCC_CFGR_HPRE_SYSCLK      /* HCLK  = SYSCLK / 1 */
 #define STM32L4_HCLK_FREQUENCY    STM32L4_SYSCLK_FREQUENCY
-#define STM32L4_BOARD_HCLK        STM32L4_HCLK_FREQUENCY    /* Same as above, to satisfy compiler */
 
 /* APB1 clock (PCLK1) is HCLK/1 (120 MHz) */
 
@@ -212,9 +217,10 @@
 /* 'main' PLL config; we use this to generate our system clock via the R
  *  output.  We set it up as 16 MHz / 1 * 15 / 2 = 120 MHz
  *
- * XXX NOTE:  currently the main PLL is implicitly turned on and is implicitly
- * the system clock; this should be configurable since not all applications may
- * want things done this way.
+ * XXX NOTE:
+ * currently the main PLL is implicitly turned on and is implicitly
+ * the system clock; this should be configurable since not all
+ * applications may want things done this way.
  */
 
 #define STM32L4_PLLCFG_PLLN             RCC_PLLCFG_PLLN(15)
@@ -273,7 +279,6 @@
 
 #define STM32L4_RCC_CFGR_HPRE     RCC_CFGR_HPRE_SYSCLK      /* HCLK  = SYSCLK / 1 */
 #define STM32L4_HCLK_FREQUENCY    STM32L4_SYSCLK_FREQUENCY
-#define STM32L4_BOARD_HCLK        STM32L4_HCLK_FREQUENCY      /* Same as above, to satisfy compiler */
 
 /* Configure the APB1 prescaler */
 
@@ -309,9 +314,10 @@
 /* 'main' PLL config; we use this to generate our system clock via the R
  *  output.  We set it up as 4 MHz / 1 * 60 / 2 = 120 MHz
  *
- * XXX NOTE:  currently the main PLL is implicitly turned on and is implicitly
- * the system clock; this should be configurable since not all applications may
- * want things done this way.
+ * XXX NOTE:
+ * currently the main PLL is implicitly turned on and is implicitly
+ * the system clock; this should be configurable since not all
+ * applications may want things done this way.
  */
 
 #define STM32L4_PLLCFG_PLLN             RCC_PLLCFG_PLLN(60)
@@ -370,7 +376,6 @@
 
 #define STM32L4_RCC_CFGR_HPRE     RCC_CFGR_HPRE_SYSCLK      /* HCLK  = SYSCLK / 1 */
 #define STM32L4_HCLK_FREQUENCY    STM32L4_SYSCLK_FREQUENCY
-#define STM32L4_BOARD_HCLK        STM32L4_HCLK_FREQUENCY    /* Same as above, to satisfy compiler */
 
 /* Configure the APB1 prescaler */
 
@@ -395,8 +400,8 @@
 #endif /* clock selection */
 
 /* The timer clock frequencies are automatically defined by hardware.
- * If the APB prescaler equals 1, the timer clock frequencies are set to the same
- * frequency as that of the APB domain. Otherwise they are set to twice.
+ * If the APB prescaler equals 1, the timer clock frequencies are set to the
+ * same frequency as that of the APB domain. Otherwise they are set to twice.
  * Note: TIM1,8,15,16,17 are on APB2, others on APB1
  */
 
@@ -414,9 +419,9 @@
 #define BOARD_LPTIM1_FREQUENCY  STM32L4_HCLK_FREQUENCY
 #define BOARD_LPTIM2_FREQUENCY  STM32L4_HCLK_FREQUENCY
 
-/************************************************************************************
+/****************************************************************************
  * Public Data
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ASSEMBLY__
 
@@ -429,9 +434,9 @@ extern "C"
 #define EXTERN extern
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Public Function Prototypes
- ************************************************************************************/
+ ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
@@ -439,4 +444,4 @@ extern "C"
 #endif
 
 #endif /* __ASSEMBLY__ */
-#endif  /* __CONFIGS_STM32L4R9AI_DISCO_INCLUDE_STM32L4R9AI_DISCO_CLOCKING_H */
+#endif /* __BOARDS_ARM_STM32L4_STM32L4R9AI_DISCO_INCLUDE_STM32L4R9AI_DISCO_CLOCKING_H */

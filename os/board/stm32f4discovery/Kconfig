@@ -1,0 +1,159 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_BOARD_STM32F4_DISCOVERY
+
+config STM32F4DISBB
+	bool "STM32F4DIS-BB base board"
+	default n
+	---help---
+		Select if you are using the STM32F4DIS-BB base board with the
+		STM32F4Discovery.
+
+config STM32_ROMFS
+	bool "Automount baked-in ROMFS image"
+	default n
+	depends on FS_ROMFS
+	---help---
+		Select STM32_ROMFS_IMAGEFILE, STM32_ROMFS_DEV_MINOR, STM32_ROMFS_MOUNTPOINT
+
+config STM32_ROMFS_DEV_MINOR
+	int "Minor for the block device backing the data"
+	depends on STM32_ROMFS
+	default 64
+
+config STM32_ROMFS_MOUNTPOINT
+	string "Mountpoint of the custom romfs image"
+	depends on STM32_ROMFS
+	default "/rom"
+
+config STM32_ROMFS_IMAGEFILE
+	string "ROMFS image file to include into build"
+	depends on STM32_ROMFS
+	default "../../../../../rom.img"
+
+config STM32F4DISCO_USBHOST_STACKSIZE
+	int "USB host waiter stack size"
+	default 1024
+	depends on USBHOST
+
+config STM32F4DISCO_USBHOST_PRIO
+	int "USB host waiter task priority"
+	default 100
+	depends on USBHOST
+
+config STM32F4DISCO_QETIMER
+	int "Timer to use with QE encoder"
+	default 2
+	depends on SENSORS_QENCODER
+
+config STM32F4DISCO_TIMER
+	int "Timer to use with timer driver"
+	default 4
+	depends on TIMER
+
+config STM32F4DISCO_LIS3DSH
+	bool "Enable LIS3DSH driver for the IMU on STM32F4Discovery (rev. MB997C)"
+	default n
+	depends on SPI
+	depends on LIS3DSH
+	default n
+	select SENSORS_LIS3DSH
+	---help---
+		Select to create a LIS3DSH driver instance for the builtin accelerometer of
+		STM32F4Discovery. Provides /dev/acc0 device file.
+		Also see apps/examples/lis3dsh_reader.
+		The LIS3DSH is available on the STM32F4Discovery rev. MB997C (see the board manual).
+
+config PM_BUTTONS
+	bool "PM button support"
+	default n
+	depends on PM && ARCH_IRQBUTTONS
+	---help---
+		Enable PM button EXTI interrupts to support PM testing
+
+config PM_BUTTON_ACTIVITY
+	int "Button PM activity weight"
+	default 10
+	depends on PM_BUTTONS
+	---help---
+		The activity weight to report to the power management subsystem when
+		a button is pressed.
+
+config PM_ALARM_SEC
+	int "PM_STANDBY delay (seconds)"
+	default 15
+	depends on PM && RTC_ALARM
+	---help---
+		Number of seconds to wait in PM_STANDBY before going to PM_STANDBY
+		mode.
+
+config PM_ALARM_NSEC
+	int "PM_STANDBY delay (nanoseconds)"
+	default 0
+	depends on PM && RTC_ALARM
+	---help---
+		Number of additional nanoseconds to wait in PM_STANDBY before going
+		to PM_STANDBY mode.
+
+config PM_SLEEP_WAKEUP
+	bool "PM_SLEEP wake-up alarm"
+	default n
+	depends on PM && RTC_ALARM
+	---help---
+		Wake-up of PM_SLEEP mode after a delay and resume normal operation.
+
+config PM_SLEEP_WAKEUP_SEC
+	int "PM_SLEEP delay (seconds)"
+	default 10
+	depends on PM && RTC_ALARM
+	---help---
+		Number of seconds to wait in PM_SLEEP before going to PM_STANDBY mode.
+
+config PM_SLEEP_WAKEUP_NSEC
+	int "PM_SLEEP delay (nanoseconds)"
+	default 0
+	depends on PM && RTC_ALARM
+	---help---
+		Number of additional nanoseconds to wait in PM_SLEEP before going to
+		PM_STANDBY mode.
+
+if INPUT_KMATRIX_I2C
+
+config STM32_KMATRIX_I2C_BUS
+	int "I2C Bus Number"
+	default 1
+	---help---
+		I2C bus number to use for the keyboard matrix GPIO expander.
+		Common values: 1 or 2 (depends on available I2C interfaces).
+
+config STM32_KMATRIX_I2C_ADDR
+	hex "I2C Slave Address of GPIO Expander"
+	default 0x20
+	---help---
+		I2C slave address of the GPIO expander (PCF8574 or MCP23017).
+		PCF8574/MCP23017 default addresses (7-bit):
+		  0x20-0x27: varies with A0-A2 pins (default is 0x20)
+
+endif # INPUT_KMATRIX_I2C
+
+endif

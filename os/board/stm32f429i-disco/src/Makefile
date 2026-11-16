@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2018 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
+###########################################################################
 ############################################################################
-############################################################################
-# os/board/stm32f429i-disco/src/Makefile
+# board/stm32f429i-disco/src/Makefile
 #
-#   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,13 +51,11 @@
 ############################################################################
 
 -include $(TOPDIR)/Make.defs
-
-CFLAGS += -I$(TOPDIR)/kernel
-
 ASRCS =
-AOBJS = $(ASRCS:.S=$(OBJEXT))
+DEPPATH = --dep-path .
+VPATH = .
 
-CSRCS = stm32_boot.c stm32_spi.c
+CSRCS = stm32_boot.c stm32_bringup.c stm32_spi.c
 
 ifeq ($(CONFIG_ARCH_LEDS),y)
 CSRCS += stm32_autoleds.c
@@ -69,16 +67,24 @@ ifeq ($(CONFIG_ARCH_BUTTONS),y)
 CSRCS +=  stm32_buttons.c
 endif
 
+ifeq ($(CONFIG_BOARDCTL),y)
+CSRCS += stm32_appinit.c
+endif
+
 ifeq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
 CSRCS += stm32_idle.c
 endif
 
-ifeq ($(CONFIG_STM32_FSMC),y)
+ifeq ($(CONFIG_STM32_FMC),y)
 CSRCS += stm32_extmem.c
 endif
 
 ifeq ($(CONFIG_STM32_OTGHS),y)
 CSRCS += stm32_usb.c
+endif
+
+ifeq ($(CONFIG_INPUT_STMPE811),y)
+CSRCS += stm32_stmpe811.c
 endif
 
 ifeq ($(CONFIG_STM32F429I_DISCO_ILI9341),y)
@@ -92,47 +98,53 @@ ifeq ($(and \
 CSRCS += stm32_lcd.c
 endif
 
-ifeq ($(CONFIG_ARCH_FPU),y)
-CSRCS += stm32_ostest.c
+ifeq ($(CONFIG_PWM),y)
+CSRCS += stm32_pwm.c
 endif
 
+ifeq ($(CONFIG_ADC),y)
+CSRCS += stm32_adc.c
+endif
+
+ifeq ($(CONFIG_STM32_CAN_CHARDRIVER),y)
+CSRCS += stm32_can.c
+endif
+
+ifeq ($(CONFIG_STM32F429I_DISCO_HIGHPRI),y)
+CSRCS += stm32_highpri.c
+endif
+
+
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+CFLAGS += -I$(TOPDIR)/kernel -I$(TOPDIR)/arch/arm/src/common -I$(TOPDIR)/arch/arm/src/chip -I$(TOPDIR)/arch/arm/src/$(ARCH_FAMILY)
+AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  CFLAGS += -I$(ARCH_SRCDIR)\chip -I$(ARCH_SRCDIR)\common -I$(ARCH_SRCDIR)\armv7-m
-else
-ifeq ($(WINTOOL),y)
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}" \
-			-I "${shell cygpath -w $(ARCH_SRCDIR)/common}" \
-			-I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
-else
-  CFLAGS += -I$(ARCH_SRCDIR)/chip -I$(ARCH_SRCDIR)/common -I$(ARCH_SRCDIR)/armv7-m
-endif
-endif
+BIN = libboard$(LIBEXT)
 
-all: libboard$(LIBEXT)
+all: $(BIN)
+.PHONY: context depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
+$(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-libboard$(LIBEXT): $(OBJS)
+$(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
 
 clean:
-	$(call DELFILE, libboard$(LIBEXT))
+	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
 distclean: clean
@@ -140,3 +152,5 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
+
+context:

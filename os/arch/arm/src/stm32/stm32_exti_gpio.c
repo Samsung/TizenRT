@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,37 +18,22 @@
 /****************************************************************************
  * arch/arm/src/stm32/stm32_exti_gpio.c
  *
- *   Copyright (C) 2009, 2011-2012, 2015 Gregory Nutt. All rights reserved.
- *   Copyright (C) 2011 Uros Platise. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *           Uros Platise <uros.platise@isotel.eu>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -67,10 +52,19 @@
 
 #include <arch/irq.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "chip.h"
 #include "stm32_gpio.h"
 #include "stm32_exti.h"
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct gpio_callback_s {
+	xcpt_t callback;
+	void  *arg;
+};
 
 /****************************************************************************
  * Private Data
@@ -78,21 +72,17 @@
 
 /* Interrupt handlers attached to each EXTI */
 
-static xcpt_t stm32_exti_callbacks[16];
+static struct gpio_callback_s g_gpio_callbacks[16];
 
 /****************************************************************************
- * Public Data
+ * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
-* Private Functions
-****************************************************************************/
 
 /****************************************************************************
  * Interrupt Service Routines - Dispatchers
  ****************************************************************************/
 
-static int stm32_exti0_isr(int irq, void *context)
+static int stm32_exti0_isr(int irq, void *context, void *arg)
 {
 	int ret = OK;
 
@@ -102,14 +92,17 @@ static int stm32_exti0_isr(int irq, void *context)
 
 	/* And dispatch the interrupt to the handler */
 
-	if (stm32_exti_callbacks[0]) {
-		ret = stm32_exti_callbacks[0](irq, context, NULL);
+	if (g_gpio_callbacks[0].callback != NULL) {
+		xcpt_t callback = g_gpio_callbacks[0].callback;
+		void  *cbarg    = g_gpio_callbacks[0].arg;
+
+		ret = callback(irq, context, cbarg);
 	}
 
 	return ret;
 }
 
-static int stm32_exti1_isr(int irq, void *context)
+static int stm32_exti1_isr(int irq, void *context, void *arg)
 {
 	int ret = OK;
 
@@ -119,14 +112,17 @@ static int stm32_exti1_isr(int irq, void *context)
 
 	/* And dispatch the interrupt to the handler */
 
-	if (stm32_exti_callbacks[1]) {
-		ret = stm32_exti_callbacks[1](irq, context, NULL);
+	if (g_gpio_callbacks[1].callback != NULL) {
+		xcpt_t callback = g_gpio_callbacks[1].callback;
+		void  *cbarg    = g_gpio_callbacks[1].arg;
+
+		ret = callback(irq, context, cbarg);
 	}
 
 	return ret;
 }
 
-static int stm32_exti2_isr(int irq, void *context)
+static int stm32_exti2_isr(int irq, void *context, void *arg)
 {
 	int ret = OK;
 
@@ -136,14 +132,17 @@ static int stm32_exti2_isr(int irq, void *context)
 
 	/* And dispatch the interrupt to the handler */
 
-	if (stm32_exti_callbacks[2]) {
-		ret = stm32_exti_callbacks[2](irq, context, NULL);
+	if (g_gpio_callbacks[2].callback != NULL) {
+		xcpt_t callback = g_gpio_callbacks[2].callback;
+		void  *cbarg    = g_gpio_callbacks[2].arg;
+
+		ret = callback(irq, context, cbarg);
 	}
 
 	return ret;
 }
 
-static int stm32_exti3_isr(int irq, void *context)
+static int stm32_exti3_isr(int irq, void *context, void  *arg)
 {
 	int ret = OK;
 
@@ -153,14 +152,17 @@ static int stm32_exti3_isr(int irq, void *context)
 
 	/* And dispatch the interrupt to the handler */
 
-	if (stm32_exti_callbacks[3]) {
-		ret = stm32_exti_callbacks[3](irq, context, NULL);
+	if (g_gpio_callbacks[3].callback != NULL) {
+		xcpt_t callback = g_gpio_callbacks[3].callback;
+		void  *cbarg    = g_gpio_callbacks[3].arg;
+
+		ret = callback(irq, context, cbarg);
 	}
 
 	return ret;
 }
 
-static int stm32_exti4_isr(int irq, void *context)
+static int stm32_exti4_isr(int irq, void *context, void *arg)
 {
 	int ret = OK;
 
@@ -170,14 +172,18 @@ static int stm32_exti4_isr(int irq, void *context)
 
 	/* And dispatch the interrupt to the handler */
 
-	if (stm32_exti_callbacks[4]) {
-		ret = stm32_exti_callbacks[4](irq, context, NULL);
+	if (g_gpio_callbacks[4].callback != NULL) {
+		xcpt_t callback = g_gpio_callbacks[4].callback;
+		void  *cbarg    = g_gpio_callbacks[4].arg;
+
+		ret = callback(irq, context, cbarg);
 	}
 
 	return ret;
 }
 
-static int stm32_exti_multiisr(int irq, void *context, int first, int last)
+static int stm32_exti_multiisr(int irq, void *context, void *arg,
+                               int first, int last)
 {
 	uint32_t pr;
 	int pin;
@@ -200,9 +206,13 @@ static int stm32_exti_multiisr(int irq, void *context, int first, int last)
 
 			/* And dispatch the interrupt to the handler */
 
-			if (stm32_exti_callbacks[pin]) {
-				int tmp = stm32_exti_callbacks[pin](irq, context, NULL);
-				if (tmp != OK) {
+			if (g_gpio_callbacks[pin].callback != NULL) {
+				xcpt_t callback = g_gpio_callbacks[pin].callback;
+				void  *cbarg    = g_gpio_callbacks[pin].arg;
+				int tmp;
+
+				tmp = callback(irq, context, cbarg);
+				if (tmp < 0) {
 					ret = tmp;
 				}
 			}
@@ -212,14 +222,14 @@ static int stm32_exti_multiisr(int irq, void *context, int first, int last)
 	return ret;
 }
 
-static int stm32_exti95_isr(int irq, void *context)
+static int stm32_exti95_isr(int irq, void *context, void *arg)
 {
-	return stm32_exti_multiisr(irq, context, 5, 9);
+	return stm32_exti_multiisr(irq, context, arg, 5, 9);
 }
 
-static int stm32_exti1510_isr(int irq, void *context)
+static int stm32_exti1510_isr(int irq, void *context, void *arg)
 {
-	return stm32_exti_multiisr(irq, context, 10, 15);
+	return stm32_exti_multiisr(irq, context, arg, 10, 15);
 }
 
 /****************************************************************************
@@ -232,36 +242,37 @@ static int stm32_exti1510_isr(int irq, void *context)
  * Description:
  *   Sets/clears GPIO based event and interrupt triggers.
  *
- * Parameters:
- *  - pinset: gpio pin configuration
- *  - rising/falling edge: enables
- *  - event:  generate event when set
- *  - func:   when non-NULL, generate interrupt
+ * Input Parameters:
+ *  - pinset:      GPIO pin configuration
+ *  - risingedge:  Enables interrupt on rising edges
+ *  - fallingedge: Enables interrupt on falling edges
+ *  - event:       Generate event when set
+ *  - func:        When non-NULL, generate interrupt
+ *  - arg:         Argument passed to the interrupt callback
  *
- * Returns:
- *  The previous value of the interrupt handler function pointer.  This value may,
- *  for example, be used to restore the previous handler when multiple handlers are
- *  used.
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure indicating the
+ *   nature of the failure.
  *
  ****************************************************************************/
 
-xcpt_t stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge, bool event, xcpt_t func)
+int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+                       bool event, xcpt_t func, void *arg)
 {
+	struct gpio_callback_s *shared_cbs;
 	uint32_t pin = pinset & GPIO_PIN_MASK;
 	uint32_t exti = STM32_EXTI_BIT(pin);
-	int irq;
-	xcpt_t handler;
-	xcpt_t oldhandler = NULL;
-	int nshared;
-	xcpt_t *shared_cbs;
-	int i;
+	int      irq;
+	xcpt_t   handler;
+	int      nshared;
+	int      i;
 
 	/* Select the interrupt handler for this EXTI pin */
 
 	if (pin < 5) {
-		irq = pin + STM32_IRQ_EXTI0;
-		nshared = 1;
-		shared_cbs = &stm32_exti_callbacks[pin];
+		irq        = pin + STM32_IRQ_EXTI0;
+		nshared    = 1;
+		shared_cbs = &g_gpio_callbacks[pin];
 		switch (pin) {
 		case 0:
 			handler = stm32_exti0_isr;
@@ -284,21 +295,21 @@ xcpt_t stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge, bo
 			break;
 		}
 	} else if (pin < 10) {
-		irq = STM32_IRQ_EXTI95;
-		handler = stm32_exti95_isr;
-		shared_cbs = &stm32_exti_callbacks[5];
-		nshared = 5;
+		irq        = STM32_IRQ_EXTI95;
+		handler    = stm32_exti95_isr;
+		shared_cbs = &g_gpio_callbacks[5];
+		nshared    = 5;
 	} else {
-		irq = STM32_IRQ_EXTI1510;
-		handler = stm32_exti1510_isr;
-		shared_cbs = &stm32_exti_callbacks[10];
-		nshared = 6;
+		irq        = STM32_IRQ_EXTI1510;
+		handler    = stm32_exti1510_isr;
+		shared_cbs = &g_gpio_callbacks[10];
+		nshared    = 6;
 	}
 
 	/* Get the previous GPIO IRQ handler; Save the new IRQ handler. */
 
-	oldhandler = stm32_exti_callbacks[pin];
-	stm32_exti_callbacks[pin] = func;
+	g_gpio_callbacks[pin].callback = func;
+	g_gpio_callbacks[pin].arg      = arg;
 
 	/* Install external interrupt handlers */
 
@@ -311,7 +322,7 @@ xcpt_t stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge, bo
 		 */
 
 		for (i = 0; i < nshared; i++) {
-			if (shared_cbs[i] != NULL) {
+			if (shared_cbs[i].callback != NULL) {
 				break;
 			}
 		}
@@ -333,15 +344,21 @@ xcpt_t stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge, bo
 
 	/* Configure rising/falling edges */
 
-	modifyreg32(STM32_EXTI_RTSR, risingedge ? 0 : exti, risingedge ? exti : 0);
-	modifyreg32(STM32_EXTI_FTSR, fallingedge ? 0 : exti, fallingedge ? exti : 0);
+	modifyreg32(STM32_EXTI_RTSR,
+	            risingedge ? 0 : exti,
+	            risingedge ? exti : 0);
+	modifyreg32(STM32_EXTI_FTSR,
+	            fallingedge ? 0 : exti,
+	            fallingedge ? exti : 0);
 
 	/* Enable Events and Interrupts */
 
-	modifyreg32(STM32_EXTI_EMR, event ? 0 : exti, event ? exti : 0);
-	modifyreg32(STM32_EXTI_IMR, func ? 0 : exti, func ? exti : 0);
+	modifyreg32(STM32_EXTI_EMR,
+	            event ? 0 : exti,
+	            event ? exti : 0);
+	modifyreg32(STM32_EXTI_IMR,
+	            func ? 0 : exti,
+	            func ? exti : 0);
 
-	/* Return the old IRQ handler */
-
-	return oldhandler;
+	return OK;
 }

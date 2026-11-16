@@ -1,8 +1,25 @@
-/************************************************************************************
- * arch/arm/src/stm32/stm32l4_comp.h
+/****************************************************************************
  *
- * Copyright (c) 2016 Motorola Mobility, LLC.
- * All rights reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * arch/arm/src/stm32l4/stm32l4_comp.h
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2016 Motorola Mobility LLC. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,137 +48,127 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_STM32L4_STM32L4_COMP_H
 #define __ARCH_ARM_SRC_STM32L4_STM32L4_COMP_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include <stdbool.h>
 
-#include "chip/stm32l4_comp.h"
+#include "hardware/stm32l4_comp.h"
 
-/************************************************************************************
+/****************************************************************************
  * Public Types
- ************************************************************************************/
+ ****************************************************************************/
 
 #if defined(CONFIG_STM32L4_STM32L4X3)
 
 /* Comparators */
 
-enum stm32l4_comp_e
-{
-  STM32L4_COMP1,
-  STM32L4_COMP2,
-  STM32L4_COMP_NUM          /* Number of comparators */
+enum stm32l4_comp_e {
+	STM32L4_COMP1,
+	STM32L4_COMP2,
+	STM32L4_COMP_NUM          /* Number of comparators */
 };
 
 /* Plus input */
 
-enum stm32l4_comp_inp_e
-{
-  STM32L4_COMP_INP_PIN_1,   /* COMP1: PC5, COMP2: PB4 */
-  STM32L4_COMP_INP_PIN_2,   /* COMP1: PB2, COMP2: PB6 */
-  STM32L4_COMP_INP_PIN_3    /* COMP1: PA1, COMP2: PA3 */
+enum stm32l4_comp_inp_e {
+	STM32L4_COMP_INP_PIN_1,   /* COMP1: PC5, COMP2: PB4 */
+	STM32L4_COMP_INP_PIN_2,   /* COMP1: PB2, COMP2: PB6 */
+	STM32L4_COMP_INP_PIN_3    /* COMP1: PA1, COMP2: PA3 */
 };
 
 /* Minus input */
 
-enum stm32l4_comp_inm_e
-{
-  STM32L4_COMP_INM_1_4_VREF,
-  STM32L4_COMP_INM_1_2_VREF,
-  STM32L4_COMP_INM_3_4_VREF,
-  STM32L4_COMP_INM_VREF,
-  STM32L4_COMP_INM_DAC_1,
-  STM32L4_COMP_INM_DAC_2,
-  STM32L4_COMP_INM_PIN_1,   /* COMP1: PB1, COMP2: PB3 */
-  STM32L4_COMP_INM_PIN_2,   /* COMP1: PC4, COMP2: PB7 */
-  STM32L4_COMP_INM_PIN_3,   /* COMP1: PA0, COMP2: PA2 */
-  STM32L4_COMP_INM_PIN_4,   /* COMP1: PA4, COMP2: PA4 */
-  STM32L4_COMP_INM_PIN_5    /* COMP1: PA5, COMP2: PA5 */
+enum stm32l4_comp_inm_e {
+	STM32L4_COMP_INM_1_4_VREF,
+	STM32L4_COMP_INM_1_2_VREF,
+	STM32L4_COMP_INM_3_4_VREF,
+	STM32L4_COMP_INM_VREF,
+	STM32L4_COMP_INM_DAC_1,
+	STM32L4_COMP_INM_DAC_2,
+	STM32L4_COMP_INM_PIN_1,   /* COMP1: PB1, COMP2: PB3 */
+	STM32L4_COMP_INM_PIN_2,   /* COMP1: PC4, COMP2: PB7 */
+	STM32L4_COMP_INM_PIN_3,   /* COMP1: PA0, COMP2: PA2 */
+	STM32L4_COMP_INM_PIN_4,   /* COMP1: PA4, COMP2: PA4 */
+	STM32L4_COMP_INM_PIN_5    /* COMP1: PA5, COMP2: PA5 */
 };
 
 #else
 
 /* Comparators */
 
-enum stm32l4_comp_e
-{
-  STM32L4_COMP1,
-  STM32L4_COMP2,
-  STM32L4_COMP_NUM          /* Number of comparators */
+enum stm32l4_comp_e {
+	STM32L4_COMP1,
+	STM32L4_COMP2,
+	STM32L4_COMP_NUM          /* Number of comparators */
 };
 
 /* Plus input */
 
-enum stm32l4_comp_inp_e
-{
-  STM32L4_COMP_INP_PIN_1,   /* COMP1: PC5, COMP2: PB4 */
-  STM32L4_COMP_INP_PIN_2    /* COMP1: PB2, COMP2: PB6 */
+enum stm32l4_comp_inp_e {
+	STM32L4_COMP_INP_PIN_1,   /* COMP1: PC5, COMP2: PB4 */
+	STM32L4_COMP_INP_PIN_2    /* COMP1: PB2, COMP2: PB6 */
 };
 
 /* Minus input */
 
-enum stm32l4_comp_inm_e
-{
-  STM32L4_COMP_INM_1_4_VREF,
-  STM32L4_COMP_INM_1_2_VREF,
-  STM32L4_COMP_INM_3_4_VREF,
-  STM32L4_COMP_INM_VREF,
-  STM32L4_COMP_INM_DAC_1,
-  STM32L4_COMP_INM_DAC_2,
-  STM32L4_COMP_INM_PIN_1,   /* COMP1: PB1, COMP2: PB3 */
-  STM32L4_COMP_INM_PIN_2    /* COMP1: PC4, COMP2: PB7 */
+enum stm32l4_comp_inm_e {
+	STM32L4_COMP_INM_1_4_VREF,
+	STM32L4_COMP_INM_1_2_VREF,
+	STM32L4_COMP_INM_3_4_VREF,
+	STM32L4_COMP_INM_VREF,
+	STM32L4_COMP_INM_DAC_1,
+	STM32L4_COMP_INM_DAC_2,
+	STM32L4_COMP_INM_PIN_1,   /* COMP1: PB1, COMP2: PB3 */
+	STM32L4_COMP_INM_PIN_2    /* COMP1: PC4, COMP2: PB7 */
 };
 #endif
 
 /* Hysteresis */
 
-enum stm32l4_comp_hyst_e
-{
-  STM32L4_COMP_HYST_NONE,
-  STM32L4_COMP_HYST_LOW,
-  STM32L4_COMP_HYST_MEDIUM,
-  STM32L4_COMP_HYST_HIGH
+enum stm32l4_comp_hyst_e {
+	STM32L4_COMP_HYST_NONE,
+	STM32L4_COMP_HYST_LOW,
+	STM32L4_COMP_HYST_MEDIUM,
+	STM32L4_COMP_HYST_HIGH
 };
 
 /* Power/Speed Modes */
 
-enum stm32l4_comp_speed_e
-{
-  STM32L4_COMP_SPEED_HIGH,
-  STM32L4_COMP_SPEED_MEDIUM,
-  STM32L4_COMP_SPEED_LOW
+enum stm32l4_comp_speed_e {
+	STM32L4_COMP_SPEED_HIGH,
+	STM32L4_COMP_SPEED_MEDIUM,
+	STM32L4_COMP_SPEED_LOW
 };
 
-/* Comparator configuration ***********************************************************/
+/* Comparator configuration *************************************************/
 
-struct stm32l4_comp_config_s
-{
-  struct
-  {
-    FAR const struct comp_callback_s *cb;
-    bool                              rising;
-    bool                              falling;
-  } interrupt;
+struct stm32l4_comp_config_s {
+	struct {
+		const struct comp_callback_s *cb;
+		bool                          rising;
+		bool                          falling;
+	} interrupt;
 
-  uint8_t  inp;                 /* Plus input pin (see enum stm32l4_comp_inp_e) */
-  uint8_t  inm;                 /* Minus input pin (see enum stm32l4_comp_inm_e) */
-  uint8_t  hyst;                /* Hysteresis (see enum stm32l4_comp_hyst_e) */
-  uint8_t  speed;               /* Speed (see stm32l4_comp_speed_e) */
-  bool     inverted;            /* Invert output? */
-  uint32_t csr;                 /* Control and status register */
+	uint8_t  inp;                 /* Plus input pin (see enum stm32l4_comp_inp_e) */
+	uint8_t  inm;                 /* Minus input pin (see enum stm32l4_comp_inm_e) */
+	uint8_t  hyst;                /* Hysteresis (see enum stm32l4_comp_hyst_e) */
+	uint8_t  speed;               /* Speed (see stm32l4_comp_speed_e) */
+	bool     inverted;            /* Invert output? */
+	uint32_t csr;                 /* Control and status register */
 };
 
-/************************************************************************************
+/****************************************************************************
  * Public Function Prototypes
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ASSEMBLY__
 #ifdef __cplusplus
@@ -191,8 +198,9 @@ extern "C"
  *
  ****************************************************************************/
 
-FAR struct comp_dev_s* stm32l4_compinitialize(int intf,
-                                              FAR const struct stm32l4_comp_config_s *cfg);
+struct
+comp_dev_s *stm32l4_compinitialize(int intf,
+                                   const struct stm32l4_comp_config_s *cfg);
 
 #undef EXTERN
 #ifdef __cplusplus

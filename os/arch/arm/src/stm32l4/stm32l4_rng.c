@@ -1,36 +1,39 @@
 /****************************************************************************
- * arch/arm/src/stm32/stm32l4_rng.c
  *
- *   Copyright (C) 2012 Max Holtzberg. All rights reserved.
- *   Author: Max Holtzberg <mh@uvc.de>
- *   mods for STL32L4 port by dev@ziggurat29.com
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * arch/arm/src/stm32l4/stm32l4_rng.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -47,13 +50,13 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/mutex.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/drivers/drivers.h>
 
-#include "up_arch.h"
-#include "chip/stm32l4_rng.h"
-#include "up_internal.h"
+#include "hardware/stm32l4_rng.h"
+#include "arm_internal.h"
 
 #if defined(CONFIG_STM32L4_RNG)
 #if defined(CONFIG_DEV_RANDOM) || defined(CONFIG_DEV_URANDOM_ARCH)
@@ -63,7 +66,7 @@
  ****************************************************************************/
 
 static int stm32l4_rng_initialize(void);
-static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg);
+static int stm32l4_rnginterrupt(int irq, void *context, void *arg);
 static void stm32l4_rngenable(void);
 static void stm32l4_rngdisable(void);
 static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t);
@@ -72,35 +75,30 @@ static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t);
  * Private Types
  ****************************************************************************/
 
-struct rng_dev_s
-{
-  sem_t rd_devsem;      /* Threads can only exclusively access the RNG */
-  sem_t rd_readsem;     /* To block until the buffer is filled  */
-  char *rd_buf;
-  size_t rd_buflen;
-  uint32_t rd_lastval;
-  bool rd_first;
+struct rng_dev_s {
+	mutex_t rd_devlock;   /* Threads can only exclusively access the RNG */
+	sem_t rd_readsem;     /* To block until the buffer is filled  */
+	char *rd_buf;
+	size_t rd_buflen;
+	uint32_t rd_lastval;
+	bool rd_first;
 };
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static struct rng_dev_s g_rngdev;
+static struct rng_dev_s g_rngdev =
+{
+  .rd_devlock = NXMUTEX_INITIALIZER,
+  .rd_readsem = SEM_INITIALIZER(0),
+};
 
 static const struct file_operations g_rngops =
 {
   NULL,            /* open */
   NULL,            /* close */
   stm32l4_rngread, /* read */
-  NULL,            /* write */
-  NULL,            /* seek */
-  NULL,            /* ioctl */
-  NULL             /* poll */
-#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
-  , 0              /* unlink */
-#endif
-
 };
 
 /****************************************************************************
@@ -109,185 +107,164 @@ static const struct file_operations g_rngops =
 
 static int stm32l4_rng_initialize(void)
 {
-  _info("Initializing RNG\n");
+	_info("Initializing RNG\n");
 
-  memset(&g_rngdev, 0, sizeof(struct rng_dev_s));
+	if (irq_attach(STM32L4_IRQ_RNG, stm32l4_rnginterrupt, NULL)) {
+		/* We could not attach the ISR to the interrupt */
 
-  nxsem_init(&g_rngdev.rd_devsem, 0, 1);
+		_info("Could not attach IRQ.\n");
 
-  if (irq_attach(STM32L4_IRQ_RNG, stm32l4_rnginterrupt, NULL))
-    {
-      /* We could not attach the ISR to the interrupt */
+		return -EAGAIN;
+	}
 
-      _info("Could not attach IRQ.\n");
-
-      return -EAGAIN;
-    }
-
-  return OK;
+	return OK;
 }
 
 static void stm32l4_rngenable(void)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  g_rngdev.rd_first = true;
+	g_rngdev.rd_first = true;
 
-  /* Enable generation and interrupts */
+	/* Enable generation and interrupts */
 
-  regval  = getreg32(STM32L4_RNG_CR);
-  regval |= RNG_CR_RNGEN;
-  regval |= RNG_CR_IE;
-  putreg32(regval, STM32L4_RNG_CR);
+	regval  = getreg32(STM32L4_RNG_CR);
+	regval |= RNG_CR_RNGEN;
+	regval |= RNG_CR_IE;
+	putreg32(regval, STM32L4_RNG_CR);
 
-  up_enable_irq(STM32L4_IRQ_RNG);
+	up_enable_irq(STM32L4_IRQ_RNG);
 }
 
 static void stm32l4_rngdisable(void)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  up_disable_irq(STM32L4_IRQ_RNG);
+	up_disable_irq(STM32L4_IRQ_RNG);
 
-  regval  =  getreg32(STM32L4_RNG_CR);
-  regval &= ~RNG_CR_IE;
-  regval &= ~RNG_CR_RNGEN;
-  putreg32(regval, STM32L4_RNG_CR);
+	regval  = getreg32(STM32L4_RNG_CR);
+	regval &= ~RNG_CR_IE;
+	regval &= ~RNG_CR_RNGEN;
+	putreg32(regval, STM32L4_RNG_CR);
 }
 
-static int stm32l4_rnginterrupt(int irq, void *context, FAR void *arg)
+static int stm32l4_rnginterrupt(int irq, void *context, void *arg)
 {
-  uint32_t rngsr;
-  uint32_t data;
+	uint32_t rngsr;
+	uint32_t data;
 
-  rngsr = getreg32(STM32L4_RNG_SR);
-  if (rngsr & RNG_SR_CEIS) /* Check for clock error int stat */
-    {
-      /* Clear it, we will try again. */
+	rngsr = getreg32(STM32L4_RNG_SR);
+	if (rngsr & RNG_SR_CEIS) /* Check for clock error int stat */ {
+		/* Clear it, we will try again. */
 
-      putreg32(rngsr & ~RNG_SR_CEIS, STM32L4_RNG_SR);
-      return OK;
-    }
+		putreg32(rngsr & ~RNG_SR_CEIS, STM32L4_RNG_SR);
+		return OK;
+	}
 
-  if (rngsr & RNG_SR_SEIS) /* Check for seed error in int stat */
-    {
-      uint32_t crval;
+	if (rngsr & RNG_SR_SEIS) /* Check for seed error in int stat */ {
+		uint32_t crval;
 
-      /* Clear seed error, then disable/enable the rng and try again. */
+		/* Clear seed error, then disable/enable the rng and try again. */
 
-      putreg32(rngsr & ~RNG_SR_SEIS, STM32L4_RNG_SR);
-      crval = getreg32(STM32L4_RNG_CR);
-      crval &= ~RNG_CR_RNGEN;
-      putreg32(crval, STM32L4_RNG_CR);
-      crval |= RNG_CR_RNGEN;
-      putreg32(crval, STM32L4_RNG_CR);
-      return OK;
-    }
+		putreg32(rngsr & ~RNG_SR_SEIS, STM32L4_RNG_SR);
+		crval = getreg32(STM32L4_RNG_CR);
+		crval &= ~RNG_CR_RNGEN;
+		putreg32(crval, STM32L4_RNG_CR);
+		crval |= RNG_CR_RNGEN;
+		putreg32(crval, STM32L4_RNG_CR);
+		return OK;
+	}
 
-  if (!(rngsr & RNG_SR_DRDY)) /* Data ready must be set */
-    {
-      /* This random value is not valid, we will try again. */
+	if (!(rngsr & RNG_SR_DRDY)) /* Data ready must be set */ {
+		/* This random value is not valid, we will try again. */
 
-      return OK;
-    }
+		return OK;
+	}
 
-  data = getreg32(STM32L4_RNG_DR);
+	data = getreg32(STM32L4_RNG_DR);
 
-  /* As required by the FIPS PUB (Federal Information Processing Standard
-   * Publication) 140-2, the first random number generated after setting the
-   * RNGEN bit should not be used, but saved for comparison with the next
-   * generated random number. Each subsequent generated random number has to be
-   * compared with the previously generated number. The test fails if any two
-   * compared numbers are equal (continuous random number generator test).
-   */
+	/* As required by the FIPS PUB (Federal Information Processing Standard
+	 * Publication) 140-2, the first random number generated after setting the
+	 * RNGEN bit should not be used, but saved for comparison with the next
+	 * generated random number. Each subsequent generated random number has to
+	 * be compared with the previously generated number. The test fails if any
+	 * two compared numbers are equal
+	 * (continuous random number generator test).
+	 */
 
-  if (g_rngdev.rd_first)
-    {
-      g_rngdev.rd_first = false;
-      g_rngdev.rd_lastval = data;
-      return OK;
-    }
+	if (g_rngdev.rd_first) {
+		g_rngdev.rd_first = false;
+		g_rngdev.rd_lastval = data;
+		return OK;
+	}
 
-  if (g_rngdev.rd_lastval == data)
-    {
-      /* Two subsequent same numbers, we will try again. */
+	if (g_rngdev.rd_lastval == data) {
+		/* Two subsequent same numbers, we will try again. */
 
-      return OK;
-    }
+		return OK;
+	}
 
-  /* If we get here, the random number is valid. */
+	/* If we get here, the random number is valid. */
 
-  g_rngdev.rd_lastval = data;
+	g_rngdev.rd_lastval = data;
 
-  if (g_rngdev.rd_buflen >= 4)
-    {
-      g_rngdev.rd_buflen -= 4;
-      *(uint32_t *)&g_rngdev.rd_buf[g_rngdev.rd_buflen] = data;
-    }
-  else
-    {
-      while (g_rngdev.rd_buflen > 0)
-        {
-          g_rngdev.rd_buf[--g_rngdev.rd_buflen] = (char)data;
-          data >>= 8;
-        }
-    }
+	if (g_rngdev.rd_buflen >= 4) {
+		g_rngdev.rd_buflen -= 4;
+		*(uint32_t *)&g_rngdev.rd_buf[g_rngdev.rd_buflen] = data;
+	} else {
+		while (g_rngdev.rd_buflen > 0) {
+			g_rngdev.rd_buf[--g_rngdev.rd_buflen] = (char)data;
+			data >>= 8;
+		}
+	}
 
-  if (g_rngdev.rd_buflen == 0)
-    {
-      /* Buffer filled, stop further interrupts. */
+	if (g_rngdev.rd_buflen == 0) {
+		/* Buffer filled, stop further interrupts. */
 
-      stm32l4_rngdisable();
-      nxsem_post(&g_rngdev.rd_readsem);
-    }
+		stm32l4_rngdisable();
+		nxsem_post(&g_rngdev.rd_readsem);
+	}
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
  * Name: stm32l4_rngread
  ****************************************************************************/
 
-static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
+static ssize_t stm32l4_rngread(struct file *filep,
+                               char *buffer, size_t buflen)
 {
-  int ret;
+	int ret;
 
-  ret = nxsem_wait(&g_rngdev.rd_devsem);
-  if (ret < 0)
-    {
-      return ret;
-    }
+	ret = nxmutex_lock(&g_rngdev.rd_devlock);
+	if (ret < 0) {
+		return ret;
+	}
 
-  /* We've got the device semaphore, proceed with reading */
+	/* We've got the device semaphore, proceed with reading */
 
-  /* Initialize the operation semaphore with 0 for blocking until the
-   * buffer is filled from interrupts.  The readsem semaphore is used
-   * for signaling and, hence, should not have priority inheritance
-   * enabled.
-   */
+	/* Reset the operation semaphore with 0 for blocking until the
+	 * buffer is filled from interrupts.
+	 */
 
-  nxsem_init(&g_rngdev.rd_readsem, 0, 0);
-  nxsem_setprotocol(&g_rngdev.rd_readsem, SEM_PRIO_NONE);
+	nxsem_reset(&g_rngdev.rd_readsem, 0);
 
-  g_rngdev.rd_buflen = buflen;
-  g_rngdev.rd_buf = buffer;
+	g_rngdev.rd_buflen = buflen;
+	g_rngdev.rd_buf = buffer;
 
-  /* Enable RNG with interrupts */
+	/* Enable RNG with interrupts */
 
-  stm32l4_rngenable();
+	stm32l4_rngenable();
 
-  /* Wait until the buffer is filled */
+	/* Wait until the buffer is filled */
 
-  nxsem_wait(&g_rngdev.rd_readsem);
+	nxsem_wait(&g_rngdev.rd_readsem);
 
-  /* Done with the operation semaphore */
+	/* Free RNG via the device mutex for next use */
 
-  nxsem_destroy(&g_rngdev.rd_readsem);
-
-  /* Free RNG via the device semaphore for next use */
-
-  nxsem_post(&g_rngdev.rd_devsem);
-  return buflen;
+	nxmutex_unlock(&g_rngdev.rd_devlock);
+	return buflen;
 }
 
 /****************************************************************************
@@ -312,8 +289,8 @@ static ssize_t stm32l4_rngread(struct file *filep, char *buffer, size_t buflen)
 #ifdef CONFIG_DEV_RANDOM
 void devrandom_register(void)
 {
-  stm32l4_rng_initialize();
-  (void)register_driver("/dev/random", &g_rngops, 0444, NULL);
+	stm32l4_rng_initialize();
+	register_driver("/dev/random", &g_rngops, 0444, NULL);
 }
 #endif
 
@@ -335,9 +312,9 @@ void devrandom_register(void)
 void devurandom_register(void)
 {
 #ifndef CONFIG_DEV_RANDOM
-  stm32l4_rng_initialize();
+	stm32l4_rng_initialize();
 #endif
-  (void)register_driver("/dev/urandom", &g_rngops, 0444, NULL);
+	register_driver("/dev/urandom", &g_rngops, 0444, NULL);
 }
 #endif
 

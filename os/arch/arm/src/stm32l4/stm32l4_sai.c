@@ -1,9 +1,27 @@
 /****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * arch/arm/src/stm32l4/stm32l4_sai.c
  *
- *   Copyright (C) 2013-2014, 2017 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
- *   Copyright (c) 2016 Motorola Mobility, LLC. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2017 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2016 Motorola Mobility LLC. All rights reserved.
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,19 +61,20 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <semaphore.h>
 #include <errno.h>
 #include <assert.h>
-#include <queue.h>
 #include <debug.h>
 
 #include <arch/board/board.h>
 
-#include <tinyara/wdog.h>
 #include <tinyara/irq.h>
+#include <tinyara/queue.h>
+#include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/i2s.h>
+#include <tinyara/mutex.h>
+#include <tinyara/semaphore.h>
 
 #include "stm32l4_dma.h"
 #include "stm32l4_gpio.h"
@@ -128,45 +147,43 @@
 
 /* I2S buffer container */
 
-struct sai_buffer_s
-{
-  struct sai_buffer_s *flink;  /* Supports a singly linked list */
-  i2s_callback_t callback;     /* Function to call when the transfer completes */
-  uint32_t timeout;            /* The timeout value to use with transfers */
-  void *arg;                   /* The argument to be returned with the callback */
-  struct ap_buffer_s *apb;     /* The audio buffer */
-  int result;                  /* The result of the transfer */
+struct sai_buffer_s {
+	struct sai_buffer_s *flink;  /* Supports a singly linked list */
+	i2s_callback_t callback;     /* Function to call when the transfer completes */
+	uint32_t timeout;            /* The timeout value to use with transfers */
+	void *arg;                   /* The argument to be returned with the callback */
+	struct ap_buffer_s *apb;     /* The audio buffer */
+	int result;                  /* The result of the transfer */
 };
 
 /* The state of the one SAI peripheral */
 
-struct stm32l4_sai_s
-{
-  struct i2s_dev_s dev;        /* Externally visible I2S interface */
-  uintptr_t base;              /* SAI block register base address */
-  sem_t exclsem;               /* Assures mutually exclusive acess to SAI */
-  uint32_t frequency;          /* SAI clock frequency */
-  uint32_t syncen;             /* Synchronization setting */
+struct stm32l4_sai_s {
+	struct i2s_dev_s dev;        /* Externally visible I2S interface */
+	uintptr_t base;              /* SAI block register base address */
+	mutex_t lock;                /* Assures mutually exclusive access to SAI */
+	uint32_t frequency;          /* SAI clock frequency */
+	uint32_t syncen;             /* Synchronization setting */
 #ifdef CONFIG_STM32L4_SAI_DMA
-  uint16_t dma_ch;             /* DMA channel number */
-  DMA_HANDLE dma;              /* DMA channel handle */
-  uint32_t dma_ccr;            /* DMA control register */
+	uint16_t dma_ch;             /* DMA channel number */
+	DMA_HANDLE dma;              /* DMA channel handle */
+	uint32_t dma_ccr;            /* DMA control register */
 #endif
-  uint8_t datalen;             /* Data width */
-  uint32_t samplerate;         /* Data sample rate */
-  uint8_t rxenab:1;            /* True: RX transfers enabled */
-  uint8_t txenab:1;            /* True: TX transfers enabled */
-  WDOG_ID dog;                 /* Watchdog that handles timeouts */
-  sq_queue_t pend;             /* A queue of pending transfers */
-  sq_queue_t act;              /* A queue of active transfers */
-  sq_queue_t done;             /* A queue of completed transfers */
-  struct work_s work;          /* Supports worker thread operations */
+	uint8_t datalen;             /* Data width */
+	uint32_t samplerate;         /* Data sample rate */
+	uint8_t rxenab:1;            /* True: RX transfers enabled */
+	uint8_t txenab:1;            /* True: TX transfers enabled */
+	struct wdog_s dog;           /* Watchdog that handles timeouts */
+	sq_queue_t pend;             /* A queue of pending transfers */
+	sq_queue_t act;              /* A queue of active transfers */
+	sq_queue_t done;             /* A queue of completed transfers */
+	struct work_s work;          /* Supports worker thread operations */
 
-  /* Pre-allocated pool of buffer containers */
+	/* Pre-allocated pool of buffer containers */
 
-  sem_t bufsem;                   /* Buffer wait semaphore */
-  struct sai_buffer_s *freelist;  /* A list a free buffer containers */
-  struct sai_buffer_s containers[CONFIG_STM32L4_SAI_MAXINFLIGHT];
+	sem_t bufsem;                   /* Buffer wait semaphore */
+	struct sai_buffer_s *freelist;  /* A list a free buffer containers */
+	struct sai_buffer_s containers[CONFIG_STM32L4_SAI_MAXINFLIGHT];
 };
 
 /****************************************************************************
@@ -178,14 +195,6 @@ static void     sai_dump_regs(struct stm32l4_sai_s *priv, const char *msg);
 #else
 #  define       sai_dump_regs(s,m)
 #endif
-
-/* Semaphore helpers */
-
-static void     sai_exclsem_take(struct stm32l4_sai_s *priv);
-#define         sai_exclsem_give(priv) nxsem_post(&priv->exclsem)
-
-static void     sai_bufsem_take(struct stm32l4_sai_s *priv);
-#define         sai_bufsem_give(priv) nxsem_post(&priv->bufsem)
 
 /* Buffer container helpers */
 
@@ -240,6 +249,7 @@ static struct stm32l4_sai_s g_sai1a_priv =
 {
   .dev.ops     = &g_i2sops,
   .base        = STM32L4_SAI1_A_BASE,
+  .lock        = NXMUTEX_INITIALIZER,
   .frequency   = STM32L4_SAI1_FREQUENCY,
 #ifdef CONFIG_STM32L4_SAI1_A_SYNC_WITH_B
   .syncen      = SAI_CR1_SYNCEN_SYNC_INT,
@@ -251,6 +261,7 @@ static struct stm32l4_sai_s g_sai1a_priv =
 #endif
   .datalen     = CONFIG_STM32L4_SAI_DEFAULT_DATALEN,
   .samplerate  = CONFIG_STM32L4_SAI_DEFAULT_SAMPLERATE,
+  .bufsem      = SEM_INITIALIZER(CONFIG_STM32L4_SAI_MAXINFLIGHT),
 };
 #endif
 
@@ -259,6 +270,7 @@ static struct stm32l4_sai_s g_sai1b_priv =
 {
   .dev.ops     = &g_i2sops,
   .base        = STM32L4_SAI1_B_BASE,
+  .lock        = NXMUTEX_INITIALIZER,
   .frequency   = STM32L4_SAI1_FREQUENCY,
 #ifdef CONFIG_STM32L4_SAI1_B_SYNC_WITH_A
   .syncen      = SAI_CR1_SYNCEN_SYNC_INT,
@@ -270,6 +282,7 @@ static struct stm32l4_sai_s g_sai1b_priv =
 #endif
   .datalen     = CONFIG_STM32L4_SAI_DEFAULT_DATALEN,
   .samplerate  = CONFIG_STM32L4_SAI_DEFAULT_SAMPLERATE,
+  .bufsem      = SEM_INITIALIZER(CONFIG_STM32L4_SAI_MAXINFLIGHT),
 };
 #endif
 
@@ -280,6 +293,7 @@ static struct stm32l4_sai_s g_sai2a_priv =
 {
   .dev.ops     = &g_i2sops,
   .base        = STM32L4_SAI2_A_BASE,
+  .lock        = NXMUTEX_INITIALIZER,
   .frequency   = STM32L4_SAI2_FREQUENCY,
 #ifdef CONFIG_STM32L4_SAI2_A_SYNC_WITH_B
   .syncen      = SAI_CR1_SYNCEN_SYNC_INT,
@@ -291,6 +305,7 @@ static struct stm32l4_sai_s g_sai2a_priv =
 #endif
   .datalen     = CONFIG_STM32L4_SAI_DEFAULT_DATALEN,
   .samplerate  = CONFIG_STM32L4_SAI_DEFAULT_SAMPLERATE,
+  .bufsem      = SEM_INITIALIZER(CONFIG_STM32L4_SAI_MAXINFLIGHT),
 };
 #endif
 
@@ -299,6 +314,7 @@ static struct stm32l4_sai_s g_sai2b_priv =
 {
   .dev.ops     = &g_i2sops,
   .base        = STM32L4_SAI2_B_BASE,
+  .lock        = NXMUTEX_INITIALIZER,
   .frequency   = STM32L4_SAI2_FREQUENCY,
 #ifdef CONFIG_STM32L4_SAI2_B_SYNC_WITH_A
   .syncen      = SAI_CR1_SYNCEN_SYNC_INT,
@@ -310,6 +326,7 @@ static struct stm32l4_sai_s g_sai2b_priv =
 #endif
   .datalen     = CONFIG_STM32L4_SAI_DEFAULT_DATALEN,
   .samplerate  = CONFIG_STM32L4_SAI_DEFAULT_SAMPLERATE,
+  .bufsem      = SEM_INITIALIZER(CONFIG_STM32L4_SAI_MAXINFLIGHT),
 };
 #endif
 
@@ -333,9 +350,9 @@ static struct stm32l4_sai_s g_sai2b_priv =
 
 static inline uint32_t sai_getbitrate(struct stm32l4_sai_s *priv)
 {
-  /* Calculate the bitrate in Hz */
+	/* Calculate the bitrate in Hz */
 
-  return priv->samplerate * priv->datalen;
+	return priv->samplerate * priv->datalen;
 }
 
 /****************************************************************************
@@ -355,7 +372,7 @@ static inline uint32_t sai_getbitrate(struct stm32l4_sai_s *priv)
 
 static inline uint32_t sai_getreg(struct stm32l4_sai_s *priv, uint8_t offset)
 {
-  return getreg32(priv->base + offset);
+	return getreg32(priv->base + offset);
 }
 
 /****************************************************************************
@@ -377,10 +394,10 @@ static inline uint32_t sai_getreg(struct stm32l4_sai_s *priv, uint8_t offset)
 static inline void sai_putreg(struct stm32l4_sai_s *priv, uint8_t offset,
                               uint32_t value)
 {
-  putreg32(value, priv->base + offset);
+	putreg32(value, priv->base + offset);
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: sai_modifyreg
  *
  * Description:
@@ -395,17 +412,17 @@ static inline void sai_putreg(struct stm32l4_sai_s *priv, uint8_t offset,
  * Returned Value:
  *   None
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static void sai_modifyreg(struct stm32l4_sai_s *priv, uint8_t offset,
                           uint32_t clrbits, uint32_t setbits)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  regval  = sai_getreg(priv, offset);
-  regval &= ~clrbits;
-  regval |= setbits;
-  sai_putreg(priv, offset, regval);
+	regval  = sai_getreg(priv, offset);
+	regval &= ~clrbits;
+	regval |= setbits;
+	sai_putreg(priv, offset, regval);
 }
 
 /****************************************************************************
@@ -426,58 +443,27 @@ static void sai_modifyreg(struct stm32l4_sai_s *priv, uint8_t offset,
 #ifdef CONFIG_DEBUG_I2S_INFO
 static void sai_dump_regs(struct stm32l4_sai_s *priv, const char *msg)
 {
-  if (msg)
-      i2sinfo("%s\n", msg);
+	if (msg)
+		i2sinfo("%s\n", msg);
 
-  i2sinfo("CR1:%08x CR2:%08x  FRCR:%08x SLOTR:%08x\n",
-          sai_getreg(priv, STM32L4_SAI_CR1_OFFSET),
-          sai_getreg(priv, STM32L4_SAI_CR2_OFFSET),
-          sai_getreg(priv, STM32L4_SAI_FRCR_OFFSET),
-          sai_getreg(priv, STM32L4_SAI_SLOTR_OFFSET));
-  i2sinfo(" IM:%08x  SR:%08x CLRFR:%08x\n",
-          sai_getreg(priv, STM32L4_SAI_IM_OFFSET),
-          sai_getreg(priv, STM32L4_SAI_SR_OFFSET),
-          sai_getreg(priv, STM32L4_SAI_CLRFR_OFFSET));
+	i2sinfo("CR1:%08x CR2:%08x  FRCR:%08x SLOTR:%08x\n",
+	        sai_getreg(priv, STM32L4_SAI_CR1_OFFSET),
+	        sai_getreg(priv, STM32L4_SAI_CR2_OFFSET),
+	        sai_getreg(priv, STM32L4_SAI_FRCR_OFFSET),
+	        sai_getreg(priv, STM32L4_SAI_SLOTR_OFFSET));
+	i2sinfo(" IM:%08x  SR:%08x CLRFR:%08x\n",
+	        sai_getreg(priv, STM32L4_SAI_IM_OFFSET),
+	        sai_getreg(priv, STM32L4_SAI_SR_OFFSET),
+	        sai_getreg(priv, STM32L4_SAI_CLRFR_OFFSET));
 }
 #endif
-
-/****************************************************************************
- * Name: sai_exclsem_take
- *
- * Description:
- *   Take the exclusive access semaphore handling any exceptional conditions
- *
- * Input Parameters:
- *   priv - A reference to the SAI peripheral state
- *
- * Returned Value:
- *  None
- *
- ****************************************************************************/
-
-static void sai_exclsem_take(struct stm32l4_sai_s *priv)
-{
-  int ret;
-
-  /* Wait until we successfully get the semaphore.  EINTR is the only
-   * expected 'failure' (meaning that the wait for the semaphore was
-   * interrupted by a signal).
-   */
-
-  do
-    {
-      ret = nxsem_wait(&priv->exclsem);
-      DEBUGASSERT(ret == 0 || ret == -EINTR);
-    }
-  while (ret == -EINTR);
-}
 
 /****************************************************************************
  * Name: sai_mckdivider
  *
  * Description:
- *   Setup the master clock divider based on the currently selected data width
- *   and the sample rate
+ *   Setup the master clock divider based on the currently selected data
+ *   width and the sample rate
  *
  * Input Parameters:
  *   priv - SAI device structure (only the sample rate and frequency are
@@ -490,20 +476,20 @@ static void sai_exclsem_take(struct stm32l4_sai_s *priv)
 
 static void sai_mckdivider(struct stm32l4_sai_s *priv)
 {
-  uint8_t mckdiv;
+	uint32_t mckdiv;
 
-  DEBUGASSERT(priv && priv->samplerate > 0 && priv->frequency > 0);
+	DEBUGASSERT(priv && priv->samplerate > 0 && priv->frequency > 0);
 
-  /* Configure Master Clock using the following formula:
-   * MCLK_x = SAI_CK_x / (MCKDIV[3:0] * 2) with MCLK_x = 256 * FS
-   * FS = SAI_CK_x / (MCKDIV[3:0] * 2) * 256
-   * MCKDIV[3:0] = SAI_CK_x / FS * 512
-   */
+	/* Configure Master Clock using the following formula:
+	 * MCLK_x = SAI_CK_x / (MCKDIV[3:0] * 2) with MCLK_x = 256 * FS
+	 * FS = SAI_CK_x / (MCKDIV[3:0] * 2) * 256
+	 * MCKDIV[3:0] = SAI_CK_x / FS * 512
+	 */
 
-  mckdiv = priv->frequency / (priv->samplerate * 2 * 256);
+	mckdiv = priv->frequency / (priv->samplerate * 2 * 256);
 
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_MCKDIV_MASK,
-                mckdiv << SAI_CR1_MCKDIV_SHIFT);
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_MCKDIV_MASK,
+	              mckdiv << SAI_CR1_MCKDIV_SHIFT);
 }
 
 /****************************************************************************
@@ -513,8 +499,7 @@ static void sai_mckdivider(struct stm32l4_sai_s *priv)
  *   The watchdog timeout without completion of the transfer.
  *
  * Input Parameters:
- *   argc   - The number of arguments (should be 1)
- *   arg    - The argument (state structure reference cast to uint32_t)
+ *   arg    - The argument
  *
  * Returned Value:
  *   None
@@ -524,20 +509,22 @@ static void sai_mckdivider(struct stm32l4_sai_s *priv)
  *
  ****************************************************************************/
 
-static void sai_timeout(int argc, uint32_t arg)
+static void sai_timeout(wdparm_t arg)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)arg;
-  DEBUGASSERT(priv != NULL);
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)arg;
+	DEBUGASSERT(priv != NULL);
 
 #ifdef CONFIG_STM32L4_SAI_DMA
-  /* Cancel the DMA */
+	/* Cancel the DMA */
 
-  stm32l4_dmastop(priv->dma);
+	stm32l4_dmastop(priv->dma);
 #endif
 
-  /* Then schedule completion of the transfer to occur on the worker thread. */
+	/* Then schedule completion of the transfer to occur on the worker
+	 * thread.
+	 */
 
-  sai_schedule(priv, -ETIMEDOUT);
+	sai_schedule(priv, -ETIMEDOUT);
 }
 
 /****************************************************************************
@@ -560,129 +547,120 @@ static void sai_timeout(int argc, uint32_t arg)
 #ifdef CONFIG_STM32L4_SAI_DMA
 static int sai_dma_setup(struct stm32l4_sai_s *priv)
 {
-  struct sai_buffer_s *bfcontainer;
-  struct ap_buffer_s *apb;
-  uintptr_t samp;
-  apb_samp_t nbytes;
-  size_t ntransfers = 0;
-  int ret;
+	struct sai_buffer_s *bfcontainer;
+	struct ap_buffer_s *apb;
+	uintptr_t samp;
+	apb_samp_t nbytes;
+	size_t ntransfers = 0;
+	int ret;
 
-  /* If there is already an active transmission in progress, then bail
-   * returning success.
-   */
+	/* If there is already an active transmission in progress, then bail
+	 * returning success.
+	 */
 
-  if (!sq_empty(&priv->act))
-    {
-      return OK;
-    }
+	if (!sq_empty(&priv->act)) {
+		return OK;
+	}
 
-  /* If there are no pending transfer, then bail returning success */
+	/* If there are no pending transfer, then bail returning success */
 
-  if (sq_empty(&priv->pend))
-    {
-      priv->txenab = priv->rxenab = false;
-      return OK;
-    }
+	if (sq_empty(&priv->pend)) {
+		priv->txenab = priv->rxenab = false;
+		return OK;
+	}
 
-  /* Remove the pending transfer at the head of the pending queue. */
+	/* Remove the pending transfer at the head of the pending queue. */
 
-  bfcontainer = (struct sai_buffer_s *)sq_remfirst(&priv->pend);
-  DEBUGASSERT(bfcontainer && bfcontainer->apb);
+	bfcontainer = (struct sai_buffer_s *)sq_remfirst(&priv->pend);
+	DEBUGASSERT(bfcontainer && bfcontainer->apb);
 
-  apb = bfcontainer->apb;
+	apb = bfcontainer->apb;
 
-  /* Get the transfer information, accounting for any data offset */
+	/* Get the transfer information, accounting for any data offset */
 
-  samp = (uintptr_t)&apb->samp[apb->curbyte];
+	samp = (uintptr_t)&apb->samp[apb->curbyte];
 
-  /* Configure the DMA */
+	/* Configure the DMA */
 
-  if (priv->txenab)
-    {
-      nbytes = apb->nbytes - apb->curbyte;
+	if (priv->txenab) {
+		nbytes = apb->nbytes - apb->curbyte;
 
-      switch (priv->datalen)
-        {
-          case 8:
-            priv->dma_ccr = SAI_TXDMA8_CONFIG;
-            ntransfers = nbytes;
-            break;
+		switch (priv->datalen) {
+		case 8:
+			priv->dma_ccr = SAI_TXDMA8_CONFIG;
+			ntransfers = nbytes;
+			break;
 
-          case 16:
-            priv->dma_ccr = SAI_TXDMA16_CONFIG;
-            DEBUGASSERT((nbytes & 0x1) == 0);
-            ntransfers = nbytes >> 1;
-            break;
+		case 16:
+			priv->dma_ccr = SAI_TXDMA16_CONFIG;
+			DEBUGASSERT((nbytes & 0x1) == 0);
+			ntransfers = nbytes >> 1;
+			break;
 
-          case 32:
-            priv->dma_ccr = SAI_TXDMA32_CONFIG;
-            DEBUGASSERT((nbytes & 0x3) == 0);
-            ntransfers = nbytes >> 2;
-            break;
-        }
-    }
-  else if (priv->rxenab)
-    {
-      nbytes = apb->nmaxbytes - apb->curbyte;
+		case 32:
+			priv->dma_ccr = SAI_TXDMA32_CONFIG;
+			DEBUGASSERT((nbytes & 0x3) == 0);
+			ntransfers = nbytes >> 2;
+			break;
+		}
+	} else if (priv->rxenab) {
+		nbytes = apb->nmaxbytes - apb->curbyte;
 
-      switch (priv->datalen)
-        {
-          case 8:
-            priv->dma_ccr = SAI_RXDMA8_CONFIG;
-            ntransfers = nbytes;
-            break;
+		switch (priv->datalen) {
+		case 8:
+			priv->dma_ccr = SAI_RXDMA8_CONFIG;
+			ntransfers = nbytes;
+			break;
 
-          case 16:
-            priv->dma_ccr = SAI_RXDMA16_CONFIG;
-            DEBUGASSERT((nbytes & 0x1) == 0);
-            ntransfers = nbytes >> 1;
-            break;
+		case 16:
+			priv->dma_ccr = SAI_RXDMA16_CONFIG;
+			DEBUGASSERT((nbytes & 0x1) == 0);
+			ntransfers = nbytes >> 1;
+			break;
 
-          case 32:
-            priv->dma_ccr = SAI_RXDMA32_CONFIG;
-            DEBUGASSERT((nbytes & 0x3) == 0);
-            ntransfers = nbytes >> 2;
-            break;
-        }
-    }
+		case 32:
+			priv->dma_ccr = SAI_RXDMA32_CONFIG;
+			DEBUGASSERT((nbytes & 0x3) == 0);
+			ntransfers = nbytes >> 2;
+			break;
+		}
+	}
 
-  DEBUGASSERT(ntransfers > 0);
+	DEBUGASSERT(ntransfers > 0);
 
-  stm32l4_dmasetup(priv->dma, priv->base + STM32L4_SAI_DR_OFFSET,
-                 samp, ntransfers, priv->dma_ccr);
+	stm32l4_dmasetup(priv->dma, priv->base + STM32L4_SAI_DR_OFFSET,
+	               samp, ntransfers, priv->dma_ccr);
 
-  /* Add the container to the list of active DMAs */
+	/* Add the container to the list of active DMAs */
 
-  sq_addlast((sq_entry_t *)bfcontainer, &priv->act);
+	sq_addlast((sq_entry_t *)bfcontainer, &priv->act);
 
-  /* Start the DMA, saving the container as the current active transfer */
+	/* Start the DMA, saving the container as the current active transfer */
 
-  stm32l4_dmastart(priv->dma, sai_dma_callback, priv, false);
+	stm32l4_dmastart(priv->dma, sai_dma_callback, priv, false);
 
-  /* Enable the transmitter */
+	/* Enable the transmitter */
 
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, 0, SAI_CR1_SAIEN);
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, 0, SAI_CR1_SAIEN);
 
-  /* Start a watchdog to catch DMA timeouts */
+	/* Start a watchdog to catch DMA timeouts */
 
-  if (bfcontainer->timeout > 0)
-    {
-      ret = wd_start(priv->dog, bfcontainer->timeout, (wdentry_t)sai_timeout,
-                     1, (uint32_t)priv);
+	if (bfcontainer->timeout > 0) {
+		ret = wd_start(&priv->dog, bfcontainer->timeout,
+		               sai_timeout, (wdparm_t)priv);
 
-      /* Check if we have successfully started the watchdog timer.  Note
-       * that we do nothing in the case of failure to start the timer.  We
-       * are already committed to the DMA anyway.  Let's just hope that the
-       * DMA does not hang.
-       */
+		/* Check if we have successfully started the watchdog timer.  Note
+		 * that we do nothing in the case of failure to start the timer.  We
+		 * are already committed to the DMA anyway.  Let's just hope that the
+		 * DMA does not hang.
+		 */
 
-      if (ret < 0)
-        {
-          i2serr("ERROR: wd_start failed: %d\n", ret);
-        }
-    }
+		if (ret < 0) {
+			i2serr("ERROR: wd_start failed: %d\n", ret);
+		}
+	}
 
-  return OK;
+	return OK;
 }
 #endif
 
@@ -702,68 +680,66 @@ static int sai_dma_setup(struct stm32l4_sai_s *priv)
 
 static void sai_worker(void *arg)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)arg;
-  struct sai_buffer_s *bfcontainer;
-  irqstate_t flags;
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)arg;
+	struct sai_buffer_s *bfcontainer;
+	irqstate_t flags;
 
-  DEBUGASSERT(priv);
+	DEBUGASSERT(priv);
 
-  /* When the transfer was started, the active buffer containers were removed
-   * from the pend queue and saved in the act queue.  We get here when the
-   * transfer is finished... either successfully, with an error, or with a
-   * timeout.
-   *
-   * In any case, the buffer containers in act will be moved to the end
-   * of the done queue and act will be emptied before this worker is
-   * started.
-   */
+	/* When the transfer was started, the active buffer containers were removed
+	 * from the pend queue and saved in the act queue.  We get here when the
+	 * transfer is finished... either successfully, with an error, or with a
+	 * timeout.
+	 *
+	 * In any case, the buffer containers in act will be moved to the end
+	 * of the done queue and act will be emptied before this worker is
+	 * started.
+	 */
 
-  i2sinfo("act.head=%p done.head=%p\n", priv->act.head, priv->done.head);
+	i2sinfo("act.head=%p done.head=%p\n", priv->act.head, priv->done.head);
 
-  /* Check if IDLE */
+	/* Check if IDLE */
 
-  if (sq_empty(&priv->act))
-    {
-      /* Then start the next transfer.  This must be done with interrupts
-       * disabled.
-       */
+	if (sq_empty(&priv->act)) {
+		/* Then start the next transfer.  This must be done with interrupts
+		 * disabled.
+		 */
 
-      flags = irqsave();
+		flags = enter_critical_section();
 #ifdef CONFIG_STM32L4_SAI_DMA
-      (void)sai_dma_setup(priv);
+		sai_dma_setup(priv);
 #endif
-      irqrestore(flags);
-    }
+		leave_critical_section(flags);
+	}
 
-  /* Process each buffer in the done queue */
+	/* Process each buffer in the done queue */
 
-  while (sq_peek(&priv->done) != NULL)
-    {
-      /* Remove the buffer container from the done queue.  NOTE that
-       * interupts must be enabled to do this because the done queue is
-       * also modified from the interrupt level.
-       */
+	while (sq_peek(&priv->done) != NULL) {
+		/* Remove the buffer container from the done queue.  NOTE that
+		 * interrupts must be enabled to do this because the done queue is
+		 * also modified from the interrupt level.
+		 */
 
-      flags = irqsave();
-      bfcontainer = (struct sai_buffer_s *)sq_remfirst(&priv->done);
-      irqrestore(flags);
+		flags = enter_critical_section();
+		bfcontainer = (struct sai_buffer_s *)sq_remfirst(&priv->done);
+		leave_critical_section(flags);
 
-      /* Perform the transfer done callback */
+		/* Perform the transfer done callback */
 
-      DEBUGASSERT(bfcontainer && bfcontainer->callback);
-      bfcontainer->callback(&priv->dev, bfcontainer->apb,
-                            bfcontainer->arg, bfcontainer->result);
+		DEBUGASSERT(bfcontainer && bfcontainer->callback);
+		bfcontainer->callback(&priv->dev, bfcontainer->apb,
+		                      bfcontainer->arg, bfcontainer->result);
 
-      /* Release our reference on the audio buffer.  This may very likely
-       * cause the audio buffer to be freed.
-       */
+		/* Release our reference on the audio buffer.  This may very likely
+		 * cause the audio buffer to be freed.
+		 */
 
-      apb_free(bfcontainer->apb);
+		apb_free(bfcontainer->apb);
 
-      /* And release the buffer container */
+		/* And release the buffer container */
 
-      sai_buf_free(priv, bfcontainer);
-    }
+		sai_buf_free(priv, bfcontainer);
+	}
 }
 
 /****************************************************************************
@@ -788,41 +764,38 @@ static void sai_worker(void *arg)
 
 static void sai_schedule(struct stm32l4_sai_s *priv, int result)
 {
-  struct sai_buffer_s *bfcontainer;
-  int ret;
+	struct sai_buffer_s *bfcontainer;
+	int ret;
 
-  /* Move all entries from the act queue to the done queue */
+	/* Move all entries from the act queue to the done queue */
 
-  while (!sq_empty(&priv->act))
-    {
-      /* Remove the next buffer container from the act list */
+	while (!sq_empty(&priv->act)) {
+		/* Remove the next buffer container from the act list */
 
-      bfcontainer = (struct sai_buffer_s *)sq_remfirst(&priv->act);
+		bfcontainer = (struct sai_buffer_s *)sq_remfirst(&priv->act);
 
-      /* Report the result of the transfer */
+		/* Report the result of the transfer */
 
-      bfcontainer->result = result;
+		bfcontainer->result = result;
 
-      /* Add the completed buffer container to the tail of the done queue */
+		/* Add the completed buffer container to the tail of the done queue */
 
-      sq_addlast((sq_entry_t *)bfcontainer, &priv->done);
-    }
+		sq_addlast((sq_entry_t *)bfcontainer, &priv->done);
+	}
 
-  /* If the worker has completed running, then reschedule the working thread.
-   * REVISIT:  There may be a race condition here.  So we do nothing is the
-   * worker is not available.
-   */
+	/* If the worker has completed running, then reschedule the working thread.
+	 * REVISIT:  There may be a race condition here.  So we do nothing is the
+	 * worker is not available.
+	 */
 
-  if (work_available(&priv->work))
-    {
-      /* Schedule the done processing to occur on the worker thread. */
+	if (work_available(&priv->work)) {
+		/* Schedule the done processing to occur on the worker thread. */
 
-      ret = work_queue(HPWORK, &priv->work, sai_worker, priv, 0);
-      if (ret != 0)
-        {
-          i2serr("ERROR: Failed to queue work: %d\n", ret);
-        }
-    }
+		ret = work_queue(HPWORK, &priv->work, sai_worker, priv, 0);
+		if (ret != 0) {
+			i2serr("ERROR: Failed to queue work: %d\n", ret);
+		}
+	}
 }
 
 /****************************************************************************
@@ -844,16 +817,16 @@ static void sai_schedule(struct stm32l4_sai_s *priv, int result)
 #ifdef CONFIG_STM32L4_SAI_DMA
 static void sai_dma_callback(DMA_HANDLE handle, uint8_t isr, void *arg)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)arg;
-  DEBUGASSERT(priv);
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)arg;
+	DEBUGASSERT(priv);
 
-  /* Cancel the watchdog timeout */
+	/* Cancel the watchdog timeout */
 
-  (void)wd_cancel(priv->dog);
+	wd_cancel(&priv->dog);
 
-  /* Then schedule completion of the transfer to occur on the worker thread */
+	/* Then schedule completion of the transfer to occur on the worker thread */
 
-  sai_schedule(priv, (isr & DMA_CHAN_TEIF_BIT) ? -EIO : OK);
+	sai_schedule(priv, (isr & DMA_CHAN_TEIF_BIT) ? -EIO : OK);
 }
 #endif
 
@@ -874,16 +847,16 @@ static void sai_dma_callback(DMA_HANDLE handle, uint8_t isr, void *arg)
 
 static uint32_t sai_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
 
-  DEBUGASSERT(priv && rate > 0);
+	DEBUGASSERT(priv && rate > 0);
 
-  /* Save the new sample rate and update the divider */
+	/* Save the new sample rate and update the divider */
 
-  priv->samplerate = rate;
-  sai_mckdivider(priv);
+	priv->samplerate = rate;
+	sai_mckdivider(priv);
 
-  return sai_getbitrate(priv);
+	return sai_getbitrate(priv);
 }
 
 /****************************************************************************
@@ -904,41 +877,40 @@ static uint32_t sai_samplerate(struct i2s_dev_s *dev, uint32_t rate)
 
 static uint32_t sai_datawidth(struct i2s_dev_s *dev, int bits)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
-  uint32_t setbits;
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
+	uint32_t setbits;
 
-  DEBUGASSERT(priv && bits >= 8);
+	DEBUGASSERT(priv && bits >= 8);
 
-  switch (bits)
-    {
-      case 8:
-        setbits = SAI_CR1_DS_8BITS;
-        break;
+	switch (bits) {
+	case 8:
+		setbits = SAI_CR1_DS_8BITS;
+		break;
 
-      case 16:
-        setbits = SAI_CR1_DS_16BITS;
-        break;
+	case 16:
+		setbits = SAI_CR1_DS_16BITS;
+		break;
 
-      case 32:
-        setbits = SAI_CR1_DS_32BITS;
-        break;
+	case 32:
+		setbits = SAI_CR1_DS_32BITS;
+		break;
 
-      default:
-        i2serr("ERROR: Unsupported or invalid data width: %d\n", bits);
-        return 0;
-    }
+	default:
+		i2serr("ERROR: Unsupported or invalid data width: %d\n", bits);
+		return 0;
+	}
 
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_DS_MASK, setbits);
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_DS_MASK, setbits);
 
-  sai_modifyreg(priv, STM32L4_SAI_FRCR_OFFSET,
-                SAI_FRCR_FSALL_MASK | SAI_FRCR_FRL_MASK,
-                SAI_FRCR_FSALL(bits) | SAI_FRCR_FRL(bits * 2));
+	sai_modifyreg(priv, STM32L4_SAI_FRCR_OFFSET,
+	              SAI_FRCR_FSALL_MASK | SAI_FRCR_FRL_MASK,
+	              SAI_FRCR_FSALL(bits) | SAI_FRCR_FRL(bits * 2));
 
-  /* Save the new data width */
+	/* Save the new data width */
 
-  priv->datalen = bits;
+	priv->datalen = bits;
 
-  return sai_getbitrate(priv);
+	return sai_getbitrate(priv);
 }
 
 /****************************************************************************
@@ -974,71 +946,74 @@ static uint32_t sai_datawidth(struct i2s_dev_s *dev, int bits)
 static int sai_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb,
                        i2s_callback_t callback, void *arg, uint32_t timeout)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
-  struct sai_buffer_s *bfcontainer;
-  uint32_t mode;
-  irqstate_t flags;
-  int ret;
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
+	struct sai_buffer_s *bfcontainer;
+	uint32_t mode;
+	irqstate_t flags;
+	int ret;
 
-  DEBUGASSERT(priv && apb);
-  i2sinfo("apb=%p nbytes=%d arg=%p timeout=%d\n",
-          apb, apb->nbytes - apb->curbyte, arg, timeout);
+	DEBUGASSERT(priv && apb);
+	i2sinfo("apb=%p nbytes=%d arg=%p timeout=%d\n",
+	        apb, apb->nbytes - apb->curbyte, arg, timeout);
 
-  /* Allocate a buffer container in advance */
+	/* Allocate a buffer container in advance */
 
-  bfcontainer = sai_buf_allocate(priv);
-  DEBUGASSERT(bfcontainer);
+	bfcontainer = sai_buf_allocate(priv);
+	DEBUGASSERT(bfcontainer);
 
-  /* Get exclusive access to the SAI driver data */
+	/* Get exclusive access to the SAI driver data */
 
-  sai_exclsem_take(priv);
+	ret = nxmutex_lock(&priv->lock);
+	if (ret < 0) {
+		sai_buf_free(priv, bfcontainer);
+		return ret;
+	}
 
-  /* Verify not already TX'ing */
+	/* Verify not already TX'ing */
 
-  if (priv->txenab)
-    {
-      i2serr("ERROR: SAI has no receiver\n");
-      ret = -EAGAIN;
-      goto errout_with_exclsem;
-    }
+	if (priv->txenab) {
+		i2serr("ERROR: SAI has no receiver\n");
+		ret = -EAGAIN;
+		goto errout_with_lock;
+	}
 
-  mode = priv->syncen ? SAI_CR1_MODE_SLAVE_RX : SAI_CR1_MODE_MASTER_RX;
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_MODE_MASK, mode);
-  priv->rxenab = true;
+	mode = priv->syncen ? SAI_CR1_MODE_SLAVE_RX : SAI_CR1_MODE_MASTER_RX;
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_MODE_MASK, mode);
+	priv->rxenab = true;
 
-  /* Add a reference to the audio buffer */
+	/* Add a reference to the audio buffer */
 
-  apb_reference(apb);
+	apb_reference(apb);
 
-  /* Initialize the buffer container structure */
+	/* Initialize the buffer container structure */
 
-  bfcontainer->callback = (void *)callback;
-  bfcontainer->timeout  = timeout;
-  bfcontainer->arg      = arg;
-  bfcontainer->apb      = apb;
-  bfcontainer->result   = -EBUSY;
+	bfcontainer->callback = (void *)callback;
+	bfcontainer->timeout  = timeout;
+	bfcontainer->arg      = arg;
+	bfcontainer->apb      = apb;
+	bfcontainer->result   = -EBUSY;
 
-  /* Add the buffer container to the end of the pending queue */
+	/* Add the buffer container to the end of the pending queue */
 
-  flags = irqsave();
-  sq_addlast((sq_entry_t *)bfcontainer, &priv->pend);
+	flags = enter_critical_section();
+	sq_addlast((sq_entry_t *)bfcontainer, &priv->pend);
 
-  /* Then start the next transfer.  If there is already a transfer in progess,
-   * then this will do nothing.
-   */
+	/* Then start the next transfer.  If there is already a transfer in
+	 * progress, then this will do nothing.
+	 */
 
 #ifdef CONFIG_STM32L4_SAI_DMA
-  ret = sai_dma_setup(priv);
+	ret = sai_dma_setup(priv);
 #endif
-  DEBUGASSERT(ret == OK);
-  irqrestore(flags);
-  sai_exclsem_give(priv);
-  return OK;
+	DEBUGASSERT(ret == OK);
+	leave_critical_section(flags);
+	nxmutex_unlock(&priv->lock);
+	return OK;
 
-errout_with_exclsem:
-  sai_exclsem_give(priv);
-  sai_buf_free(priv, bfcontainer);
-  return ret;
+errout_with_lock:
+	nxmutex_unlock(&priv->lock);
+	sai_buf_free(priv, bfcontainer);
+	return ret;
 }
 
 /****************************************************************************
@@ -1074,102 +1049,74 @@ errout_with_exclsem:
 static int sai_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb,
                     i2s_callback_t callback, void *arg, uint32_t timeout)
 {
-  struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
-  struct sai_buffer_s *bfcontainer;
-  uint32_t mode;
-  irqstate_t flags;
-  int ret;
+	struct stm32l4_sai_s *priv = (struct stm32l4_sai_s *)dev;
+	struct sai_buffer_s *bfcontainer;
+	uint32_t mode;
+	irqstate_t flags;
+	int ret;
 
-  DEBUGASSERT(priv && apb);
-  i2sinfo("apb=%p nbytes=%d arg=%p timeout=%d\n",
-          apb, apb->nbytes - apb->curbyte, arg, timeout);
+	DEBUGASSERT(priv && apb);
+	i2sinfo("apb=%p nbytes=%d arg=%p timeout=%d\n",
+	        apb, apb->nbytes - apb->curbyte, arg, timeout);
 
-  /* Allocate a buffer container in advance */
+	/* Allocate a buffer container in advance */
 
-  bfcontainer = sai_buf_allocate(priv);
-  DEBUGASSERT(bfcontainer);
+	bfcontainer = sai_buf_allocate(priv);
+	DEBUGASSERT(bfcontainer);
 
-  /* Get exclusive access to the SAI driver data */
+	/* Get exclusive access to the SAI driver data */
 
-  sai_exclsem_take(priv);
+	ret = nxmutex_lock(&priv->lock);
+	if (ret < 0) {
+		sai_buf_free(priv, bfcontainer);
+		return ret;
+	}
 
-  /* Verify not already RX'ing */
+	/* Verify not already RX'ing */
 
-  if (priv->rxenab)
-    {
-      i2serr("ERROR: SAI has no transmitter\n");
-      ret = -EAGAIN;
-      goto errout_with_exclsem;
-    }
+	if (priv->rxenab) {
+		i2serr("ERROR: SAI has no transmitter\n");
+		ret = -EAGAIN;
+		goto errout_with_lock;
+	}
 
-  mode = priv->syncen ? SAI_CR1_MODE_SLAVE_TX : SAI_CR1_MODE_MASTER_TX;
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_MODE_MASK, mode);
-  priv->txenab = true;
+	mode = priv->syncen ? SAI_CR1_MODE_SLAVE_TX : SAI_CR1_MODE_MASTER_TX;
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_MODE_MASK, mode);
+	priv->txenab = true;
 
-  /* Add a reference to the audio buffer */
+	/* Add a reference to the audio buffer */
 
-  apb_reference(apb);
+	apb_reference(apb);
 
-  /* Initialize the buffer container structure */
+	/* Initialize the buffer container structure */
 
-  bfcontainer->callback = (void *)callback;
-  bfcontainer->timeout  = timeout;
-  bfcontainer->arg      = arg;
-  bfcontainer->apb      = apb;
-  bfcontainer->result   = -EBUSY;
+	bfcontainer->callback = (void *)callback;
+	bfcontainer->timeout  = timeout;
+	bfcontainer->arg      = arg;
+	bfcontainer->apb      = apb;
+	bfcontainer->result   = -EBUSY;
 
-  /* Add the buffer container to the end of the pending queue */
+	/* Add the buffer container to the end of the pending queue */
 
-  flags = irqsave();
-  sq_addlast((sq_entry_t *)bfcontainer, &priv->pend);
+	flags = enter_critical_section();
+	sq_addlast((sq_entry_t *)bfcontainer, &priv->pend);
 
-  /* Then start the next transfer.  If there is already a transfer in progess,
-   * then this will do nothing.
-   */
+	/* Then start the next transfer.  If there is already a transfer in
+	 * progress, then this will do nothing.
+	 */
 
 #ifdef CONFIG_STM32L4_SAI_DMA
-  ret = sai_dma_setup(priv);
+	ret = sai_dma_setup(priv);
 #endif
-  DEBUGASSERT(ret == OK);
-  irqrestore(flags);
-  sai_exclsem_give(priv);
-  return OK;
+	DEBUGASSERT(ret == OK);
+	leave_critical_section(flags);
+	nxmutex_unlock(&priv->lock);
+	return OK;
 
-errout_with_exclsem:
-  sai_exclsem_give(priv);
-  sai_buf_free(priv, bfcontainer);
-  return ret;
-}
-
-/****************************************************************************
- * Name: sai_bufsem_take
- *
- * Description:
- *   Take the buffer semaphore handling any exceptional conditions
- *
- * Input Parameters:
- *   priv - A reference to the SAI peripheral state
- *
- * Returned Value:
- *  None
- *
- ****************************************************************************/
-
-static void sai_bufsem_take(struct stm32l4_sai_s *priv)
-{
-  int ret;
-
-  /* Wait until we successfully get the semaphore.  EINTR is the only
-   * expected 'failure' (meaning that the wait for the semaphore was
-   * interrupted by a signal).
-   */
-
-  do
-    {
-      ret = nxsem_wait(&priv->bufsem);
-      DEBUGASSERT(ret == 0 || ret == -EINTR);
-    }
-  while (ret == -EINTR);
+errout_with_lock:
+	nxmutex_unlock(&priv->lock);
+	sai_buf_free(priv, bfcontainer);
+	return ret;
 }
 
 /****************************************************************************
@@ -1194,26 +1141,30 @@ static void sai_bufsem_take(struct stm32l4_sai_s *priv)
 
 static struct sai_buffer_s *sai_buf_allocate(struct stm32l4_sai_s *priv)
 {
-  struct sai_buffer_s *bfcontainer;
-  irqstate_t flags;
+	struct sai_buffer_s *bfcontainer;
+	irqstate_t flags;
+	int ret;
 
-  /* Set aside a buffer container.  By doing this, we guarantee that we will
-   * have at least one free buffer container.
-   */
+	/* Set aside a buffer container.  By doing this, we guarantee that we will
+	 * have at least one free buffer container.
+	 */
 
-  sai_bufsem_take(priv);
+	ret = nxsem_wait_uninterruptible(&priv->bufsem);
+	if (ret < 0) {
+		return ret;
+	}
 
-  /* Get the buffer from the head of the free list */
+	/* Get the buffer from the head of the free list */
 
-  flags = irqsave();
-  bfcontainer = priv->freelist;
-  DEBUGASSERT(bfcontainer);
+	flags = enter_critical_section();
+	bfcontainer = priv->freelist;
+	DEBUGASSERT(bfcontainer);
 
-  /* Unlink the buffer from the freelist */
+	/* Unlink the buffer from the freelist */
 
-  priv->freelist = bfcontainer->flink;
-  irqrestore(flags);
-  return bfcontainer;
+	priv->freelist = bfcontainer->flink;
+	leave_critical_section(flags);
+	return bfcontainer;
 }
 
 /****************************************************************************
@@ -1234,20 +1185,21 @@ static struct sai_buffer_s *sai_buf_allocate(struct stm32l4_sai_s *priv)
  *
  ****************************************************************************/
 
-static void sai_buf_free(struct stm32l4_sai_s *priv, struct sai_buffer_s *bfcontainer)
+static void sai_buf_free(struct stm32l4_sai_s *priv,
+                         struct sai_buffer_s *bfcontainer)
 {
-  irqstate_t flags;
+	irqstate_t flags;
 
-  /* Put the buffer container back on the free list */
+	/* Put the buffer container back on the free list */
 
-  flags = irqsave();
-  bfcontainer->flink  = priv->freelist;
-  priv->freelist = bfcontainer;
-  irqrestore(flags);
+	flags = enter_critical_section();
+	bfcontainer->flink  = priv->freelist;
+	priv->freelist = bfcontainer;
+	leave_critical_section(flags);
 
-  /* Wake up any threads waiting for a buffer container */
+	/* Wake up any threads waiting for a buffer container */
 
-  sai_bufsem_give(priv);
+	nxsem_post(&priv->bufsem);
 }
 
 /****************************************************************************
@@ -1271,15 +1223,12 @@ static void sai_buf_free(struct stm32l4_sai_s *priv, struct sai_buffer_s *bfcont
 
 static void sai_buf_initialize(struct stm32l4_sai_s *priv)
 {
-  int i;
+	int i;
 
-  priv->freelist = NULL;
-  nxsem_init(&priv->bufsem, 0, CONFIG_STM32L4_SAI_MAXINFLIGHT);
-
-  for (i = 0; i < CONFIG_STM32L4_SAI_MAXINFLIGHT; i++)
-    {
-      sai_buf_free(priv, &priv->containers[i]);
-    }
+	priv->freelist = NULL;
+	for (i = 0; i < CONFIG_STM32L4_SAI_MAXINFLIGHT; i++) {
+		sai_buf_free(priv, &priv->containers[i]);
+	}
 }
 
 /****************************************************************************
@@ -1298,49 +1247,47 @@ static void sai_buf_initialize(struct stm32l4_sai_s *priv)
 
 static void sai_portinitialize(struct stm32l4_sai_s *priv)
 {
-  sai_dump_regs(priv, "Before initialization");
+	sai_dump_regs(priv, "Before initialization");
 
-  nxsem_init(&priv->exclsem, 0, 1);
+	/* Initialize buffering */
 
-  /* Create a watchdog timer to catch transfer timeouts */
+	sai_buf_initialize(priv);
 
-  priv->dog = wd_create();
-  DEBUGASSERT(priv->dog);
+	/* Configure the master clock divider */
 
-  /* Initialize buffering */
+	sai_mckdivider(priv);
 
-  sai_buf_initialize(priv);
+	/* Configure the data width */
 
-  /* Configure the master clock divider */
-
-  sai_mckdivider(priv);
-
-  /* Configure the data width */
-
-  sai_datawidth((struct i2s_dev_s *)priv, CONFIG_STM32L4_SAI_DEFAULT_DATALEN);
+	sai_datawidth((struct i2s_dev_s *)priv,
+	              CONFIG_STM32L4_SAI_DEFAULT_DATALEN);
 
 #ifdef CONFIG_STM32L4_SAI_DMA
-  /* Get DMA channel */
+	/* Get DMA channel */
 
-  priv->dma = stm32l4_dmachannel(priv->dma_ch);
-  DEBUGASSERT(priv->dma);
+	priv->dma = stm32l4_dmachannel(priv->dma_ch);
+	DEBUGASSERT(priv->dma);
 
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, 0, SAI_CR1_DMAEN);
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, 0, SAI_CR1_DMAEN);
 #endif
 
-  sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_SYNCEN_MASK, priv->syncen);
+	sai_modifyreg(priv, STM32L4_SAI_CR1_OFFSET, SAI_CR1_SYNCEN_MASK,
+	              priv->syncen);
 
-  sai_modifyreg(priv, STM32L4_SAI_CR2_OFFSET, SAI_CR2_FTH_MASK, SAI_CR2_FTH_1QF);
+	sai_modifyreg(priv, STM32L4_SAI_CR2_OFFSET, SAI_CR2_FTH_MASK,
+	              SAI_CR2_FTH_1QF);
 
-  sai_modifyreg(priv, STM32L4_SAI_FRCR_OFFSET,
-                SAI_FRCR_FSDEF | SAI_FRCR_FSPOL | SAI_FRCR_FSOFF,
-                SAI_FRCR_FSDEF_CHID | SAI_FRCR_FSPOL_LOW | SAI_FRCR_FSOFF_BFB);
+	sai_modifyreg(priv, STM32L4_SAI_FRCR_OFFSET,
+	              SAI_FRCR_FSDEF | SAI_FRCR_FSPOL | SAI_FRCR_FSOFF,
+	              SAI_FRCR_FSDEF_CHID | SAI_FRCR_FSPOL_LOW |
+	              SAI_FRCR_FSOFF_BFB);
 
-  sai_modifyreg(priv, STM32L4_SAI_SLOTR_OFFSET,
-                SAI_SLOTR_NBSLOT_MASK | SAI_SLOTR_SLOTEN_MASK,
-                SAI_SLOTR_NBSLOT(2) | SAI_SLOTR_SLOTEN_0 | SAI_SLOTR_SLOTEN_1);
+	sai_modifyreg(priv, STM32L4_SAI_SLOTR_OFFSET,
+	              SAI_SLOTR_NBSLOT_MASK | SAI_SLOTR_SLOTEN_MASK,
+	              SAI_SLOTR_NBSLOT(2) | SAI_SLOTR_SLOTEN_0 |
+	              SAI_SLOTR_SLOTEN_1);
 
-  sai_dump_regs(priv, "After initialization");
+	sai_dump_regs(priv, "After initialization");
 }
 
 /****************************************************************************
@@ -1363,88 +1310,91 @@ static void sai_portinitialize(struct stm32l4_sai_s *priv)
 
 struct i2s_dev_s *stm32l4_sai_initialize(int intf)
 {
-  struct stm32l4_sai_s *priv;
-  irqstate_t flags;
+	struct stm32l4_sai_s *priv;
+	irqstate_t flags;
 
-  flags = irqsave();
+	flags = enter_critical_section();
 
-  switch (intf)
-    {
+	switch (intf) {
 #ifdef CONFIG_STM32L4_SAI1_A
-      case SAI1_BLOCK_A:
-        {
-          i2sinfo("SAI1 Block A Selected\n");
-          priv = &g_sai1a_priv;
+	case SAI1_BLOCK_A:
+	{
+		i2sinfo("SAI1 Block A Selected\n");
+		priv = &g_sai1a_priv;
 
-          stm32l4_configgpio(GPIO_SAI1_SD_A);
+		stm32l4_configgpio(GPIO_SAI1_SD_A);
 #  ifndef CONFIG_STM32L4_SAI1_A_SYNC_WITH_B
-          stm32l4_configgpio(GPIO_SAI1_FS_A);
-          stm32l4_configgpio(GPIO_SAI1_SCK_A);
-          stm32l4_configgpio(GPIO_SAI1_MCLK_A);
+		stm32l4_configgpio(GPIO_SAI1_FS_A);
+		stm32l4_configgpio(GPIO_SAI1_SCK_A);
+		stm32l4_configgpio(GPIO_SAI1_MCLK_A);
 #  endif
-          break;
-        }
+		break;
+	}
+
 #endif
 #ifdef CONFIG_STM32L4_SAI1_B
-      case SAI1_BLOCK_B:
-        {
-          i2sinfo("SAI1 Block B Selected\n");
-          priv = &g_sai1b_priv;
+	case SAI1_BLOCK_B:
+	{
+		i2sinfo("SAI1 Block B Selected\n");
+		priv = &g_sai1b_priv;
 
-          stm32l4_configgpio(GPIO_SAI1_SD_B);
+		stm32l4_configgpio(GPIO_SAI1_SD_B);
 #  ifndef CONFIG_STM32L4_SAI1_B_SYNC_WITH_A
-          stm32l4_configgpio(GPIO_SAI1_FS_B);
-          stm32l4_configgpio(GPIO_SAI1_SCK_B);
-          stm32l4_configgpio(GPIO_SAI1_MCLK_B);
+		stm32l4_configgpio(GPIO_SAI1_FS_B);
+		stm32l4_configgpio(GPIO_SAI1_SCK_B);
+		stm32l4_configgpio(GPIO_SAI1_MCLK_B);
 #  endif
-          break;
-        }
+		break;
+	}
+
 #endif
 #ifdef CONFIG_STM32L4_SAI2_A
-      case SAI2_BLOCK_A:
-        {
-          i2sinfo("SAI2 Block A Selected\n");
-          priv = &g_sai2a_priv;
+	case SAI2_BLOCK_A:
+	{
+		i2sinfo("SAI2 Block A Selected\n");
+		priv = &g_sai2a_priv;
 
-          stm32l4_configgpio(GPIO_SAI2_SD_A);
+		stm32l4_configgpio(GPIO_SAI2_SD_A);
 #  ifndef CONFIG_STM32L4_SAI2_A_SYNC_WITH_B
-          stm32l4_configgpio(GPIO_SAI2_FS_A);
-          stm32l4_configgpio(GPIO_SAI2_SCK_A);
-          stm32l4_configgpio(GPIO_SAI2_MCLK_A);
+		stm32l4_configgpio(GPIO_SAI2_FS_A);
+		stm32l4_configgpio(GPIO_SAI2_SCK_A);
+		stm32l4_configgpio(GPIO_SAI2_MCLK_A);
 #  endif
-          break;
-        }
+		break;
+	}
+
 #endif
 #ifdef CONFIG_STM32L4_SAI2_B
-      case SAI2_BLOCK_B:
-        {
-          i2sinfo("SAI2 Block B Selected\n");
-          priv = &g_sai2b_priv;
+	case SAI2_BLOCK_B:
+	{
+		i2sinfo("SAI2 Block B Selected\n");
+		priv = &g_sai2b_priv;
 
-          stm32l4_configgpio(GPIO_SAI2_SD_B);
+		stm32l4_configgpio(GPIO_SAI2_SD_B);
 #  ifndef CONFIG_STM32L4_SAI2_B_SYNC_WITH_A
-          stm32l4_configgpio(GPIO_SAI2_FS_B);
-          stm32l4_configgpio(GPIO_SAI2_SCK_B);
-          stm32l4_configgpio(GPIO_SAI2_MCLK_B);
+		stm32l4_configgpio(GPIO_SAI2_FS_B);
+		stm32l4_configgpio(GPIO_SAI2_SCK_B);
+		stm32l4_configgpio(GPIO_SAI2_MCLK_B);
 #  endif
-          break;
-        }
+		break;
+	}
+
 #endif
-      default:
-        {
-          i2sinfo("No SAI interface defined\n");
-          goto err;
-        }
-    }
+	default:
+	{
+		i2sinfo("No SAI interface defined\n");
+		goto err;
+	}
+	}
 
-  sai_portinitialize(priv);
-  irqrestore(flags);
+	sai_portinitialize(priv);
+	leave_critical_section(flags);
 
-  return &priv->dev;
+	return &priv->dev;
 
 err:
-  irqrestore(flags);
-  return NULL;
+	leave_critical_section(flags);
+	return NULL;
 }
 
 #endif
