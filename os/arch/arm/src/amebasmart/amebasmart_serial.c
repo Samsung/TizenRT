@@ -568,15 +568,28 @@ static int rtl8730e_log_uart_irq(void *Data)
 #ifdef CONFIG_SMP
 	spin_unlock(&g_loguart_ier_lock);
 #endif
-	u32 reg_lsr = LOGUART_GetStatus(CONSOLE);
+						u32 reg_lsr = LOGUART_GetStatus(CONSOLE);
 
 	if (reg_lsr & LOGUART_BIT_RXFIFO_INT) {
 		uart_recvchars(&CONSOLE_DEV);
 	}
 
-	u32 txempty_en = LOGUART_GET_ETPFEI(IrqEn);
-	if ((txempty_en == 0x4 && (reg_lsr & LOGUART_BIT_TP4F_EMPTY)) || (reg_lsr & LOGUART_BIT_TP4F_NOT_FULL)) {
+		u32 txempty_en = LOGUART_GET_ETPFEI(IrqEn);
+		if ((txempty_en == 0x4 && (reg_lsr & LOGUART_BIT_TP4F_EMPTY)) || (reg_lsr & LOGUART_BIT_TP4F_NOT_FULL)) {
 		uart_xmitchars(&CONSOLE_DEV);
+	}
+
+	/* Self-healing TX re-arm: the serial core can lose the TX-empty
+	 * interrupt mask through a race between the console writer
+	 * (uart_writev/uart_putxmitchar) and the draining irq
+	 * (uart_xmitchars disabling the TX interrupt when the ring drains
+	 * just as new characters are appended).  When that happens the TX
+	 * ring keeps data but no TX interrupt will ever fire again and the
+	 * console wedges.  Detect that state here on every interrupt (RX
+	 * activity included) and re-arm the TX-empty interrupt. */
+
+		if (txempty_en != 0x4 && CONSOLE_DEV.xmit.head != CONSOLE_DEV.xmit.tail) {
+		LOGUART_INTConfig(LOGUART_DEV, LOGUART_TX_EMPTY_PATH_4_INTR, ENABLE);
 	}
 	return 0;
 }
@@ -772,12 +785,24 @@ static void rtl8730e_log_up_txint(struct uart_dev_s *dev, bool enable)
 {
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
-	priv->txint_enable = enable;
+		priv->txint_enable = enable;
 #ifdef CONFIG_PM
 	irqstate_t flags = enter_critical_section();
 	if (log_uart_active_state != enable) {	/* State has changed */
-		bsp_pm_domain_control(BSP_UART_DRV, enable);
-		log_uart_active_state = enable;
+		/* Gate the UART PM domain only when the path-4 FIFO has fully
+		 * drained.  Gating it while a character is still in flight stops
+		 * that character mid-shift: TP4F_EMPTY never sets, no TX-empty
+		 * interrupt ever fires again, and the next caller waiting for
+		 * TX completion (uart_tcdrain/uart_flush) hangs forever while
+		 * holding the console xmit lock.  The LOG UART is the always-on
+		 * console (see arm_serialinit: it must not be stopped), so
+		 * deferring the gate until the FIFO is empty is safe - the next
+		 * txint() transition re-evaluates it. */
+
+		if (enable || (LOGUART_GetStatus(CONSOLE) & LOGUART_BIT_TP4F_EMPTY)) {
+			bsp_pm_domain_control(BSP_UART_DRV, enable);
+			log_uart_active_state = enable;
+		}
 	}
 	leave_critical_section(flags);
 #endif
