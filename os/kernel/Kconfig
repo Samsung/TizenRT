@@ -2172,3 +2172,11 @@ config HRTIMER_TREE
 endchoice
 
 endif # HRTIMER
+
+config SILENT_REBOOT
+	bool "Enable Silent Reboot"
+	default y
+	depends on SYSTEM_REBOOT_REASON
+	depends on BOARDCTL_RESET
+	---help---
+		Enables Silent Reboot.
