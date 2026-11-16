@@ -138,6 +138,23 @@
 #define PR_SET_PREFERENCE_CB    12
 #define PR_UNSET_PREFERENCE_CB  13
 
+/* TizenRT reboot reason prctl() commands.
+ *
+ *  PR_REBOOT_REASON_READ
+ *    Read the last recorded reboot reason, returned as a
+ *    reboot_reason_code_t value cast to int.
+ *
+ *  PR_REBOOT_REASON_WRITE
+ *    Record a reboot reason, passing the reboot_reason_code_t value
+ *    as arg2.
+ *
+ *  PR_REBOOT_REASON_CLEAR
+ *    Clear the recorded reboot reason.
+ */
+#define PR_REBOOT_REASON_READ   18
+#define PR_REBOOT_REASON_WRITE  19
+#define PR_REBOOT_REASON_CLEAR  20
+
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
