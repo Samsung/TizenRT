@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,75 +16,43 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/board/imxrt1020-evk/include/imxrt_autoleds.c
+ * boards/arm/imxrt/imxrt1020-evk/src/imxrt_autoleds.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name TinyARA nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-/* There are four LED status indicators located on the EVK Board.  The
- * functions of these LEDs include:
+/* There is one user accessible LED status indicator located on the 1020-EVK.
+ * The function of the LEDs include:
  *
- *   - Main Power Supply(D3)
- *     Green: DC 5V main supply is normal.
- *     Red:   J2 input voltage is over 5.6V.
- *     Off:   The board is not powered.
- *   - Reset RED LED(D15)
- *   - OpenSDA LED(D16)
- *   - USER LED(D18)
- *
- * Only a single LED, D18, is under software control.
+ * D3: Power (Green) & Overpower (Red)
+ * D5: User LED (Green) GPIO_AD_B0_05
+ * D15: RST LED (Red)
  *
  * This LED is not used by the board port unless CONFIG_ARCH_LEDS is
  * defined.  In that case, the usage by the board port is defined in
  * include/board.h and src/imxrt_autoleds.c. The LED is used to encode
- * OS-related events as follows:
+ * OS-related events as documented in board.h
  *
- *   -------------------- ----------------------- ------
- *   SYMBOL               Meaning                 LED
- *   -------------------- ----------------------- ------
- *
- *   LED_STARTED       0  TinyARA has been started  OFF
- *   LED_HEAPALLOCATE  0  Heap has been allocated OFF
- *   LED_IRQSENABLED   0  Interrupts enabled      OFF
- *   LED_STACKCREATED  1  Idle stack created      ON
- *   LED_INIRQ         2  In an interrupt         N/C
- *   LED_SIGNAL        2  In a signal handler     N/C
- *   LED_ASSERTION     2  An assertion failed     N/C
- *   LED_PANIC         3  The system has crashed  FLASH
- *   LED_IDLE             Not used
- *
- * Thus if the LED is statically on, TinyARA has successfully  booted and is,
- * apparently, running normally.  If the LED is flashing at approximately
- * 2Hz, then a fatal error has been detected and the system has halted.
+ * The intention is that if the LED is statically on, NuttX has successfully
+ * booted and is, apparently, running normally.  If the LED is flashing at
+ * approximately 2Hz, then a fatal error has been detected and the system has
+ * halted.
  */
 
 /****************************************************************************
@@ -123,13 +91,13 @@
 
 void imxrt_autoled_initialize(void)
 {
-	/* Configure LED GPIO for output */
+  /* Configure LED GPIO for output */
 
-	imxrt_config_gpio(GPIO_LED);
+  imxrt_config_gpio(GPIO_USERLED);
 }
 
 /****************************************************************************
- * Name: board_led_on
+ * Name: board_autoled_on
  *
  * Description:
  *   Turn on the "logical" LED state
@@ -143,28 +111,29 @@ void imxrt_autoled_initialize(void)
  *
  ****************************************************************************/
 
-void board_led_on(int led)
+void board_autoled_on(int led)
 {
-	bool ledoff = false;
+  bool ledoff = false;
 
-	switch (led) {
-	case 0:					/* LED Off */
-		ledoff = true;
-		break;
+  switch (led)
+    {
+      case 0:  /* LED Off */
+        ledoff = true;
+        break;
 
-	case 2:					/* LED No change */
-		return;
+      case 2:  /* LED No change */
+        return;
 
-	case 1:					/* LED On */
-	case 3:					/* LED On */
-		break;
-	}
+      case 1:  /* LED On */
+      case 3:  /* LED On */
+        break;
+    }
 
-	imxrt_gpio_write(GPIO_LED, ledoff);	/* Low illuminates */
+  imxrt_gpio_write(GPIO_USERLED, ledoff); /* Low illuminates */
 }
 
 /****************************************************************************
- * Name: board_led_off
+ * Name: board_autoled_off
  *
  * Description:
  *   Turn off the "logical" LED state
@@ -178,19 +147,20 @@ void board_led_on(int led)
  *
  ****************************************************************************/
 
-void board_led_off(int led)
+void board_autoled_off(int led)
 {
-	switch (led) {
-	case 0:					/* LED Off */
-	case 1:					/* LED Off */
-	case 3:					/* LED Off */
-		break;
+  switch (led)
+    {
+      case 0:  /* LED Off */
+      case 1:  /* LED Off */
+      case 3:  /* LED Off */
+        break;
 
-	case 2:					/* LED No change */
-		return;
-	}
+      case 2:  /* LED No change */
+        return;
+    }
 
-	imxrt_gpio_write(GPIO_LED, true);	/* Low illuminates */
+  imxrt_gpio_write(GPIO_USERLED, true); /* Low illuminates */
 }
 
-#endif							/* CONFIG_ARCH_LEDS */
+#endif /* CONFIG_ARCH_LEDS */

@@ -1,3 +1,20 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 #
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
@@ -5,85 +22,23 @@
 
 if ARCH_BOARD_IMXRT1050_EVK
 
-config FLASH_START_ADDR
-	hex
-	default 0x60000000
-	---help---
-		A start address of flash (in hex).
-		This is fixed value, so user doesn't need to change it.
-
-config FLASH_SIZE
-	int
-	default 16777216
-	---help---
-		A size of flash (in bytes).
-		This is fixed value, so user doesn't need to change it.
-
 choice
 	prompt "Boot Flash"
 	default IMXRT1050_EVK_HYPER_FLASH
 
 config IMXRT1050_EVK_HYPER_FLASH
 	bool "HYPER Flash"
-	select IMXRT_HYPERFLASH
 
-config IMXRT1050_EVK_NOR_FLASH
-	bool "Serial NOR Flash"
-	select IMXRT_NORFLASH
+config IMXRT1050_EVK_QSPI_FLASH
+	bool "QSPI Flash"
 
 endchoice # Boot Flash
 
-config IMXRT_HYPERFLASH
-	bool "Enable Hyperflash"
+config IMXRT1050_EVK_SDRAM
+	bool "Enable SDRAM"
 	default n
+	select IMXRT_SEMC_INIT_DONE
 	---help---
-		Enables Hyperflash
+		Activate DCD configuration of SDRAM
 
-config IMXRT_NORFLASH
-	bool "Enable Norflash"
-	default n
-	---help---
-		Enables Norflash
-
-config IMXRT_AUTOMOUNT_TZDEVNAME
-	string "Device name of the partition for zoneinfo file system"
-	default "/dev/mtdblock10"
-	depends on LIBC_ZONEINFO_ROMFS
-	depends on IMXRT_AUTOMOUNT
-	---help---
-		Specifies the device name (/dev/mtdblock10) of the partition
-		for zoneinfo file system.
-
-config SVR_DB_SECURESTORAGE
-	bool "Enable storing SVR DB inside secure storage partition"
-	default n
-	depends on SECURITY_SS
-	---help---
-		If enabled, SVR DB is stored in secure storage partion
-		mounted at the specified mount point.
-
-if RAMMTD
-config IMXRT_RAMMTD_NEBLOCKS
-	int "RAM MTD erase block count"
-	default 64
-	---help---
-		Ramfs size will be RAMMTD_ERASESIZE * IMXRT_RAMMTD_NEBLOCKS.
-		You have to consider total ramsize to alloc ramfs size.
-
-config IMXRT_RAMMTD_DEV_NUMBER
-	int "device number for mtd of smartfs"
-	default 3
-
-config IMXRT_RAMMTD_DEV_POINT
-	string "Device name of the partition for ramfs r/w file system"
-	default "/dev/smart3"
-
-config IMXRT_RAMMTD_MOUNT_POINT
-	string "Mountpoint of the partition for ramfs r/w file system"
-	default "/ramfs"
-endif
-
-config PROD_HEADER
-	string "Product pin definition header"
-	default "prod/fac.h"
 endif

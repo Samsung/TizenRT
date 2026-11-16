@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/arch/arm/src/imxrt/imxrt_lowputc.h
+ * arch/arm/src/imxrt/imxrt_lowputc.h
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_IMXRT_LOWPUTC_H
-#define __ARCH_ARM_SRC_IMXRT_LOWPUTC_H
+#ifndef __ARCH_ARM_SRC_IMXRT_IMXRT_LOWPUTC_H
+#define __ARCH_ARM_SRC_IMXRT_IMXRT_LOWPUTC_H
 
 /****************************************************************************
  * Included Files
@@ -64,33 +51,35 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "chip.h"
 #include "imxrt_config.h"
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-/* LPUART Data Register */
-#define LPUART_ALL_INTS (LPUART_CTRL_ORIE(1U) | LPUART_CTRL_NEIE(1U) | LPUART_CTRL_FEIE(1U) |  \
-			LPUART_CTRL_PEIE(1U) | LPUART_CTRL_TIE(1U)  | LPUART_CTRL_TCIE(1U) |  \
-			LPUART_CTRL_RIE(1U)  | LPUART_CTRL_ILIE(1U) | LPUART_CTRL_MA1IE(1U) | \
-			LPUART_CTRL_MA2IE(1U))
-
-#define LPUART_DATA_SHIFT              (0)	/* Bits 0-9: Data bits 0-9 */
-#define LPUART_DATA_MASK               (0x3ff << LPUART_DATA_SHIFT)
-/****************************************************************************
  * Public Types
  ****************************************************************************/
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 #ifdef HAVE_LPUART_DEVICE
 /* This structure describes the configuration of an UART */
 
 struct uart_config_s {
-	uint32_t baud;				/* Configured baud */
-	uint8_t parity;				/* 0=none, 1=odd, 2=even */
-	uint8_t bits;				/* Number of bits (5-9) */
-	bool stopbits2;				/* true: Configure with 2 stop bits instead of 1 */
+	uint32_t baud;          /* Configured baud */
+	uint8_t  parity;        /* 0=none, 1=odd, 2=even */
+	uint8_t  bits;          /* Number of bits (5-9) */
+	bool     stopbits2;     /* true: Configure with 2 stop bits instead of 1 */
+	bool     userts;        /* True: Assert RTS when there are data to be sent */
+	bool     invrts;        /* True: Invert sense of RTS pin (true=active high) */
+	bool     usects;        /* True: Condition transmission on CTS asserted */
+	bool     users485;      /* True: Assert RTS while transmission progresses */
 };
 #endif
 
@@ -111,33 +100,38 @@ struct uart_config_s {
 
 void imxrt_lowsetup(void);
 
-/************************************************************************************
+/****************************************************************************
  * Name: imxrt_lpuart_configure
  *
  * Description:
  *   Configure a UART for non-interrupt driven operation
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifdef HAVE_LPUART_DEVICE
-int imxrt_lpuart_configure(uint32_t base, FAR const struct uart_config_s *config);
+int imxrt_lpuart_configure(uint32_t base,
+                           const struct uart_config_s *config);
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Name: imxrt_lowputc
  *
  * Description:
- *   Output a byte with as few system dependencies as possible.  This will even work
- *   BEFORE the console is initialized if we are booting from U-Boot (and the same
- *   UART is used for the console, of course.)
+ *   Output a byte with as few system dependencies as possible.  This will
+ *   even work BEFORE the console is initialized if we are booting from U-
+ *   Boot (and the same UART is used for the console, of course.)
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #if defined(HAVE_LPUART_DEVICE)
-void imxrt_lowputc(char ch);
-uint8_t imxrt_lowgetc(void);
+void imxrt_lowputc(int ch);
 #else
-#define imxrt_lowputc(ch)
+#  define imxrt_lowputc(ch)
 #endif
 
-#endif							/* __ARCH_ARM_SRC_IMXRT_LOWPUTC_H */
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __ARCH_ARM_SRC_IMXRT_LOWPUTC_H */

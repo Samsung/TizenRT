@@ -1,61 +1,47 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 #
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
 if ARCH_BOARD_IMXRT1020_EVK
+choice
+	prompt "Boot Flash"
+	default IMXRT1020_EVK_HYPER_FLASH
 
-config FLASH_START_ADDR
-	hex
-	default 0x60000000
-	---help---
-		A start address of flash (in hex).
-		This is fixed value, so user doesn't need to change it.
+config IMXRT1020_EVK_HYPER_FLASH
+	bool "HYPER Flash"
 
-config FLASH_SIZE
-	int
-	default 8388608
-	---help---
-		A size of flash (in bytes).
-		This is fixed value, so user doesn't need to change it.
+config IMXRT1020_EVK_QSPI_FLASH
+	bool "QSPI Flash"
 
-config IMXRT_NORFLASH
-	bool "Enable Norflash"
-	default y
-	---help---
-		Enables Norflash
+endchoice # Boot Flash
 
-config SVR_DB_SECURESTORAGE
-	bool "Enable storing SVR DB inside secure storage partition"
+config IMXRT1020_EVK_SDRAM
+	bool "Enable SDRAM"
 	default n
-	depends on SECURITY_SS
+	select IMXRT_SEMC_INIT_DONE
 	---help---
-		If enabled, SVR DB is stored in secure storage partion
-		mounted at the specified mount point.
+		Activate DCD configuration of SDRAM
 
-if RAMMTD
-config IMXRT_RAMMTD_NEBLOCKS
-	int "RAM MTD erase block count"
-	default 64
-	---help---
-		Ramfs size will be RAMMTD_ERASESIZE * IMXRT_RAMMTD_NEBLOCKS.
-		You have to consider total ramsize to alloc ramfs size.
-
-config IMXRT_RAMMTD_DEV_NUMBER
-	int "device number for mtd of smartfs"
-	default 3
-
-config IMXRT_RAMMTD_DEV_POINT
-	string "Device name of the partition for ramfs r/w file system"
-	default "/dev/smart3"
-
-config IMXRT_RAMMTD_MOUNT_POINT
-	string "Mountpoint of the partition for ramfs r/w file system"
-	default "/ramfs"
-endif
-
-config PROD_HEADER
-	string "Product pin definition header"
-	default "prod/fac.h"
-
+config HAVE_LEDS
+	bool "Have user leds"
+	default y
+	select ARCH_HAVE_LEDS
 endif

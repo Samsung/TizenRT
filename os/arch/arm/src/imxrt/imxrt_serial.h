@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/arch/arm/src/imxrt/imxrt_serial.h
+ * arch/arm/src/imxrt/imxrt_serial.h
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Ivan Ucherdzhiev <ivanucherdjiev@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_IMXRT_IMX_SERIAL_H
-#define __ARCH_ARM_SRC_IMXRT_IMX_SERIAL_H
+#ifndef __ARCH_ARM_SRC_IMXRT_IMXRT_SERIAL_H
+#define __ARCH_ARM_SRC_IMXRT_IMXRT_SERIAL_H
 
 /****************************************************************************
  * Included Files
@@ -59,24 +46,252 @@
 
 #include <tinyara/config.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "imxrt_config.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define LPUART_ALL_INTS (LPUART_CTRL_ORIE(1U) | LPUART_CTRL_NEIE(1U) | LPUART_CTRL_FEIE(1U) |  \
-                        LPUART_CTRL_PEIE(1U) | LPUART_CTRL_TIE(1U)  | LPUART_CTRL_TCIE(1U) |  \
-                        LPUART_CTRL_RIE(1U)  | LPUART_CTRL_ILIE(1U) | LPUART_CTRL_MA1IE(1U) | \
-                        LPUART_CTRL_MA2IE(1U))
 
-/* LPUART Data Register */
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
-#define LPUART_DATA_SHIFT              (0)	/* Bits 0-9: Data bits 0-9 */
-#define LPUART_DATA_MASK               (0x3ff << LPUART_DATA_SHIFT)
-/* Bit 10:  Reserved */
-#define LPUART_DATA_STATUS_SHIFT       (11)	/* Bit 11: Idle Line status */
-/* Bits 16-31:  Reserved */
+#if defined(CONFIG_IMXRT_LPUART1) || defined(CONFIG_IMXRT_LPUART2) || \
+    defined(CONFIG_IMXRT_LPUART3) || defined(CONFIG_IMXRT_LPUART4) || \
+    defined(CONFIG_IMXRT_LPUART5) || defined(CONFIG_IMXRT_LPUART6) || \
+    defined(CONFIG_IMXRT_LPUART7) || defined(CONFIG_IMXRT_LPUART8)
+#  define HAVE_UART 1
+#endif
+
+/* Assume DMA is not used on the console UART */
+
+#undef SERIAL_HAVE_CONSOLE_RXDMA
+#undef SERIAL_HAVE_CONSOLE_TXDMA
+
+#if !defined(HAVE_UART) || !defined(CONFIG_ARCH_DMA)
+#  undef CONFIG_LPUART1_RXDMA
+#  undef CONFIG_LPUART1_TXDMA
+#  undef CONFIG_LPUART2_RXDMA
+#  undef CONFIG_LPUART2_TXDMA
+#  undef CONFIG_LPUART3_RXDMA
+#  undef CONFIG_LPUART3_TXDMA
+#  undef CONFIG_LPUART4_RXDMA
+#  undef CONFIG_LPUART4_TXDMA
+#  undef CONFIG_LPUART5_RXDMA
+#  undef CONFIG_LPUART5_TXDMA
+#  undef CONFIG_LPUART6_RXDMA
+#  undef CONFIG_LPUART6_TXDMA
+#  undef CONFIG_LPUART7_RXDMA
+#  undef CONFIG_LPUART7_TXDMA
+#  undef CONFIG_LPUART8_RXDMA
+#  undef CONFIG_LPUART8_TXDMA
+#  undef CONFIG_LPUART9_RXDMA
+#  undef CONFIG_LPUART9_TXDMA
+#  undef CONFIG_LPUART10_RXDMA
+#  undef CONFIG_LPUART10_TXDMA
+#  undef CONFIG_LPUART11_RXDMA
+#  undef CONFIG_LPUART11_TXDMA
+#  undef CONFIG_LPUART12_RXDMA
+#  undef CONFIG_LPUART12_TXDMA
+#endif
+
+/* Disable the DMA configuration on all unused LPUARTs */
+
+#ifndef CONFIG_IMXRT_LPUART1
+#  undef CONFIG_LPUART1_RXDMA
+#  undef CONFIG_LPUART1_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART2
+#  undef CONFIG_LPUART2_RXDMA
+#  undef CONFIG_LPUART2_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART3
+#  undef CONFIG_LPUART3_RXDMA
+#  undef CONFIG_LPUART3_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART4
+#  undef CONFIG_LPUART4_RXDMA
+#  undef CONFIG_LPUART4_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART5
+#  undef CONFIG_LPUART5_RXDMA
+#  undef CONFIG_LPUART5_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART6
+#  undef CONFIG_LPUART6_RXDMA
+#  undef CONFIG_LPUART6_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART7
+#  undef CONFIG_LPUART7_RXDMA
+#  undef CONFIG_LPUART7_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART8
+#  undef CONFIG_LPUART8_RXDMA
+#  undef CONFIG_LPUART8_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART9
+#  undef CONFIG_LPUART9_RXDMA
+#  undef CONFIG_LPUART9_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART10
+#  undef CONFIG_LPUART10_RXDMA
+#  undef CONFIG_LPUART10_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART11
+#  undef CONFIG_LPUART11_RXDMA
+#  undef CONFIG_LPUART11_TXDMA
+#endif
+
+#ifndef CONFIG_IMXRT_LPUART12
+#  undef CONFIG_LPUART12_RXDMA
+#  undef CONFIG_LPUART12_TXDMA
+#endif
+
+/* Is RX DMA available on any (enabled) LPUART? */
+
+#undef SERIAL_HAVE_RXDMA
+#if defined(CONFIG_LPUART1_RXDMA)  || defined(CONFIG_LPUART2_RXDMA)  || \
+    defined(CONFIG_LPUART3_RXDMA)  || defined(CONFIG_LPUART4_RXDMA)  || \
+    defined(CONFIG_LPUART5_RXDMA)  || defined(CONFIG_LPUART6_RXDMA)  || \
+    defined(CONFIG_LPUART7_RXDMA)  || defined(CONFIG_LPUART8_RXDMA)  || \
+    defined(CONFIG_LPUART9_RXDMA)  || defined(CONFIG_LPUART10_RXDMA) || \
+    defined(CONFIG_LPUART11_RXDMA) || defined(CONFIG_LPUART12_RXDMA)
+#  define SERIAL_HAVE_RXDMA 1
+#endif
+
+/* Is TX DMA available on any (enabled) LPUART? */
+#undef SERIAL_HAVE_TXDMA
+#if defined(CONFIG_LPUART1_TXDMA)  || defined(CONFIG_LPUART2_TXDMA)  || \
+    defined(CONFIG_LPUART3_TXDMA)  || defined(CONFIG_LPUART4_TXDMA)  || \
+    defined(CONFIG_LPUART5_TXDMA)  || defined(CONFIG_LPUART6_TXDMA)  || \
+    defined(CONFIG_LPUART7_TXDMA)  || defined(CONFIG_LPUART8_TXDMA)  || \
+    defined(CONFIG_LPUART9_RXDMA)  || defined(CONFIG_LPUART10_RXDMA) || \
+    defined(CONFIG_LPUART11_RXDMA) || defined(CONFIG_LPUART12_RXDMA)
+#  define SERIAL_HAVE_TXDMA 1
+#endif
+
+/* Is RX DMA used on all (enabled) LPUARTs */
+
+#define SERIAL_HAVE_ONLY_RXDMA 1
+#if defined(CONFIG_IMXRT_LPUART1) && !defined(CONFIG_LPUART1_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART2) && !defined(CONFIG_LPUART2_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART3) && !defined(CONFIG_LPUART3_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART4) && !defined(CONFIG_LPUART4_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART5) && !defined(CONFIG_LPUART5_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART6) && !defined(CONFIG_LPUART6_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART7) && !defined(CONFIG_LPUART7_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART8) && !defined(CONFIG_LPUART8_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART9) && !defined(CONFIG_LPUART9_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART10) && !defined(CONFIG_LPUART10_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART11) && !defined(CONFIG_LPUART11_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#elif defined(CONFIG_IMXRT_LPUART12) && !defined(CONFIG_LPUART12_RXDMA)
+#  undef SERIAL_HAVE_ONLY_RXDMA
+#endif
+
+/* Is TX DMA used on all (enabled) LPUARTs */
+
+#define SERIAL_HAVE_ONLY_TXDMA 1
+#if defined(CONFIG_IMXRT_LPUART1) && !defined(CONFIG_LPUART1_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART2) && !defined(CONFIG_LPUART2_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART3) && !defined(CONFIG_LPUART3_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART4) && !defined(CONFIG_LPUART4_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART5) && !defined(CONFIG_LPUART5_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART6) && !defined(CONFIG_LPUART6_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART7) && !defined(CONFIG_LPUART7_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART8) && !defined(CONFIG_LPUART8_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART9) && !defined(CONFIG_LPUART9_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART10) && !defined(CONFIG_LPUART10_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART11) && !defined(CONFIG_LPUART11_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#elif defined(CONFIG_IMXRT_LPUART12) && !defined(CONFIG_LPUART12_TXDMA)
+#  undef SERIAL_HAVE_ONLY_TXDMA
+#endif
+
+#undef SERIAL_HAVE_ONLY_DMA
+#if defined(SERIAL_HAVE_ONLY_RXDMA) && defined(SERIAL_HAVE_ONLY_TXDMA)
+#define SERIAL_HAVE_ONLY_DMA
+#endif
+
+/* Verify that DMA has been enabled and the DMA channel has been defined.
+ */
+
+#  if defined(SERIAL_HAVE_TXDMA) || defined(SERIAL_HAVE_RXDMA)
+#    ifndef CONFIG_IMXRT_EDMA
+#      error IMXRT LPUART receive or transmit DMA requires CONFIG_IMXRT_EDMA
+#    endif
+#  endif
+
+#if defined(SERIAL_HAVE_RXDMA)
+/* Currently RS-485 support cannot be enabled when RXDMA is in use due to
+ * lack of testing.
+ */
+
+#  if (defined(CONFIG_LPUART1_RXDMA)  && defined(CONFIG_LPUART1_RS485))  || \
+      (defined(CONFIG_LPUART2_RXDMA)  && defined(CONFIG_LPUART2_RS485))  || \
+      (defined(CONFIG_LPUART3_RXDMA)  && defined(CONFIG_LPUART3_RS485))  || \
+      (defined(CONFIG_LPUART4_RXDMA)  && defined(CONFIG_LPUART4_RS485))  || \
+      (defined(CONFIG_LPUART5_RXDMA)  && defined(CONFIG_LPUART5_RS485))  || \
+      (defined(CONFIG_LPUART6_RXDMA)  && defined(CONFIG_LPUART6_RS485))  || \
+      (defined(CONFIG_LPUART7_RXDMA)  && defined(CONFIG_LPUART7_RS485))  || \
+      (defined(CONFIG_LPUART8_RXDMA)  && defined(CONFIG_LPUART8_RS485))  || \
+      (defined(CONFIG_LPUART9_RXDMA)  && defined(CONFIG_LPUART9_RS485))  || \
+      (defined(CONFIG_LPUART10_RXDMA) && defined(CONFIG_LPUART10_RS485)) || \
+      (defined(CONFIG_LPUART11_RXDMA) && defined(CONFIG_LPUART11_RS485)) || \
+      (defined(CONFIG_LPUART12_RXDMA) && defined(CONFIG_LPUART12_RS485))
+#    error "RXDMA and RS-485 cannot be enabled at the same time for the same LPUART"
+#  endif
+#endif /* SERIAL_HAVE_RXDMA */
+
+/* Currently RS-485 support cannot be enabled when TXDMA is in use due to
+ * lack of testing.
+ */
+
+#if (defined(CONFIG_LPUART1_TXDMA)  && defined(CONFIG_LPUART1_RS485))  || \
+    (defined(CONFIG_LPUART2_TXDMA)  && defined(CONFIG_LPUART2_RS485))  || \
+    (defined(CONFIG_LPUART3_TXDMA)  && defined(CONFIG_LPUART3_RS485))  || \
+    (defined(CONFIG_LPUART4_TXDMA)  && defined(CONFIG_LPUART4_RS485))  || \
+    (defined(CONFIG_LPUART5_TXDMA)  && defined(CONFIG_LPUART5_RS485))  || \
+    (defined(CONFIG_LPUART6_TXDMA)  && defined(CONFIG_LPUART6_RS485))  || \
+    (defined(CONFIG_LPUART7_TXDMA)  && defined(CONFIG_LPUART7_RS485))  || \
+    (defined(CONFIG_LPUART8_TXDMA)  && defined(CONFIG_LPUART8_RS485))  || \
+    (defined(CONFIG_LPUART9_TXDMA)  && defined(CONFIG_LPUART9_RS485))  || \
+    (defined(CONFIG_LPUART10_TXDMA) && defined(CONFIG_LPUART10_RS485)) || \
+    (defined(CONFIG_LPUART11_TXDMA) && defined(CONFIG_LPUART11_RS485)) || \
+    (defined(CONFIG_LPUART12_TXDMA) && defined(CONFIG_LPUART12_RS485))
+#  error "TXDMA and RS-485 cannot be enabled at the same time for the same LPUART"
+#endif
 
 /****************************************************************************
  * Public Types
@@ -95,7 +310,8 @@
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -109,8 +325,8 @@ extern "C" {
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
- *   before up_serialinit.
+ *   serial console will be available during boot up.  This must be called
+ *   before arm_serialinit.
  *
  ****************************************************************************/
 
@@ -118,37 +334,10 @@ extern "C" {
 void imxrt_earlyserialinit(void);
 #endif
 
-/****************************************************************************
- * Name: uart_earlyserialinit
- *
- * Description:
- *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
- *   before up_serialinit.
- *
- ****************************************************************************/
-
-#if defined(USE_EARLYSERIALINIT) && defined(IMXRT_HAVE_LPUART)
-void uart_earlyserialinit(void);
-#endif
-
-/****************************************************************************
- * Name: uart_serialinit
- *
- * Description:
- *   Register the UART serial console and serial ports.  This assumes that
- *   uart_earlyserialinit was called previously.
- *
- ****************************************************************************/
-
-#ifdef IMXRT_HAVE_LPUART
-void uart_serialinit(void);
-#endif
-
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_IMXRT_IMX_SERIAL_H */
+#endif /* __ASSEMBLY__ */
+#endif /* __ARCH_ARM_SRC_IMXRT_IMXRT_SERIAL_H */

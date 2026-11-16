@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2019 NXP Semiconductors All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# os/board/imxrt1020-evk/src/Makefile
+# board/imxrt1020-evk/src/Makefile
 #
-#   Copyright (C) 2018 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 #    notice, this list of conditions and the following disclaimer in
 #    the documentation and/or other materials provided with the
 #    distribution.
-# 3. Neither the name TinyARA nor the names of its contributors may be
+# 3. Neither the name NuttX nor the names of its contributors may be
 #    used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
@@ -51,21 +51,18 @@
 ############################################################################
 
 -include $(TOPDIR)/Make.defs
-
-DEPPATH = --dep-path .
 ASRCS =
-CSRCS = imxrt_boot.c imxrt_flexspi_nor_boot.c imxrt_flexspi_nor_flash.c
+DEPPATH = --dep-path .
+VPATH = .
 
+CSRCS = imxrt_flexspi_nor_flash.c imxrt_boot.c imxrt_flexspi_nor_boot.c
 ifeq ($(CONFIG_IMXRT_SDRAMC),y)
 CSRCS += imxrt_sdram.c
 endif
 
-ifeq ($(CONFIG_LIB_BOARDCTL),y)
+ifeq ($(CONFIG_BOARDCTL),y)
 CSRCS += imxrt_appinit.c imxrt_bringup.c
-ifeq ($(CONFIG_IMXRT_USB),y)
-CFLAGS += -DIMXRT_USB
-endif
-else ifeq ($(CONFIG_BOARD_INITIALIZE),y)
+else ifeq ($(CONFIG_BOARD_LATE_INITIALIZE),y)
 CSRCS += imxrt_bringup.c
 endif
 
@@ -83,67 +80,49 @@ ifeq ($(CONFIG_IMXRT_ENET),y)
 CSRCS += imxrt_ethernet.c
 endif
 
-DEPPATH += --dep-path $(TOPDIR)/board/common
-VPATH += :$(TOPDIR)/board/common
-
-ifeq ($(CONFIG_FLASH_PARTITION),y)
-CSRCS += partitions.c
+ifeq ($(CONFIG_IMXRT_LPSPI),y)
+CSRCS += imxrt_spi.c
 endif
 
-ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
-CSRCS += crashdump.c
+ifeq ($(CONFIG_DEV_GPIO),y)
+CSRCS += imxrt_gpio.c
 endif
 
-# boardctl support
-ifeq ($(CONFIG_LIB_BOARDCTL),y)
-DEPPATH += --dep-path $(TOPDIR)/arch
-VPATH += :$(TOPDIR)/arch
-CSRCS += boardctl.c
+ifeq ($(CONFIG_IMXRT_USBOTG),y)
+CSRCS += imxrt_usbhost.c
 endif
 
+
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+CFLAGS += -I$(TOPDIR)/kernel -I$(TOPDIR)/arch/arm/src/common -I$(TOPDIR)/arch/arm/src/chip -I$(TOPDIR)/arch/arm/src/$(ARCH_FAMILY)
+AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src
-BOARD_SRCDIR = $(TOPDIR)/board
-ifeq ($(WINTOOL),y)
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/chip}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/common}"
-  CFLAGS += -I "${shell cygpath -w $(ARCH_SRCDIR)/armv7-m}"
-  CFLAGS += -I "${shell cygpath -w $(BOARD_SRCDIR)/common}"
-else
-  CFLAGS += -I$(ARCH_SRCDIR)/chip
-  CFLAGS += -I$(ARCH_SRCDIR)/common
-  CFLAGS += -I$(ARCH_SRCDIR)/armv7-m
-  CFLAGS += -I$(BOARD_SRCDIR)/common
-  CFLAGS += -DUSB_TIZEN_RT
-  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/include
-  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/phy
-  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/host/class
-  CFLAGS += -I$(ARCH_SRCDIR)/chip/usb/host
-endif
+BIN = libboard$(LIBEXT)
 
-all: libboard$(LIBEXT)
+all: $(BIN)
+.PHONY: context depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
+$(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-libboard$(LIBEXT): $(OBJS)
+$(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) $(CC) -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
 	$(Q) touch $@
 
 depend: .depend
 
 clean:
-	$(call DELFILE, libboard$(LIBEXT))
+	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
 distclean: clean
@@ -151,4 +130,5 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-#include $(TOPDIR)/configs/Board.mk
+
+context:

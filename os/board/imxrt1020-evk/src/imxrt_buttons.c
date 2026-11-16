@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/board/imrtx1020-evk/src/imxrt_buttons.c
+ * boards/arm/imxrt/imxrt1020-evk/src/imxrt_buttons.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name TinyARA nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,8 +50,7 @@
 #include <tinyara/irq.h>
 #include <arch/board/board.h>
 
-#include "up_arch.h"
-
+#include "arm_internal.h"
 #include "imxrt_config.h"
 #include "imxrt_irq.h"
 #include "imxrt_gpio.h"
@@ -76,9 +62,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* The IMXRT has 1 user button (SW8)):
+/* The imxrt1020-evk has 1 user button:
  *
- * 1. SW8 (IRQ88)   GPIO5-00
+ * 1. SW2 (IRQ88)   EMC-16
+
  */
 
 /****************************************************************************
@@ -96,11 +83,12 @@
  *
  ****************************************************************************/
 
-void board_button_initialize(void)
+uint32_t board_button_initialize(void)
 {
-	/* Configure the button as input */
+  /* Configure the buttons as input */
 
-	imxrt_config_gpio(GPIO_SW8);
+  imxrt_config_gpio(GPIO_SWWAKE);
+  return 1;
 }
 
 /****************************************************************************
@@ -116,13 +104,14 @@ void board_button_initialize(void)
 
 uint8_t board_buttons(void)
 {
-	uint8_t ret = 0;
+  uint8_t ret = 0;
 
-	if (!imxrt_gpio_read(GPIO_SW8)) {
-		ret |= BUTTON_SW8_BIT;
-	}
+  if (!imxrt_gpio_read(GPIO_SWWAKE))
+    {
+      ret |= BUTTON_WAKE_BIT;
+    }
 
-	return ret;
+  return ret;
 }
 
 /****************************************************************************
@@ -140,20 +129,20 @@ uint8_t board_buttons(void)
 #ifdef CONFIG_ARCH_IRQBUTTONS
 int board_button_irq(int id, xcpt_t irqhandler)
 {
-	int ret = -EINVAL;
+  int ret = -EINVAL;
 
-	/* The button has already been configured as an interrupting input (by
-	 * board_button_initialize() above).
-	 *
-	 * Attach the new button handler.
-	 */
+  /* The button has already been configured as an interrupting input (by
+   * board_button_initialize() above).
+   *
+   * Attach the new button handler.
+   */
 
-	ret = irq_attach(id, irqhandler, NULL);
+  ret = irq_attach(id, irqhandler, NULL);
 
-	/* Then make sure that interrupts are enabled on the pin */
+  /* Then make sure that interrupts are enabled on the pin */
 
-	up_enable_irq(id);
-	return ret;
+  up_enable_irq(id);
+  return ret;
 }
 #endif
-#endif							/* CONFIG_ARCH_BUTTONS */
+#endif /* CONFIG_ARCH_BUTTONS */

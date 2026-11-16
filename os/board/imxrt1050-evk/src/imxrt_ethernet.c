@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 NXP Semiconductors All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/board/imxrt1050-evk/src/imxrt_ethernet.c
+ * boards/arm/imxrt/imxrt1050-evk/src/imxrt_ethernet.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name TinyARA nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,25 +46,27 @@
 /* Force verbose debug on in this file only to support unit-level testing. */
 
 #ifdef CONFIG_NETDEV_PHY_DEBUG
-#undef  CONFIG_DEBUG_INFO
-#define CONFIG_DEBUG_INFO 1
-#undef  CONFIG_DEBUG_NET
-#define CONFIG_DEBUG_NET 1
+#  undef  CONFIG_DEBUG_INFO
+#  define CONFIG_DEBUG_INFO 1
+#  undef  CONFIG_DEBUG_NET
+#  define CONFIG_DEBUG_NET 1
 #endif
 
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
-#include <stdio.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/spinlock.h>
 
 #include "imxrt_gpio.h"
 #include "imxrt_enet.h"
 
 #include "imxrt1050-evk.h"
+
+#include <arch/board/board.h>
 
 #ifdef CONFIG_IMXRT_ENET
 
@@ -88,95 +77,105 @@
 #define IMXRT_ENET_DEVNAME "eth0"
 
 /* Debug ********************************************************************/
+
 /* Extra, in-depth debug output that is only available if
  * CONFIG_NETDEV_PHY_DEBUG us defined.
  */
 
 #ifdef CONFIG_NETDEV_PHY_DEBUG
-#define phyerr    _err
-#define phywarn   _warn
-#define phyinfo   _info
+#  define phyerr    _err
+#  define phywarn   _warn
+#  define phyinfo   _info
 #else
-#define phyerr(x...)
-#define phywarn(x...)
-#define phyinfo(x...)
+#  define phyerr(x...)
+#  define phywarn(x...)
+#  define phyinfo(x...)
 #endif
 
-#undef nerr
-#undef ninfo
-#if defined(DEBUG_IMX_ENET_DRIVER)
-#define ninfo(format, ...)   printf(format, ##__VA_ARGS__)
-#define nerr(format, ...)   printf(format, ##__VA_ARGS__)
-#else
-#define ninfo(format, ...)
-#endif
-#define nerr(format, ...)   printf(format, ##__VA_ARGS__)
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
-/************************************************************************************
+#ifdef CONFIG_IMXRT_GPIO1_0_15_IRQ
+static spinlock_t g_phy_lock = SP_UNLOCKED;
+#endif
+
+/****************************************************************************
  * Private Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: imxrt_enet_phy_enable
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_IMXRT_GPIO1_0_15_IRQ
 static void imxrt_enet_phy_enable(bool enable)
 {
-	phyinfo("IRQ%d: enable=%d\n", GPIO_ENET_INT, enable);
+  phyinfo("IRQ%d: enable=%d\n", GPIO_ENET_INT, enable);
 
-	if (enable) {
-		up_enable_irq(GPIO_ENET_IRQ);
-	} else {
-		up_disable_irq(GPIO_ENET_IRQ);
-	}
+  if (enable)
+    {
+      up_enable_irq(GPIO_ENET_IRQ);
+    }
+  else
+    {
+      up_disable_irq(GPIO_ENET_IRQ);
+    }
 }
 #endif
 
-/************************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Function: imxrt_phy_boardinitialize
  *
  * Description:
- *   Some boards require specialized initialization of the PHY before it can be
- *   used.  This may include such things as configuring GPIOs, resetting the PHY,
- *   etc.  If CONFIG_IMXRT_ENET_PHYINIT is defined in the configuration then the
- *   board specific logic must provide imxrt_phyinitialize();  The i.MX RT Ethernet
- *   driver will call this function one time before it first uses the PHY.
+ *  Some boards require specialized initialization of the PHY before it can
+ *  be used.
+ *  This may include such things as configuring GPIOs, resetting the PHY,
+ *  etc.
+ *  If CONFIG_IMXRT_ENET_PHYINIT is defined in the configuration then the
+ *  board specific logic must provide imxrt_phyinitialize();
+ *  The i.MX RT Ethernet driver will call this function one time before it
+ *  first uses the PHY.
  *
  * Input Parameters:
- *   intf - Always zero for now.
+ *  intf - Always zero for now.
  *
  * Returned Value:
- *   OK on success; Negated errno on failure.
+ *  OK on success; Negated errno on failure.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 int imxrt_phy_boardinitialize(int intf)
 {
 #ifdef CONFIG_IMXRT_GPIO1_0_15_IRQ
-	/* Configure the PHY interrupt pin */
+  /* Configure the PHY interrupt pin */
 
-	phyinfo("Configuring interrupt: %08x\n", GPIO_ENET_INT);
-	imxrt_config_gpio(GPIO_ENET_INT);
+  phyinfo("Configuring interrupt: %08x\n", GPIO_ENET_INT);
+  imxrt_config_gpio(GPIO_ENET_INT);
 #endif
 
-	/* Configure the PHY reset pin.
-	 *
-	 * The #RST uses inverted logic.  The initial value of zero will put the
-	 * PHY into the reset state.
-	 */
+  /* Configure the PHY reset pin.
+   *
+   * The #RST uses inverted logic.  The initial value of zero will put the
+   * PHY into the reset state.
+   */
+#ifdef GPIO_ENET_RST
+  /* On the EVK the RST pin is combined with LED, so sometimes can't be
+   * accessed. Only stress about it if we've got a definition.
+   */
 
-	phyinfo("Configuring reset: %08x\n", GPIO_ENET_RST);
-	imxrt_config_gpio(GPIO_ENET_RST);
+  phyinfo("Configuring reset: %08x\n", GPIO_ENET_RST);
+  imxrt_config_gpio(GPIO_ENET_RST);
 
-	/* Take the PHY out of reset. */
+  /* Take the PHY out of reset. */
 
-	imxrt_gpio_write(GPIO_ENET_RST, true);
-	return OK;
+  imxrt_gpio_write(GPIO_ENET_RST, true);
+#endif
+  return OK;
 }
 
 /****************************************************************************
@@ -232,7 +231,7 @@ int imxrt_phy_boardinitialize(int intf)
  *             signal tasks in user space.  A value of NULL can be passed
  *             in order to detach and disable the PHY interrupt.
  *   arg     - The argument that will accompany the interrupt
- *   enable  - A function pointer that be unsed to enable or disable the
+ *   enable  - A function pointer that be unused to enable or disable the
  *             PHY interrupt.
  *
  * Returned Value:
@@ -242,64 +241,71 @@ int imxrt_phy_boardinitialize(int intf)
  ****************************************************************************/
 
 #ifdef CONFIG_IMXRT_GPIO1_0_15_IRQ
-xcpt_t arch_phy_irq(FAR const char *intf, xcpt_t handler, phy_enable_t *enable)
+int arch_phy_irq(const char *intf, xcpt_t handler, void *arg,
+                 phy_enable_t *enable)
 {
-	irqstate_t flags;
-	phy_enable_t enabler;
-	xcpt_t rethandler = NULL;
-	int irq;
+  irqstate_t flags;
+  phy_enable_t enabler;
+  int irq;
 
-	DEBUGASSERT(intf);
+  DEBUGASSERT(intf);
 
-	ninfo("%s: handler=%p\n", intf, handler);
-	phyinfo("EMAC: devname=%s\n", IMXRT_ENET_DEVNAME);
+  ninfo("%s: handler=%p\n", intf, handler);
+  phyinfo("EMAC: devname=%s\n", IMXRT_ENET_DEVNAME);
 
-	if (strcmp(intf, IMXRT_ENET_DEVNAME) == 0) {
-		irq = GPIO_ENET_IRQ;
-		enabler = imxrt_enet_phy_enable;
-	} else {
-		nerr("ERROR: Unsupported interface: %s\n", intf);
-		return NULL;
-	}
+  if (strcmp(intf, IMXRT_ENET_DEVNAME) == 0)
+    {
+      irq     = GPIO_ENET_IRQ;
+      enabler = imxrt_enet_phy_enable;
+    }
+  else
+    {
+      nerr("ERROR: Unsupported interface: %s\n", intf);
+      return -EINVAL;
+    }
 
-	/* Disable interrupts until we are done.  This guarantees that the
-	 * following operations are atomic.
-	 */
+  /* Disable interrupts until we are done.  This guarantees that the
+   * following operations are atomic.
+   */
 
-	flags = irqsave();
+  flags = spin_lock_irqsave(&g_phy_lock);
 
-	/* Configure the interrupt */
+  /* Configure the interrupt */
 
-	if (handler) {
-		/* The interrupt pin has already been configured as an interrupting
-		 * input (by imxrt_phy_boardinitialize() above).
-		 *
-		 * Attach the new button handler.
-		 */
+  if (handler)
+    {
+      /* The interrupt pin has already been configured as an interrupting
+       * input (by imxrt_phy_boardinitialize() above).
+       *
+       * Attach the new button handler.
+       */
 
-		phyinfo("Attach IRQ%d\n", irq);
-		(void)irq_attach(irq, handler, NULL);
-	} else {
-		phyinfo("Detach IRQ%d\n", irq);
-		(void)irq_detach(irq);
-		enabler = NULL;
-	}
+      phyinfo("Attach IRQ%d\n", irq);
+      irq_attach(irq, handler, arg);
+    }
+  else
+    {
+      phyinfo("Detach IRQ%d\n", irq);
+      irq_detach(irq);
+      enabler = NULL;
+    }
 
-	/* Return with the interrupt disabled in either case */
+  /* Return with the interrupt disabled in either case */
 
-	up_disable_irq(GPIO_ENET_IRQ);
+  up_disable_irq(GPIO_ENET_IRQ);
 
-	/* Return the enabling function pointer */
+  /* Return the enabling function pointer */
 
-	if (enable) {
-		*enable = enabler;
-	}
+  if (enable)
+    {
+      *enable = enabler;
+    }
 
-	/* Return the old handler (so that it can be restored) */
+  /* Return the old handler (so that it can be restored) */
 
-	irqrestore(flags);
-	return rethandler;
+  spin_unlock_irqrestore(&g_phy_lock, flags);
+  return OK;
 }
-#endif							/* CONFIG_IMXRT_GPIO1_0_15_IRQ */
+#endif /* CONFIG_IMXRT_GPIO1_0_15_IRQ */
 
-#endif							/* CONFIG_IMXRT_ENET */
+#endif /* CONFIG_IMXRT_ENET */
