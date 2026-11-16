@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_clockconfig.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -41,7 +43,7 @@
 
 #include <tinyara/config.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "hardware/imx_ccm.h"
 #include "imx_config.h"
 #include "imx_clockconfig.h"
@@ -62,17 +64,17 @@
 
 void imx_clockconfig(void)
 {
-  /* Don't change the current basic clock configuration if we are running
-   * from SDRAM.  In this case, some bootloader logic has already configured
-   * clocking and SDRAM.  We are pretty much committed to using things the
-   * way that the bootloader has left them.
-   *
-   * Clocking will be configured at 792 MHz initially when started via
-   * U-Boot.  The Linux kernel will uses the CPU frequency scaling code
-   * which will switch the processor frequency between 400 MHz and 1GHz based
-   * on load and temperature.  For now, NuttX simply leaves the clocking at
-   * 792MHz.
-   */
+	/* Don't change the current basic clock configuration if we are running
+	 * from SDRAM.  In this case, some bootloader logic has already configured
+	 * clocking and SDRAM.  We are pretty much committed to using things the
+	 * way that the bootloader has left them.
+	 *
+	 * Clocking will be configured at 792 MHz initially when started via
+	 * U-Boot.  The Linux kernel will uses the CPU frequency scaling code
+	 * which will switch the processor frequency between 400 MHz and 1GHz based
+	 * on load and temperature.  For now, NuttX simply leaves the clocking at
+	 * 792MHz.
+	 */
 
 #ifndef CONFIG_IMX6_BOOT_SDRAM
 #  warning Missing logic

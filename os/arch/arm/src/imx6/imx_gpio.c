@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_gpio.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -46,9 +48,10 @@
 #include <errno.h>
 
 #include <tinyara/irq.h>
+#include <tinyara/spinlock.h>
 
 #include "chip.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "imx_iomuxc.h"
 #include "imx_gpio.h"
 
@@ -61,6 +64,8 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+static spinlock_t g_imx_gpio_lock = SP_UNLOCKED;
 
 static const uint8_t g_gpio1_padmux[IMX_GPIO_NPINS] =
 {
@@ -357,9 +362,9 @@ static const uint8_t *g_gpio_padmux[IMX_GPIO_NPORTS + 1] =
 
 static inline void imx_gpio_dirout(int port, int pin)
 {
-  uint32_t regval = getreg32(IMX_GPIO_GDIR(port));
-  regval |= GPIO_PIN(pin);
-  putreg32(regval, IMX_GPIO_GDIR(port));
+	uint32_t regval = getreg32(IMX_GPIO_GDIR(port));
+	regval |= GPIO_PIN(pin);
+	putreg32(regval, IMX_GPIO_GDIR(port));
 }
 
 /****************************************************************************
@@ -368,9 +373,9 @@ static inline void imx_gpio_dirout(int port, int pin)
 
 static inline void imx_gpio_dirin(int port, int pin)
 {
-  uint32_t regval = getreg32(IMX_GPIO_GDIR(port));
-  regval &= ~GPIO_PIN(pin);
-  putreg32(regval, IMX_GPIO_GDIR(port));
+	uint32_t regval = getreg32(IMX_GPIO_GDIR(port));
+	regval &= ~GPIO_PIN(pin);
+	putreg32(regval, IMX_GPIO_GDIR(port));
 }
 
 /****************************************************************************
@@ -379,20 +384,17 @@ static inline void imx_gpio_dirin(int port, int pin)
 
 static void imx_gpio_setoutput(int port, int pin, bool value)
 {
-  uintptr_t regaddr = IMX_GPIO_DR(port);
-  uint32_t regval;
+	uintptr_t regaddr = IMX_GPIO_DR(port);
+	uint32_t regval;
 
-  regval = getreg32(regaddr);
-  if (value)
-    {
-      regval |= GPIO_PIN(pin);
-    }
-  else
-    {
-      regval &= ~GPIO_PIN(pin);
-    }
+	regval = getreg32(regaddr);
+	if (value) {
+		regval |= GPIO_PIN(pin);
+	} else {
+		regval &= ~GPIO_PIN(pin);
+	}
 
-  putreg32(regval, regaddr);
+	putreg32(regval, regaddr);
 }
 
 /****************************************************************************
@@ -401,11 +403,11 @@ static void imx_gpio_setoutput(int port, int pin, bool value)
 
 static inline bool imx_gpio_getinput(int port, int pin)
 {
-  uintptr_t regaddr = IMX_GPIO_DR(port);
-  uint32_t regval;
+	uintptr_t regaddr = IMX_GPIO_DR(port);
+	uint32_t regval;
 
-  regval = getreg32(regaddr);
-  return ((regval & GPIO_PIN(pin)) != 0);
+	regval = getreg32(regaddr);
+	return ((regval & GPIO_PIN(pin)) != 0);
 }
 
 /****************************************************************************
@@ -414,45 +416,42 @@ static inline bool imx_gpio_getinput(int port, int pin)
 
 static int imx_gpio_configinput(gpio_pinset_t pinset)
 {
-  int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
-  int pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-  const uint8_t *table;
-  iomux_pinset_t ioset;
-  uintptr_t regaddr;
-  unsigned int index;
+	int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	const uint8_t *table;
+	iomux_pinset_t ioset;
+	uintptr_t regaddr;
+	unsigned int index;
 
-  /* Configure pin as in input */
+	/* Configure pin as in input */
 
-  imx_gpio_dirin(port, pin);
+	imx_gpio_dirin(port, pin);
 
-  /* Configure pin as a GPIO */
+	/* Configure pin as a GPIO */
 
-  table = g_gpio_padmux[port];
-  if (table == NULL)
-    {
-      return -EINVAL;
-    }
+	table = g_gpio_padmux[port];
+	if (table == NULL) {
+		return -EINVAL;
+	}
 
-  index = (unsigned int)table[pin];
-  if (index >= IMX_PADMUX_NREGISTERS)
-    {
-      return -EINVAL;
-    }
+	index = (unsigned int)table[pin];
+	if (index >= IMX_PADMUX_NREGISTERS) {
+		return -EINVAL;
+	}
 
-  regaddr = IMX_PADMUX_ADDRESS(index);
-  putreg32(PADMUX_MUXMODE_ALT5, regaddr);
+	regaddr = IMX_PADMUX_ADDRESS(index);
+	putreg32(PADMUX_MUXMODE_ALT5, regaddr);
 
-  /* Configure pin pad settings */
+	/* Configure pin pad settings */
 
-  index = imx_padmux_map(index);
-  if (index >= IMX_PADCTL_NREGISTERS)
-    {
-      return -EINVAL;
-    }
+	index = imx_padmux_map(index);
+	if (index >= IMX_PADCTL_NREGISTERS) {
+		return -EINVAL;
+	}
 
-  regaddr = IMX_PADCTL_ADDRESS(index);
-  ioset   = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
-  return imx_iomux_configure(regaddr, ioset);
+	regaddr = IMX_PADCTL_ADDRESS(index);
+	ioset   = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
+	return imx_iomux_configure(regaddr, ioset);
 }
 
 /****************************************************************************
@@ -461,18 +460,18 @@ static int imx_gpio_configinput(gpio_pinset_t pinset)
 
 static inline int imx_gpio_configoutput(gpio_pinset_t pinset)
 {
-  int port   = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
-  int pin    = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-  bool value = ((pinset & GPIO_OUTPUT_ONE) != 0);
+	int port   = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int pin    = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	bool value = ((pinset & GPIO_OUTPUT_ONE) != 0);
 
-  /* Set the output value */
+	/* Set the output value */
 
-  imx_gpio_setoutput(port, pin, value);
+	imx_gpio_setoutput(port, pin, value);
 
-  /* Convert the configured input GPIO to an output */
+	/* Convert the configured input GPIO to an output */
 
-  imx_gpio_dirout(port, pin);
-  return OK;
+	imx_gpio_dirout(port, pin);
+	return OK;
 }
 
 /****************************************************************************
@@ -481,33 +480,32 @@ static inline int imx_gpio_configoutput(gpio_pinset_t pinset)
 
 static inline int imx_gpio_configperiph(gpio_pinset_t pinset)
 {
-  iomux_pinset_t ioset;
-  uintptr_t regaddr;
-  uint32_t regval;
-  uint32_t value;
-  unsigned int index;
+	iomux_pinset_t ioset;
+	uintptr_t regaddr;
+	uint32_t regval;
+	uint32_t value;
+	unsigned int index;
 
-  /* Configure pin as a peripheral */
+	/* Configure pin as a peripheral */
 
-  index = ((pinset & GPIO_PADMUX_MASK) >> GPIO_PADMUX_SHIFT);
-  regaddr = IMX_PADMUX_ADDRESS(index);
+	index = ((pinset & GPIO_PADMUX_MASK) >> GPIO_PADMUX_SHIFT);
+	regaddr = IMX_PADMUX_ADDRESS(index);
 
-  value = ((pinset & GPIO_ALT_MASK) >> GPIO_ALT_SHIFT);
-  regval = (value << PADMUX_MUXMODE_SHIFT);
+	value = ((pinset & GPIO_ALT_MASK) >> GPIO_ALT_SHIFT);
+	regval = (value << PADMUX_MUXMODE_SHIFT);
 
-  putreg32(regval, regaddr);
+	putreg32(regval, regaddr);
 
-  /* Configure pin pad settings */
+	/* Configure pin pad settings */
 
-  index = imx_padmux_map(index);
-  if (index >= IMX_PADCTL_NREGISTERS)
-    {
-      return -EINVAL;
-    }
+	index = imx_padmux_map(index);
+	if (index >= IMX_PADCTL_NREGISTERS) {
+		return -EINVAL;
+	}
 
-  regaddr = IMX_PADCTL_ADDRESS(index);
-  ioset   = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
-  return imx_iomux_configure(regaddr, ioset);
+	regaddr = IMX_PADCTL_ADDRESS(index);
+	ioset   = (iomux_pinset_t)((pinset & GPIO_IOMUX_MASK) >> GPIO_IOMUX_SHIFT);
+	return imx_iomux_configure(regaddr, ioset);
 }
 
 /****************************************************************************
@@ -524,56 +522,54 @@ static inline int imx_gpio_configperiph(gpio_pinset_t pinset)
 
 int imx_config_gpio(gpio_pinset_t pinset)
 {
-  irqstate_t flags;
-  int ret;
+	irqstate_t flags;
+	int ret;
 
-  /* Configure the pin as an input initially to avoid any spurious outputs */
+	/* Configure the pin as an input initially to avoid any spurious outputs */
 
-  flags = enter_critical_section();
+	flags = spin_lock_irqsave(&g_imx_gpio_lock);
 
-  /* Configure based upon the pin mode */
+	/* Configure based upon the pin mode */
 
-  switch (pinset & GPIO_MODE_MASK)
-    {
-      case GPIO_INPUT:
-        {
-          /* Configure the pin as a GPIO input */
+	switch (pinset & GPIO_MODE_MASK) {
+	case GPIO_INPUT:
+	{
+		/* Configure the pin as a GPIO input */
 
-          ret = imx_gpio_configinput(pinset);
-        }
-        break;
+		ret = imx_gpio_configinput(pinset);
+	}
+	break;
 
-      case GPIO_OUTPUT:
-        {
-          /* First coonfigure the pin as a GPIO input to avoid output
-           * glitches.
-           */
+	case GPIO_OUTPUT:
+	{
+		/* First coonfigure the pin as a GPIO input to avoid output
+		 * glitches.
+		 */
 
-          ret = imx_gpio_configinput(pinset);
-          if (ret >= 0)
-            {
-              /* Convert the input to an output */
+		ret = imx_gpio_configinput(pinset);
+		if (ret >= 0) {
+			/* Convert the input to an output */
 
-              ret = imx_gpio_configoutput(pinset);
-            }
-        }
-        break;
+			ret = imx_gpio_configoutput(pinset);
+		}
+	}
+	break;
 
-      case GPIO_PERIPH:
-        {
-          /* Configure the pin as a peripheral */
+	case GPIO_PERIPH:
+	{
+		/* Configure the pin as a peripheral */
 
-          ret = imx_gpio_configperiph(pinset);
-        }
-        break;
+		ret = imx_gpio_configperiph(pinset);
+	}
+	break;
 
-      default:
-        ret = -EINVAL;
-        break;
-    }
+	default:
+		ret = -EINVAL;
+		break;
+	}
 
-  leave_critical_section(flags);
-  return ret;
+	spin_unlock_irqrestore(&g_imx_gpio_lock, flags);
+	return ret;
 }
 
 /****************************************************************************
@@ -586,13 +582,13 @@ int imx_config_gpio(gpio_pinset_t pinset)
 
 void imx_gpio_write(gpio_pinset_t pinset, bool value)
 {
-  irqstate_t flags;
-  int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
-  int pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	irqstate_t flags;
+	int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-  flags = enter_critical_section();
-  imx_gpio_setoutput(port, pin, value);
-  leave_critical_section(flags);
+	flags = spin_lock_irqsave(&g_imx_gpio_lock);
+	imx_gpio_setoutput(port, pin, value);
+	spin_unlock_irqrestore(&g_imx_gpio_lock, flags);
 }
 
 /****************************************************************************
@@ -605,13 +601,13 @@ void imx_gpio_write(gpio_pinset_t pinset, bool value)
 
 bool imx_gpio_read(gpio_pinset_t pinset)
 {
-  irqstate_t flags;
-  int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
-  int pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-  bool value;
+	irqstate_t flags;
+	int port = (pinset & GPIO_PORT_MASK) >> GPIO_PORT_SHIFT;
+	int pin  = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+	bool value;
 
-  flags = enter_critical_section();
-  value = imx_gpio_getinput(port, pin);
-  leave_critical_section(flags);
-  return value;
+	flags = spin_lock_irqsave(&g_imx_gpio_lock);
+	value = imx_gpio_getinput(port, pin);
+	spin_unlock_irqrestore(&g_imx_gpio_lock, flags);
+	return value;
 }

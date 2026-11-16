@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_iomuxc.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -46,7 +48,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "imx_iomuxc.h"
 
 /****************************************************************************
@@ -408,8 +410,8 @@ static const uint8_t g_mux2ctl_map[IMX_PADMUX_NREGISTERS] =
 
 unsigned int imx_padmux_map(unsigned int padmux)
 {
-  DEBUGASSERT(padmux < IMX_PADMUX_NREGISTERS);
-  return (unsigned int)g_mux2ctl_map[padmux];
+	DEBUGASSERT(padmux < IMX_PADMUX_NREGISTERS);
+	return (unsigned int)g_mux2ctl_map[padmux];
 }
 
 /****************************************************************************
@@ -423,66 +425,62 @@ unsigned int imx_padmux_map(unsigned int padmux)
 
 int imx_iomux_configure(uintptr_t padctl, iomux_pinset_t ioset)
 {
-  uint32_t regval = 0;
-  uint32_t value;
+	uint32_t regval = 0;
+	uint32_t value;
 
-  /* Select CMOS input or Schmitt Trigger input */
+	/* Select CMOS input or Schmitt Trigger input */
 
-  if ((ioset & IOMUX_SCHMITT_TRIGGER) != 0)
-    {
-      regval |= PADCTL_SRE;
-    }
+	if ((ioset & IOMUX_SCHMITT_TRIGGER) != 0) {
+		regval |= PADCTL_SRE;
+	}
 
-  /* Select drive strength */
+	/* Select drive strength */
 
-  value = (ioset & IOMUX_DRIVE_MASK) >> IOMUX_DRIVE_SHIFT;
-  regval |= PADCTL_DSE(value);
+	value = (ioset & IOMUX_DRIVE_MASK) >> IOMUX_DRIVE_SHIFT;
+	regval |= PADCTL_DSE(value);
 
-  /* Select spped */
+	/* Select speed */
 
-  value = (ioset & IOMUX_SPEED_MASK) >> IOMUX_SPEED_SHIFT;
-  regval |= PADCTL_SPEED(value);
+	value = (ioset & IOMUX_SPEED_MASK) >> IOMUX_SPEED_SHIFT;
+	regval |= PADCTL_SPEED(value);
 
-  /* Select CMOS output or Open Drain outpout */
+	/* Select CMOS output or Open Drain output */
 
-  if ((ioset & IOMUX_OPENDRAIN) != 0)
-    {
-      regval |= PADCTL_ODE;
-    }
+	if ((ioset & IOMUX_OPENDRAIN) != 0) {
+		regval |= PADCTL_ODE;
+	}
 
-  /* Handle pull/keep selection */
+	/* Handle pull/keep selection */
 
-  switch (ioset & _IOMUX_PULLTYPE_MASK)
-    {
-      default:
-      case _IOMUX_PULL_NONE:
-        break;
+	switch (ioset & _IOMUX_PULLTYPE_MASK) {
+	default:
+	case _IOMUX_PULL_NONE:
+		break;
 
-      case _IOMUX_PULL_KEEP:
-        {
-          regval |= PADCTL_PKE;
-        }
-        break;
+	case _IOMUX_PULL_KEEP:
+	{
+		regval |= PADCTL_PKE;
+	}
+	break;
 
-      case _IOMUX_PULL_ENABLE:
-        {
-          regval |= (PADCTL_PKE | PADCTL_PUE);
+	case _IOMUX_PULL_ENABLE:
+	{
+		regval |= (PADCTL_PKE | PADCTL_PUE);
 
-          value   = (ioset & _IOMUX_PULLDESC_MASK) >> _IOMUX_PULLDESC_SHIFT;
-          regval |= PADCTL_PUS(value);
-        }
-        break;
-    }
+		value   = (ioset & _IOMUX_PULLDESC_MASK) >> _IOMUX_PULLDESC_SHIFT;
+		regval |= PADCTL_PUS(value);
+	}
+	break;
+	}
 
-  /* Select slow/fast slew rate */
+	/* Select slow/fast slew rate */
 
-  if ((ioset & IOMUX_SLEW_FAST) != 0)
-    {
-      regval |= PADCTL_HYS;
-    }
+	if ((ioset & IOMUX_SLEW_FAST) != 0) {
+		regval |= PADCTL_HYS;
+	}
 
-  /* Write the result to the specified Pad Control register */
+	/* Write the result to the specified Pad Control register */
 
-  putreg32(regval, padctl);
-  return OK;
+	putreg32(regval, padctl);
+	return OK;
 }

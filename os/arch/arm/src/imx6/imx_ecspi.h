@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_ecspi.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -101,7 +103,7 @@ struct spi_dev_s *imx_spibus_initialize(int port);
  * The external functions, imx_spiselect, imx_spistatus, and imx_cmddata must
  * be provided by board-specific logic.  These are implementations of the
  * select and status methods of the SPI interface defined by struct spi_ops_s
- * (see include/tinyara/spi/spi.h).  All other methods (including
+ * (see include/nuttx/spi/spi.h).  All other methods (including
  * imx_spibus_initialize()) are provided by common logic.
  * To use this common SPI logic on your board:
  *

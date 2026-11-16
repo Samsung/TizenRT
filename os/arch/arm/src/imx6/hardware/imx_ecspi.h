@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/hardware/imx_ecspi.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -232,7 +234,7 @@
 #define ECSPI_CONFIGREG_HTLEN_SHIFT   (24)      /* Bits 24-28: HT Length */
 #define ECSPI_CONFIGREG_HTLEN_MASK    (15 << ECSPI_CONFIGREG_HTLEN_SHIFT)
 #  define ECSPI_CONFIGREG_HTLEN(n)    ((uint32_t)(n) << ECSPI_CONFIGREG_HTLEN_SHIFT)
-                                                /* Bits 29-31: Reserved */
+/* Bits 29-31: Reserved */
 
 /* Common Interrupt Control Register and Status Register */
 
@@ -244,7 +246,7 @@
 #define ECSPI_INT_RF                  (1 << 5)  /* Bit 5:  RXFIFO Full Interrupt */
 #define ECSPI_INT_RO                  (1 << 6)  /* Bit 6:  RXFIFO Overflow Interrupt */
 #define ECSPI_INT_TC                  (1 << 7)  /* Bit 7:  Transfer Completed Interrupt enable */
-                                                /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 #define ECSPI_INT_ALL                 0x000000ff
 
@@ -253,18 +255,18 @@
 #define ECSPI_DMAREG_TXTHRES_SHIFT    (0)       /* Bits 0-5: TX Threshold */
 #define ECSPI_DMAREG_TXTHRES_MASK     (0x3f << ECSPI_DMAREG_TXTHRES_SHIFT)
 #  define ECSPI_DMAREG_TXTHRES(n)     ((uint32_t)(n) << ECSPI_DMAREG_TXTHRES_SHIFT)
-                                                /* Bit 6: Reserved */
+/* Bit 6: Reserved */
 #define ECSPI_DMAREG_TEDEN            (1 << 7)  /* Bit 7:  TXFIFO Empty DMA request enable */
-                                                /* Bits 8-15: Reserved */
+/* Bits 8-15: Reserved */
 #define ECSPI_DMAREG_RXTHRES_SHIFT    (16)      /* Bits 16-21: RX Threshold */
 #define ECSPI_DMAREG_RXTHRES_MASK     (0x3f << ECSPI_DMAREG_RXTHRES_SHIFT)
 #  define ECSPI_DMAREG_RXTHRES(n)     ((uint32_t)(n) << ECSPI_DMAREG_RXTHRES_SHIFT)
-                                                /* Bit 22: Reserved */
+/* Bit 22: Reserved */
 #define ECSPI_DMAREG_RXDEN            (1 << 23) /* Bit 23: RXFIFO DMA request enable */
 #define ECSPI_DMAREG_RXLEN_SHIFT      (24)      /* Bits 24-29: RX DMA length */
 #define ECSPI_DMAREG_RXLEN_MASK       (0x3f << ECSPI_DMAREG_RXLEN_SHIFT)
 #  define ECSPI_DMAREG_RXLEN(n)       ((uint32_t)(n) << ECSPI_DMAREG_RXLEN_SHIFT)
-                                                /* Bit 30: Reserved */
+/* Bit 30: Reserved */
 #define ECSPI_DMAREG_RXTDEN           (1 << 31) /* Bit 31: RXFIFO Tail DMA request enable */
 
 /* ECSPI Sample Period Control Register */
@@ -276,18 +278,18 @@
 #define ECSPI_PERIODREG_CSDCTL_SHIFT  (16)      /* Bits 16-21: Chip Select delay control */
 #define ECSPI_PERIODREG_CSDCTL_MASK   (0x3f << ECSPI_PERIODREG_CSDCTL_SHIFT)
 #  define ECSPI_PERIODREG_CSDCTL(n)   ((uint32_t)(n) << ECSPI_PERIODREG_CSDCTL_SHIFT)
-                                                /* Bits 22-31: Reserved */
+/* Bits 22-31: Reserved */
 
 /* Test Control Register */
 
 #define ECSPI_TESTREG_TXCNT_SHIFT     (0)       /* Bits 0-6: TXFIFO Counter */
 #define ECSPI_TESTREG_TXCNT_MASK      (0x7f << ECSPI_TESTREG_TXCNT_SHIFT)
 #  define ECSPI_TESTREG_TXCNT(n)      ((uint32_t)(n) << ECSPI_TESTREG_TXCNT_SHIFT)
-                                                /* Bit 7: Reserved */
+/* Bit 7: Reserved */
 #define ECSPI_TESTREG_RXCNT_SHIFT     (8)       /* Bits 8-14: RXFIFO Counter */
 #define ECSPI_TESTREG_RXCNT_MASK      (0x7f << ECSPI_TESTREG_RXCNT_SHIFT)
 #  define ECSPI_TESTREG_RXCNT(n)      ((uint32_t)(n) << ECSPI_TESTREG_RXCNT_SHIFT)
-                                                /* Bits 15-30: Reserved */
+/* Bits 15-30: Reserved */
 #define ECSPI_TESTREG_LBC             (1 << 31) /* Bit 31: Loop Back Control */
 
 /* Message Data Register (32-bit message data) */

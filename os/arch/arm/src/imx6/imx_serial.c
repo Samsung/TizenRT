@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/imx_serial.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -56,12 +58,13 @@
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/spinlock.h>
 #include <tinyara/init.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/serial/serial.h>
 
 #include "chip.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "gic.h"
 #include "hardware/imx_uart.h"
 #include "imx_config.h"
@@ -202,21 +205,21 @@
  * Private Types
  ****************************************************************************/
 
-struct imx_uart_s
-{
-  uint32_t uartbase;    /* Base address of UART registers */
-  uint32_t baud;        /* Configured baud */
-  uint32_t ie;          /* Saved enabled interrupts */
-  uint32_t ucr1;        /* Saved UCR1 value */
-  uint8_t  irq;         /* IRQ associated with this UART */
-  uint8_t  parity;      /* 0=none, 1=odd, 2=even */
-  uint8_t  bits;        /* Number of bits (7 or 8) */
-  uint8_t  stopbits2:1; /* 1: Configure with 2 stop bits vs 1 */
+struct imx_uart_s {
+	uint32_t uartbase;    /* Base address of UART registers */
+	uint32_t baud;        /* Configured baud */
+	uint32_t ie;          /* Saved enabled interrupts */
+	uint32_t ucr1;        /* Saved UCR1 value */
+	uint8_t  irq;         /* IRQ associated with this UART */
+	uint8_t  parity;      /* 0=none, 1=odd, 2=even */
+	spinlock_t lock;      /* Spinlock */
+	uint8_t  bits;        /* Number of bits (7 or 8) */
+	uint8_t  stopbits2:1; /* 1: Configure with 2 stop bits vs 1 */
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-  uint8_t  iflow:1;     /* input flow control (RTS) enabled */
+	uint8_t  iflow:1;     /* input flow control (RTS) enabled */
 #endif
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-  uint8_t  oflow:1;     /* output flow control (CTS) enabled */
+	uint8_t  oflow:1;     /* output flow control (CTS) enabled */
 #endif
 };
 
@@ -309,6 +312,7 @@ static struct imx_uart_s g_uart1priv =
   .baud           = CONFIG_UART1_BAUD,
   .irq            = IMX_IRQ_UART1,
   .parity         = CONFIG_UART1_PARITY,
+  .lock           = SP_UNLOCKED,
   .bits           = CONFIG_UART1_BITS,
   .stopbits2      = CONFIG_UART1_2STOP,
 };
@@ -339,6 +343,7 @@ static struct imx_uart_s g_uart2priv =
   .baud           = CONFIG_UART2_BAUD,
   .irq            = IMX_IRQ_UART2,
   .parity         = CONFIG_UART2_PARITY,
+  .lock           = SP_UNLOCKED,
   .bits           = CONFIG_UART2_BITS,
   .stopbits2      = CONFIG_UART2_2STOP,
 };
@@ -367,6 +372,7 @@ static struct imx_uart_s g_uart3priv =
   .baud           = IMX_UART3_VBASE,
   .irq            = IMX_IRQ_UART3,
   .parity         = CONFIG_UART3_PARITY,
+  .lock           = SP_UNLOCKED,
   .bits           = CONFIG_UART3_BITS,
   .stopbits2      = CONFIG_UART3_2STOP,
 };
@@ -395,6 +401,7 @@ static struct imx_uart_s g_uart4priv =
   .baud           = IMX_UART4_VBASE,
   .irq            = IMX_IRQ_UART4,
   .parity         = CONFIG_UART4_PARITY,
+  .lock           = SP_UNLOCKED,
   .bits           = CONFIG_UART4_BITS,
   .stopbits2      = CONFIG_UART4_2STOP,
 };
@@ -423,6 +430,7 @@ static struct imx_uart_s g_uart5priv =
   .baud           = IMX_UART5_VBASE,
   .irq            = IMX_IRQ_UART5,
   .parity         = CONFIG_UART5_PARITY,
+  .lock           = SP_UNLOCKED,
   .bits           = CONFIG_UART5_BITS,
   .stopbits2      = CONFIG_UART5_2STOP,
 };
@@ -454,7 +462,7 @@ static struct uart_dev_s g_uart5port =
 
 static inline uint32_t imx_serialin(struct imx_uart_s *priv, uint32_t offset)
 {
-  return getreg32(priv->uartbase + offset);
+	return getreg32(priv->uartbase + offset);
 }
 
 /****************************************************************************
@@ -464,7 +472,7 @@ static inline uint32_t imx_serialin(struct imx_uart_s *priv, uint32_t offset)
 static inline void imx_serialout(struct imx_uart_s *priv, uint32_t offset,
                                  uint32_t value)
 {
-  putreg32(value, priv->uartbase + offset);
+	putreg32(value, priv->uartbase + offset);
 }
 
 /****************************************************************************
@@ -474,17 +482,16 @@ static inline void imx_serialout(struct imx_uart_s *priv, uint32_t offset,
 static inline void imx_disableuartint(struct imx_uart_s *priv,
                                       uint32_t *ucr1)
 {
-  /* Return the current Rx and Tx interrupt state */
+	/* Return the current Rx and Tx interrupt state */
 
-  if (ucr1 != NULL)
-    {
-      *ucr1 = priv->ucr1 & (UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
-    }
+	if (ucr1 != NULL) {
+		*ucr1 = priv->ucr1 & (UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
+	}
 
-  /* Then disable both Rx and Tx interrupts */
+	/* Then disable both Rx and Tx interrupts */
 
-  priv->ucr1 &= ~(UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
-  imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
+	priv->ucr1 &= ~(UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
+	imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
 }
 
 /****************************************************************************
@@ -493,13 +500,13 @@ static inline void imx_disableuartint(struct imx_uart_s *priv,
 
 static inline void imx_restoreuartint(struct imx_uart_s *priv, uint32_t ucr1)
 {
-  /* Enable/disable any interrupts that are currently disabled but should be
-   * enabled/disabled.
-   */
+	/* Enable/disable any interrupts that are currently disabled but should be
+	 * enabled/disabled.
+	 */
 
-  priv->ucr1 &= ~(UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
-  priv->ucr1 |= ucr1 & (UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
-  imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
+	priv->ucr1 &= ~(UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
+	priv->ucr1 |= ucr1 & (UART_UCR1_RRDYEN | UART_UCR1_TXEMPTYEN);
+	imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
 }
 
 /****************************************************************************
@@ -508,15 +515,13 @@ static inline void imx_restoreuartint(struct imx_uart_s *priv, uint32_t ucr1)
 
 static inline void imx_waittxready(struct imx_uart_s *priv)
 {
-  int tmp;
+	int tmp;
 
-  for (tmp = 1000 ; tmp > 0 ; tmp--)
-    {
-      if ((imx_serialin(priv, UART_UTS_OFFSET) & UART_UTS_TXFULL) == 0)
-        {
-          break;
-        }
-    }
+	for (tmp = 1000; tmp > 0; tmp--) {
+		if ((imx_serialin(priv, UART_UTS_OFFSET) & UART_UTS_TXFULL) == 0) {
+			break;
+		}
+	}
 }
 
 /****************************************************************************
@@ -531,30 +536,30 @@ static inline void imx_waittxready(struct imx_uart_s *priv)
 
 static int imx_setup(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 #ifndef CONFIG_SUPPRESS_UART_CONFIG
-  struct uart_config_s config;
-  int ret;
+	struct uart_config_s config;
+	int ret;
 
-  /* Configure the UART */
+	/* Configure the UART */
 
-  config.baud       = priv->baud;          /* Configured baud */
-  config.parity     = priv->parity;        /* 0=none, 1=odd, 2=even */
-  config.bits       = priv->bits;          /* Number of bits (5-9) */
-  config.stopbits2  = priv->stopbits2;     /* true: Configure with 2 stop bits instead of 1 */
+	config.baud       = priv->baud;          /* Configured baud */
+	config.parity     = priv->parity;        /* 0=none, 1=odd, 2=even */
+	config.bits       = priv->bits;          /* Number of bits (5-9) */
+	config.stopbits2  = priv->stopbits2;     /* true: Configure with 2 stop bits instead of 1 */
 
-  ret = imx_uart_configure(priv->uartbase, &config);
+	ret = imx_uart_configure(priv->uartbase, &config);
 
-  /* Initialize the UCR1 shadow register */
+	/* Initialize the UCR1 shadow register */
 
-  priv->ucr1 = imx_serialin(priv, UART_UCR1_OFFSET);
-  return ret;
+	priv->ucr1 = imx_serialin(priv, UART_UCR1_OFFSET);
+	return ret;
 
 #else
-  /* Initialize the UCR1 shadow register */
+	/* Initialize the UCR1 shadow register */
 
-  priv->ucr1 = imx_serialin(priv, UART_UCR1_OFFSET);
-  return OK;
+	priv->ucr1 = imx_serialin(priv, UART_UCR1_OFFSET);
+	return OK;
 #endif
 }
 
@@ -569,14 +574,14 @@ static int imx_setup(struct uart_dev_s *dev)
 
 static void imx_shutdown(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  /* Disable the UART */
+	/* Disable the UART */
 
-  imx_serialout(priv, UART_UCR1_OFFSET, 0);
-  imx_serialout(priv, UART_UCR2_OFFSET, 0);
-  imx_serialout(priv, UART_UCR3_OFFSET, 0);
-  imx_serialout(priv, UART_UCR4_OFFSET, 0);
+	imx_serialout(priv, UART_UCR1_OFFSET, 0);
+	imx_serialout(priv, UART_UCR2_OFFSET, 0);
+	imx_serialout(priv, UART_UCR3_OFFSET, 0);
+	imx_serialout(priv, UART_UCR4_OFFSET, 0);
 }
 
 /****************************************************************************
@@ -597,26 +602,25 @@ static void imx_shutdown(struct uart_dev_s *dev)
 
 static int imx_attach(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
-  int ret;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	int ret;
 
-  /* Attach and enable the IRQ */
+	/* Attach and enable the IRQ */
 
-  ret = irq_attach(priv->irq, imx_interrupt, dev);
-  if (ret == OK)
-    {
-      /* Configure as a (high) level interrupt */
+	ret = irq_attach(priv->irq, imx_interrupt, dev);
+	if (ret == OK) {
+		/* Configure as a (high) level interrupt */
 
-      arm_gic_irq_trigger(priv->irq, false);
+		up_set_irq_type(priv->irq, IRQ_HIGH_LEVEL);
 
-      /* Enable the interrupt (RX and TX interrupts are still disabled
-       * in the UART
-       */
+		/* Enable the interrupt (RX and TX interrupts are still disabled
+		 * in the UART
+		 */
 
-      up_enable_irq(priv->irq);
-    }
+		up_enable_irq(priv->irq);
+	}
 
-  return ret;
+	return ret;
 }
 
 /****************************************************************************
@@ -631,71 +635,69 @@ static int imx_attach(struct uart_dev_s *dev)
 
 static void imx_detach(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  up_disable_irq(priv->irq);
-  irq_detach(priv->irq);
+	up_disable_irq(priv->irq);
+	irq_detach(priv->irq);
 }
 
 /****************************************************************************
  * Name: imx_interrupt (and front-ends)
  *
  * Description:
- *   This is the common UART interrupt handler.  It should cal
- *   uart_transmitchars or uart_receivechar to perform the appropriate data
- *   transfers.
+ *   This is the UART interrupt handler.  It will be invoked when an
+ *   interrupt is received on the 'irq'.  It should call uart_xmitchars or
+ *   uart_recvchars to perform the appropriate data transfers.  The
+ *   interrupt handling logic must be able to map the 'arg' to the
+ *   appropriate uart_dev_s structure in order to call these functions.
  *
  ****************************************************************************/
 
 static int imx_interrupt(int irq, void *context, void *arg)
 {
-  struct uart_dev_s *dev = (struct uart_dev_s *)arg;
-  struct imx_uart_s *priv;
-  uint32_t usr1;
-  int passes = 0;
+	struct uart_dev_s *dev = (struct uart_dev_s *)arg;
+	struct imx_uart_s *priv;
+	uint32_t usr1;
+	int passes = 0;
 
-  DEBUGASSERT(dev != NULL && dev->priv != NULL);
-  priv = (struct imx_uart_s *)dev->priv;
+	DEBUGASSERT(dev != NULL && dev->priv != NULL);
+	priv = (struct imx_uart_s *)dev->priv;
 
-  /* Loop until there are no characters to be transferred or,
-   * until we have been looping for a long time.
-   */
+	/* Loop until there are no characters to be transferred or,
+	 * until we have been looping for a long time.
+	 */
 
-  for (; ; )
-    {
-      /* Get the current UART status and check for loop
-       * termination conditions
-       */
+	for (;;) {
+		/* Get the current UART status and check for loop
+		 * termination conditions
+		 */
 
-      usr1 = imx_serialin(priv, UART_USR1_OFFSET);
-      usr1 &= (UART_USR1_RRDY | UART_USR1_TRDY);
+		usr1 = imx_serialin(priv, UART_USR1_OFFSET);
+		usr1 &= (UART_USR1_RRDY | UART_USR1_TRDY);
 
-      if (usr1 == 0 || passes > 256)
-        {
-          return OK;
-        }
+		if (usr1 == 0 || passes > 256) {
+			return OK;
+		}
 
-      /* Handle incoming, receive bytes */
+		/* Handle incoming, receive bytes */
 
-      if (usr1 & UART_USR1_RRDY)
-        {
-          uart_recvchars(dev);
-        }
+		if (usr1 & UART_USR1_RRDY) {
+			uart_recvchars(dev);
+		}
 
-      /* Handle outgoing, transmit bytes */
+		/* Handle outgoing, transmit bytes */
 
-      if (usr1 & UART_USR1_TRDY &&
-          (imx_serialin(priv, UART_UCR1_OFFSET) & UART_UCR1_TXEMPTYEN) != 0)
-        {
-          uart_xmitchars(dev);
-        }
+		if (usr1 & UART_USR1_TRDY &&
+		    (imx_serialin(priv, UART_UCR1_OFFSET) & UART_UCR1_TXEMPTYEN) != 0) {
+			uart_xmitchars(dev);
+		}
 
-      /* Keep track of how many times we do this in case there
-       * is some hardware failure condition.
-       */
+		/* Keep track of how many times we do this in case there
+		 * is some hardware failure condition.
+		 */
 
-      passes++;
-    }
+		passes++;
+	}
 }
 
 /****************************************************************************
@@ -709,208 +711,196 @@ static int imx_interrupt(int irq, void *context, void *arg)
 static int imx_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
 #if defined(CONFIG_SERIAL_TIOCSERGSTRUCT) || defined(CONFIG_SERIAL_TERMIOS)
-  struct inode *inode = filep->f_inode;
-  struct uart_dev_s *dev   = inode->i_private;
-  irqstate_t flags;
+	struct inode *inode = filep->f_inode;
+	struct uart_dev_s *dev   = inode->i_private;
+	irqstate_t flags;
 #endif
-  int ret   = OK;
+	int ret   = OK;
 
-  switch (cmd)
-    {
+	switch (cmd) {
 #ifdef CONFIG_SERIAL_TIOCSERGSTRUCT
-    case TIOCSERGSTRUCT:
-      {
-         struct imx_uart_s *user = (struct imx_uart_s *)arg;
-         if (!user)
-           {
-             ret = -EINVAL;
-           }
-         else
-           {
-             memcpy(user, dev, sizeof(struct imx_uart_s));
-           }
-       }
-       break;
+	case TIOCSERGSTRUCT:
+	{
+		struct imx_uart_s *user = (struct imx_uart_s *)arg;
+		if (!user) {
+			ret = -EINVAL;
+		} else {
+			memcpy(user, dev, sizeof(struct imx_uart_s));
+		}
+	}
+	break;
 #endif
 
 #ifdef CONFIG_SERIAL_TERMIOS
-    case TCGETS:
-      {
-        struct termios  *termiosp = (struct termios *)arg;
-        struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	case TCGETS:
+	{
+		struct termios  *termiosp = (struct termios *)arg;
+		struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-        if (!termiosp)
-          {
-            ret = -EINVAL;
-            break;
-          }
+		if (!termiosp) {
+			ret = -EINVAL;
+			break;
+		}
 
-        /* Return parity */
+		/* Return parity */
 
-        termiosp->c_cflag = ((priv->parity != 0) ? PARENB : 0) |
-                            ((priv->parity == 1) ? PARODD : 0);
+		termiosp->c_cflag = ((priv->parity != 0) ? PARENB : 0) |
+		                    ((priv->parity == 1) ? PARODD : 0);
 
-        /* Return stop bits */
+		/* Return stop bits */
 
-        termiosp->c_cflag |= (priv->stopbits2) ? CSTOPB : 0;
+		termiosp->c_cflag |= (priv->stopbits2) ? CSTOPB : 0;
 
-        /* Return flow control */
+		/* Return flow control */
 
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-        termiosp->c_cflag |= ((priv->oflow) ? CCTS_OFLOW : 0);
+		termiosp->c_cflag |= ((priv->oflow) ? CCTS_OFLOW : 0);
 #endif
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-        termiosp->c_cflag |= ((priv->iflow) ? CRTS_IFLOW : 0);
+		termiosp->c_cflag |= ((priv->iflow) ? CRTS_IFLOW : 0);
 #endif
-        /* Return baud */
+		/* Return baud */
 
-        cfsetispeed(termiosp, priv->baud);
+		cfsetispeed(termiosp, priv->baud);
 
-        /* Return number of bits */
+		/* Return number of bits */
 
-        switch (priv->bits)
-          {
-          case 5:
-            termiosp->c_cflag |= CS5;
-            break;
+		switch (priv->bits) {
+		case 5:
+			termiosp->c_cflag |= CS5;
+			break;
 
-          case 6:
-            termiosp->c_cflag |= CS6;
-            break;
+		case 6:
+			termiosp->c_cflag |= CS6;
+			break;
 
-          case 7:
-            termiosp->c_cflag |= CS7;
-            break;
+		case 7:
+			termiosp->c_cflag |= CS7;
+			break;
 
-          default:
-          case 8:
-            termiosp->c_cflag |= CS8;
-            break;
+		default:
+		case 8:
+			termiosp->c_cflag |= CS8;
+			break;
 
 #if defined(CS9)
-          case 9:
-            termiosp->c_cflag |= CS9;
-            break;
+		case 9:
+			termiosp->c_cflag |= CS9;
+			break;
 #endif
-          }
-      }
-      break;
+		}
+	}
+	break;
 
-    case TCSETS:
-      {
-        struct termios  *termiosp = (struct termios *)arg;
-        struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
-        uint32_t baud;
-        uint32_t ie;
-        uint8_t parity;
-        uint8_t nbits;
-        bool stop2;
+	case TCSETS:
+	{
+		struct termios  *termiosp = (struct termios *)arg;
+		struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+		uint32_t baud;
+		uint32_t ie;
+		uint8_t parity;
+		uint8_t nbits;
+		bool stop2;
 
-        if ((!termiosp)
+		if ((!termiosp)
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-            || ((termiosp->c_cflag & CCTS_OFLOW) && (priv->cts_gpio == 0))
+		    || ((termiosp->c_cflag & CCTS_OFLOW) && (priv->cts_gpio == 0))
 #endif
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-            || ((termiosp->c_cflag & CRTS_IFLOW) && (priv->rts_gpio == 0))
+		    || ((termiosp->c_cflag & CRTS_IFLOW) && (priv->rts_gpio == 0))
 #endif
-           )
-          {
-            ret = -EINVAL;
-            break;
-          }
+		   ) {
+			ret = -EINVAL;
+			break;
+		}
 
-        /* Decode baud. */
+		/* Decode baud. */
 
-        ret = OK;
-        baud = cfgetispeed(termiosp);
+		ret = OK;
+		baud = cfgetispeed(termiosp);
 
-        /* Decode number of bits */
+		/* Decode number of bits */
 
-        switch (termiosp->c_cflag & CSIZE)
-          {
-          case CS5:
-            nbits = 5;
-            break;
+		switch (termiosp->c_cflag & CSIZE) {
+		case CS5:
+			nbits = 5;
+			break;
 
-          case CS6:
-            nbits = 6;
-            break;
+		case CS6:
+			nbits = 6;
+			break;
 
-          case CS7:
-            nbits = 7;
-            break;
+		case CS7:
+			nbits = 7;
+			break;
 
-          case CS8:
-            nbits = 8;
-            break;
+		case CS8:
+			nbits = 8;
+			break;
 
 #if defined(CS9)
-          case CS9:
-            nbits = 9;
-            break;
+		case CS9:
+			nbits = 9;
+			break;
 #endif
-          default:
-            ret = -EINVAL;
-            break;
-          }
+		default:
+			ret = -EINVAL;
+			break;
+		}
 
-        /* Decode parity */
+		/* Decode parity */
 
-        if ((termiosp->c_cflag & PARENB) != 0)
-          {
-            parity = (termiosp->c_cflag & PARODD) ? 1 : 2;
-          }
-        else
-          {
-            parity = 0;
-          }
+		if ((termiosp->c_cflag & PARENB) != 0) {
+			parity = (termiosp->c_cflag & PARODD) ? 1 : 2;
+		} else {
+			parity = 0;
+		}
 
-        /* Decode stop bits */
+		/* Decode stop bits */
 
-        stop2 = (termiosp->c_cflag & CSTOPB) != 0;
+		stop2 = (termiosp->c_cflag & CSTOPB) != 0;
 
-        /* Verify that all settings are valid before committing */
+		/* Verify that all settings are valid before committing */
 
-        if (ret == OK)
-          {
-            /* Commit */
+		if (ret == OK) {
+			/* Commit */
 
-            priv->baud      = baud;
-            priv->parity    = parity;
-            priv->bits      = nbits;
-            priv->stopbits2 = stop2;
+			priv->baud      = baud;
+			priv->parity    = parity;
+			priv->bits      = nbits;
+			priv->stopbits2 = stop2;
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
-            priv->oflow     = (termiosp->c_cflag & CCTS_OFLOW) != 0;
+			priv->oflow     = (termiosp->c_cflag & CCTS_OFLOW) != 0;
 #endif
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
-            priv->iflow     = (termiosp->c_cflag & CRTS_IFLOW) != 0;
+			priv->iflow     = (termiosp->c_cflag & CRTS_IFLOW) != 0;
 #endif
-            /* effect the changes immediately - note that we do not
-             * implement TCSADRAIN / TCSAFLUSH
-             */
+			/* effect the changes immediately - note that we do not
+			 * implement TCSADRAIN / TCSAFLUSH
+			 */
 
-            flags  = spin_lock_irqsave(NULL);
-            imx_disableuartint(priv, &ie);
-            ret = imx_setup(dev);
+			flags  = spin_lock_irqsave(&priv->lock);
+			imx_disableuartint(priv, &ie);
+			ret = imx_setup(dev);
 
-            /* Restore the interrupt state */
+			/* Restore the interrupt state */
 
-            imx_restoreuartint(priv, ie);
-            priv->ie = ie;
-            spin_unlock_irqrestore(NULL, flags);
-          }
-      }
-      break;
+			imx_restoreuartint(priv, ie);
+			priv->ie = ie;
+			spin_unlock_irqrestore(&priv->lock, flags);
+		}
+	}
+	break;
 #endif /* CONFIG_SERIAL_TERMIOS */
 
-    case TIOCSBRK:  /* BSD compatibility: Turn break on, unconditionally */
-    case TIOCCBRK:  /* BSD compatibility: Turn break off, unconditionally */
-    default:
-      ret = -ENOTTY;
-      break;
-    }
+	case TIOCSBRK:  /* BSD compatibility: Turn break on, unconditionally */
+	case TIOCCBRK:  /* BSD compatibility: Turn break off, unconditionally */
+	default:
+		ret = -ENOTTY;
+		break;
+	}
 
-  return ret;
+	return ret;
 }
 
 /****************************************************************************
@@ -925,12 +915,12 @@ static int imx_ioctl(struct file *filep, int cmd, unsigned long arg)
 
 static int imx_receive(struct uart_dev_s *dev, unsigned int *status)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
-  uint32_t rxd0;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	uint32_t rxd0;
 
-  rxd0    = imx_serialin(priv, UART_RXD_OFFSET);
-  *status = rxd0;
-  return (rxd0 & UART_RXD_DATA_MASK) >> UART_RXD_DATA_SHIFT;
+	rxd0    = imx_serialin(priv, UART_RXD_OFFSET);
+	*status = rxd0;
+	return (rxd0 & UART_RXD_DATA_MASK) >> UART_RXD_DATA_SHIFT;
 }
 
 /****************************************************************************
@@ -943,22 +933,19 @@ static int imx_receive(struct uart_dev_s *dev, unsigned int *status)
 
 static void imx_rxint(struct uart_dev_s *dev, bool enable)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  /* Enable interrupts for data availab at Rx FIFO */
+	/* Enable interrupts for data availab at Rx FIFO */
 
-  if (enable)
-    {
+	if (enable) {
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
-      priv->ucr1 |= UART_UCR1_RRDYEN;
+		priv->ucr1 |= UART_UCR1_RRDYEN;
 #endif
-    }
-  else
-    {
-      priv->ucr1 &= ~UART_UCR1_RRDYEN;
-    }
+	} else {
+		priv->ucr1 &= ~UART_UCR1_RRDYEN;
+	}
 
-  imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
+	imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
 }
 
 /****************************************************************************
@@ -971,11 +958,11 @@ static void imx_rxint(struct uart_dev_s *dev, bool enable)
 
 static bool imx_rxavailable(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  /* Return true is data is ready in the Rx FIFO */
+	/* Return true is data is ready in the Rx FIFO */
 
-  return ((imx_serialin(priv, UART_USR2_OFFSET) & UART_USR2_RDR) != 0);
+	return ((imx_serialin(priv, UART_USR2_OFFSET) & UART_USR2_RDR) != 0);
 }
 
 /****************************************************************************
@@ -988,8 +975,8 @@ static bool imx_rxavailable(struct uart_dev_s *dev)
 
 static void imx_send(struct uart_dev_s *dev, int ch)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
-  imx_serialout(priv, UART_TXD_OFFSET, (uint32_t)ch);
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	imx_serialout(priv, UART_TXD_OFFSET, (uint32_t)ch);
 }
 
 /****************************************************************************
@@ -1002,24 +989,21 @@ static void imx_send(struct uart_dev_s *dev, int ch)
 
 static void imx_txint(struct uart_dev_s *dev, bool enable)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  /* We won't take an interrupt until the FIFO is completely empty (although
-   * there may still be a transmission in progress).
-   */
+	/* We won't take an interrupt until the FIFO is completely empty (although
+	 * there may still be a transmission in progress).
+	 */
 
-  if (enable)
-    {
+	if (enable) {
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
-      priv->ucr1 |= UART_UCR1_TXEMPTYEN;
+		priv->ucr1 |= UART_UCR1_TXEMPTYEN;
 #endif
-    }
-  else
-    {
-      priv->ucr1 &= ~UART_UCR1_TXEMPTYEN;
-    }
+	} else {
+		priv->ucr1 &= ~UART_UCR1_TXEMPTYEN;
+	}
 
-  imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
+	imx_serialout(priv, UART_UCR1_OFFSET, priv->ucr1);
 }
 
 /****************************************************************************
@@ -1032,11 +1016,11 @@ static void imx_txint(struct uart_dev_s *dev, bool enable)
 
 static bool imx_txready(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  /* When TXFULL is set, there is no space in the Tx FIFO  */
+	/* When TXFULL is set, there is no space in the Tx FIFO  */
 
-  return ((imx_serialin(priv, UART_UTS_OFFSET) & UART_UTS_TXFULL) == 0);
+	return ((imx_serialin(priv, UART_UTS_OFFSET) & UART_UTS_TXFULL) == 0);
 }
 
 /****************************************************************************
@@ -1049,11 +1033,11 @@ static bool imx_txready(struct uart_dev_s *dev)
 
 static bool imx_txempty(struct uart_dev_s *dev)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
+	struct imx_uart_s *priv = (struct imx_uart_s *)dev->priv;
 
-  /* When TXDC is set, the FIFO is empty and the transmission is complete */
+	/* When TXDC is set, the FIFO is empty and the transmission is complete */
 
-  return ((imx_serialin(priv, UART_USR2_OFFSET) & UART_USR2_TXDC) != 0);
+	return ((imx_serialin(priv, UART_USR2_OFFSET) & UART_USR2_TXDC) != 0);
 }
 
 /****************************************************************************
@@ -1066,29 +1050,29 @@ static bool imx_txempty(struct uart_dev_s *dev)
  * Description:
  *   Performs the low level UART initialization early in
  *   debug so that the serial console will be available
- *   during bootup.  This must be called before arm_serialinit.
+ *   during boot up.  This must be called before arm_serialinit.
  *
  ****************************************************************************/
 
 void imx_earlyserialinit(void)
 {
-  /* NOTE: This function assumes that low level hardware configuration
-   * -- including all clocking and pin configuration -- was performed by the
-   * function imx_lowsetup() earlier in the boot sequence.
-   */
+	/* NOTE: This function assumes that low level hardware configuration
+	 * -- including all clocking and pin configuration -- was performed by the
+	 * function imx_lowsetup() earlier in the boot sequence.
+	 */
 
-  /* Enable the console UART.  The other UARTs will be initialized if and
-   * when they are first opened.
-   */
+	/* Enable the console UART.  The other UARTs will be initialized if and
+	 * when they are first opened.
+	 */
 
 #ifdef CONSOLE_DEV
-  CONSOLE_DEV.isconsole = true;
-  imx_setup(&CONSOLE_DEV);
+	CONSOLE_DEV.isconsole = true;
+	imx_setup(&CONSOLE_DEV);
 #endif
 }
 
 /****************************************************************************
- * Name: up_serialinit
+ * Name: arm_serialinit
  *
  * Description:
  *   Register serial console and serial ports.  This assumes
@@ -1096,26 +1080,26 @@ void imx_earlyserialinit(void)
  *
  ****************************************************************************/
 
-void up_serialinit(void)
+void arm_serialinit(void)
 {
 #ifdef CONSOLE_DEV
-  uart_register("/dev/console", &CONSOLE_DEV);
+	uart_register("/dev/console", &CONSOLE_DEV);
 #endif
 
 #ifdef TTYS0_DEV
-  uart_register("/dev/ttyS0", &TTYS0_DEV);
-# ifdef TTYS1_DEV
-  uart_register("/dev/ttyS1", &TTYS1_DEV);
-#  ifdef TTYS2_DEV
-  uart_register("/dev/ttyS2", &TTYS2_DEV);
-#    ifdef TTYS3_DEV
-  uart_register("/dev/ttyS3", &TTYS2_DEV);
-#      ifdef TTYS4_DEV
-  uart_register("/dev/ttyS4", &TTYS2_DEV);
+	uart_register("/dev/ttyS0", &TTYS0_DEV);
+#  ifdef TTYS1_DEV
+	uart_register("/dev/ttyS1", &TTYS1_DEV);
+#    ifdef TTYS2_DEV
+	uart_register("/dev/ttyS2", &TTYS2_DEV);
+#      ifdef TTYS3_DEV
+	uart_register("/dev/ttyS3", &TTYS2_DEV);
+#        ifdef TTYS4_DEV
+	uart_register("/dev/ttyS4", &TTYS2_DEV);
+#        endif
 #      endif
 #    endif
 #  endif
-# endif
 #endif
 }
 
@@ -1128,30 +1112,18 @@ void up_serialinit(void)
  *
  ****************************************************************************/
 
-int up_putc(int ch)
+void up_putc(int ch)
 {
-  struct imx_uart_s *priv = (struct imx_uart_s *)CONSOLE_DEV.priv;
-  uint32_t ier;
+	struct imx_uart_s *priv = (struct imx_uart_s *)CONSOLE_DEV.priv;
+	uint32_t ier;
 
-  /* Disable UART interrupts and wait until the hardware is ready to send
-   * a byte.
-   */
+	/* Disable UART interrupts and wait until the hardware is ready to send
+	 * a byte.
+	 */
 
-  imx_disableuartint(priv, &ier);
-
-  /* Check for LF */
-
-  if (ch == '\n')
-    {
-      /* Add CR */
-
-      imx_lowputc('\r');
-    }
-
-  imx_lowputc(ch);
-  imx_restoreuartint(priv, ier);
-
-  return ch;
+	imx_disableuartint(priv, &ier);
+	imx_lowputc(ch);
+	imx_restoreuartint(priv, ier);
 }
 
 #else /* USE_SERIALDRIVER */
@@ -1180,19 +1152,17 @@ int up_putc(int ch)
 #ifdef IMX_CONSOLE_VBASE
 static inline void imx_waittxready(void)
 {
-  int tmp;
+	int tmp;
 
-  for (tmp = 1000 ; tmp > 0 ; tmp--)
-    {
-      /* Loop until TXFULL is zero -- meaning that there is space available
-       * in the TX FIFO.
-       */
+	for (tmp = 1000; tmp > 0; tmp--) {
+		/* Loop until TXFULL is zero -- meaning that there is space available
+		 * in the TX FIFO.
+		 */
 
-      if ((getreg32(IMX_CONSOLE_VBASE + UART_UTS) & UART_UTS_TXFULL) == 0)
-        {
-          break;
-        }
-    }
+		if ((getreg32(IMX_CONSOLE_VBASE + UART_UTS) & UART_UTS_TXFULL) == 0) {
+			break;
+		}
+	}
 }
 #endif
 
@@ -1200,25 +1170,12 @@ static inline void imx_waittxready(void)
  * Public Functions
  ****************************************************************************/
 
-int up_putc(int ch)
+void up_putc(int ch)
 {
 #ifdef IMX_CONSOLE_VBASE
-  imx_waittxready();
-
-  /* Check for LF */
-
-  if (ch == '\n')
-    {
-      /* Add CR */
-
-      putreg32((uint16_t)'\r', IMX_CONSOLE_VBASE + UART_TXD_OFFSET);
-      imx_waittxready();
-    }
-
-  putreg32((uint16_t)ch, IMX_CONSOLE_VBASE + UART_TXD_OFFSET);
+	imx_waittxready();
+	putreg32((uint16_t)ch, IMX_CONSOLE_VBASE + UART_TXD_OFFSET);
 #endif
-
-  return ch;
 }
 
 #endif /* USE_SERIALDRIVER */

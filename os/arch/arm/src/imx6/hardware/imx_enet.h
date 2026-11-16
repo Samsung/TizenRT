@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * arch/arm/src/imx6/hardware/imx_enet.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -187,19 +189,19 @@
 #define ENET_INT_GRA                 (1 << 28) /* Bit 28: Graceful Stop Complete */
 #define ENET_INT_BABT                (1 << 29) /* Bit 29: Babbling Transmit Error */
 #define ENET_INT_BABR                (1 << 30) /* Bit 30: Babbling Receive Error */
-                                               /* Bit 31: Reserved */
+/* Bit 31: Reserved */
 
 /* Receive Descriptor Active Register */
 
 /* Bits 0-23: Reserved */
 #define ENET_RDAR                    (1 << 24) /* Bit 24: Receive descriptor active */
-                                               /* Bits 25-31: Reserved */
+/* Bits 25-31: Reserved */
 
 /* Transmit Descriptor Active Register */
 
 /* Bits 0-23: Reserved */
 #define ENET_TDAR                    (1 << 24) /* Bit 24: Transmit descriptor active */
-                                               /* Bits 25-31: Reserved */
+/* Bits 25-31: Reserved */
 
 /* Ethernet Control Register */
 
@@ -208,13 +210,13 @@
 #define ENET_ECR_MAGICEN             (1 << 2)  /* Bit 2:  Magic packet detection enable */
 #define ENET_ECR_SLEEP               (1 << 3)  /* Bit 3:  Sleep mode enable */
 #define ENET_ECR_EN1588              (1 << 4)  /* Bit 4:  EN1588 enable */
-                                               /* Bit 5: Reserved */
+#define ENET_ECR_SPEED               (1 << 5)  /* Bit 5:  1000-Mbit/s mode */
 #define ENET_ECR_DBGEN               (1 << 6)  /* Bit 6:  Debug enable */
 #define ENET_ECR_STOPEN              (1 << 7)  /* Bit 7:  STOPEN Signal Control */
 #ifdef IMX_ENET_HAS_DBSWAP
 #define ENET_ECR_DBSWP               (1 << 8)  /* Bit 8:  Swap bytes */
 #endif
-                                               /* Bits 9-31: Reserved */
+/* Bits 9-31: Reserved */
 #define ECR_RESV_VAL                 (7 << 28) /* Reserve val to write */
 
 /* MII Management Frame Register */
@@ -248,7 +250,7 @@
 #define ENET_MSCR_HOLDTIME_2CYCLES   (1 << ENET_MSCR_HOLDTIME_SHIFT) /* 2 internal module clock cycles */
 #define ENET_MSCR_HOLDTIME_3CYCLES   (2 << ENET_MSCR_HOLDTIME_SHIFT) /* 3 internal module clock cycles */
 #define ENET_MSCR_HOLDTIME_8CYCLES   (7 << ENET_MSCR_HOLDTIME_SHIFT) /* 8 internal module clock cycles */
-                                                                     /* Bits 11-31: Reserved */
+/* Bits 11-31: Reserved */
 
 /* MIB Control Register */
 
@@ -265,10 +267,11 @@
 #define ENET_RCR_PROM                (1 << 3)  /* Bit 3:  Promiscuous mode */
 #define ENET_RCR_BC_REJ              (1 << 4)  /* Bit 4:  Broadcast frame reject */
 #define ENET_RCR_FCE                 (1 << 5)  /* Bit 5:  Flow control enable */
-                                               /* Bits 6-7: Reserved */
+#define ENET_RCR_RGMII_EN            (1 << 6)  /* Bit 6:  RGMII mode enable */
+/* Bit 7:  Reserved */
 #define ENET_RCR_RMII_MODE           (1 << 8)  /* Bit 8: RMII mode enable */
 #define ENET_RCR_RMII_10T            (1 << 9)  /* Bit 9: Enables 10-Mbps mode of the RMII */
-                                               /* Bits 10-11: Reserved */
+/* Bits 10-11: Reserved */
 #define ENET_RCR_PADEN               (1 << 12) /* Bit 12: Enable frame padding remove on receive */
 #define ENET_RCR_PAUFWD              (1 << 13) /* Bit 13: Terminate/forward pause frames */
 #define ENET_RCR_CRCFWD              (1 << 14) /* Bit 14: Terminate/forward received CRC */
@@ -281,7 +284,7 @@
 /* Transmit Control Register */
 
 #define ENET_TCR_GTS                 (1 << 0)  /* Bit 0:  Graceful transmit stop */
-                                               /* Bit 1: Reserved */
+/* Bit 1: Reserved */
 #define ENET_TCR_ADDINS              (1 << 8)  /* Bit 8:  Set MAC address on transmit */
 #define ENET_TCR_FDEN                (1 << 2)  /* Bit 2:  Full duplex enable */
 #define ENET_TCR_TFC_PAUSE           (1 << 3)  /* Bit 3:  Transmit frame control pause */
@@ -290,7 +293,7 @@
 #define ENET_TCR_ADDSEL_MASK         (7 << ENET_TCR_ADDSEL_SHIFT)
 #define ENET_TCR_ADDSEL_PADDR12      (0 << ENET_TCR_ADDSEL_SHIFT) /* Node MAC address programmed on PADDR1/2 registers */
 #define ENET_TCR_CRCFWD              (1 << 9)                     /* Bit 9:  Forward frame from application with CRC */
-                                                                  /* Bits 10-31: Reserved */
+/* Bits 10-31: Reserved */
 
 /* Physical Address Lower/Upper Register (32-bits of 48-address) */
 
@@ -319,31 +322,31 @@
 
 #define ENET_TXIC_ICTT_SHIFT         (0)       /* Bits 0-15: Interrupt coalescing timer threshold */
 #define ENET_TXIC_ICTT_SHIFT_MASK    (0xffff << ENET_TXIC_ICTT_SHIFT)
-                                               /* Bits 16-19: Reserved */
+/* Bits 16-19: Reserved */
 #define ENET_TXIC_ICFT_SHIFT         (20)      /* Bits 0-15: Interrupt coalescing timer threshold */
 #define ENET_TXIC_ICFT_SHIFT_MASK    (0xff << ENET_TXIC_ICFT_SHIFT)
 #define ENET_TXIC_ICTT_ICCS          (1 << 30) /* Bit 30: Interrupt Coalescing Timer Clock Source Select */
-#define ENET_TXIC_ICTT_ICEN          (1 << 31) /* Bit 31: Eable/disabel Interrupt Coalescing */
+#define ENET_TXIC_ICTT_ICEN          (1 << 31) /* Bit 31: Enable/disable Interrupt Coalescing */
 
 /* Receive Interrupt Coalescing Register */
 
 #define ENET_RXIC_ICTT_SHIFT         (0)       /* Bits 0-15: Interrupt coalescing timer threshold */
 #define ENET_RXIC_ICTT_SHIFT_MASK    (0xffff << ENET_TXIC_ICTT_SHIFT)
-                                               /* Bits 16-19: Reserved */
+/* Bits 16-19: Reserved */
 #define ENET_RXIC_ICFT_SHIFT         (20)      /* Bits 0-15: Interrupt coalescing timer threshold */
 #define ENET_RXIC_ICFT_SHIFT_MASK    (0xff << ENET_TXIC_ICFT_SHIFT)
 #define ENET_RXIC_ICTT_ICCS          (1 << 30) /* Bit 30: Interrupt Coalescing Timer Clock Source Select */
-#define ENET_RXIC_ICTT_ICEN          (1 << 31) /* Bit 31: Eable/disabel Interrupt Coalescing */
+#define ENET_RXIC_ICTT_ICEN          (1 << 31) /* Bit 31: Enable/disable Interrupt Coalescing */
 
 #endif /* if 0 */
 
 /* Transmit FIFO Watermark Register */
 
 #define ENET_TFWR_TFWR_SHIFT         (0)       /* Bits 0-5: Transmit FIFO write */
-                                               /* Bits 6-7: Reserved */
+/* Bits 6-7: Reserved */
 #define ENET_TFWR_TFWR_MASK          (63 << ENET_TFWR_TFWR_SHIFT)
 #define ENET_TFWR_STRFWD             (1 << 8)  /* Bit 8: Store and forward enable */
-                                               /* Bits 9-31: Reserved */
+/* Bits 9-31: Reserved */
 
 /* Receive Descriptor Ring Start Register */
 
@@ -362,7 +365,7 @@
 /* Bits 14-31: Reserved */
 #define ENET_MRBR_SHIFT              (4)       /* Bits 4-11: Receive buffer size in bytes */
 #define ENET_MRBR_MASK               (0x7f << ENET_MRBR_SHIFT)
-                                               /* Bits 0-3: Reserved */
+/* Bits 0-3: Reserved */
 
 /* Receive FIFO Section Full Threshold */
 
@@ -374,84 +377,84 @@
 
 #define ENET_RSEM_SHIFT              (0)       /* Bits 0-7: Value of the receive FIFO section empty threshold */
 #define ENET_RSEM_MASK               (0xff << ENET_RSEM_SHIFT)
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Receive FIFO Almost Empty Threshold */
 
 #define ENET_RAEM_SHIFT              (0)       /* Bits 0-7: Value of the receive FIFO almost empty threshold */
 #define ENET_RAEM_MASK               (0xff << ENET_RAEM_SHIFT)
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Receive FIFO Almost Full Threshold */
 
 #define ENET_RAFL_SHIFT              (0)       /* Bits 0-7: Value of the receive FIFO almost full threshold */
 #define ENET_RAFL_MASK               (0xff << ENET_RAFL_SHIFT)
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Transmit FIFO Section Empty Threshold */
 
 #define ENET_TSEM_SHIFT              (0)       /* Bits 0-7: Value of the transmit FIFO section empty threshold */
 #define ENET_TSEM_MASK               (0xff << ENET_TSEM_SHIFT)
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Transmit FIFO Almost Empty Threshold */
 
 #define ENET_TAEM_SHIFT              (0)       /* Bits 0-7: Value of the transmit FIFO section empty threshold */
 #define ENET_TAEM_MASK               (0xff << ENET_TAEM_SHIFT)
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Transmit FIFO Almost Full Threshold */
 
 #define ENET_TAFL_SHIFT              (0)       /* Bits 0-7: Value of the transmit FIFO section empty threshold */
 #define ENET_TAFL_MASK               (0xff << ENET_TAFL_SHIFT)
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Transmit Inter-Packet Gap */
 
 #define ENET_TIPG_SHIFT              (0)       /* Bits 0-4: Value of the transmit FIFO section empty threshold */
 #define ENET_TIPG_MASK               (31 << ENET_TIPG_SHIFT)
-                                               /* Bits 5-31: Reserved */
+/* Bits 5-31: Reserved */
 
 /* Frame Truncation Length */
 
 #define ENET_FTRL_SHIFT              (0)       /* Bits 0-13: Value of the transmit FIFO section empty threshold */
 #define ENET_FTRL_MASK               (0x3fff << ENET_FTRL_SHIFT)
-                                               /* Bits 14-31: Reserved */
+/* Bits 14-31: Reserved */
 
 /* Transmit Accelerator Function Configuration */
 
 #define ENET_TACC_SHIFT16            (1 << 0)  /* Bit 0:  TX FIFO shift-16 */
-                                               /* Bits 1-2: Reserved */
+/* Bits 1-2: Reserved */
 #define ENET_TACC_IPCHK              (1 << 3)  /* Bit 3:  Enables insertion of IP header checksum */
 #define ENET_TACC_PROCHK             (1 << 4)  /* Bit 4:  Enables insertion of protocol checksum */
-                                               /* Bits 5-31: Reserved */
+/* Bits 5-31: Reserved */
 
 /* Receive Accelerator Function Configuration */
 
 #define ENET_RACC_PADREM             (1 << 0)  /* Bit 0: Enable padding removal for short IP frames */
 #define ENET_RACC_IPDIS              (1 << 1)  /* Bit 1: Enable discard of frames with wrong IPv4 header checksum */
 #define ENET_RACC_PRODIS             (1 << 2)  /* Bit 2: Enable discard of frames with wrong protocol checksum */
-                                               /* Bits 3-5: Reserved */
+/* Bits 3-5: Reserved */
 #define ENET_RACC_LINEDIS            (1 << 6)  /* Bit 6: Enable discard of frames with MAC layer errors */
 #define ENET_RACC_SHIFT16            (1 << 7)  /* Bit 7: RX FIFO shift-16 */
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Timer Control Register */
 
 #define ENET_ATCR_EN                 (1 << 0)  /* Bit 0:  Enable timer */
-                                               /* Bit 1:  Reserved */
+/* Bit 1:  Reserved */
 #define ENET_ATCR_OFFEN              (1 << 2)  /* Bit 2:  Enable one-shot offset event */
 #define ENET_ATCR_OFFRST             (1 << 3)  /* Bit 3:  Reset timer on offset event */
 #define ENET_ATCR_PEREN              (1 << 4)  /* Bit 4:  Enable periodical event */
-                                               /* Bits 5-6: Reserved */
+/* Bits 5-6: Reserved */
 #define ENET_ATCR_PINPER             (1 << 7)  /* Bit 7:  Enables event signal output assertion on period event */
-                                               /* Bit 8:  Reserved */
+/* Bit 8:  Reserved */
 #define ENET_ATCR_RESTART            (1 << 9)  /* Bit 9:  Reset timer */
-                                               /* Bit 10: Reserved */
+/* Bit 10: Reserved */
 #define ENET_ATCR_CAPTURE            (1 << 11) /* Bit 11: Capture timer value */
-                                               /* Bit 12: Reserved */
+/* Bit 12: Reserved */
 #define ENET_ATCR_SLAVE              (1 << 13) /* Bit 13: Enable timer slave mode */
-                                               /* Bits 14-31: Reserved */
+/* Bits 14-31: Reserved */
 
 /* Timer Value Register (32-bit timer value)
  * Timer Offset Register (32-bit offset value)
@@ -461,16 +464,16 @@
 /* Timer Correction Register */
 
 #define ENET_ATCOR_MASK              (0x7fffffff) /* Bits 0-3: Correction counter wrap-around value */
-                                                  /* Bit 31: Reserved */
+/* Bit 31: Reserved */
 
 /* Time-Stamping Clock Period Register */
 
 #define ENET_ATINC_INC_SHIFT         (0)       /* Bits 0-6: Clock period of the timestamping clock (ts_clk) in nanoseconds */
 #define ENET_ATINC_INC_MASK          (0x7f << ENET_ATINC_INC_SHIFT)
-                                               /* Bit 7: Reserved */
+/* Bit 7: Reserved */
 #define ENET_ATINC_INC_CORR_SHIFT    (8)       /* Bits 8-14: Correction increment value */
 #define ENET_ATINC_INC_CORR_MASK     (0x7f << ENET_ATINC_INC_CORR_SHIFT)
-                                               /* Bits 15-31: Reserved */
+/* Bits 15-31: Reserved */
 
 /* Timestamp of Last Transmitted Frame (32-bit timestamp) */
 
@@ -480,12 +483,12 @@
 #define ENET_TGSR_TF1                (1 << 1)  /* Bit 1:  Copy of Timer Flag for channel 1 */
 #define ENET_TGSR_TF2                (1 << 2)  /* Bit 2:  Copy of Timer Flag for channel 2 */
 #define ENET_TGSR_TF3                (1 << 3)  /* Bit 3:  Copy of Timer Flag for channel 3 */
-                                               /* Bits 14-31: Reserved */
+/* Bits 14-31: Reserved */
 
 /* Timer Control Status Register n */
 
 #define ENET_TCSR_TDRE               (1 << 0)  /* Bit 0:  Timer DMA Request Enable */
-                                               /* Bit 1: Reserved */
+/* Bit 1: Reserved */
 #define ENET_TCSR_TMODE_SHIFT        (2)       /* Bits 2-5: Timer Mode */
 #define ENET_TCSR_TMODE_MASK         (15 << ENET_TCSR_TMODE_SHIFT)
 #define ENET_TCSR_TMODE_DISABLED     (0 << ENET_TCSR_TMODE_SHIFT)  /* Disabled */
@@ -503,7 +506,7 @@
 
 #define ENET_TCSR_TIE                (1 << 6)  /* Bit 6:  Timer interrupt enable */
 #define ENET_TCSR_TF                 (1 << 7)  /* Bit 7:  Timer Flag */
-                                               /* Bits 8-31: Reserved */
+/* Bits 8-31: Reserved */
 
 /* Timer Compare Capture Register (32-bit compare value) */
 
@@ -531,13 +534,13 @@
  */
 
 #ifdef IMX_ENET_HAS_DBSWAP
-# ifndef CONFIG_ENDIAN_BIG
-#  define IMX_USE_DBSWAP
-# endif
+#  ifndef CONFIG_ENDIAN_BIG
+#    define IMX_USE_DBSWAP
+#  endif
 #else
-# ifndef CONFIG_ENDIAN_BIG
-#  define IMX_BUFFERS_SWAP
-# endif
+#  ifndef CONFIG_ENDIAN_BIG
+#    define IMX_BUFFERS_SWAP
+#  endif
 #endif
 
 #ifndef IMX_BUFFERS_SWAP
@@ -662,57 +665,53 @@
 
 /* Legacy Buffer Descriptor */
 
-#ifdef CONFIG_ENET_ENHANCEDBD
+#ifdef CONFIG_IMX_ENET_ENHANCEDBD
 #ifdef IMX_USE_DBSWAP
 /* When DBSWP is used to swap the bytes in hardware, it is done 32-bits
  * at a time.  Therefore, all 16 bit elements need to be swapped to
  * compensate.
  */
 
-struct enet_desc_s
-{
-  uint16_t length;      /* Data length */
-  uint16_t status1;     /* Control and status */
-  uint8_t  *data;       /* Buffer address */
-  uint32_t status2;     /* Extended status */
-  uint16_t checksum;    /* Payload checksum */
-  uint16_t lenproto;    /* Header length + Protocol type */
-  uint32_t bdu;         /* BDU */
-  uint32_t timestamp;   /* Time stamp */
-  uint32_t reserved1;   /* unused */
-  uint32_t reserved2;   /* unused */
+struct enet_desc_s {
+	uint16_t length;      /* Data length */
+	uint16_t status1;     /* Control and status */
+	uint8_t  *data;       /* Buffer address */
+	uint32_t status2;     /* Extended status */
+	uint16_t checksum;    /* Payload checksum */
+	uint16_t lenproto;    /* Header length + Protocol type */
+	uint32_t bdu;         /* BDU */
+	uint32_t timestamp;   /* Time stamp */
+	uint32_t reserved1;   /* unused */
+	uint32_t reserved2;   /* unused */
 };
 #else
-struct enet_desc_s
-{
-  uint16_t status1;     /* Control and status */
-  uint16_t length;      /* Data length */
-  uint8_t  *data;       /* Buffer address */
-  uint32_t status2;     /* Extended status */
-  uint16_t lenproto;    /* Header length + Protocol type */
-  uint16_t checksum;    /* Payload checksum */
-  uint32_t bdu;         /* BDU */
-  uint32_t timestamp;   /* Time stamp */
-  uint32_t reserved1;   /* unused */
-  uint32_t reserved2;   /* unused */
+struct enet_desc_s {
+	uint16_t status1;     /* Control and status */
+	uint16_t length;      /* Data length */
+	uint8_t  *data;       /* Buffer address */
+	uint32_t status2;     /* Extended status */
+	uint16_t lenproto;    /* Header length + Protocol type */
+	uint16_t checksum;    /* Payload checksum */
+	uint32_t bdu;         /* BDU */
+	uint32_t timestamp;   /* Time stamp */
+	uint32_t reserved1;   /* unused */
+	uint32_t reserved2;   /* unused */
 };
 #endif /* IMX_USE_DBSWAP */
-#else /* CONFIG_ENET_ENHANCEDBD */
+#else /* CONFIG_IMX_ENET_ENHANCEDBD */
 #ifdef IMX_USE_DBSWAP
-struct enet_desc_s
-{
-  uint16_t length;      /* Data length */
-  uint16_t status1;     /* Control and status */
-  uint8_t  *data;       /* Buffer address */
+struct enet_desc_s {
+	uint16_t length;      /* Data length */
+	uint16_t status1;     /* Control and status */
+	uint8_t  *data;       /* Buffer address */
 };
 #else
-struct enet_desc_s
-{
-  uint16_t status1;     /* Control and status */
-  uint16_t length;      /* Data length */
-  uint8_t  *data;       /* Buffer address */
+struct enet_desc_s {
+	uint16_t status1;     /* Control and status */
+	uint16_t length;      /* Data length */
+	uint8_t  *data;       /* Buffer address */
 };
 #endif /* IMX_USE_DBSWAP */
-#endif /* CONFIG_ENET_ENHANCEDBD */
+#endif /* CONFIG_IMX_ENET_ENHANCEDBD */
 
 #endif /* __ARCH_ARM_SRC_IMX6_HARDWARE_IMX_ENET_H */

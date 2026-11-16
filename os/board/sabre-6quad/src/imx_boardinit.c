@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  ****************************************************************************/
 /****************************************************************************
  * boards/arm/imx6/sabre-6quad/src/imx_boardinit.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -46,8 +48,8 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
-//#include "chip.h"
-#include "up_internal.h"
+#include "chip.h"
+#include "arm_internal.h"
 #include "imx_boot.h"
 #include "sabre-6quad.h"
 
@@ -90,7 +92,7 @@ void imx_memory_initialize(void)
 }
 
 /****************************************************************************
- * Name: board_initialize
+ * Name: imx_board_initialize
  *
  * Description:
  *   All i.MX6 architectures must provide the following entry point.  This
@@ -106,7 +108,7 @@ void imx_memory_initialize(void)
  *
  ****************************************************************************/
 
-void board_initialize(void)
+void imx_board_initialize(void)
 {
 #ifdef CONFIG_ARCH_LEDS
   /* Configure on-board LEDs if LED support has been selected. */
