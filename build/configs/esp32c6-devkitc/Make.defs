@@ -1,0 +1,131 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# build/configs/esp32c6-devkitc/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Based on boards/risc-v/esp32c6/esp32c6-devkitc/scripts/Make.defs of NuttX
+# 12.13.0.  The compiler settings come from
+# arch/risc-v/src/common/Toolchain.defs; the TizenRT specific parts are the
+# toolchain prefix, the location of the linker scripts, the framework and
+# external include directories, the link map and the hook that makes the
+# flash image after the link.
+
+include $(TOPDIR)/.config
+include $(TOPDIR)/tools/Config.mk
+include $(TOPDIR)/tools/espressif/Config.mk
+
+# The build image (tools/docker/riscv) has the Espressif riscv32-esp-elf
+# toolchain.  Toolchain.defs sets CROSSDEV only when it is not set yet.
+
+CROSSDEV = riscv32-esp-elf-
+
+include $(TOPDIR)/arch/risc-v/src/common/Toolchain.defs
+
+# arch/risc-v/src/common/espressif/Make.defs clones the Espressif HAL and
+# its mbedtls submodule at the context step.  The git of the build image
+# (2.7.4) cannot fetch the commit of the submodule with a shallow clone
+# ("reference is not a tree"): clone the submodule with its history.
+
+DISABLE_GIT_DEPTH = y
+
+# Remove quotes from CONFIG_ESPRESSIF_CHIP_SERIES configuration
+
+CHIP_SERIES = $(patsubst "%",%,$(CONFIG_ESPRESSIF_CHIP_SERIES))
+
+# The linker scripts of boards/risc-v/esp32c6/common/scripts of NuttX are
+# in the scripts directory of the board configuration.
+
+SCRIPTDIR = $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(patsubst "%",%,$(CONFIG_ARCH_BOARD))$(DELIM)scripts
+
+ARCHSCRIPT += $(SCRIPTDIR)$(DELIM)$(CHIP_SERIES)_aliases.ld
+ARCHSCRIPT += $(SCRIPTDIR)$(DELIM)$(CHIP_SERIES)_flat_memory.ld
+
+ifeq ($(CONFIG_ESPRESSIF_SIMPLE_BOOT),y)
+  ARCHSCRIPT += $(SCRIPTDIR)$(DELIM)$(CHIP_SERIES)_sections.ld
+else ifeq ($(CONFIG_ESPRESSIF_BOOTLOADER_MCUBOOT),y)
+  ARCHSCRIPT += $(SCRIPTDIR)$(DELIM)$(CHIP_SERIES)_sections.ld
+else
+  ARCHSCRIPT += $(SCRIPTDIR)$(DELIM)$(CHIP_SERIES)_legacy_sections.ld
+endif
+
+ARCHPICFLAGS = -fpic
+
+# The Espressif HAL is built as a whole and its unused parts refer to
+# components that are not built: the linker must discard the unused
+# sections (CONFIG_DEBUG_OPT_UNUSED_SECTIONS, default y in NuttX, which
+# TizenRT does not have).
+
+ARCHOPTIMIZATION += -ffunction-sections -fdata-sections
+LDFLAGS += --gc-sections
+
+# The HAL describes the registers as volatile bit-field structures.  GCC
+# reads an 8 bit wide field with a byte access by default; ESP-IDF builds
+# the HAL with -fstrict-volatile-bitfields, which makes every access as
+# wide as the register (32 bits).  The peripheral models of the Espressif
+# QEMU decode only the 32 bit accesses (a byte read of
+# PCR.mspi_clk_conf.mspi_fast_hs_div_num returns 0 and the flash
+# initialization of the HAL asserts), so build like ESP-IDF does.
+
+ARCHCFLAGS += -fstrict-volatile-bitfields
+
+# TizenRT framework and external headers
+
+ARCHINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)framework$(DELIM)include
+ARCHINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)include
+ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)framework$(DELIM)include
+ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)include
+
+# EXTRADEFINES is used by the TizenRT build system to pass __KERNEL__ to the
+# kernel libraries (EXTRAFLAGS in NuttX).
+
+CFLAGS := $(ARCHCFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(EXTRADEFINES) -Werror=return-type
+CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
+CXXFLAGS := $(ARCHCXXFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(EXTRADEFINES)
+CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
+CPPFLAGS := $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(EXTRADEFINES)
+AFLAGS := $(CFLAGS) -D__ASSEMBLY__
+
+LDFLAGS += -Map=$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)output$(DELIM)bin$(DELIM)tinyara.map
+
+# The ROM of the chip loads an image file, not the ELF file.  POSTBUILD of
+# tools/espressif/Config.mk makes build/output/bin/tinyara.bin with esptool
+# (and tinyara.merged.bin, the image of the whole flash, with
+# CONFIG_ESPRESSIF_MERGE_BINS).
+
+define MAKE_BOARD_SPECIFIC_BIN
+	$(call POSTBUILD)
+endef
