@@ -286,4 +286,20 @@ void arm_cpu_boot(int cpu)
 		asm("WFI");
 	}
 }
+
+/****************************************************************************
+ * Name: up_cpu_up
+ *
+ * Description:
+ *   imx_cpu_enable() releases the secondary cores during board
+ *   initialization and they park in arm_cpu_boot() waiting for the
+ *   CPUSTART SGI, so the board bring-up of a secondary CPU is the release
+ *   performed by up_cpu_start() (the generic one in arm_cpustart.c).
+ *
+ ****************************************************************************/
+
+int up_cpu_up(int cpu)
+{
+  return up_cpu_start(cpu);
+}
 #endif /* CONFIG_SMP */
