@@ -1,0 +1,75 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config XTENSA_STRING_FUNCTION
+	bool "Enable optimized XTENSA specific string function"
+	default n
+	select XTENSA_MEMCPY
+	select XTENSA_MEMMOVE
+	select XTENSA_MEMSET
+	select XTENSA_STRCMP
+	select XTENSA_STRCPY
+	select XTENSA_STRLEN
+	select XTENSA_STRNCPY
+
+config XTENSA_MEMCPY
+	bool "Enable optimized memcpy() for XTENSA"
+	select LIBC_ARCH_MEMCPY
+	---help---
+		Enable optimized XTENSA specific memcpy() library function
+
+config XTENSA_MEMMOVE
+	bool "Enable optimized memmove() for XTENSA"
+	select LIBC_ARCH_MEMMOVE
+	---help---
+		Enable optimized XTENSA specific memmove() library function
+
+config XTENSA_MEMSET
+	bool "Enable optimized memset() for XTENSA"
+	select LIBC_ARCH_MEMSET
+	---help---
+		Enable optimized XTENSA specific memset() library function
+
+config XTENSA_STRCMP
+	bool "Enable optimized strcmp() for XTENSA"
+	select LIBC_ARCH_STRCMP
+	---help---
+		Enable optimized XTENSA specific strcmp() library function
+
+config XTENSA_STRCPY
+	bool "Enable optimized strcpy() for XTENSA"
+	select LIBC_ARCH_STRCPY
+	---help---
+		Enable optimized XTENSA specific strcpy() library function
+
+config XTENSA_STRLEN
+	bool "Enable optimized strlen() for XTENSA"
+	select LIBC_ARCH_STRLEN
+	---help---
+		Enable optimized XTENSA specific strlen() library function
+
+config XTENSA_STRNCPY
+	bool "Enable optimized strncpy() for XTENSA"
+	select LIBC_ARCH_STRNCPY
+	---help---
+		Enable optimized XTENSA specific strncpy() library function
+
