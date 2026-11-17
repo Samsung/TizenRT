@@ -137,6 +137,72 @@ uint16_t crc16ccittpart(FAR const uint8_t *src, size_t len,
 uint16_t crc16ccitt(FAR const uint8_t *src, size_t len);
 
 /****************************************************************************
+ * Name: crc16_ccitt_part
+ *
+ * Description:
+ *   Continue CRC16-CCITT calculation on a part of the buffer using the
+ *   0x1021 polynomial (TizenRT extension).
+ *
+ ****************************************************************************/
+
+uint16_t crc16_ccitt_part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
+
+/****************************************************************************
+ * Name: crc16_ccitt_rev_part
+ *
+ * Description:
+ *   Continue CRC16-CCITT calculation on a part of the buffer using the
+ *   0x8408 reflected polynomial (TizenRT extension).
+ *
+ ****************************************************************************/
+
+uint16_t crc16_ccitt_rev_part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
+
+/****************************************************************************
+ * Name: crc16_ccitt_xmodem
+ *
+ * Description:
+ *   Return a 16-bit CRC16-CCITT/Xmodem of the contents of the 'src'
+ *   buffer, length 'len' (TizenRT extension).
+ *
+ ****************************************************************************/
+
+uint16_t crc16_ccitt_xmodem(FAR const uint8_t *src, size_t len);
+
+/****************************************************************************
+ * Name: crc16_ccitt_false
+ *
+ * Description:
+ *   Return a 16-bit CRC16-CCITT/False of the contents of the 'src'
+ *   buffer, length 'len' (TizenRT extension).
+ *
+ ****************************************************************************/
+
+uint16_t crc16_ccitt_false(FAR const uint8_t *src, size_t len);
+
+/****************************************************************************
+ * Name: crc16_ccitt_aug
+ *
+ * Description:
+ *   Return a 16-bit CRC16-CCITT/Aug of the contents of the 'src'
+ *   buffer, length 'len' (TizenRT extension).
+ *
+ ****************************************************************************/
+
+uint16_t crc16_ccitt_aug(FAR const uint8_t *src, size_t len);
+
+/****************************************************************************
+ * Name: crc16_ccitt_kermit
+ *
+ * Description:
+ *   Return a 16-bit CRC16-CCITT/Kermit of the contents of the 'src'
+ *   buffer, length 'len' (TizenRT extension).
+ *
+ ****************************************************************************/
+
+uint16_t crc16_ccitt_kermit(FAR const uint8_t *src, size_t len);
+
+/****************************************************************************
  * Name: crc16ibm
  *
  * Description:
