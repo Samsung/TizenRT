@@ -15,6 +15,7 @@ the Cortex-M7 code paths.
 |---|---|
 | `ostest` | Runs the NuttX OS test (`apps/examples/testcase/ostest`) as the entry point (`CONFIG_INIT_ENTRYPOINT="ostest_main"`). |
 | `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the system and FS commands, the `ostest` command and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
+| `net` | `tash` with the network stack (`CONFIG_NET`, lwIP with netmgr): loopback and LAN9118 interfaces, DHCP client and `ifconfig`/`ping`. |
 
 The configurations are the ones of `mps2-an521` with the chip and board
 values of the NuttX `mps2-an500` `nsh` configuration: SysTick
@@ -27,7 +28,7 @@ values of the NuttX `mps2-an500` `nsh` configuration: SysTick
 ```bash
 docker build -t tizenrt/tizenrt:2.0.1-qemu tools/docker
 cd os
-./tools/configure.sh mps2-an500/ostest    # or mps2-an500/tash
+./tools/configure.sh mps2-an500/ostest    # or mps2-an500/tash, mps2-an500/net
 ./dbuild.sh build
 ```
 
@@ -55,3 +56,33 @@ ostest_main: Exiting with status 0
 
 With the `tash` configuration, type `ostest` at the `TASH>>` prompt.
 Quit QEMU with `Ctrl-a x`.
+
+## Network
+
+The `net` configuration registers two interfaces: `lo` (lwIP loopback)
+and `eth0`, the LAN9118 Ethernet controller of the MPS2 board
+(`os/arch/arm/src/mps/mps_lan9118.c`, `CONFIG_MPS_LAN9118`): registers
+at 0xa0000000, interrupt 13.  The driver is written for the QEMU model and has
+no PHY management.  Give QEMU a NIC with the extra arguments of
+`qemu_run.sh`:
+
+```bash
+docker run --rm -it -v $PWD:/root/tizenrt tizenrt/tizenrt:2.0.1-qemu \
+	/root/tizenrt/build/configs/mps2-an500/qemu_run.sh \
+	-nic user,model=lan9118
+```
+
+At the `TASH>>` prompt:
+
+```
+ifconfig                          # lo and eth0
+ifup eth0
+ifconfig eth0 dhcp                # 10.0.2.15 from the QEMU user network
+ping -c 4 10.0.2.2                # the host
+```
+
+10.0.2.2 is the machine that runs QEMU, which is the container with the
+command above.
+
+`ping` prints the packet loss as `*float*` because the configuration has
+no floating point `printf` (`CONFIG_LIBC_FLOATINGPOINT`).
