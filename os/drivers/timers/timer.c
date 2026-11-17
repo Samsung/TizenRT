@@ -53,6 +53,7 @@
 #include <debug.h>
 
 #include <tinyara/spinlock.h>
+#include <tinyara/irq.h>
 #include <tinyara/lib/lib.h>
 #include <tinyara/signal.h>
 #include <tinyara/fs/fs.h>
@@ -141,6 +142,16 @@ static bool timer_notifier(FAR uint32_t *next_interval_us, FAR void *arg)
 	FAR struct timer_notify_s *notify = &upper->notify;
 
 	DEBUGASSERT(upper != NULL);
+
+	/* Deliver the fin irq-event to the registered task.  This is the
+	 * historical TizenRT notification method (pre-sync commit 7c99c7a0a
+	 * "drivers/timer : Modify timer interrupt notification method"); the
+	 * payload travels in sigev_value (the NuttX-native carrier of the old
+	 * upper->arg).  fin_notify() is ISR-safe and a no-op for an invalid
+	 * pid.
+	 */
+
+	fin_notify(notify->pid, notify->event.sigev_value.sival_int);
 
 	/* Signal the waiter.. if there is one */
 
