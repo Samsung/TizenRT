@@ -56,7 +56,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#if defined(CONFIG_NET_IPv6) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET_IPv6)
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
