@@ -1,0 +1,6 @@
+# Configure-time symlinks and the cloned HAL must not be committed
+include/board
+include/chip
+src/board
+src/chip
+src/esp32/esp-hal-3rdparty/

@@ -1,72 +1,59 @@
-/******************************************************************
+/****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * arch/xtensa/include/spinlock.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- ******************************************************************/
-
-/****************************************************************************
- *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_INCLUDE_SPINLOCK_H
-#define __ARCH_ARM_INCLUDE_SPINLOCK_H
+#ifndef __ARCH_XTENSA_INCLUDE_SPINLOCK_H
+#define __ARCH_XTENSA_INCLUDE_SPINLOCK_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #ifndef __ASSEMBLY__
-#include <stdint.h>
-#endif							/* __ASSEMBLY__ */
+#  include <stdint.h>
+#endif /* __ASSEMBLY__ */
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define SP_UNLOCKED 0			/* The Un-locked state */
-#define SP_LOCKED   1			/* The Locked state */
+#define SP_UNLOCKED 0  /* The Un-locked state */
+#define SP_LOCKED   1  /* The Locked state */
 
 /****************************************************************************
  * Public Types
@@ -76,7 +63,7 @@
 
 /* The Type of a spinlock.
  *
- * This must be a uint32_ becaue it will be set using S32C1I instruction.
+ * This must be a uint32_ because it will be set using S32C1I instruction.
  * That instruction atomically stores to a memory location only if its
  * current value is the expected one.  The state register (SCOMPARE1) is
  * used to provide the additional comparison operand. Some implementations
@@ -87,7 +74,7 @@
 typedef uint32_t spinlock_t;
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
@@ -110,5 +97,27 @@ typedef uint32_t spinlock_t;
  *
  ****************************************************************************/
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_INCLUDE_SPINLOCK_H */
+#if defined(CONFIG_SPINLOCK)
+static inline_function spinlock_t up_testset(volatile spinlock_t *lock)
+{
+	/* Perform the 32-bit compare and set operation */
+
+	spinlock_t ret;
+
+	__asm__ __volatile__
+	(
+	  "WSR    %2, SCOMPARE1\n" /* Initialize SCOMPARE1 */
+	  "S32C1I %0, %1, 0\n"     /* Store the compare value into the lock,
+                              * if the lock is the same as compare1.
+                              * Otherwise, no write-access */
+	  : "=r" (ret) : "r" (lock), "r" (SP_UNLOCKED), "0" (SP_LOCKED)
+	);
+
+	return ret;
+}
+#endif
+
+/* See prototype in nuttx/include/nuttx/spinlock.h */
+
+#endif /* __ASSEMBLY__ */
+#endif /* __ARCH_XTENSA_INCLUDE_SPINLOCK_H */

@@ -1,77 +1,263 @@
-############################################################################
+###########################################################################
 #
-#Copyright 2018 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
 #
-############################################################################
+###########################################################################
 ############################################################################
 # arch/xtensa/src/lx6/Toolchain.defs
 #
-#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+# SPDX-License-Identifier: Apache-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 ############################################################################
-
 
 # Supported toolchains
 #
 # Each toolchain definition should set:
 #
 #  CROSSDEV         The GNU toolchain triple (command prefix)
-#  ARCROSSDEV       If required, an alternative prefix used when
-#                   invoking ar and nm.
 #  ARCHCPUFLAGS     CPU-specific flags selecting the instruction set
 #                   FPU options, etc.
-#  MAXOPTIMIZATION  The maximum optimization level that results in
+#  ARCHOPTIMIZATION The optimization level that results in
 #                   reliable code generation.
 #
 
-CROSSDEV = xtensa-esp32-elf-
+ifeq ($(CONFIG_XTENSA_TOOLCHAIN_XCC), y)
+  CROSSDEV = xt-
+endif
 
-ARCHCPUFLAGS =
+ifeq ($(CONFIG_XTENSA_TOOLCHAIN_XCLANG), y)
+  CROSSDEV = xt-
+endif
 
-MEMSTATS = xtensa
+ifeq ($(CONFIG_XTENSA_TOOLCHAIN_ESP), y)
+  CROSSDEV = xtensa-esp32-elf-
+endif
+
+ARCHCPUFLAGS = -mlongcalls
+
+ifeq ($(CONFIG_MM_KASAN_INSTRUMENT_ALL),y)
+  ARCHOPTIMIZATION += -fsanitize=kernel-address
+  KASAN_PARAM += asan-stack=0
+  KASAN_PARAM += asan-instrumentation-with-call-threshold=0
+
+  ifeq ($(CONFIG_MM_KASAN_GLOBAL),y)
+    KASAN_PARAM += asan-globals=1
+  else
+    KASAN_PARAM += asan-globals=0
+  endif
+
+  ifeq ($(CONFIG_MM_KASAN_DISABLE_READS_CHECK),y)
+    KASAN_PARAM += asan-instrument-reads=0
+  endif
+
+  ifeq ($(CONFIG_MM_KASAN_DISABLE_WRITES_CHECK),y)
+    KASAN_PARAM += asan-instrument-writes=0
+  endif
+
+  ifeq ($(CONFIG_ARM_TOOLCHAIN_CLANG),y)
+    ARCHOPTIMIZATION += $(addprefix -mllvm ,$(KASAN_PARAM))
+  else
+    ARCHOPTIMIZATION += $(addprefix --param ,$(KASAN_PARAM))
+  endif
+endif
+
+ifeq ($(CONFIG_MM_UBSAN_ALL),y)
+  ARCHOPTIMIZATION += $(CONFIG_MM_UBSAN_OPTION)
+endif
+
+ifeq ($(CONFIG_MM_UBSAN_TRAP_ON_ERROR),y)
+  ARCHOPTIMIZATION += -fsanitize-undefined-trap-on-error
+endif
 
 ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
-  MAXOPTIMIZATION := $(CONFIG_DEBUG_OPTLEVEL)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_OPTLEVEL)
+else ifeq ($(CONFIG_DEBUG_FULLOPT),y)
+  ARCHOPTIMIZATION += -Os
+endif
+
+ifneq ($(CONFIG_DEBUG_NOOPT),y)
+  ARCHOPTIMIZATION += -fno-strict-aliasing
+endif
+
+ifeq ($(CONFIG_FRAME_POINTER),y)
+  ARCHOPTIMIZATION += -fno-omit-frame-pointer -fno-optimize-sibling-calls
 else
- MAXOPTIMIZATION := -Os
+  ARCHOPTIMIZATION += -fomit-frame-pointer
+endif
+
+ifeq ($(CONFIG_STACK_CANARIES),y)
+  ARCHOPTIMIZATION += $(patsubst "%",%,$(CONFIG_STACK_CANARIES_LEVEL))
+endif
+
+ifeq ($(CONFIG_STACK_USAGE),y)
+  ARCHOPTIMIZATION += -fstack-usage
+endif
+
+ifneq ($(CONFIG_STACK_USAGE_WARNING),0)
+  ARCHOPTIMIZATION += -Wstack-usage=$(CONFIG_STACK_USAGE_WARNING)
+endif
+
+# Instrumentation options
+
+ifeq ($(CONFIG_ARCH_INSTRUMENT_ALL),y)
+  ARCHOPTIMIZATION += -finstrument-functions
+endif
+
+ARCHCFLAGS += -fno-common
+ARCHCXXFLAGS += -fno-common
+
+ARCHCFLAGS += -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-attributes -Wno-unknown-pragmas
+ARCHCXXFLAGS += -Wall -Wshadow -Wundef -Wno-attributes -Wno-unknown-pragmas
+
+# When all C++ code is built using GCC 7.1 or a higher version,
+# we can safely disregard warnings of the type "parameter passing for X changed in GCC 7.1."
+# Refer to : https://stackoverflow.com/questions/48149323/what-does-the-gcc-warning-project-parameter-passing-for-x-changed-in-gcc-7-1-m
+
+ifneq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  ARCHCXXFLAGS += -nostdinc++
+endif
+
+ifneq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+  ARCHCFLAGS += -Wno-psabi
+  ARCHCXXFLAGS += -Wno-psabi
+endif
+
+ifneq ($(CONFIG_CXX_STANDARD),)
+  ARCHCXXFLAGS += -std=$(CONFIG_CXX_STANDARD)
+endif
+
+ifneq ($(CONFIG_CXX_EXCEPTION),y)
+  ARCHCXXFLAGS += -fno-exceptions -fcheck-new
+endif
+
+ifneq ($(CONFIG_CXX_RTTI),y)
+  ARCHCXXFLAGS += -fno-rtti
+endif
+
+LDFLAGS += -nostdlib
+
+SHMODULEFLAGS = -Bsymbolic -G -Bdynamic --entry=__start
+
+# Optimization of unused sections
+
+ifeq ($(CONFIG_DEBUG_OPT_UNUSED_SECTIONS),y)
+  LDFLAGS          += --gc-sections
+  ARCHOPTIMIZATION += -ffunction-sections -fdata-sections
+endif
+
+# Debug link map
+
+ifeq ($(CONFIG_DEBUG_LINK_MAP),y)
+  LDFLAGS += --cref -Map=$(call CONVERT_PATH,$(TOPDIR)$(DELIM)nuttx.map)
+endif
+
+# Debug --whole-archive
+
+ifeq ($(CONFIG_DEBUG_LINK_WHOLE_ARCHIVE),y)
+  LDFLAGS += --whole-archive
+endif
+
+ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_SYMBOLS_LEVEL)
+endif
+
+# Default toolchain
+ifeq ($(CONFIG_XTENSA_TOOLCHAIN_XCC), y)
+  ARCHCFLAGS += -Wno-atomic-alignment
+  ARCHCXXFLAGS += -Wno-atomic-alignment
+  CC = $(CROSSDEV)xcc
+  CXX = $(CROSSDEV)xc++
+  CPP = $(CROSSDEV)xcc -E -P -x c
+else ifeq ($(CONFIG_XTENSA_TOOLCHAIN_XCLANG), y)
+  CC = $(CROSSDEV)clang
+  CXX = $(CROSSDEV)clang++
+  CPP = $(CROSSDEV)clang -E -P -x c
+else
+  CC = $(CROSSDEV)gcc
+  CXX = $(CROSSDEV)g++
+  CPP = $(CROSSDEV)gcc -E -P -x c
+endif
+
+LD = $(CROSSDEV)ld
+STRIP = $(CROSSDEV)strip --strip-unneeded
+AR = $(CROSSDEV)ar rcs
+UNAR = $(CROSSDEV)ar x
+NM = $(CROSSDEV)nm
+OBJCOPY = $(CROSSDEV)objcopy
+OBJDUMP = $(CROSSDEV)objdump
+
+LDFLAGS += --print-memory-usage
+
+ifeq ($(CONFIG_ARCH_TOOLCHAIN_GNU),y)
+  ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),)
+    ifeq ($(GCCVER),)
+      export GCCVER := $(shell $(CC) --version | grep gcc | sed -E "s/.* ([0-9]+\.[0-9]+).*/\1/" | cut -d'.' -f1)
+    endif
+  endif
+endif
+
+# Add the builtin library
+
+EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-libgcc-file-name))
+
+ifeq ($(CONFIG_LIBM_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libm.a))
+endif
+
+ifeq ($(CONFIG_LIBSUPCXX_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libsupc++.a))
+endif
+
+ifeq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libstdc++.a))
+endif
+
+ifeq ($(CONFIG_COVERAGE_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libgcov.a))
+endif
+
+# Loadable module definitions
+
+CMODULEFLAGS = $(CFLAGS) -fvisibility=hidden -mtext-section-literals
+LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
+
+# ELF module definitions
+
+CELFFLAGS = $(CFLAGS) -fvisibility=hidden -mtext-section-literals
+CXXELFFLAGS = $(CXXFLAGS) -fvisibility=hidden -mtext-section-literals
+
+LDELFFLAGS = -r -e _start
+LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)$(DELIM)libs$(DELIM)libc$(DELIM)elf$(DELIM)gnu-elf.ld)
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  # Flat build and protected elf entry point use crt0,
+  # Kernel build will use apps/import/scripts/crt0
+
+  LDELFFLAGS += $(TOPDIR)$(DELIM)arch$(DELIM)xtensa$(DELIM)src$(DELIM)crt0.o
 endif

@@ -86,21 +86,21 @@ config ARCH_BOARD_STM32F429I_DISCO
 		STMicro STM32F429I-Discovery board based on the STMicro STM32F429ZIT6 MCU.
 
 config ARCH_BOARD_ESP32_DEVKITC
-	bool "Espressif ESP32-DevKitC board"
-	depends on ARCH_CHIP_ESP32
+	bool "Espressif ESP32 DevkitC board V4"
+	depends on ARCH_CHIP_ESP32WROOM32 || ARCH_CHIP_ESP32WROOM32_8MB || ARCH_CHIP_ESP32WROOM32_16MB || ARCH_CHIP_ESP32WROVER || ARCH_CHIP_ESP32SOLO1
 	select ARCH_BOARD_ESP32_FAMILY
 	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Espressif esp32 WIFI/BLE MCU
 
-config ARCH_BOARD_ESP_WROVER_KIT
-	bool "Espressif ESP-WROVER-KIT board"
-	depends on ARCH_CHIP_ESP32
+config ARCH_BOARD_ESP32_WROVERKIT
+	bool "Espressif ESP-WROVER-KIT"
+	depends on ARCH_CHIP_ESP32WROVER
 	select ARCH_BOARD_ESP32_FAMILY
 	select ARCH_BOARD_HAVE_FLASH
 	---help---
 		Espressif esp32 WIFI/BLE LCDs MCU
-		
+	
 config ARCH_BOARD_IMXRT1020_EVK
 	bool "NXP i.MX RT 1020 EVK"
 	depends on ARCH_CHIP_MIMXRT1021DAG5A
@@ -224,7 +224,8 @@ config ARCH_BOARD
 	default "cy4390x"            if ARCH_BOARD_CY4390x
 	default "stm32f4discovery"     if ARCH_BOARD_STM32F4_DISCOVERY
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
-	default "esp32_devkit"       if ARCH_BOARD_ESP32_FAMILY
+	default "esp32-devkitc"      if ARCH_BOARD_ESP32_DEVKITC
+	default "esp32-wrover-kit"   if ARCH_BOARD_ESP32_WROVERKIT
 	default "imxrt1020-evk"      if ARCH_BOARD_IMXRT1020_EVK
 	default "imxrt1050-evk"      if ARCH_BOARD_IMXRT1050_EVK
 	default "stm32l4r9ai-disco"  if ARCH_BOARD_STM32L4R9AI_DISCO
@@ -691,8 +692,11 @@ endif
 if ARCH_BOARD_STM32F429I_DISCO
 source board/stm32f429i-disco/Kconfig
 endif
-if ARCH_BOARD_ESP32_FAMILY
-source board/esp32_devkit/Kconfig
+if ARCH_BOARD_ESP32_DEVKITC
+source board/esp32-devkitc/Kconfig
+endif
+if ARCH_BOARD_ESP32_WROVERKIT
+source board/esp32-wrover-kit/Kconfig
 endif
 if ARCH_BOARD_IMXRT1020_EVK
 source board/imxrt1020-evk/Kconfig

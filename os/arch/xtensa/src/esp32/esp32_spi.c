@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,1318 +15,621 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/****************************************************************************
+ * arch/xtensa/src/esp32/esp32_spi.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
- *****************************************************************************/
+ ****************************************************************************/
+
 #include <tinyara/config.h>
 
-#include <stdio.h>
+#ifdef CONFIG_ESP32_SPI
+
+#include <debug.h>
+#include <sys/param.h>
 #include <sys/types.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <semaphore.h>
-#include <errno.h>
-#include <string.h>
+#include <stdlib.h>
+#include <time.h>
 #include <assert.h>
-#include <debug.h>
-#include <stddef.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
-#include <tinyara/spi/spi.h>
+#include <tinyara/clock.h>
+#include <tinyara/mutex.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/fs/fs.h>
+#include <tinyara/spi/spi.h>
 
-#include <arch/irq.h>
 #include <arch/board/board.h>
-#include "arch/chip/spi_pins.h"
-#include "arch/chip/spi_struct.h"
-
-#include "chip/periph_defs.h"
-#include "chip/esp32_soc.h"
-#include "chip/esp32_iomux.h"
-#include "chip/esp32_gpio_sigmap.h"
-#include "chip/esp32_spi_reg.h"
-#include "rom/esp32_gpio.h"
-#include "rom/lldesc.h"
-#include "esp32_cpuint.h"
-#include "esp32_config.h"
-#include "esp32_gpio.h"
-#include "periph_ctrl.h"
 
 #include "esp32_spi.h"
+#include "esp32_gpio.h"
+#include "esp32_irq.h"
+#include "esp32_dma.h"
+
+#include "xtensa.h"
+#include "hardware/esp32_gpio_sigmap.h"
+#include "hardware/esp32_dport.h"
+#include "hardware/esp32_spi.h"
+#include "hardware/esp32_soc.h"
+#include "hardware/esp32_pinmap.h"
 
 /****************************************************************************
- * Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
-#ifndef GPIO_PIN_COUNT
-#define GPIO_PIN_COUNT                  40
+
+#ifdef CONFIG_ESP32_SPI2
+#  if defined(CONFIG_ESP32_SPI2_MASTER_IO_RW)
+#    define ESP32_SPI2_IO   ESP32_SPI_IO_RW
+#  elif defined(CONFIG_ESP32_SPI2_MASTER_IO_RO)
+#    define ESP32_SPI2_IO   ESP32_SPI_IO_R
+#  elif defined(CONFIG_ESP32_SPI2_MASTER_IO_WO)
+#    define ESP32_SPI2_IO   ESP32_SPI_IO_W
+#  endif
 #endif
 
-//
-#define HSPI_IOMUX_PIN_NUM_MISO 12
-#define HSPI_IOMUX_PIN_NUM_MOSI 13
-#define HSPI_IOMUX_PIN_NUM_CLK  14
-#define HSPI_IOMUX_PIN_NUM_CS   15
-#define HSPI_IOMUX_PIN_NUM_WP   2
-#define HSPI_IOMUX_PIN_NUM_HD   4
-//
-#define VSPI_IOMUX_PIN_NUM_MISO 19
-#define VSPI_IOMUX_PIN_NUM_MOSI 23
-#define VSPI_IOMUX_PIN_NUM_CLK  18
-#define VSPI_IOMUX_PIN_NUM_CS   5
-#define VSPI_IOMUX_PIN_NUM_WP   22
-#define VSPI_IOMUX_PIN_NUM_HD   21
-//
-#define SPI_PIN_FUNC_SPI    (INPUT | OUTPUT | FUNCTION_1)
-#define SPI_PIN_FUNC_GPIO   (INPUT | OUTPUT | FUNCTION_2)
+#ifdef CONFIG_ESP32_SPI3
+#  if defined(CONFIG_ESP32_SPI3_MASTER_IO_RW)
+#    define ESP32_SPI3_IO   ESP32_SPI_IO_RW
+#  elif defined(CONFIG_ESP32_SPI3_MASTER_IO_RO)
+#    define ESP32_SPI3_IO   ESP32_SPI_IO_R
+#  elif defined(CONFIG_ESP32_SPI3_MASTER_IO_WO)
+#    define ESP32_SPI3_IO   ESP32_SPI_IO_W
+#  endif
+#endif
 
-//
-#define SPICOMMON_BUSFLAG_SLAVE         0	///< Initialize I/O in slave mode
-#define SPICOMMON_BUSFLAG_MASTER        (1<<0)	///< Initialize I/O in master mode
-#define SPICOMMON_BUSFLAG_NATIVE_PINS   (1<<1)	///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
-#define SPICOMMON_BUSFLAG_SCLK          (1<<2)	///< Check existing of SCLK pin. Or indicates CLK line initialized.
-#define SPICOMMON_BUSFLAG_MISO          (1<<3)	///< Check existing of MISO pin. Or indicates MISO line initialized.
-#define SPICOMMON_BUSFLAG_MOSI          (1<<4)	///< Check existing of MOSI pin. Or indicates CLK line initialized.
-#define SPICOMMON_BUSFLAG_DUAL          (1<<5)	///< Check MOSI and MISO pins can output. Or indicates bus able to work under DIO mode.
-#define SPICOMMON_BUSFLAG_WPHD          (1<<6)	///< Check existing of WP and HD pins. Or indicates WP & HD pins initialized.
-#define SPICOMMON_BUSFLAG_QUAD          (SPICOMMON_BUSFLAG_DUAL|SPICOMMON_BUSFLAG_WPHD)	///< Check existing of MOSI/MISO/WP/HD pins as output. Or indicates bus able to work under QIO mode.
+/* SPI DMA RX/TX description number */
 
-#define SPI_DEVICE_TXBIT_LSBFIRST          (1<<0)	///< Transmit command/address/data LSB first instead of the default MSB first
-#define SPI_DEVICE_RXBIT_LSBFIRST          (1<<1)	///< Receive data LSB first instead of the default MSB first
-#define SPI_DEVICE_BIT_LSBFIRST            (SPI_DEVICE_TXBIT_LSBFIRST|SPI_DEVICE_RXBIT_LSBFIRST)	///< Transmit and receive LSB first
-#define SPI_DEVICE_3WIRE                   (1<<2)	///< Use MOSI (=spid) for both sending and receiving data
-#define SPI_DEVICE_POSITIVE_CS             (1<<3)	///< Make CS positive during a transaction instead of negative
-#define SPI_DEVICE_HALFDUPLEX              (1<<4)	///< Transmit data before receiving it, instead of simultaneously
-#define SPI_DEVICE_CLK_AS_CS               (1<<5)	///< Output clock on CS line if CS is active
-/** There are timing issue when reading at high frequency (the frequency is related to whether iomux pins are used, valid time after slave sees the clock).
-*     - In half-duplex mode, the driver automatically inserts dummy bits before reading phase to fix the timing issue. Set this flag to disable this feature.
-*     - In full-duplex mode, however, the hardware cannot use dummy bits, so there is no way to prevent data being read from getting corrupted.
-*       Set this flag to confirm that you're going to work with output only, or read without dummy bits at your own risk.
-*/
-#define SPI_DEVICE_NO_DUMMY                (1<<6)
+#define SPI_DMADESC_NUM     (CONFIG_SPI_DMADESC_NUM)
 
-#define SPI_DEFAULT_FREQUENCY              (20000000)
+/* SPI DMA channel number */
 
-#define TIMEOUT_SLEEP           (2)
-#define EIMEOUT_VALUE           (1000)
-#define TIMEOUT_COUNT           (EIMEOUT_VALUE/TIMEOUT_SLEEP)
-#define SPI_DATA_BITS_UNIT      (32)
-#define SPI_DATA_BYTES_UNIT     (32/8)
-#define SPI_ADDR_BITS_COUNT     (32)
+#define SPI_DMA_CHANNEL_MAX (2)
 
-#undef spiinfo
-#define spiinfo(format, ...)
+/* SPI DMA reset before exchange */
 
+#define SPI_DMA_RESET_MASK  (SPI_AHBM_RST_M | SPI_AHBM_FIFO_RST_M | \
+                             SPI_OUT_RST_M | SPI_IN_RST_M)
 
-//
-#define SPI_DMA_DISABLED    0
-#define SPI_DMA_COUNT       2
+/* SPI Default speed (limited by clock divider) */
 
-//Maximum amount of bytes that limited by ESP32
-#define SPI_MAX_NODMA_FRAME_LEN     (64)
-#define SPI_MAX_DMA_FRAME_LEN       (4096 - 16)	//Limited by lldesc_t
-#define SPI_MAX_BITS_LEN            (0xffffff)	//limited by register SPI_USR_MOSI_DBITLEN & SPI_USR_MISO_DBITLEN
-#define SPI_MAX_DATA_LEN            (SPI_MAX_BITS_LEN / 8)
+#define SPI_FREQ_DEFAULT  (400000)
 
-#define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
+/* Helper for applying the mask for a given register field.
+ * Mask is determined by the macros suffixed with _V and _S from the
+ * peripheral register description.
+ */
+
+#define VALUE_MASK(_val, _field) ((_val & (_field##_V)) << (_field##_S))
+
+/* SPI Maximum buffer size in bytes */
+
+#define SPI_MAX_BUF_SIZE (64)
 
 /****************************************************************************
-* Private Types
-****************************************************************************/
-enum spi_dma_channel_e {
-	DMA_CHANNEL_NONE = 0,
-	DMA_CHANNEL_1 = 1,
-	DMA_CHANNEL_2 = 2,
-	DMA_CHANNEL_MAX = 3,
+ * Private Types
+ ****************************************************************************/
+
+/* SPI Device hardware configuration */
+
+struct esp32_spi_config_s {
+	uint32_t id;                /* SPI instance */
+
+	uint32_t clk_freq;          /* SPI clock frequency */
+	enum spi_mode_e mode;       /* SPI default mode */
+
+	uint8_t cs_pin;             /* GPIO configuration for CS */
+	uint8_t mosi_pin;           /* GPIO configuration for MOSI */
+	uint8_t miso_pin;           /* GPIO configuration for MISO */
+	uint8_t clk_pin;            /* GPIO configuration for CLK */
+
+	uint8_t periph;             /* peripher ID */
+	uint8_t irq;                /* Interrupt ID */
+
+	uint32_t clk_bit;           /* Clock enable bit */
+	uint32_t rst_bit;           /* SPI reset bit */
+
+	bool use_dma;               /* Use DMA */
+	uint8_t dma_chan_s;         /* DMA channel register shift */
+	uint8_t dma_chan;           /* DMA channel */
+	uint32_t dma_clk_bit;       /* DMA clock enable bit */
+	uint32_t dma_rst_bit;       /* DMA reset bit */
+
+	uint32_t cs_insig;          /* SPI CS input signal index */
+	uint32_t cs_outsig;         /* SPI CS output signal index */
+	uint32_t mosi_insig;        /* SPI MOSI input signal index */
+	uint32_t mosi_outsig;       /* SPI MOSI output signal index */
+	uint32_t miso_insig;        /* SPI MISO input signal index */
+	uint32_t miso_outsig;       /* SPI MISO output signal index */
+	uint32_t clk_insig;         /* SPI CLK input signal index */
+	uint32_t clk_outsig;        /* SPI CLK output signal index */
+
+	uint32_t flags;             /* SPI supports features */
 };
 
-enum spi_cs_e {
-	NO_CS = -1,
-	CS0 = 0,
-	CS1,
-	CS2,
-	CS_MAX
+struct esp32_spi_priv_s {
+	/* Externally visible part of the SPI interface */
+
+	struct spi_dev_s spi_dev;
+
+	/* Port configuration */
+
+	const struct esp32_spi_config_s *config;
+
+	int refs;                    /* Reference count */
+
+	/* Held while chip is selected for mutual exclusion */
+
+	mutex_t          lock;
+
+	/* Interrupt wait semaphore */
+
+	sem_t            sem_isr;
+
+	int              cpuint;      /* SPI interrupt ID */
+	uint8_t          cpu;         /* CPU ID */
+
+	uint32_t         frequency;   /* Requested clock frequency */
+	uint32_t         actual;      /* Actual clock frequency */
+
+	enum spi_mode_e  mode;        /* Actual SPI hardware mode */
+
+	/* Actual SPI send/receive bits once transmission */
+
+	uint8_t          nbits;
 };
-
-typedef struct {
-	spi_clock_reg_t reg;
-	int eff_clk;
-	int dummy_num;
-	int miso_delay;
-} clock_config_t;
-
-typedef union {
-	struct {
-		uint32_t rd_buf_done:1;	/*The interrupt raw bit for the completion of read-buffer operation in the slave mode. */
-		uint32_t wr_buf_done:1;	/*The interrupt raw bit for the completion of write-buffer operation in the slave mode. */
-		uint32_t rd_sta_done:1;	/*The interrupt raw bit for the completion of read-status operation in the slave mode. */
-		uint32_t wr_sta_done:1;	/*The interrupt raw bit for the completion of write-status operation in the slave mode. */
-		uint32_t trans_done:1;	/*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode. */
-		uint32_t rd_buf_inten:1;	/*The interrupt enable bit for the completion of read-buffer operation in the slave mode. */
-		uint32_t wr_buf_inten:1;	/*The interrupt enable bit for the completion of write-buffer operation in the slave mode. */
-		uint32_t rd_sta_inten:1;	/*The interrupt enable bit for the completion of read-status operation in the slave mode. */
-		uint32_t wr_sta_inten:1;	/*The interrupt enable bit for the completion of write-status operation in the slave mode. */
-		uint32_t trans_inten:1;	/*The interrupt enable bit for the completion of any operation in both the master mode and the slave mode. */
-		uint32_t cs_i_mode:2;	/*In the slave mode  this bits used to synchronize the input spi cs signal and eliminate spi cs  jitter. */
-		uint32_t reserved12:5;	/*reserved */
-		uint32_t last_command:3;	/*In the slave mode it is the value of command. */
-		uint32_t last_state:3;	/*In the slave mode it is the state of spi state machine. */
-		uint32_t trans_cnt:4;	/*The operations counter in both the master mode and the slave mode. 4: read-status */
-		uint32_t cmd_define:1;	/*1: slave mode commands are defined in SPI_SLAVE3.  0: slave mode commands are fixed as: 1: write-status 2: write-buffer and 3: read-buffer. */
-		uint32_t wr_rd_sta_en:1;	/*write and read status enable  in the slave mode */
-		uint32_t wr_rd_buf_en:1;	/*write and read buffer enable in the slave mode */
-		uint32_t slave_mode:1;	/*1: slave mode 0: master mode. */
-		uint32_t sync_reset:1;	/*Software reset enable, reset the spi clock line cs line and data lines. */
-	};
-	uint32_t val;
-} spi_reg_slave_t;
-
-typedef struct {
-	const uint8_t port;
-	const uint8_t spiclk_out;	//
-	const uint8_t spiclk_in;
-	const uint8_t spimosi_out;	//SPID
-	const uint8_t spimosi_in;	//
-	const uint8_t spimiso_out;	//SPIQ
-	const uint8_t spimiso_in;	//
-	const uint8_t spiwp_out;
-	const uint8_t spiwp_in;
-	const uint8_t spihd_out;
-	const uint8_t spihd_in;
-	const uint8_t spics_out[3];	// /CS GPIO output mux signals
-	const uint8_t spics_in;
-
-} esp32_spi_pins_sig_t;
-
-struct esp32_spidev_s {
-	struct spi_dev_s spidev;
-
-	spi_dev_t *hw;
-
-	uint8_t port;				/* port */
-
-	uint8_t periph_module;
-
-	uint8_t initiallized;		/* Is initiallized */
-
-	uint8_t periph_isr;			/* ISR peripheral ID */
-	int intrupt_level;
-	int cpu_int;
-	int isr_num;				/* isr number */
-	xcpt_t isr_handler;			/* irs handler */
-
-	enum spi_mode_e comm_mode;	/* SPI mode */
-	uint32_t frequency;
-
-	uint32_t work_mode;			/* */
-	int8_t dma_chan;			/* */
-
-	uint8_t gpio_clk;
-	uint8_t gpio_miso;
-	uint8_t gpio_mosi;
-	uint8_t gpio_nss[MAX_CS_NUM];
-	uint8_t cur_cs;
-	uint8_t prev_cs;
-	uint8_t gpio_quadwp;
-	uint8_t gpio_quadhd;
-
-	uint32_t max_transfer_sz;
-
-	clock_config_t clk_cfg;
-
-#ifndef CONFIG_SPI_POLLWAIT
-	sem_t xfrsem;				/* Wait for transfer to complete */
-#endif
-
-#ifndef CONFIG_SPI_OWNBUS
-	sem_t exclsem;
-#endif
-	lldesc_chain_t dmadesc_rx;
-	lldesc_chain_t dmadesc_tx;
-};
-
-typedef struct {
-	uint8_t command_bits;		///< Default amount of bits in command phase (0-16), used when ``SPI_TRANS_VARIABLE_CMD`` is not used, otherwise ignored.
-	uint8_t address_bits;		///< Default amount of bits in address phase (0-64), used when ``SPI_TRANS_VARIABLE_ADDR`` is not used, otherwise ignored.
-	uint8_t dummy_bits;			///< Amount of dummy bits to insert between address and data phase
-	uint8_t mode;				///< SPI mode (0-3)
-	uint8_t duty_cycle_pos;		///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
-	uint8_t cs_ena_pretrans;	///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
-	uint8_t cs_ena_posttrans;	///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
-	int clock_speed_hz;			///< Clock speed, divisors of 80MHz, in Hz. See ``SPI_MASTER_FREQ_*``.
-	int input_delay_ns;			/**< Maximum data valid time of slave. The time required between SCLK and MISO
-								valid, including the possible clock delay from slave to master. The driver uses this value to give an extra
-								delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
-								performance at high frequency (over 8MHz), it's suggest to have the right value.
-								*/
-	int spics_io_num;			///< CS GPIO pin for this device, or -1 if not used
-	uint32_t flags;				///< Bitwise OR of SPI_DEVICE_* flags
-} spi_device_interface_config_t;
-
-typedef struct {
-	sem_t dma_lock;
-	uint8_t chan_enabled;
-} spi_dma_claim_t;
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-/* SPI Driver Methods */
-static int spi_lock(FAR struct spi_dev_s *dev, bool lock);
-static void spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
-static uint32_t spi_setfrequency(FAR struct spi_dev_s *dev, uint32_t frequency);
-static void spi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode);
-static void spi_setbits(FAR struct spi_dev_s *dev, int nbits);
-static uint16_t spi_send(FAR struct spi_dev_s *dev, uint16_t wd);
-static void spi_exchange(FAR struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords);
-
-#ifndef CONFIG_SPI_EXCHANGE
-static void spi_sndblock(FAR struct spi_dev_s *dev, const void *txbuffer, size_t nwords);
-static void spi_recvblock(FAR struct spi_dev_s *dev, void *rxbuffer, size_t nwords);
+static int esp32_spi_lock(struct spi_dev_s *dev, bool lock);
+#ifndef CONFIG_ESP32_SPI_UDCS
+static void esp32_spi_select(struct spi_dev_s *dev,
+                             uint32_t devid, bool selected);
 #endif
-
-static int esp32_spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o);
-static void esp32_spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dummy_o, int *cycles_remain_o);
-static inline void esp32_spi_set_clock(struct esp32_spidev_s *priv, spi_clock_reg_t reg);
+static uint32_t esp32_spi_setfrequency(struct spi_dev_s *dev,
+                                       uint32_t frequency);
+static void esp32_spi_setmode(struct spi_dev_s *dev,
+                              enum spi_mode_e mode);
+static void esp32_spi_setbits(struct spi_dev_s *dev, int nbits);
+#ifdef CONFIG_SPI_HWFEATURES
+static int esp32_spi_hwfeatures(struct spi_dev_s *dev,
+                                spi_hwfeatures_t features);
+#endif
+static uint32_t esp32_spi_send(struct spi_dev_s *dev, uint32_t wd);
+static void esp32_spi_exchange(struct spi_dev_s *dev,
+                               const void *txbuffer,
+                               void *rxbuffer, size_t nwords);
+#ifndef CONFIG_SPI_EXCHANGE
+static void esp32_spi_sndblock(struct spi_dev_s *dev,
+                               const void *txbuffer,
+                               size_t nwords);
+static void esp32_spi_recvblock(struct spi_dev_s *dev,
+                                void *rxbuffer,
+                                size_t nwords);
+#endif
+#ifdef CONFIG_SPI_TRIGGER
+static int esp32_spi_trigger(struct spi_dev_s *dev);
+#endif
+static void esp32_spi_init(struct spi_dev_s *dev);
+static void esp32_spi_deinit(struct spi_dev_s *dev);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static const struct spi_ops_s g_spiops = {
-#ifndef CONFIG_SPI_OWNBUS
-	.lock = spi_lock,
+
+#ifdef CONFIG_ESP32_SPI2
+static const struct esp32_spi_config_s esp32_spi2_config =
+{
+  .id           = 2,
+  .clk_freq     = SPI_FREQ_DEFAULT,
+  .mode         = SPIDEV_MODE0,
+  .cs_pin       = CONFIG_ESP32_SPI2_CSPIN,
+  .mosi_pin     = CONFIG_ESP32_SPI2_MOSIPIN,
+  .miso_pin     = CONFIG_ESP32_SPI2_MISOPIN,
+  .clk_pin      = CONFIG_ESP32_SPI2_CLKPIN,
+  .periph       = ESP32_PERIPH_SPI2,
+  .irq          = ESP32_IRQ_SPI2,
+  .clk_bit      = DPORT_SPI_CLK_EN_2,
+  .rst_bit      = DPORT_SPI_RST_2,
+#ifdef CONFIG_ESP32_SPI2_DMA
+  .use_dma      = true,
+#else
+  .use_dma      = false,
 #endif
-	.select = spi_select,
-	.setfrequency = spi_setfrequency,
-	.setmode = (void *)spi_setmode,
-	.setbits = (void *)spi_setbits,
-	.status = 0,
+  .dma_chan_s   = 2,
+  .dma_chan     = 1,
+  .dma_clk_bit  = DPORT_SPI_DMA_CLK_EN,
+  .dma_rst_bit  = DPORT_SPI_DMA_RST,
+  .cs_insig     = HSPICS0_IN_IDX,
+  .cs_outsig    = HSPICS0_OUT_IDX,
+  .mosi_insig   = HSPID_IN_IDX,
+  .mosi_outsig  = HSPID_OUT_IDX,
+  .miso_insig   = HSPIQ_IN_IDX,
+  .miso_outsig  = HSPIQ_OUT_IDX,
+  .clk_insig    = HSPICLK_IN_IDX,
+  .clk_outsig   = HSPICLK_OUT_IDX,
+  .flags        = ESP32_SPI2_IO
+};
+
+static const struct spi_ops_s esp32_spi2_ops =
+{
+  .lock              = esp32_spi_lock,
+#ifdef CONFIG_ESP32_SPI_UDCS
+  .select            = esp32_spi2_select,
+#else
+  .select            = esp32_spi_select,
+#endif
+  .setfrequency      = esp32_spi_setfrequency,
+  .setmode           = esp32_spi_setmode,
+  .setbits           = esp32_spi_setbits,
+#ifdef CONFIG_SPI_HWFEATURES
+  .hwfeatures        = esp32_spi_hwfeatures,
+#endif
+  .status            = esp32_spi2_status,
 #ifdef CONFIG_SPI_CMDDATA
-	.cmddata = 0,
+  .cmddata           = esp32_spi2_cmddata,
 #endif
-	.send = spi_send,
+  .send              = esp32_spi_send,
 #ifdef CONFIG_SPI_EXCHANGE
-	.exchange = spi_exchange,
+  .exchange          = esp32_spi_exchange,
 #else
-	.sndblock = spi_sndblock,
-	.recvblock = spi_recvblock,
+  .sndblock          = esp32_spi_sndblock,
+  .recvblock         = esp32_spi_recvblock,
 #endif
-	.registercallback = 0,
+#ifdef CONFIG_SPI_TRIGGER
+  .trigger           = esp32_spi_trigger,
+#endif
+  .registercallback  = NULL,
 };
 
-const esp32_spi_pins_sig_t s_spi2_pin_sig = {
-	.port = HSPI_PORT,
-	.spiclk_out = HSPICLK_OUT_IDX,
-	.spiclk_in = HSPICLK_IN_IDX,
-	.spimosi_out = HSPID_OUT_IDX,
-	.spimiso_out = HSPIQ_OUT_IDX,
-	.spiwp_out = HSPIWP_OUT_IDX,
-	.spihd_out = HSPIHD_OUT_IDX,
-	.spimosi_in = HSPID_IN_IDX,
-	.spimiso_in = HSPIQ_IN_IDX,
-	.spiwp_in = HSPIWP_IN_IDX,
-	.spihd_in = HSPIHD_IN_IDX,
-	.spics_out = {HSPICS0_OUT_IDX, HSPICS1_OUT_IDX, HSPICS2_OUT_IDX},
-	.spics_in = HSPICS0_IN_IDX,
+static struct esp32_spi_priv_s esp32_spi2_priv =
+{
+  .spi_dev =
+    {
+      .ops = &esp32_spi2_ops
+    },
+  .config  = &esp32_spi2_config,
+  .lock    = NXMUTEX_INITIALIZER,
+  .sem_isr = SEM_INITIALIZER(0),
+};
+#endif /* CONFIG_ESP32_SPI2 */
+
+#ifdef CONFIG_ESP32_SPI3
+static const struct esp32_spi_config_s esp32_spi3_config =
+{
+  .id           = 3,
+  .clk_freq     = SPI_FREQ_DEFAULT,
+  .mode         = SPIDEV_MODE0,
+  .cs_pin       = CONFIG_ESP32_SPI3_CSPIN,
+  .mosi_pin     = CONFIG_ESP32_SPI3_MOSIPIN,
+  .miso_pin     = CONFIG_ESP32_SPI3_MISOPIN,
+  .clk_pin      = CONFIG_ESP32_SPI3_CLKPIN,
+  .periph       = ESP32_PERIPH_SPI3,
+  .irq          = ESP32_IRQ_SPI3,
+  .clk_bit      = DPORT_SPI_CLK_EN,
+  .rst_bit      = DPORT_SPI_RST,
+#ifdef CONFIG_ESP32_SPI3_DMA
+  .use_dma      = true,
+#else
+  .use_dma      = false,
+#endif
+  .dma_chan_s   = 4,
+  .dma_chan     = 2,
+  .dma_clk_bit  = DPORT_SPI_DMA_CLK_EN,
+  .dma_rst_bit  = DPORT_SPI_DMA_RST,
+  .cs_insig     = VSPICS0_IN_IDX,
+  .cs_outsig    = VSPICS0_OUT_IDX,
+  .mosi_insig   = VSPID_IN_IDX,
+  .mosi_outsig  = VSPID_OUT_IDX,
+  .miso_insig   = VSPIQ_IN_IDX,
+  .miso_outsig  = VSPIQ_OUT_IDX,
+  .clk_insig    = VSPICLK_IN_IDX,
+  .clk_outsig   = VSPICLK_OUT_MUX_IDX,
+  .flags        = ESP32_SPI3_IO
 };
 
-const esp32_spi_pins_sig_t s_spi3_pin_sig = {
-	.port = VSPI_PORT,
-	.spiclk_out = VSPICLK_OUT_MUX_IDX,
-	.spiclk_in = VSPICLK_IN_IDX,
-	.spimosi_out = VSPID_OUT_IDX,
-	.spimiso_out = VSPIQ_OUT_IDX,
-	.spiwp_out = VSPIWP_OUT_IDX,
-	.spihd_out = VSPIHD_OUT_IDX,
-	.spimosi_in = VSPID_IN_IDX,
-	.spimiso_in = VSPIQ_IN_IDX,
-	.spiwp_in = VSPIWP_IN_IDX,
-	.spihd_in = VSPIHD_IN_IDX,
-	.spics_out = {VSPICS0_OUT_IDX, VSPICS1_OUT_IDX, VSPICS2_OUT_IDX},
-	.spics_in = VSPICS0_IN_IDX,
+static const struct spi_ops_s esp32_spi3_ops =
+{
+  .lock              = esp32_spi_lock,
+#ifdef CONFIG_ESP32_SPI_UDCS
+  .select            = esp32_spi3_select,
+#else
+  .select            = esp32_spi_select,
+#endif
+  .setfrequency      = esp32_spi_setfrequency,
+  .setmode           = esp32_spi_setmode,
+  .setbits           = esp32_spi_setbits,
+#ifdef CONFIG_SPI_HWFEATURES
+  .hwfeatures        = esp32_spi_hwfeatures,
+#endif
+  .status            = esp32_spi3_status,
+#ifdef CONFIG_SPI_CMDDATA
+  .cmddata           = esp32_spi3_cmddata,
+#endif
+  .send              = esp32_spi_send,
+#ifdef CONFIG_SPI_EXCHANGE
+  .exchange          = esp32_spi_exchange,
+#else
+  .sndblock          = esp32_spi_sndblock,
+  .recvblock         = esp32_spi_recvblock,
+#endif
+#ifdef CONFIG_SPI_TRIGGER
+  .trigger           = esp32_spi_trigger,
+#endif
+  .registercallback  = NULL,
 };
 
-const spi_device_interface_config_t def_dev_config = {
-	.command_bits = 0,
-	.address_bits = 0,
-	.dummy_bits = 0,
-	.mode = 0,
-	.duty_cycle_pos = 128,
-	.cs_ena_pretrans = 1,
-	.cs_ena_posttrans = 1,
-	.clock_speed_hz = 1,
-	.input_delay_ns = 0,
-	.spics_io_num = 0,
-	.flags = SPI_DEVICE_HALFDUPLEX,
+static struct esp32_spi_priv_s esp32_spi3_priv =
+{
+  .spi_dev =
+    {
+      .ops = &esp32_spi3_ops
+    },
+  .config  = &esp32_spi3_config,
+  .lock    = NXMUTEX_INITIALIZER,
+  .sem_isr = SEM_INITIALIZER(0),
 };
+#endif /* CONFIG_ESP32_SPI3 */
 
-static struct esp32_spidev_s g_spi2dev = {
-	.spidev = {.ops = &g_spiops},
-	.hw = &SPI2,
-#if defined(CONFIG_SPI2_DMA_CHANNEL) && (CONFIG_SPI2_DMA_CHANNEL > SPI_DMA_DISABLED) && (CONFIG_SPI2_DMA_CHANNEL <= SPI_DMA_COUNT)
-	.dma_chan = CONFIG_SPI2_DMA_CHANNEL,
-#else
-	.dma_chan = 0,
-#endif
-	.port = HSPI_PORT,
-	.periph_module = PERIPH_HSPI_MODULE,
-	.initiallized = 0,
+/* SPI DMA RX/TX description */
 
-#if defined(CONFIG_GPIO_SPI2_CLK_PIN) || defined(CONFIG_GPIO_SPI2_MISO_PIN) || defined(CONFIG_GPIO_SPI2_MOSI_PIN)
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL ,
-#else
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL | SPICOMMON_BUSFLAG_NATIVE_PINS,
-#endif
-	.comm_mode = SPIDEV_MODE0,
-	.frequency = SPI_DEFAULT_FREQUENCY,
-
-	.periph_isr = ESP32_PERIPH_SPI2,
-	.intrupt_level = 1,
-	.isr_num = ESP32_IRQ_SPI2,
-
-	.gpio_nss = {
-#if defined(CONFIG_GPIO_SPI2_CS0_PIN)
-		CONFIG_GPIO_SPI2_CS0_PIN,
-#else
-		HSPI_IOMUX_PIN_NUM_CS,
-#endif
-#if defined(CONFIG_GPIO_SPI2_CS1_PIN)
-		CONFIG_GPIO_SPI2_CS1_PIN,
-#else
-		-1,
-#endif
-#if defined(CONFIG_GPIO_SPI2_CS2_PIN)
-		CONFIG_GPIO_SPI2_CS2_PIN,
-#else
-		-1
-#endif
-	},
-
-#if defined(CONFIG_GPIO_SPI2_CLK_PIN)
-	.gpio_clk = CONFIG_GPIO_SPI2_CLK_PIN,
-#else
-	.gpio_clk = HSPI_IOMUX_PIN_NUM_CLK,
-#endif
-
-#if defined(CONFIG_GPIO_SPI2_MISO_PIN)
-	.gpio_miso = CONFIG_GPIO_SPI2_MISO_PIN,
-#else
-	.gpio_miso = (HSPI_IOMUX_PIN_NUM_MISO),
-#endif
-
-#if defined(CONFIG_GPIO_SPI2_MOSI_PIN)
-	.gpio_mosi = CONFIG_GPIO_SPI2_MOSI_PIN,
-#else
-	.gpio_mosi = HSPI_IOMUX_PIN_NUM_MOSI,
-#endif
-
-#if defined(CONFIG_GPIO_SPI2_QUADWP_PIN)
-	.gpio_quadwp = CONFIG_GPIO_SPI2_QUADWP_PIN,
-#else
-	.gpio_quadwp = -1,
-#endif
-#if defined(CONFIG_GPIO_SPI2_QUADHD_PIN)
-	.gpio_quadhd = CONFIG_GPIO_SPI2_QUADHD_PIN;
-#else
-	.gpio_quadhd = -1,
-#endif
-};
-
-static struct esp32_spidev_s g_spi3dev = {
-	.spidev = {.ops = &g_spiops},
-	.hw = &SPI3,
-	.frequency = SPI_DEFAULT_FREQUENCY,
-#if defined(CONFIG_SPI3_DMA_CHANNEL) && (CONFIG_SPI3_DMA_CHANNEL > SPI_DMA_DISABLED) && (CONFIG_SPI3_DMA_CHANNEL <= SPI_DMA_COUNT)
-	.dma_chan = CONFIG_SPI3_DMA_CHANNEL,
-#else
-	.dma_chan = 0,
-#endif
-#if defined(CONFIG_GPIO_SPI3_CLK_PIN) || defined(CONFIG_GPIO_SPI3_MISO_PIN) || defined(CONFIG_GPIO_SPI3_MOSI_PIN)
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL ,
-#else
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL | SPICOMMON_BUSFLAG_NATIVE_PINS,
-#endif
-	.comm_mode = SPIDEV_MODE0,
-
-	.port = VSPI_PORT,
-	.periph_module = PERIPH_VSPI_MODULE,
-	.initiallized = 0,
-
-	.periph_isr = ESP32_PERIPH_SPI3,
-	.intrupt_level = 1,
-	.isr_num = ESP32_IRQ_SPI3,
-
-	.gpio_nss = {
-#if defined(CONFIG_GPIO_SPI3_CS0_PIN)
-		CONFIG_GPIO_SPI3_CS0_PIN,
-#else
-		VSPI_IOMUX_PIN_NUM_CS,
-#endif
-#if defined(CONFIG_GPIO_SPI3_CS1_PIN)
-		CONFIG_GPIO_SPI3_CS1_PIN,
-#else
-		-1,
-#endif
-#if defined(CONFIG_GPIO_SPI3_CS2_PIN)
-		CONFIG_GPIO_SPI3_CS2_PIN,
-#else
-		-1
-#endif
-	},
-	
-#if defined(CONFIG_GPIO_SPI3_CLK_PIN)
-	.gpio_clk = CONFIG_GPIO_SPI3_CLK_PIN,
-#else
-	.gpio_clk = VSPI_IOMUX_PIN_NUM_CLK,
-#endif
-
-#if defined(CONFIG_GPIO_SPI3_MISO_PIN)
-	.gpio_miso = CONFIG_GPIO_SPI3_MISO_PIN,
-#else
-	.gpio_miso = (VSPI_IOMUX_PIN_NUM_MISO),
-#endif
-#if defined(CONFIG_GPIO_SPI3_MOSI_PIN)
-	.gpio_mosi = CONFIG_GPIO_SPI3_MOSI_PIN,
-#else
-	.gpio_mosi = (VSPI_IOMUX_PIN_NUM_MOSI),
-#endif
-#if defined(CONFIG_GPIO_SPI3_QUADWP_PIN)
-	.gpio_quadwp = CONFIG_GPIO_SPI3_QUADWP_PIN,
-#else
-	.gpio_quadwp = -1,
-#endif
-#if defined(CONFIG_GPIO_SPI3_QUADHD_PIN)
-	.gpio_quadhd = CONFIG_GPIO_SPI3_QUADHD_PIN;
-#else
-	.gpio_quadhd = -1,
-#endif
-};
-
-static volatile spi_dma_claim_t g_spi_dma = {
-	.dma_lock = {0},
-	.chan_enabled = 0,
-};
+struct esp32_dmadesc_s s_dma_rxdesc[SPI_DMA_CHANNEL_MAX][SPI_DMADESC_NUM];
+struct esp32_dmadesc_s s_dma_txdesc[SPI_DMA_CHANNEL_MAX][SPI_DMADESC_NUM];
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: spi_lock
+ * Name: esp32_spi_set_regbits
  *
  * Description:
- *   On SPI busses where there are multiple devices, it will be necessary to
- *   lock SPI to have exclusive access to the busses for a sequence of
- *   transfers.  The bus should be locked before the chip is selected. After
- *   locking the SPI bus, the caller should then also call the setfrequency,
- *   setbits, and setmode methods to make sure that the SPI is properly
- *   configured for the device.  If the SPI buss is being shared, then it
- *   may have been left in an incompatible state.
+ *   Set the bits of the SPI register
+ *
+ * Input Parameters:
+ *   addr   - Address of the register of interest
+ *   bits   - Bits to be set
+ *
+ * Returned Value:
+ *   None
  *
  ****************************************************************************/
-static int spi_lock(struct spi_dev_s *dev, bool lock)
+
+static inline void esp32_spi_set_regbits(uint32_t addr, uint32_t bits)
 {
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
+	uint32_t tmp = getreg32(addr);
 
-	if (lock) {
-		while (sem_wait(&priv->exclsem) != 0) {
-			DEBUGASSERT(errno == EINTR);
-		}
-	} else {
-		(void)sem_post(&priv->exclsem);
-	}
-
-	return OK;
+	putreg32(tmp | bits, addr);
 }
 
 /****************************************************************************
- * Name: spi_setfrequency
+ * Name: esp32_spi_reset_regbits
+ *
+ * Description:
+ *   Clear the bits of the SPI register
+ *
+ * Input Parameters:
+ *   addr   - Address of the register of interest
+ *   bits   - Bits to be cleared
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static inline void esp32_spi_reset_regbits(uint32_t addr, uint32_t bits)
+{
+	uint32_t tmp = getreg32(addr);
+
+	putreg32(tmp & (~bits), addr);
+}
+
+/****************************************************************************
+ * Name: esp32_spi_iomux
+ *
+ * Description:
+ *   Check if the option SPI GPIO pins can use IOMUX directly
+ *
+ * Input Parameters:
+ *   priv   - Private SPI device structure
+ *
+ * Returned Value:
+ *   True if can use IOMUX or false if can't.
+ *
+ ****************************************************************************/
+
+static inline bool esp32_spi_iomux(struct esp32_spi_priv_s *priv)
+{
+	bool mapped = false;
+	const struct esp32_spi_config_s *cfg = priv->config;
+
+	if (cfg->id == 2) {
+		if ((!(cfg->flags & ESP32_SPI_IO_W) ||
+		     cfg->mosi_pin == SPI2_IOMUX_MOSIPIN) &&
+
+#ifndef CONFIG_ESP32_SPI_SWCS
+		    cfg->cs_pin == SPI2_IOMUX_CSPIN &&
+#endif
+		    (!(cfg->flags & ESP32_SPI_IO_R) ||
+		     cfg->miso_pin == SPI2_IOMUX_MISOPIN) &&
+
+		    cfg->clk_pin == SPI2_IOMUX_CLKPIN) {
+			mapped = true;
+		}
+	} else if (cfg->id == 3) {
+		if ((!(cfg->flags & ESP32_SPI_IO_W) ||
+		     cfg->mosi_pin == SPI3_IOMUX_MOSIPIN) &&
+
+#ifndef CONFIG_ESP32_SPI_SWCS
+		    cfg->cs_pin == SPI3_IOMUX_CSPIN &&
+#endif
+		    (!(cfg->flags & ESP32_SPI_IO_R) ||
+		     cfg->miso_pin == SPI3_IOMUX_MISOPIN) &&
+
+		    cfg->clk_pin == SPI3_IOMUX_CLKPIN) {
+			mapped = true;
+		}
+	}
+
+	return mapped;
+}
+
+/****************************************************************************
+ * Name: esp32_spi_lock
+ *
+ * Description:
+ *   Lock or unlock the SPI device
+ *
+ * Input Parameters:
+ *   priv   - Private SPI device structure
+ *   lock   - true: Lock spi bus, false: unlock SPI bus
+ *
+ * Returned Value:
+ *   The result of lock or unlock the SPI device
+ *
+ ****************************************************************************/
+
+static int esp32_spi_lock(struct spi_dev_s *dev, bool lock)
+{
+	int ret;
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	if (lock) {
+		ret = nxmutex_lock(&priv->lock);
+	} else {
+		ret = nxmutex_unlock(&priv->lock);
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: esp32_spi_sem_waitdone
+ *
+ * Description:
+ *   Wait for a transfer to complete
+ *
+ ****************************************************************************/
+
+static int esp32_spi_sem_waitdone(struct esp32_spi_priv_s *priv)
+{
+	return nxsem_tickwait_uninterruptible(&priv->sem_isr, SEC2TICK(10));
+}
+
+/****************************************************************************
+ * Name: esp32_spi_select
+ *
+ * Description:
+ *   Enable/disable the SPI chip select.  The implementation of this method
+ *   must include handshaking:  If a device is selected, it must hold off
+ *   all other attempts to select the device until the device is deselected.
+ *
+ *   If disable ESP32_SPI_SWCS, driver will use hardware CS so that when
+ *   once transmission is started, hardware select the device and when this
+ *   transmission is done, hardware deselect the device automatically. And
+ *   the function will do nothing.
+ *
+ * Input Parameters:
+ *   priv     - Private SPI device structure
+ *   devid    - Identifies the device to select
+ *   selected - true: slave selected, false: slave de-selected
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_ESP32_SPI_UDCS
+static void esp32_spi_select(struct spi_dev_s *dev,
+                             uint32_t devid, bool selected)
+{
+#ifdef CONFIG_ESP32_SPI_SWCS
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	esp32_gpiowrite(priv->config->cs_pin, !selected);
+#endif
+
+	spiinfo("devid: %08" PRIx32 " CS: %s\n",
+	        devid, selected ? "select" : "free");
+}
+#endif
+
+/****************************************************************************
+ * Name: esp32_spi_setfrequency
  *
  * Description:
  *   Set the SPI frequency.
  *
- ****************************************************************************/
-static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
-{
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
-
-	if (frequency <= APB_CLK_FREQ && frequency != priv->frequency) {
-		const int duty_cycle = 128;
-		spi_clock_reg_t clk_reg = { 0 };
-		int dummy_required, miso_delay;
-		priv->frequency = frequency;
-		int eff_clk = esp32_spi_cal_clock(APB_CLK_FREQ, priv->frequency, duty_cycle, (uint32_t *)&clk_reg);
-		esp32_spi_get_timing(!(priv->work_mode & SPICOMMON_BUSFLAG_NATIVE_PINS), def_dev_config.input_delay_ns, eff_clk, &dummy_required, &miso_delay);
-		priv->clk_cfg.eff_clk = eff_clk;
-		priv->clk_cfg.reg = clk_reg;
-		priv->clk_cfg.dummy_num = dummy_required;
-		priv->clk_cfg.miso_delay = miso_delay;
-
-		//Configure clock settings
-		esp32_spi_set_clock(priv, priv->clk_cfg.reg);
-		spiinfo("[SPI] frequency %d, reg: %08x\n", frequency, clk_reg.val);
-	}
-	return OK;
-}
-
-/****************************************************************************
- * Name: spi_select
+ * Input Parameters:
+ *   dev -       Device-specific state data
+ *   frequency - The SPI frequency requested
  *
- * Description:
- *   Enable/disable the SPI slave select. The implementation of this method
- *   must include handshaking:  If a device is selected, it must hold off
- *   all other attempts to select the device until the device is deselecte.
- *
- ****************************************************************************/
-static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
-{
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
-
-	uint32_t value = selected > 0 ? 0 : 1;
-	switch (priv->cur_cs) {
-	case 0:
-		priv->hw->pin.cs0_dis = value;
-		break;
-	case 1:
-		priv->hw->pin.cs1_dis = value;
-		break;
-	case 2:
-		priv->hw->pin.cs2_dis = value;
-		break;
-
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: spi_setmode
- *
- * Description:
- *   Set the SPI mode.  see enum spi_mode_e for mode definitions
- *
- ****************************************************************************/
-static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
-{
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
-
-	//Configure polarity
-	switch (mode) {
-	case SPIDEV_MODE0: {
-		priv->hw->pin.ck_idle_edge = 0;
-		priv->hw->user.ck_out_edge = 0;
-	}
-	break;
-	case SPIDEV_MODE1: {
-		priv->hw->pin.ck_idle_edge = 0;
-		priv->hw->user.ck_out_edge = 1;
-	}
-	break;
-	case SPIDEV_MODE2: {
-		priv->hw->pin.ck_idle_edge = 1;
-		priv->hw->user.ck_out_edge = 1;
-	}
-	break;
-	case SPIDEV_MODE3: {
-		priv->hw->pin.ck_idle_edge = 1;
-		priv->hw->user.ck_out_edge = 0;
-	}
-	break;
-	default:
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: spi_setbits
- *
- * Description:
- *   Support 8 bits only.
- *
- ****************************************************************************/
-static void spi_setbits(struct spi_dev_s *dev, int nbits)
-{
-	unsigned int mode_cfg = 0;
-
-	switch (nbits) {
-	case 8:
-		mode_cfg = mode_cfg;
-		break;
-
-	default:
-		DEBUGASSERT(0 == 1);
-		break;
-	}
-}
-
-/****************************************************************************
- * Name: spi_send
- *
- * Description:
- *   Exchange one word on SPI. Currently support only byte transfers.
- *
- ****************************************************************************/
-static uint16_t spi_send(struct spi_dev_s *dev, uint16_t wd)
-{
-	uint8_t txbyte;
-	uint8_t rxbyte;
-
-	txbyte = (uint8_t) wd;
-	rxbyte = (uint8_t) 0;
-	spi_exchange(dev, &txbyte, &rxbyte, 1);
-
-	return (uint16_t) rxbyte;
-}
-
-/****************************************************************************
- * Name: spi_exchange
- *
- * Description:
- *   Exchange a block data with the SPI device. Support only byte transfers.
+ * Returned Value:
+ *   Returns the actual frequency selected
  *
  ****************************************************************************/
 
-void esp32_spi_Enable_ints(struct esp32_spidev_s *priv)
+static uint32_t esp32_spi_setfrequency(struct spi_dev_s *dev,
+                                       uint32_t frequency)
 {
-	priv->hw->slave.trans_inten = 1;
-	priv->hw->slave.rd_buf_inten = 0;
-	priv->hw->slave.wr_buf_inten = 0;
-	priv->hw->slave.rd_sta_inten = 0;
-	priv->hw->slave.wr_sta_inten = 0;
-}
+	uint32_t reg_val;
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+	const uint32_t duty_cycle = 128;
 
-void esp32_spi_Disable_ints(struct esp32_spidev_s *priv)
-{
-	priv->hw->slave.trans_inten = 0;
-	priv->hw->slave.rd_buf_inten = 0;
-	priv->hw->slave.wr_buf_inten = 0;
-	priv->hw->slave.rd_sta_inten = 0;
-	priv->hw->slave.wr_sta_inten = 0;
-}
+	if (priv->frequency == frequency) {
+		/* We are already at this frequency. Return the actual. */
 
-void esp32_spi_Clear_ints(struct esp32_spidev_s *priv)
-{
-	priv->hw->slave.rd_buf_done = 0;
-	priv->hw->slave.wr_buf_done = 0;
-	priv->hw->slave.rd_sta_done = 0;
-	priv->hw->slave.wr_sta_done = 0;
-	priv->hw->slave.trans_done = 0;
-}
-
-/*Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.*/
-int spicommon_free_dma_desc_links(lldesc_chain_t *desc_chain)
-{
-	for (lldesc_t *cdesc = desc_chain->head; cdesc != NULL;) {
-		lldesc_t *prvdesc = cdesc;
-		cdesc = prvdesc->qe;
-		kmm_free(prvdesc);
-	}
-	desc_chain->head = NULL;
-	desc_chain->tail = NULL;
-	return OK;
-}
-
-int spicommon_setup_dma_desc_links(lldesc_chain_t *desc_chain, int len, const uint8_t *data, bool isrx)
-{
-	int ret = ERROR;
-	desc_chain->head = NULL;
-	desc_chain->tail = NULL;
-	int n = 0;
-	while (n < len) {
-		lldesc_t *cdesc = (lldesc_t *)kmm_zalloc(sizeof(lldesc_t));
-		if (cdesc == NULL) {
-			ret = -ENOMEM;
-			spiinfo("[SPI] setup dma links fails\n");
-			goto errout_with_lldesc;
-		}
-		if (desc_chain->head == NULL) {
-			desc_chain->head = cdesc;
-		}
-
-		int count = len - n;
-		if (count > SPI_MAX_DMA_FRAME_LEN) {
-			count = SPI_MAX_DMA_FRAME_LEN;
-		}
-		if (isrx) {
-			/*Receive needs DMA length rounded to next 32-bit boundary */
-			count = (count + 3) & (~3);
-		}
-
-		cdesc->length = count;
-		cdesc->size = count;
-		cdesc->offset = 0;
-		cdesc->owner = 1;
-		cdesc->eof = 0;
-		cdesc->sosf = 0;
-		cdesc->buf = (uint8_t *) data;
-		cdesc->empty = 0;
-
-		if (desc_chain->tail != NULL) {
-			desc_chain->tail->qe = cdesc;
-		}
-		desc_chain->tail = cdesc;
-
-		n += count;
-		data += count;
-	}
-	/*Mark last DMA desc as end of stream. */
-	if (desc_chain->tail != NULL) {
-		desc_chain->tail->eof = 1;
-		desc_chain->tail->qe = NULL;
-
-		ret = OK;
-	}
-	return ret;
-
-errout_with_lldesc:
-	spicommon_free_dma_desc_links(desc_chain);
-	return ret;
-}
-
-int spicommon_dma_chan_claim(int dma_chan)
-{
-	int ret = ERROR;
-	DEBUGASSERT(dma_chan == DMA_CHANNEL_1 || dma_chan == DMA_CHANNEL_2);
-
-	sem_wait((sem_t *)&g_spi_dma.dma_lock);
-	if (!(g_spi_dma.chan_enabled & DMA_CHANNEL_ENABLED(dma_chan))) {
-		// get the channel only when it's not claimed yet.
-		g_spi_dma.chan_enabled |= DMA_CHANNEL_ENABLED(dma_chan);
-		ret = OK;
-	}
-	periph_module_enable(PERIPH_SPI_DMA_MODULE);
-	sem_post((sem_t *)&g_spi_dma.dma_lock);
-
-	return ret;
-}
-
-int spicommon_dma_chan_in_use(int dma_chan)
-{
-	DEBUGASSERT(dma_chan == DMA_CHANNEL_1 || dma_chan == DMA_CHANNEL_2);
-	if (dma_chan != DMA_CHANNEL_1 && dma_chan != DMA_CHANNEL_2) {
-		return 0;
-	}
-	return (g_spi_dma.chan_enabled & DMA_CHANNEL_ENABLED(dma_chan));
-}
-
-int spicommon_dma_chan_free(int dma_chan)
-{
-	if (0 < spicommon_dma_chan_in_use(dma_chan)) {
-		sem_wait((sem_t *)&g_spi_dma.dma_lock);
-		g_spi_dma.chan_enabled &= ~DMA_CHANNEL_ENABLED(dma_chan);
-		if (g_spi_dma.chan_enabled == 0) {
-			//disable the DMA only when all the channels are freed.
-			periph_module_disable(PERIPH_SPI_DMA_MODULE);
-		}
-		sem_post((sem_t *)&g_spi_dma.dma_lock);
+		return priv->actual;
 	}
 
-	return OK;
-}
-
-/* The function is called to send a new transaction.
- * Setup the transaction-specified registers and linked-list used by the DMA.
- */
-static void spi_new_trans(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nbits, uint16_t cmd, uint64_t trans_addr)
-{
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
-	int extra_dummy = 0;
-	int cmdlen = 0;
-	int addrlen = 0;
-
-	/*We should be done with the transmission. */
-	assert(priv->hw->cmd.usr == 0);
-
-	/*clear interrupt bits */
-	esp32_spi_Disable_ints(priv);
-	esp32_spi_Clear_ints(priv);
-
-	/* Reset DMA peripheral */
-	priv->hw->dma_conf.val |= SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST;
-	priv->hw->dma_out_link.addr = 0;
-	priv->hw->dma_out_link.start = 0;
-	priv->hw->dma_in_link.addr = 0;
-	priv->hw->dma_in_link.start = 0;
-	priv->hw->dma_conf.val &= ~(SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST);
-	priv->hw->dma_conf.out_data_burst_en = 1;
-	priv->hw->dma_conf.indscr_burst_en = 1;
-	priv->hw->dma_conf.outdscr_burst_en = 1;
-
-	/*Fill DMA descriptors */
-	if (rxbuffer != NULL) {
-		if (priv->dma_chan == 0) {
-			//No need to setup anything; we'll copy the result out of the work registers directly later.
-		} else {
-			spicommon_setup_dma_desc_links(&(priv->dmadesc_rx), nbits / 8, (uint8_t *)rxbuffer, true);
-			//priv->hw->dma_in_link.addr = (int)(priv->dmadesc_rx.head) & 0xFFFFF;
-			priv->hw->dma_in_link.addr = (uint32_t)(priv->dmadesc_rx.head);
-			priv->hw->dma_in_link.start = 1;
-			spiinfo("[SPI] DMA start rx %p~%p; %d...\n", priv->dmadesc_rx.head, priv->dmadesc_rx.tail, nbits);
-		}
-		//when no_dummy is not set and in half-duplex mode, sets the dummy bit if RX phase exist
-		if (((def_dev_config.flags & SPI_DEVICE_NO_DUMMY) == 0) && (def_dev_config.flags & SPI_DEVICE_HALFDUPLEX)) {
-			extra_dummy = priv->clk_cfg.dummy_num;
-		}
+	if (frequency > ((APB_CLK_FREQ / 4) * 3)) {
+		reg_val = SPI_CLK_EQU_SYSCLK_M;
+		priv->actual = APB_CLK_FREQ;
 	} else {
-		//DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
-		if (priv->dma_chan != 0) {
-			priv->hw->dma_in_link.addr = 0;
-			priv->hw->dma_in_link.start = 1;
-		}
-	}
-
-	if (txbuffer != NULL) {
-		/*Copy data to registers manually if Need */
-		if (priv->dma_chan == 0) {
-			uint32_t *buf = (uint32_t *) txbuffer;
-			for (int x = 0; x < nbits; x += SPI_DATA_BITS_UNIT) {
-				addrlen = x / SPI_DATA_BITS_UNIT;
-				priv->hw->data_buf[addrlen] = buf[addrlen];
-			}
-		} else {
-			spicommon_setup_dma_desc_links(&(priv->dmadesc_tx), nbits / 8, (uint8_t *)txbuffer, false);
-			priv->hw->dma_out_link.addr = (uint32_t)(priv->dmadesc_tx.head);
-			priv->hw->dma_out_link.start = 1;
-			spiinfo("[SPI] DMA start tx %p~%p; %d...\n", priv->dmadesc_tx.head, priv->dmadesc_tx.tail, nbits);
-		}
-	}
-	/* SPI iface needs to be configured for a delay in some cases.
-	   configure dummy bits */
-	priv->hw->user.usr_dummy = (def_dev_config.dummy_bits + extra_dummy) ? 1 : 0;
-	priv->hw->user1.usr_dummy_cyclelen = def_dev_config.dummy_bits + extra_dummy - 1;
-
-	int miso_long_delay = 0;
-	if (priv->clk_cfg.miso_delay < 0) {
-		//if the data comes too late, delay half a SPI clock to improve reading
-		miso_long_delay = 1;
-		priv->hw->ctrl2.miso_delay_num = 0;
-	} else {
-		//if the data is so fast that dummy_bit is used, delay some apb clocks to meet the timing
-		priv->hw->ctrl2.miso_delay_num = extra_dummy ? priv->clk_cfg.miso_delay : 0;
-	}
-
-	if (miso_long_delay) {
-		switch (def_dev_config.mode) {
-		case 0:
-			priv->hw->ctrl2.miso_delay_mode = 2;
-			break;
-		case 1:
-			priv->hw->ctrl2.miso_delay_mode = 1;
-			break;
-		case 2:
-			priv->hw->ctrl2.miso_delay_mode = 1;
-			break;
-		case 3:
-			priv->hw->ctrl2.miso_delay_mode = 2;
-			break;
-		}
-	} else {
-		priv->hw->ctrl2.miso_delay_mode = 0;
-	}
-
-	priv->hw->mosi_dlen.usr_mosi_dbitlen = nbits - 1;
-	if (def_dev_config.flags & SPI_DEVICE_HALFDUPLEX) {
-		priv->hw->miso_dlen.usr_miso_dbitlen = nbits - 1;
-	} else {
-		//rxlength is not used in full-duplex mode
-		priv->hw->miso_dlen.usr_miso_dbitlen = nbits - 1;
-	}
-
-	//Configure bit sizes, load addr and command
-	if (!(def_dev_config.flags & SPI_DEVICE_HALFDUPLEX) && def_dev_config.cs_ena_pretrans != 0) {
-		/* The command and address phase is not compatible with cs_ena_pretrans
-		 * in full duplex mode.
-		 */
-		cmdlen = 0;
-		addrlen = 0;
-	} else {
-		cmdlen = def_dev_config.command_bits;
-		addrlen = def_dev_config.address_bits;
-	}
-
-	priv->hw->user1.usr_addr_bitlen = addrlen - 1;
-	priv->hw->user2.usr_command_bitlen = cmdlen - 1;
-	priv->hw->user.usr_addr = addrlen ? 1 : 0;
-	priv->hw->user.usr_command = cmdlen ? 1 : 0;
-
-	if ((def_dev_config.flags & SPI_DEVICE_TXBIT_LSBFIRST) == 0) {
-		/* Output command will be sent from bit 7 to 0 of command_value, and
-		 * then bit 15 to 8 of the same register field. Shift and swap to send
-		 * more straightly.
-		 */
-		priv->hw->user2.usr_command_value = __builtin_bswap32(cmd);
-
-		/* shift the address to MSB of addr (and maybe slv_wr_status) register.
-		 * output address will be sent from MSB to LSB of addr register, then
-		 * comes the MSB to LSB of slv_wr_status register.*/
-		if (addrlen > SPI_ADDR_BITS_COUNT) {
-			priv->hw->addr = trans_addr >> (addrlen - SPI_ADDR_BITS_COUNT);
-			priv->hw->slv_wr_status = trans_addr << (SPI_ADDR_BITS_COUNT * 2 - addrlen);
-		} else {
-			priv->hw->addr = trans_addr << (SPI_ADDR_BITS_COUNT - addrlen);
-		}
-	} else {
-		/* The output command start from bit0 to bit 15, kept as is.
-		 * The output address start from the LSB of the highest byte, i.e.
-		 * addr[24] -> addr[31]
-		 * ...
-		 * addr[0] -> addr[7]
-		 * slv_wr_status[24] -> slv_wr_status[31]
-		 * ...
-		 * slv_wr_status[0] -> slv_wr_status[7]
-		 * So swap the byte order to let the LSB sent first.
-		 */
-		priv->hw->user2.usr_command_value = cmd;
-		uint64_t addr = __builtin_bswap64(trans_addr);
-		priv->hw->addr = addr >> SPI_ADDR_BITS_COUNT;
-		priv->hw->slv_wr_status = addr;
-	}
-
-	if ((!(def_dev_config.flags & SPI_DEVICE_HALFDUPLEX) && NULL != rxbuffer) || NULL != txbuffer) {
-		priv->hw->user.usr_mosi = 1;
-	} else {
-		priv->hw->user.usr_mosi = 0;
-	}
-	priv->hw->user.usr_miso = (NULL != rxbuffer) ? 1 : 0;
-
-#ifndef CONFIG_SPI_POLLWAIT
-	esp32_spi_Enable_ints(priv);
-#endif
-
-	//Kick off transfer
-	priv->hw->cmd.usr = 1;
-}
-
-static void spi_post_trans(struct spi_dev_s *dev, uint32_t *pRdBuf, int flen)
-{
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
-	esp32_spi_Disable_ints(priv);
-	if (priv->dma_chan) {
-		priv->hw->dma_conf.val |= SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST;
-		priv->hw->dma_out_link.addr = 0;
-		priv->hw->dma_out_link.start = 0;
-		priv->hw->dma_in_link.addr = 0;
-		priv->hw->dma_in_link.start = 0;
-		priv->hw->dma_conf.val &= ~(SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST);
-
-		spicommon_free_dma_desc_links(&priv->dmadesc_rx);
-		spicommon_free_dma_desc_links(&priv->dmadesc_tx);
-	}
-	/* Read rx data to buffer if need */
-	else if (pRdBuf != NULL) {
-		int index;
-		for (int x = 0; x < flen * 8; x += SPI_DATA_BITS_UNIT) {
-			index = x / SPI_DATA_BITS_UNIT;
-			pRdBuf[index] = priv->hw->data_buf[index];
-		}
-	}
-}
-
-static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
-{
-	FAR struct esp32_spidev_s *priv = (FAR struct esp32_spidev_s *)dev;
-
-	size_t sent = 0;
-	size_t received = 0;
-	int len = nwords;
-
-	char *tbuf = (char *)txbuffer;
-	char *rbuf = (char *)rxbuffer;
-
-	int flen = len;
-	uint32_t *pWrBuf = NULL;
-	uint32_t *pRdBuf = NULL;
-	while (len > 0) {
-		flen = len;
-		if (len > priv->max_transfer_sz) {
-			flen = priv->max_transfer_sz;
-		}
-		if (NULL != rbuf) {
-			pRdBuf = (uint32_t *)(rbuf + received);
-		}
-		if (NULL != tbuf) {
-			pWrBuf = (uint32_t *)(tbuf + sent);
-		}
-		spi_new_trans(dev, pWrBuf, pRdBuf, flen * 8, 0, 0);
-
-		/* SPI wait transfer done */
-#ifndef CONFIG_SPI_POLLWAIT
-		sem_wait(&priv->xfrsem);
-#else
-		int count = 0;
-		while (!priv->hw->slave.trans_done) {
-			usleep(TIMEOUT_SLEEP);
-			if (++count > TIMEOUT_COUNT) {
-				spiinfo("[SPI] polling trans timeout!\n");
-				return;
-			}
-		}
-#endif
-		spi_post_trans(dev, pRdBuf, flen);
-
-		sent += flen;
-		received += flen;
-		len -= flen;
-	}
-}
-
-#ifndef CONFIG_SPI_EXCHANGE
-/****************************************************************************
- * Name: spi_sndblock
- *
- * Description:
- *   Send a block of data on SPI. Support only byte transfers
- *
- ****************************************************************************/
-static void spi_sndblock(struct spi_dev_s *dev, const void *txbuffer, size_t nwords)
-{
-	spi_exchange(dev, txbuffer, NULL, nwords);
-}
-
-/****************************************************************************
- * Name: spi_recvblock
- *
- * Description:
- *   Revice a block of data from SPI. Support only byte transfers.
- *
- ****************************************************************************/
-static void spi_recvblock(struct spi_dev_s *dev, void *rxbuffer, size_t nwords)
-{
-	spi_exchange(dev, NULL, rxbuffer, nwords);
-}
-#endif
-
-/*
- * spi_irq_handler
- *
- */
-static int spi_irq_handler(int irq, FAR void *context, FAR void *arg)
-{
-	struct esp32_spidev_s *priv = (struct esp32_spidev_s *)arg;
-	spi_reg_slave_t slave;
-	slave.val = priv->hw->slave.val;
-
-	if (slave.trans_done) {
-#ifndef CONFIG_SPI_POLLWAIT
-		sem_post(&priv->xfrsem);
-#endif
-	}
-	/*Disable unneeded ints */
-	esp32_spi_Clear_ints(priv);
-
-	return OK;
-}
-
-static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
-{
-	bool use_iomux = true;
-	//check pins existence and if the selected pins correspond to the iomux pins of the peripheral
-
-	esp32_spi_pins_sig_t *p_pin_sig = NULL;
-	int func = 0;
-	switch (priv->port) {
-	case HSPI_PORT: {
-		p_pin_sig = (esp32_spi_pins_sig_t *)(&s_spi2_pin_sig);
-#if defined(CONFIG_GPIO_SPI2_CS_PIN) || defined(CONFIG_GPIO_SPI2_CLK_PIN) || defined(CONFIG_GPIO_SPI2_MISO_PIN) || defined(CONFIG_GPIO_SPI2_MOSI_PIN)
-		use_iomux = false;
-#endif
-
-	}
-	break;
-	case VSPI_PORT: {
-		p_pin_sig = (esp32_spi_pins_sig_t *)(&s_spi3_pin_sig);
-#if defined(CONFIG_GPIO_SPI3_CS_PIN) || defined(CONFIG_GPIO_SPI3_CLK_PIN) || defined(CONFIG_GPIO_SPI3_MISO_PIN) || defined(CONFIG_GPIO_SPI3_MOSI_PIN)
-		use_iomux = false;
-#endif
-
-	}
-	break;
-	default:
-		return;
-	}
-
-	if (use_iomux) {
-		func = SPI_PIN_FUNC_SPI;
-	} else {
-		func = SPI_PIN_FUNC_GPIO;
-	}
-
-	if (priv->gpio_mosi >= 0) {
-		gpio_matrix_in(priv->gpio_mosi, p_pin_sig->spimosi_in, 0);
-		gpio_matrix_out(priv->gpio_mosi, p_pin_sig->spimosi_out, 0, 0);
-		esp32_configgpio(priv->gpio_mosi, func);
-	}
-
-	if (priv->gpio_miso >= 0) {
-		gpio_matrix_in(priv->gpio_miso, p_pin_sig->spimiso_in, 0);
-		func = use_iomux ? (INPUT | FUNCTION_1) : (INPUT | FUNCTION_2);
-		if (priv->work_mode & SPICOMMON_BUSFLAG_DUAL) {
-			gpio_matrix_out(priv->gpio_miso, p_pin_sig->spimiso_out, 0, 0);
-			func |= OUTPUT;
-		}
-		esp32_configgpio(priv->gpio_miso, func);
-	}
-
-	if (priv->gpio_quadwp >= 0 && priv->gpio_quadwp < GPIO_PIN_COUNT) {
-		gpio_matrix_in(priv->gpio_quadwp, p_pin_sig->spiwp_in, 0);
-		gpio_matrix_out(priv->gpio_quadwp, p_pin_sig->spiwp_out, 0, 0);
-		esp32_configgpio(priv->gpio_quadwp, func);
-	}
-
-	if (priv->gpio_quadhd >= 0 && priv->gpio_quadhd < GPIO_PIN_COUNT) {
-		gpio_matrix_in(priv->gpio_quadhd, p_pin_sig->spihd_in, 0);
-		gpio_matrix_out(priv->gpio_quadhd, p_pin_sig->spihd_out, 0, 0);
-		esp32_configgpio(priv->gpio_quadhd, func);
-	}
-
-	if (priv->gpio_clk >= 0) {
-		gpio_matrix_in(priv->gpio_clk, p_pin_sig->spiclk_in, 0);
-		gpio_matrix_out(priv->gpio_clk, p_pin_sig->spiclk_in, 0, 0);
-		esp32_configgpio(priv->gpio_clk, func);
-	}
-	if (priv->work_mode & SPICOMMON_BUSFLAG_MASTER) {
-		for (int i = 0; i < MAX_CS_NUM; i++) {
-			if (priv->gpio_nss[i] >= 0 && priv->gpio_nss[i] < GPIO_PIN_COUNT) {
-				if (i == 0) {
-					gpio_matrix_in(priv->gpio_nss[i], p_pin_sig->spics_in, 0);
-				}
-				gpio_matrix_out(priv->gpio_nss[i], p_pin_sig->spics_out[i], 0, 0);
-				esp32_configgpio(priv->gpio_nss[i], func);
-			}
-		}
-	} else {
-		if (priv->gpio_nss[0] >= 0 && priv->gpio_nss[0] < GPIO_PIN_COUNT) {
-			gpio_matrix_in(priv->gpio_nss[0], p_pin_sig->spics_in, 0);
-			gpio_matrix_out(priv->gpio_nss[0], p_pin_sig->spics_in, 0, 0);
-			esp32_configgpio(priv->gpio_nss[0], func);
-		}
-	}
-}
-
-void spicommon_cs_initialize(struct esp32_spidev_s *priv, int cs_io_num, int cs_num, int force_gpio_matrix)
-{
-	int spics0_iomux_pin = -1;
-	esp32_spi_pins_sig_t *p_pin_sig = NULL;
-	switch (priv->port) {
-	case HSPI_PORT: {
-		p_pin_sig = (esp32_spi_pins_sig_t *)&s_spi2_pin_sig;
-		spics0_iomux_pin = HSPI_IOMUX_PIN_NUM_CS;
-	}
-	break;
-	case VSPI_PORT: {
-		p_pin_sig = (esp32_spi_pins_sig_t *)&s_spi3_pin_sig;
-		spics0_iomux_pin = VSPI_IOMUX_PIN_NUM_CS;
-	}
-	break;
-	default: {
-		return;
-	}
-	}
-	if (!force_gpio_matrix && cs_io_num == spics0_iomux_pin && cs_num == 0) {
-		//The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
-		gpio_matrix_in(cs_io_num, p_pin_sig->spics_in, 0);
-		gpio_matrix_out(cs_io_num, SPI_PIN_FUNC_SPI, false, 0);
-	} else {
-		gpio_matrix_out(priv->gpio_nss[cs_num], p_pin_sig->spics_out[cs_num], 0, 0);
-		if (cs_num == 0) {
-			gpio_matrix_in(priv->gpio_nss[cs_num], p_pin_sig->spics_out[cs_num], 0);
-		}
-		esp32_configgpio(priv->gpio_nss[cs_num], SPI_PIN_FUNC_GPIO);
-	}
-}
-
-static int esp32_spi_isr_initialize(struct esp32_spidev_s *priv)
-{
-	/*register isr */
-	priv->cpu_int = esp32_alloc_levelint(priv->intrupt_level);
-	if (priv->cpu_int < 0) {
-		/* Failed to allocate a CPU interrupt of this type */
-		spiinfo("[SPI] esp32_alloc_levelint fails:%d \n", priv->cpu_int);
-		return priv->cpu_int;
-	}
-
-	/* Set up to receive peripheral interrupts on the current CPU */
-	int cpu = 1;
-#ifdef CONFIG_SMP
-	cpu = up_cpu_index();
-#else
-	cpu = 0;
-#endif
-
-	/* Attach the GPIO peripheral to the allocated CPU interrupt */
-	up_disable_irq(priv->cpu_int);
-	esp32_attach_peripheral(cpu, priv->periph_isr, priv->cpu_int);
-
-	/* Attach and enable the IRQ */
-	int ret = irq_attach(priv->isr_num, priv->isr_handler, priv);
-	if (ret == OK) {
-		/* Enable the CPU interrupt */
-		up_enable_irq(priv->cpu_int);
-	} else {
-		spiinfo("[SPI] irq_attach fails:%d \n", ret);
-	}
-
-	return ret;
-}
-
-static int spi_freq_for_pre_n(int fapb, int pre, int n)
-{
-	return (fapb / (pre * n));
-}
-
-int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
-{
-	const int apbclk_kHz = APB_CLK_FREQ / 1000;
-	const int gpio_delay_ns = gpio_is_used ? 25 : 0;
-
-	//calculate how many apb clocks a period has, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-	int apb_period_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
-	int limit = APB_CLK_FREQ / (apb_period_n + 1);
-
-	spiinfo("[SPI] gpio:%d, dely_ns:%d, apb_period=%d: limit=%d ...\n", gpio_is_used, input_delay_ns, apb_period_n, limit);
-	return limit;
-}
-
-static int esp32_spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o)
-{
-	spi_clock_reg_t reg;
-	int eff_clk;
-
-	//In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
-	if (hz > ((fapb / 4) * 3)) {
-		//Using Fapb directly will give us the best result here.
-		reg.clkcnt_l = 0;
-		reg.clkcnt_h = 0;
-		reg.clkcnt_n = 0;
-		reg.clkdiv_pre = 0;
-		reg.clk_equ_sysclk = 1;
-		eff_clk = fapb;
-	} else {
-		//For best duty cycle resolution, we want n to be as close to 32 as possible, but
-		//we also need a pre/n combo that gets us as close as possible to the intended freq.
-		//To do this, we bruteforce n and calculate the best pre to go along with that.
-		//If there's a choice between pre/n combos that give the same result, use the one
-		//with the higher n.
-		int pre, n, h, l;
+		int pre;
+		int n;
+		int h;
+		int l;
 		int bestn = -1;
 		int bestpre = -1;
 		int besterr = 0;
 		int errval;
-		/* Start at 2: we need to be able to set h/l so we have at least one high and one low pulse.
-		 * Effectively, this does pre=round((fapb/n)/hz).
-		 */
+
 		for (n = 2; n <= 64; n++) {
-			pre = ((fapb / n) + (hz / 2)) / hz;
+			pre = ((APB_CLK_FREQ / n) + (frequency / 2)) / frequency;
+
 			if (pre <= 0) {
 				pre = 1;
 			}
+
 			if (pre > 8192) {
 				pre = 8192;
 			}
-			errval = abs(spi_freq_for_pre_n(fapb, pre, n) - hz);
+
+			errval = abs(APB_CLK_FREQ / (pre * n) - frequency);
 			if (bestn == -1 || errval <= besterr) {
 				besterr = errval;
 				bestn = n;
@@ -1337,259 +640,938 @@ static int esp32_spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o
 		n = bestn;
 		pre = bestpre;
 		l = n;
-		/* This effectively does round((duty_cycle*n)/256) */
 		h = (duty_cycle * n + 127) / 256;
 		if (h <= 0) {
 			h = 1;
 		}
 
-		reg.clk_equ_sysclk = 0;
-		reg.clkcnt_n = n - 1;
-		reg.clkdiv_pre = pre - 1;
-		reg.clkcnt_h = h - 1;
-		reg.clkcnt_l = l - 1;
-		eff_clk = spi_freq_for_pre_n(fapb, pre, n);
-		spiinfo("[SPI] clk=%d: n=%d, pre=%d, h=%d,l=%d, ...\n", eff_clk, n, pre, h, l);
+		reg_val = ((l - 1) << SPI_CLKCNT_L_S) |
+		          ((h - 1) << SPI_CLKCNT_H_S) |
+		          ((n - 1) << SPI_CLKCNT_N_S) |
+		          ((pre - 1) << SPI_CLKDIV_PRE_S);
+
+		priv->actual = APB_CLK_FREQ / (n * pre);
 	}
 
-	if (reg_o != NULL) {
-		*reg_o = reg.val;
-	}
+	priv->frequency = frequency;
 
-	return eff_clk;
-}
+	putreg32(reg_val, SPI_CLOCK_REG(priv->config->id));
 
-/*
-* Set the spi clock according to pre-calculated register value.
-*/
-static inline void esp32_spi_set_clock(struct esp32_spidev_s *priv, spi_clock_reg_t reg)
-{
-	priv->hw->clock.val = reg.val;
-}
+	spiinfo("frequency=%" PRIu32 ", actual=%" PRIu32 "\n",
+	        priv->frequency, priv->actual);
 
-static void esp32_spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dummy_o, int *cycles_remain_o)
-{
-	const int apbclk_kHz = APB_CLK_FREQ / 1000;
-	const int apbclk_n = APB_CLK_FREQ / eff_clk;
-	const int gpio_delay_ns = gpio_is_used ? 25 : 0;
-
-	/*calculate how many apb clocks a period has, the 1 is to compensate in case ``input_delay_ns`` is rounded off. */
-	int apb_period_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
-	int dummy_required = apb_period_n / apbclk_n;
-	//spiinfo("[SPI] timing gpio:%d, i_delns:%d, g_delns:%d, clk_n:%d, prd_n:%d, dreq:%d!\n", gpio_is_used, input_delay_ns, gpio_delay_ns, apbclk_n, apb_period_n, dummy_required);
-
-	int miso_delay = 0;
-	if (dummy_required > 0) {
-		/*due to the clock delay between master and slave, there's a range in which data is random
-		 *give MISO a delay if needed to make sure we sample at the time MISO is stable
-		 */
-		miso_delay = (dummy_required + 1) * apbclk_n - apb_period_n - 1;
-	} else {
-		/* if the dummy is not required, maybe we should also delay half a SPI clock if the data comes too early
-		 */
-		if (apb_period_n * 4 <= apbclk_n) {
-			miso_delay = -1;
-		}
-	}
-	if (dummy_o != NULL) {
-		*dummy_o = dummy_required;
-	}
-	if (cycles_remain_o != NULL) {
-		*cycles_remain_o = miso_delay;
-	}
-	spiinfo("[SPI] eff: %d, lim: %dk(/%d), %d, %d\n", eff_clk / 1000, apbclk_kHz / (apb_period_n + 1), apb_period_n, dummy_required, miso_delay);
-}
-
-void spi_config_device(struct esp32_spidev_s *priv, const spi_device_interface_config_t *dev_config)
-{
-	/* Configure clock settings */
-	esp32_spi_set_clock(priv, priv->clk_cfg.reg);
-
-	/* Configure bit order */
-	priv->hw->ctrl.rd_bit_order = (dev_config->flags & SPI_DEVICE_RXBIT_LSBFIRST) ? 1 : 0;
-	priv->hw->ctrl.wr_bit_order = (dev_config->flags & SPI_DEVICE_TXBIT_LSBFIRST) ? 1 : 0;
-
-	/* Configure polarity */
-	if (priv->comm_mode == SPIDEV_MODE0) {
-		priv->hw->pin.ck_idle_edge = 0;
-		priv->hw->user.ck_out_edge = 0;
-	} else if (priv->comm_mode == SPIDEV_MODE1) {
-		priv->hw->pin.ck_idle_edge = 0;
-		priv->hw->user.ck_out_edge = 1;
-	} else if (priv->comm_mode == SPIDEV_MODE2) {
-		priv->hw->pin.ck_idle_edge = 1;
-		priv->hw->user.ck_out_edge = 1;
-	} else if (priv->comm_mode == SPIDEV_MODE3) {
-		priv->hw->pin.ck_idle_edge = 1;
-		priv->hw->user.ck_out_edge = 0;
-	}
-	/* Configure misc stuff */
-	priv->hw->user.doutdin = (dev_config->flags & SPI_DEVICE_HALFDUPLEX) ? 0 : 1;
-	priv->hw->user.sio = (dev_config->flags & SPI_DEVICE_3WIRE) ? 1 : 0;
-	/* Configure CS pin and timing */
-	priv->hw->ctrl2.setup_time = dev_config->cs_ena_pretrans - 1;
-	priv->hw->user.cs_setup = dev_config->cs_ena_pretrans ? 1 : 0;
-	/* set hold_time to 0 will not actually append delay to CS
-	 *set it to 1 since we do need at least one clock of hold time in most cases
-	 */
-	priv->hw->ctrl2.hold_time = dev_config->cs_ena_posttrans;
-	if (priv->hw->ctrl2.hold_time == 0) {
-		priv->hw->ctrl2.hold_time = 1;
-	}
-	priv->hw->user.cs_hold = 1;
-
-	priv->hw->pin.cs0_dis = (priv->cur_cs == 0) ? 0 : 1;
-	priv->hw->pin.cs1_dis = (priv->cur_cs == 1) ? 0 : 1;
-	priv->hw->pin.cs2_dis = (priv->cur_cs == 2) ? 0 : 1;
-}
-
-/*
- * spi_select_device:
- * Input param:
- *      priv
- *      dev_id: cs index {0~2};
- *      dev_config:
- * return value:
- *      ok.
- */
-int spi_select_device(struct esp32_spidev_s *priv, int dev_id, const spi_device_interface_config_t *dev_config)
-{
-	int freecs;
-	int eff_clk;
-	int dummy_required;
-	int miso_delay;
-
-	const int duty_cycle = 128;
-	spi_clock_reg_t clk_reg = { 0 };
-
-	/* GPIO matrix can only change data at 80Mhz rate, which only allows 40MHz SPI clock.
-	 * Speed >=40MHz over GPIO matrix needs a dummy cycle, but these don't work for full-duplex connections.
-	 */
-	eff_clk = esp32_spi_cal_clock(APB_CLK_FREQ, priv->frequency, duty_cycle, (uint32_t *)&clk_reg);
-	esp32_spi_get_timing(!(priv->work_mode & SPICOMMON_BUSFLAG_NATIVE_PINS), dev_config->input_delay_ns, eff_clk, &dummy_required, &miso_delay);
-	spiinfo("[SPI] eff_clk=%d, dummy_required=%d, miso_delay=%d...\n", eff_clk, dummy_required, miso_delay);
-
-	priv->clk_cfg = (clock_config_t) {
-		.eff_clk = eff_clk, .dummy_num = dummy_required, .reg = clk_reg, .miso_delay = miso_delay,
-	};
-
-	/* Set CS pin, CS options */
-	freecs = dev_id;
-	if (dev_config->flags & SPI_DEVICE_CLK_AS_CS) {
-		priv->hw->pin.master_ck_sel |= (1 << freecs);
-	} else {
-		priv->hw->pin.master_ck_sel &= (1 << freecs);
-	}
-	if (dev_config->flags & SPI_DEVICE_POSITIVE_CS) {
-		priv->hw->pin.master_cs_pol |= (1 << freecs);
-	} else {
-		priv->hw->pin.master_cs_pol &= (1 << freecs);
-	}
-	priv->hw->ctrl2.mosi_delay_mode = 0;
-	priv->hw->ctrl2.mosi_delay_num = 0;
-
-	/*Record the device just configured to save time for next time */
-	priv->prev_cs = priv->cur_cs;
-	priv->cur_cs = dev_id;
-
-	spi_config_device(priv, dev_config);
-
-	return dev_id;
+	return priv->actual;
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: up_spiinitialize
+ * Name: esp32_spi_setmode
  *
  * Description:
- *   Initialize the selected SPI port
+ *   Set the SPI mode.
+ *
+ * Input Parameters:
+ *   dev  - Device-specific state data
+ *   mode - The requested SPI mode
+ *
+ * Returned Value:
+ *   None.
  *
  ****************************************************************************/
 
-struct spi_dev_s *up_spiinitialize(int port)
+static void esp32_spi_setmode(struct spi_dev_s *dev,
+                              enum spi_mode_e mode)
 {
-	FAR struct esp32_spidev_s *priv = NULL;
+	uint32_t ck_idle_edge;
+	uint32_t ck_out_edge;
+	uint32_t delay_mode;
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	spiinfo("mode=%d\n", mode);
+
+	/* Has the mode changed? */
+
+	if (mode != priv->mode) {
+		switch (mode) {
+		case SPIDEV_MODE0: /* CPOL=0; CPHA=0 */
+			ck_idle_edge = 0;
+			ck_out_edge = 0;
+			delay_mode = 0;
+			break;
+
+		case SPIDEV_MODE1: /* CPOL=0; CPHA=1 */
+			ck_idle_edge = 0;
+			ck_out_edge = 1;
+			delay_mode = 2;
+			break;
+
+		case SPIDEV_MODE2: /* CPOL=1; CPHA=0 */
+			ck_idle_edge = 1;
+			ck_out_edge = 1;
+			delay_mode = 2;
+			break;
+
+		case SPIDEV_MODE3: /* CPOL=1; CPHA=1 */
+			ck_idle_edge = 1;
+			ck_out_edge = 0;
+			delay_mode = 0;
+			break;
+
+		default:
+			return;
+		}
+
+		const uint32_t id = priv->config->id;
+
+		esp32_spi_reset_regbits(SPI_PIN_REG(id), SPI_CK_IDLE_EDGE_M);
+		esp32_spi_set_regbits(SPI_PIN_REG(id),
+		                      VALUE_MASK(ck_idle_edge, SPI_CK_IDLE_EDGE));
+
+		esp32_spi_reset_regbits(SPI_USER_REG(id), SPI_CK_OUT_EDGE_M);
+		esp32_spi_set_regbits(SPI_USER_REG(id),
+		                      VALUE_MASK(ck_out_edge, SPI_CK_OUT_EDGE));
+
+		esp32_spi_reset_regbits(SPI_CTRL2_REG(id),
+		                        SPI_MISO_DELAY_MODE_M |
+		                        SPI_MISO_DELAY_NUM_M |
+		                        SPI_MOSI_DELAY_NUM_M |
+		                        SPI_MOSI_DELAY_MODE_M);
+		esp32_spi_set_regbits(SPI_CTRL2_REG(id),
+		                      VALUE_MASK(delay_mode, SPI_MISO_DELAY_MODE) |
+		                      VALUE_MASK(delay_mode, SPI_MOSI_DELAY_MODE));
+
+		priv->mode = mode;
+	}
+}
+
+/****************************************************************************
+ * Name: esp32_spi_setbits
+ *
+ * Description:
+ *   Set the number of bits per word.
+ *
+ * Input Parameters:
+ *   dev   - Device-specific state data
+ *   nbits - The number of bits in an SPI word.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_setbits(struct spi_dev_s *dev, int nbits)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	spiinfo("nbits=%d\n", nbits);
+
+	priv->nbits = nbits;
+}
+
+/****************************************************************************
+ * Name: esp32_spi_hwfeatures
+ *
+ * Description:
+ *   Set hardware-specific feature flags.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *   features - H/W feature flags
+ *
+ * Returned Value:
+ *   Zero (OK) if the selected H/W features are enabled; A negated errno
+ *   value if any H/W feature is not supportable.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SPI_HWFEATURES
+static int esp32_spi_hwfeatures(struct spi_dev_s *dev,
+                                spi_hwfeatures_t features)
+{
+	/* Other H/W features are not supported */
+
+	return (features == 0) ? OK : -ENOSYS;
+}
+#endif
+
+/****************************************************************************
+ * Name: esp32_spi_dma_exchange
+ *
+ * Description:
+ *   Exchange a block of data from SPI by DMA.
+ *
+ * Input Parameters:
+ *   priv     - SPI private state data
+ *   txbuffer - A pointer to the buffer of data to be sent
+ *   rxbuffer - A pointer to the buffer in which to receive data
+ *   nwords   - the length of data that to be exchanged in units of words.
+ *              The wordsize is determined by the number of bits-per-word
+ *              selected for the SPI interface.  If nbits <= 8, the data is
+ *              packed into uint8_t's; if nbits >8, the data is packed into
+ *              uint16_t's
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_dma_exchange(struct esp32_spi_priv_s *priv,
+                                   const void *txbuffer,
+                                   void *rxbuffer,
+                                   uint32_t nwords)
+{
+	const uint32_t total = nwords * (priv->nbits / 8);
+	uint32_t bytes = total;
+	uint8_t *tp;
+	uint8_t *rp;
+	uint32_t n;
+	uint32_t regval;
+	struct esp32_dmadesc_s *dma_tx_desc;
+	struct esp32_dmadesc_s *dma_rx_desc;
+#ifdef CONFIG_ESP32_SPIRAM
+	uint8_t *alloctp = NULL;
+	uint8_t *allocrp = NULL;
+#endif
+
+	/* Define these constants outside transfer loop to avoid wasting CPU time
+	 * with register offset calculation.
+	 */
+
+	const uint32_t id = priv->config->id;
+	const uint8_t dma_desc_idx = priv->config->dma_chan - 1;
+	const uintptr_t spi_dma_in_link_reg = SPI_DMA_IN_LINK_REG(id);
+	const uintptr_t spi_dma_out_link_reg = SPI_DMA_OUT_LINK_REG(id);
+	const uintptr_t spi_slave_reg = SPI_SLAVE_REG(id);
+	const uintptr_t spi_dma_conf_reg = SPI_DMA_CONF_REG(id);
+	const uintptr_t spi_mosi_dlen_reg = SPI_MOSI_DLEN_REG(id);
+	const uintptr_t spi_miso_dlen_reg = SPI_MISO_DLEN_REG(id);
+	const uintptr_t spi_user_reg = SPI_USER_REG(id);
+	const uintptr_t spi_cmd_reg = SPI_CMD_REG(id);
+	const uintptr_t spi_dma_rstatus = SPI_DMA_RSTATUS_REG(id);
+
+	DEBUGASSERT((txbuffer != NULL) || (rxbuffer != NULL));
+
+	/* If the buffer comes from PSRAM, allocate a new one from DRAM */
+
+#ifdef CONFIG_ESP32_SPIRAM
+	if (esp32_ptr_extram(txbuffer)) {
+#  ifdef CONFIG_MM_KERNEL_HEAP
+		alloctp = kmm_malloc(total);
+#  elif defined(CONFIG_XTENSA_IMEM_USE_SEPARATE_HEAP)
+		alloctp = xtensa_imm_malloc(total);
+#  endif
+
+		DEBUGASSERT(alloctp != NULL);
+		memcpy(alloctp, txbuffer, total);
+		tp = alloctp;
+	} else
+#endif
+	{
+		tp = (uint8_t *)txbuffer;
+	}
+
+#ifdef CONFIG_ESP32_SPIRAM
+	if (esp32_ptr_extram(rxbuffer)) {
+#  ifdef CONFIG_MM_KERNEL_HEAP
+		allocrp = kmm_malloc(total);
+#  elif defined(CONFIG_XTENSA_IMEM_USE_SEPARATE_HEAP)
+		allocrp = xtensa_imm_malloc(total);
+#  endif
+
+		DEBUGASSERT(allocrp != NULL);
+		rp = allocrp;
+	} else
+#endif
+	{
+		rp = (uint8_t *)rxbuffer;
+	}
+
+	if (tp == NULL) {
+		tp = rp;
+	}
+
+	dma_tx_desc = s_dma_txdesc[dma_desc_idx];
+	dma_rx_desc = s_dma_rxdesc[dma_desc_idx];
+
+	esp32_spi_reset_regbits(spi_slave_reg, SPI_TRANS_DONE_M);
+	esp32_spi_set_regbits(spi_slave_reg, SPI_INT_EN_M);
+
+	while (bytes != 0) {
+		putreg32(0, spi_dma_in_link_reg);
+		putreg32(0, spi_dma_out_link_reg);
+
+		esp32_spi_set_regbits(spi_slave_reg, SPI_SYNC_RESET_M);
+		esp32_spi_reset_regbits(spi_slave_reg, SPI_SYNC_RESET_M);
+
+		esp32_spi_set_regbits(spi_dma_conf_reg, SPI_DMA_RESET_MASK);
+		esp32_spi_reset_regbits(spi_dma_conf_reg, SPI_DMA_RESET_MASK);
+
+		n = esp32_dma_init(dma_tx_desc, SPI_DMADESC_NUM, tp, bytes);
+
+		regval  = VALUE_MASK((uintptr_t)dma_tx_desc, SPI_OUTLINK_ADDR);
+		regval |= SPI_OUTLINK_START_M;
+		putreg32(regval, spi_dma_out_link_reg);
+		putreg32((n * 8 - 1), spi_mosi_dlen_reg);
+		esp32_spi_set_regbits(spi_user_reg, SPI_USR_MOSI_M);
+
+		tp += n;
+
+		if (rp != NULL) {
+			esp32_dma_init(dma_rx_desc, SPI_DMADESC_NUM, rp, bytes);
+
+			regval  = VALUE_MASK((uintptr_t)dma_rx_desc, SPI_INLINK_ADDR);
+			regval |= SPI_INLINK_START_M;
+			putreg32(regval, spi_dma_in_link_reg);
+			putreg32((n * 8 - 1), spi_miso_dlen_reg);
+			esp32_spi_set_regbits(spi_user_reg, SPI_USR_MISO_M);
+
+			rp += n;
+		} else {
+			esp32_spi_reset_regbits(spi_user_reg, SPI_USR_MISO_M);
+		}
+
+		if (priv->config->flags & ESP32_SPI_IO_W) {
+			/* Wait until SPI TX FIFO is not empty */
+
+			while ((getreg32(spi_dma_rstatus) & SPI_DMA_TX_FIFO_EMPTY) != 0) {
+				;
+			}
+		}
+
+		esp32_spi_set_regbits(spi_cmd_reg, SPI_USR_M);
+
+		esp32_spi_sem_waitdone(priv);
+
+		bytes -= n;
+	}
+
+	esp32_spi_reset_regbits(spi_slave_reg, SPI_INT_EN_M);
+
+#ifdef CONFIG_ESP32_SPIRAM
+	if (allocrp) {
+		memcpy(rxbuffer, allocrp, total);
+#  ifdef CONFIG_MM_KERNEL_HEAP
+		kmm_free(allocrp);
+#  elif defined(CONFIG_XTENSA_IMEM_USE_SEPARATE_HEAP)
+		xtensa_imm_free(allocrp);
+#  endif
+	}
+#endif
+
+#ifdef CONFIG_ESP32_SPIRAM
+	if (alloctp) {
+#  ifdef CONFIG_MM_KERNEL_HEAP
+		kmm_free(alloctp);
+#  elif defined(CONFIG_XTENSA_IMEM_USE_SEPARATE_HEAP)
+		xtensa_imm_free(alloctp);
+#  endif
+	}
+#endif
+}
+
+/****************************************************************************
+ * Name: esp32_spi_poll_send
+ *
+ * Description:
+ *   Send one word on SPI by polling mode.
+ *
+ * Input Parameters:
+ *   priv - SPI private state data
+ *   wd   - The word to send. The size of the data is determined by the
+ *          number of bits selected for the SPI interface.
+ *
+ * Returned Value:
+ *   Received value.
+ *
+ ****************************************************************************/
+
+static uint32_t esp32_spi_poll_send(struct esp32_spi_priv_s *priv,
+                                    uint32_t wd)
+{
+	uint32_t val;
+	const uintptr_t spi_miso_dlen_reg = SPI_MISO_DLEN_REG(priv->config->id);
+	const uintptr_t spi_mosi_dlen_reg = SPI_MOSI_DLEN_REG(priv->config->id);
+	const uintptr_t spi_w0_reg = SPI_W0_REG(priv->config->id);
+	const uintptr_t spi_cmd_reg = SPI_CMD_REG(priv->config->id);
+
+	putreg32((priv->nbits - 1), spi_miso_dlen_reg);
+	putreg32((priv->nbits - 1), spi_mosi_dlen_reg);
+
+	putreg32(wd, spi_w0_reg);
+
+	esp32_spi_set_regbits(spi_cmd_reg, SPI_USR_M);
+
+	while ((getreg32(spi_cmd_reg) & SPI_USR_M) != 0) {
+		;
+	}
+
+	val = getreg32(spi_w0_reg);
+
+	spiinfo("send=0x%" PRIx32 " and recv=0x%" PRIx32 "\n", wd, val);
+
+	return val;
+}
+
+/****************************************************************************
+ * Name: esp32_spi_send
+ *
+ * Description:
+ *   Send one word on SPI.
+ *
+ * Input Parameters:
+ *   dev - Device-specific state data
+ *   wd  - The word to send. The size of the data is determined by the
+ *         number of bits selected for the SPI interface.
+ *
+ * Returned Value:
+ *   Received value.
+ *
+ ****************************************************************************/
+
+static uint32_t esp32_spi_send(struct spi_dev_s *dev, uint32_t wd)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	return esp32_spi_poll_send(priv, wd);
+}
+
+/****************************************************************************
+ * Name: esp32_spi_poll_exchange
+ *
+ * Description:
+ *   Exchange a block of data from SPI.
+ *
+ * Input Parameters:
+ *   priv     - SPI private state data
+ *   txbuffer - A pointer to the buffer of data to be sent
+ *   rxbuffer - A pointer to the buffer in which to receive data
+ *   nwords   - The length of data that to be exchanged in units of words.
+ *              The wordsize is determined by the number of bits-per-word
+ *              selected for the SPI interface. If nbits <= 8, the data is
+ *              packed into uint8_t's; if nbits >8, the data is packed into
+ *              uint16_t's
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_poll_exchange(struct esp32_spi_priv_s *priv,
+                                    const void *txbuffer,
+                                    void *rxbuffer,
+                                    size_t nwords)
+{
+	const uintptr_t spi_user_reg = SPI_USER_REG(priv->config->id);
+	const uintptr_t spi_w0_reg = SPI_W0_REG(priv->config->id);
+	const uintptr_t spi_cmd_reg = SPI_CMD_REG(priv->config->id);
+	const uintptr_t spi_miso_dlen_reg = SPI_MISO_DLEN_REG(priv->config->id);
+	const uintptr_t spi_mosi_dlen_reg = SPI_MOSI_DLEN_REG(priv->config->id);
+	const uint32_t total_bytes = nwords * (priv->nbits / 8);
+	uintptr_t bytes_remaining = total_bytes;
+	uint8_t *tp = (uint8_t *)txbuffer;
+	uint8_t *rp = (uint8_t *)rxbuffer;
+
+	while (bytes_remaining != 0) {
+		/* Initialize data_buf_reg with the address of the first data buffer
+		 * register (W0).
+		 */
+
+		uintptr_t data_buf_reg = spi_w0_reg;
+		uint32_t transfer_size = MIN(SPI_MAX_BUF_SIZE, bytes_remaining);
+
+		/* Write data words to data buffer registers.
+		 * SPI peripheral contains 16 registers (W0 - W15).
+		 */
+
+		for (int i = 0; i < transfer_size; i += sizeof(uint32_t)) {
+			uint32_t w_wd = UINT32_MAX;
+			uint32_t chunk = transfer_size - i;
+
+			if (chunk > sizeof(uint32_t)) {
+				chunk = sizeof(uint32_t);
+			}
+
+			if (tp != NULL) {
+				w_wd = 0; /* Clear padding */
+				memcpy(&w_wd, tp, chunk);
+
+				tp += chunk;
+			}
+
+			putreg32(w_wd, data_buf_reg);
+
+			spiinfo("send=0x%" PRIx32 " data_reg=0x%" PRIxPTR "\n",
+			        w_wd, data_buf_reg);
+
+			/* Update data_buf_reg to point to the next data buffer register. */
+
+			data_buf_reg += sizeof(uintptr_t);
+		}
+
+		esp32_spi_set_regbits(spi_user_reg, SPI_USR_MOSI_M);
+
+		if (rp == NULL) {
+			esp32_spi_reset_regbits(spi_user_reg, SPI_USR_MISO_M);
+		} else {
+			esp32_spi_set_regbits(spi_user_reg, SPI_USR_MISO_M);
+		}
+
+		putreg32((transfer_size * 8) - 1, spi_mosi_dlen_reg);
+		putreg32((transfer_size * 8) - 1, spi_miso_dlen_reg);
+
+		/* Trigger start of user-defined transaction for master. */
+
+		esp32_spi_set_regbits(spi_cmd_reg, SPI_USR_M);
+
+		/* Wait for the user-defined transaction to finish. */
+
+		while ((getreg32(spi_cmd_reg) & SPI_USR_M) != 0) {
+			;
+		}
+
+		if (rp != NULL) {
+			/* Set data_buf_reg with the address of the first data buffer
+			 * register (W0).
+			 */
+
+			data_buf_reg = spi_w0_reg;
+
+			/* Read received data words from SPI data buffer registers. */
+
+			for (int i = 0; i < transfer_size; i += sizeof(uint32_t)) {
+				uint32_t r_wd = getreg32(data_buf_reg);
+				uint32_t chunk = transfer_size - i;
+
+				if (chunk > sizeof(uint32_t)) {
+					chunk = sizeof(uint32_t);
+				}
+
+				spiinfo("recv=0x%" PRIx32 " data_reg=0x%" PRIxPTR "\n",
+				        r_wd, data_buf_reg);
+
+				if (rp != NULL) {
+					memcpy(rp, &r_wd, chunk);
+
+					rp += chunk;
+				}
+
+				/* Update data_buf_reg to point to the next data buffer
+				 * register.
+				 */
+
+				data_buf_reg += sizeof(uintptr_t);
+			}
+		}
+
+		bytes_remaining -= transfer_size;
+	}
+}
+
+/****************************************************************************
+ * Name: esp32_spi_exchange
+ *
+ * Description:
+ *   Exchange a block of data from SPI.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *   txbuffer - A pointer to the buffer of data to be sent
+ *   rxbuffer - A pointer to the buffer in which to receive data
+ *   nwords   - The length of data that to be exchanged in units of words.
+ *              The wordsize is determined by the number of bits-per-word
+ *              selected for the SPI interface. If nbits <= 8, the data is
+ *              packed into uint8_t's; if nbits >8, the data is packed into
+ *              uint16_t's
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_exchange(struct spi_dev_s *dev,
+                               const void *txbuffer,
+                               void *rxbuffer,
+                               size_t nwords)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+#ifdef CONFIG_ESP32_SPI_DMATHRESHOLD
+	size_t thld = CONFIG_ESP32_SPI_DMATHRESHOLD;
+#else
+	size_t thld = 0;
+#endif
+
+	if (priv->config->use_dma && nwords > thld) {
+		esp32_spi_dma_exchange(priv, txbuffer, rxbuffer, nwords);
+	} else {
+		esp32_spi_poll_exchange(priv, txbuffer, rxbuffer, nwords);
+	}
+}
+
+#ifndef CONFIG_SPI_EXCHANGE
+
+/****************************************************************************
+ * Name: esp32_spi_sndblock
+ *
+ * Description:
+ *   Send a block of data on SPI.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *   txbuffer - A pointer to the buffer of data to be sent
+ *   nwords   - The length of data to send from the buffer in number of
+ *              words. The wordsize is determined by the number of
+ *              bits-per-word selected for the SPI interface. If nbits <= 8,
+ *              the data is packed into uint8_t's; if nbits >8, the data is
+ *              packed into uint16_t's
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_sndblock(struct spi_dev_s *dev,
+                               const void *txbuffer,
+                               size_t nwords)
+{
+	spiinfo("txbuffer=%p nwords=%d\n", txbuffer, nwords);
+
+	esp32_spi_exchange(dev, txbuffer, NULL, nwords);
+}
+
+/****************************************************************************
+ * Name: esp32_spi_recvblock
+ *
+ * Description:
+ *   Receive a block of data from SPI.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *   rxbuffer - A pointer to the buffer in which to receive data
+ *   nwords   - The length of data that can be received in the buffer in
+ *              number of words. The wordsize is determined by the number of
+ *              bits-per-word selected for the SPI interface. If nbits <= 8,
+ *              the data is packed into uint8_t's; if nbits >8, the data is
+ *              packed into uint16_t's
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_recvblock(struct spi_dev_s *dev,
+                                void *rxbuffer,
+                                size_t nwords)
+{
+	spiinfo("rxbuffer=%p nwords=%d\n", rxbuffer, nwords);
+
+	esp32_spi_exchange(dev, NULL, rxbuffer, nwords);
+}
+#endif
+
+/****************************************************************************
+ * Name: esp32_spi_trigger
+ *
+ * Description:
+ *   Trigger a previously configured DMA transfer.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *
+ * Returned Value:
+ *   OK       - Trigger was fired
+ *   -ENOSYS  - Trigger not fired due to lack of DMA or low level support
+ *   -EIO     - Trigger not fired because not previously primed
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SPI_TRIGGER
+static int esp32_spi_trigger(struct spi_dev_s *dev)
+{
+	return -ENOSYS;
+}
+#endif
+
+/****************************************************************************
+ * Name: esp32_spi_init
+ *
+ * Description:
+ *   Initialize ESP32 SPI hardware interface
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void esp32_spi_init(struct spi_dev_s *dev)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+	const struct esp32_spi_config_s *config = priv->config;
+	uint32_t regval;
+
+	esp32_gpiowrite(config->cs_pin, 1);
+	esp32_gpiowrite(config->clk_pin, 1);
+
+	if (config->flags & ESP32_SPI_IO_W) {
+		esp32_gpiowrite(config->mosi_pin, 1);
+	}
+
+	if (config->flags & ESP32_SPI_IO_R) {
+		esp32_gpiowrite(config->miso_pin, 1);
+	}
+
+#ifdef CONFIG_ESP32_SPI_SWCS
+	esp32_configgpio(config->cs_pin, OUTPUT);
+	esp32_gpio_matrix_out(config->cs_pin, SIG_GPIO_OUT_IDX, 0, 0);
+#endif
+
+	if (esp32_spi_iomux(priv)) {
+#ifndef CONFIG_ESP32_SPI_SWCS
+		esp32_configgpio(config->cs_pin, OUTPUT_FUNCTION_2);
+		esp32_gpio_matrix_out(config->cs_pin, SIG_GPIO_OUT_IDX, 0, 0);
+#endif
+
+		esp32_configgpio(config->clk_pin, OUTPUT_FUNCTION_2);
+		esp32_gpio_matrix_out(config->clk_pin, SIG_GPIO_OUT_IDX, 0, 0);
+
+		if (config->flags & ESP32_SPI_IO_W) {
+			esp32_configgpio(config->mosi_pin, OUTPUT_FUNCTION_2);
+			esp32_gpio_matrix_out(config->mosi_pin, SIG_GPIO_OUT_IDX, 0, 0);
+		}
+
+		if (config->flags & ESP32_SPI_IO_R) {
+			esp32_configgpio(config->miso_pin, INPUT_FUNCTION_2 | PULLUP);
+			esp32_gpio_matrix_out(config->miso_pin, SIG_GPIO_OUT_IDX, 0, 0);
+		}
+	} else {
+#ifndef CONFIG_ESP32_SPI_SWCS
+		esp32_configgpio(config->cs_pin, OUTPUT_FUNCTION_3);
+		esp32_gpio_matrix_out(config->cs_pin, config->cs_outsig, 0, 0);
+#endif
+
+		esp32_configgpio(config->clk_pin, OUTPUT_FUNCTION_3);
+		esp32_gpio_matrix_out(config->clk_pin, config->clk_outsig, 0, 0);
+
+		if (config->flags & ESP32_SPI_IO_W) {
+			esp32_configgpio(config->mosi_pin, OUTPUT_FUNCTION_3);
+			esp32_gpio_matrix_out(config->mosi_pin, config->mosi_outsig, 0, 0);
+		}
+
+		if (config->flags & ESP32_SPI_IO_R) {
+			esp32_configgpio(config->miso_pin, INPUT_FUNCTION_3 | PULLUP);
+			esp32_gpio_matrix_in(config->miso_pin, config->miso_insig, 0);
+		}
+	}
+
+	modifyreg32(DPORT_PERIP_CLK_EN_REG, 0, config->clk_bit);
+	modifyreg32(DPORT_PERIP_RST_EN_REG, config->rst_bit, 0);
+
+	regval = SPI_DOUTDIN_M | SPI_USR_MISO_M | SPI_USR_MOSI_M | SPI_CS_HOLD_M;
+	putreg32(regval, SPI_USER_REG(config->id));
+	putreg32(0, SPI_USER1_REG(config->id));
+	putreg32(0, SPI_SLAVE_REG(config->id));
+	putreg32(SPI_CS1_DIS_M | SPI_CS2_DIS_M, SPI_PIN_REG(config->id));
+
+#ifdef CONFIG_ESP32_SPI_SWCS
+	esp32_spi_set_regbits(SPI_PIN_REG(config->id), SPI_CS0_DIS_M);
+#endif
+
+	putreg32(0, SPI_CTRL_REG(config->id));
+	putreg32(VALUE_MASK(0, SPI_HOLD_TIME), SPI_CTRL2_REG(config->id));
+
+	if (config->use_dma) {
+		modifyreg32(DPORT_PERIP_CLK_EN_REG, 0, config->dma_clk_bit);
+		modifyreg32(DPORT_PERIP_RST_EN_REG, config->dma_rst_bit, 0);
+
+		modifyreg32(DPORT_SPI_DMA_CHAN_SEL_REG, 0,
+		            (config->dma_chan << config->dma_chan_s));
+
+		regval = SPI_OUT_DATA_BURST_EN_M |
+		         SPI_INDSCR_BURST_EN_M |
+		         SPI_OUTDSCR_BURST_EN_M;
+		putreg32(regval, SPI_DMA_CONF_REG(config->id));
+	}
+
+	esp32_spi_setfrequency(dev, config->clk_freq);
+	esp32_spi_setbits(dev, 8);
+	esp32_spi_setmode(dev, config->mode);
+}
+
+/****************************************************************************
+ * Name: esp32_spi_deinit
+ *
+ * Description:
+ *   Deinitialize ESP32 SPI hardware interface
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void esp32_spi_deinit(struct spi_dev_s *dev)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	if (priv->config->use_dma) {
+		modifyreg32(DPORT_PERIP_RST_EN_REG, 0, priv->config->dma_rst_bit);
+		modifyreg32(DPORT_PERIP_CLK_EN_REG, priv->config->dma_clk_bit, 0);
+	}
+
+	modifyreg32(DPORT_PERIP_RST_EN_REG, 0, priv->config->rst_bit);
+	modifyreg32(DPORT_PERIP_CLK_EN_REG, priv->config->clk_bit, 0);
+
+	priv->frequency = 0;
+	priv->actual    = 0;
+	priv->mode      = SPIDEV_MODE0;
+	priv->nbits     = 0;
+}
+
+/****************************************************************************
+ * Name: esp32_spi_interrupt
+ *
+ * Description:
+ *   Common SPI DMA interrupt handler.
+ *
+ * Input Parameters:
+ *   irq     - Number of the IRQ that generated the interrupt
+ *   context - Interrupt register state save info
+ *   arg     - SPI controller private data
+ *
+ * Returned Value:
+ *   Standard interrupt return value.
+ *
+ ****************************************************************************/
+
+static int esp32_spi_interrupt(int irq, void *context, void *arg)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)arg;
+
+	esp32_spi_reset_regbits(SPI_SLAVE_REG(priv->config->id), SPI_TRANS_DONE_M);
+	nxsem_post(&priv->sem_isr);
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: esp32_spibus_initialize
+ *
+ * Description:
+ *   Initialize the selected SPI bus.
+ *
+ * Input Parameters:
+ *   port     - Port number (for hardware that has multiple SPI interfaces)
+ *
+ * Returned Value:
+ *   Valid SPI device structure reference on success; NULL on failure.
+ *
+ ****************************************************************************/
+
+struct spi_dev_s *esp32_spibus_initialize(int port)
+{
+	int ret;
+	struct spi_dev_s *spi_dev;
+	struct esp32_spi_priv_s *priv;
 
 	switch (port) {
-
-	case HSPI_PORT: {
-		priv = &g_spi2dev;
-		periph_module_enable(PERIPH_HSPI_MODULE);
-	}
-	break;
-
-	case VSPI_PORT: {
-		priv = &g_spi3dev;
-		periph_module_enable(PERIPH_VSPI_MODULE);
-	}
-	break;
-
+#ifdef CONFIG_ESP32_SPI2
+	case ESP32_SPI2:
+		priv = &esp32_spi2_priv;
+		break;
+#endif
+#ifdef CONFIG_ESP32_SPI3
+	case ESP32_SPI3:
+		priv = &esp32_spi3_priv;
+		break;
+#endif
 	default:
-		spiinfo("[SPI] unsupport spi port %d!\n", port);
 		return NULL;
 	}
 
-	if (0 == priv->initiallized) {
-		priv->port = port;
+	spi_dev = (struct spi_dev_s *)priv;
 
-		esp32_spi_pins_initialize(priv);
-
-		priv->max_transfer_sz = SPI_MAX_NODMA_FRAME_LEN;
-		if (0 < priv->dma_chan) {
-			if (OK == spicommon_dma_chan_claim(priv->dma_chan)) {
-#if !defined(CONFIG_SPI_DMA_MAX_DATALEN) || (CONFIG_SPI_DMA_MAX_DATALEN < SPI_MAX_DMA_FRAME_LEN || CONFIG_SPI_DMA_MAX_DATALEN > SPI_MAX_DATA_LEN)
-				priv->max_transfer_sz = SPI_MAX_DMA_FRAME_LEN;
-#else
-				priv->max_transfer_sz = CONFIG_SPI_DMA_MAX_DATALEN;
-#endif
-
-				DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, priv->dma_chan, ((priv->port - 1) * 2));
-
-				spiinfo("[SPI] %d DMA channel %d; max: %d; reg:%08x\n", priv->port, priv->dma_chan, priv->max_transfer_sz, DPORT_READ_PERI_REG(DPORT_SPI_DMA_CHAN_SEL_REG));
-			}
-		}
-#ifndef CONFIG_SPI_POLLWAIT
-		sem_init(&priv->xfrsem, 0, 0);
-		sem_setprotocol(&priv->xfrsem, SEM_PRIO_NONE);
-#endif
-
-#ifndef CONFIG_SPI_OWNBUS
-		sem_init(&priv->exclsem, 0, 1);
-#endif
-
-		priv->isr_handler = &spi_irq_handler;
-		esp32_spi_isr_initialize(priv);
-
-		//Reset DMA
-		priv->hw->dma_conf.val |= SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST;
-		priv->hw->dma_out_link.start = 0;
-		priv->hw->dma_in_link.start = 0;
-		priv->hw->dma_conf.val &= ~(SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST);
-
-		//Reset timing
-		priv->hw->ctrl2.val = 0;
-
-		//master use all 64 bytes of the buffer
-		priv->hw->user.usr_miso_highpart = 0;
-		priv->hw->user.usr_mosi_highpart = 0;
-
-		//Disable unneeded ints
-		esp32_spi_Disable_ints(priv);
-		esp32_spi_Clear_ints(priv);
-
-#ifdef CONFIG_ESP32_SPI_CS
-		spi_select_device(priv, CONFIG_ESP32_SPI_CS, &def_dev_config);
-#else
-		spi_select_device(priv, 0, &def_dev_config);
-#endif
-
-		/* Initialize a semaphore for spi dma */
-		sem_init((sem_t *)&g_spi_dma.dma_lock, 0, 1);
-		priv->initiallized = true;
+	nxmutex_lock(&priv->lock);
+	if (priv->refs != 0) {
+		priv->refs++;
+		nxmutex_unlock(&priv->lock);
+		return spi_dev;
 	}
 
-	return (struct spi_dev_s *)priv;
+	if (priv->config->use_dma) {
+		/* Set up to receive peripheral interrupts on the current CPU */
+
+		priv->cpu = this_cpu();
+		priv->cpuint = esp32_setup_irq(priv->cpu, priv->config->periph,
+		                               1, ESP32_CPUINT_LEVEL);
+		if (priv->cpuint < 0) {
+			nxmutex_unlock(&priv->lock);
+			return NULL;
+		}
+
+		ret = irq_attach(priv->config->irq, esp32_spi_interrupt, priv);
+		if (ret != OK) {
+			esp32_teardown_irq(priv->cpu,
+			                   priv->config->periph,
+			                   priv->cpuint);
+			nxmutex_unlock(&priv->lock);
+			return NULL;
+		}
+
+		up_enable_irq(priv->config->irq);
+	}
+
+	esp32_spi_init(spi_dev);
+	priv->refs++;
+
+	nxmutex_unlock(&priv->lock);
+	return spi_dev;
 }
+
+/****************************************************************************
+ * Name: esp32_spibus_uninitialize
+ *
+ * Description:
+ *   Uninitialize an SPI bus.
+ *
+ * Input Parameters:
+ *   dev      - Device-specific state data
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success. Otherwise -1 (ERROR).
+ *
+ ****************************************************************************/
+
+int esp32_spibus_uninitialize(struct spi_dev_s *dev)
+{
+	struct esp32_spi_priv_s *priv = (struct esp32_spi_priv_s *)dev;
+
+	DEBUGASSERT(dev);
+
+	if (priv->refs == 0) {
+		return ERROR;
+	}
+
+	nxmutex_lock(&priv->lock);
+	if (--priv->refs != 0) {
+		nxmutex_unlock(&priv->lock);
+		return OK;
+	}
+
+	if (priv->config->use_dma) {
+		up_disable_irq(priv->config->irq);
+		esp32_teardown_irq(priv->cpu,
+		                   priv->config->periph,
+		                   priv->cpuint);
+	}
+
+	esp32_spi_deinit(dev);
+	nxmutex_unlock(&priv->lock);
+
+	return OK;
+}
+
+#endif /* CONFIG_ESP32_SPI */

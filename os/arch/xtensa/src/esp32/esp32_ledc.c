@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,600 +16,722 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * arch/xtensa/src/esp32/esp32_ledc.c
  *
- *   Copyright (C) 2011-2012, 2014 Gregory Nutt. All rights reserved.
- *   Authors: Gregory Nutt <gnutt@nuttx.org>
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- *
- */
+ ****************************************************************************/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <tinyara/config.h>
 
-#include <sys/types.h>
-#include <assert.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/param.h>
 #include <debug.h>
 #include <errno.h>
 
-#include <arch/chip/ledc_struct.h>
-#include <tinyara/ledc.h>
-#include <tinyara/kmalloc.h>
-#include <tinyara/irq.h>
-
-#include "chip/esp32_ledc.h"
-#include "periph_ctrl.h"
-#include "chip/esp32_soc.h"
-#include "chip/esp32_gpio_sigmap.h"
-#include "chip/esp32_iomux.h"
-#include "chip/esp32_gpio.h"
-#include "esp32_ledc.h"
+#include "esp32_clockconfig.h"
 #include "esp32_gpio.h"
-#include "rom/esp32_gpio.h"
+#include "esp32_ledc.h"
 
-#define LEDC_HS_TIMER          LEDC_TIMER_0
-#define LEDC_HS_MODE           LEDC_HIGH_SPEED_MODE
-#define LEDC_HS_CH0_GPIO       (18)
-#define LEDC_HS_CH0_CHANNEL    LEDC_CHANNEL_0
-#define LEDC_HS_CH1_GPIO       (19)
-#define LEDC_HS_CH1_CHANNEL    LEDC_CHANNEL_1
+#include "xtensa.h"
+#include "hardware/esp32_ledc.h"
+#include "hardware/esp32_dport.h"
+#include "hardware/esp32_gpio_sigmap.h"
 
-#define LEDC_LS_TIMER          LEDC_TIMER_1
-#define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
-#define LEDC_LS_CH2_GPIO       (4)
-#define LEDC_LS_CH2_CHANNEL    LEDC_CHANNEL_2
-#define LEDC_LS_CH3_GPIO       (5)
-#define LEDC_LS_CH3_CHANNEL    LEDC_CHANNEL_3
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
-#define LEDC_TEST_CH_NUM       (4)
-#define LEDC_TEST_DUTY         (4000)
-#define LEDC_TEST_FADE_TIME    (3000)
+/* LEDC total timers */
+
+#define LEDC_TIMERS               (4)
+
+/* LEDC total channels */
+
+#if defined(CONFIG_PWM_NCHANNELS) && CONFIG_PWM_NCHANNELS > 1
+#  define LEDC_CHANNELS           (8)
+#else
+#  define LEDC_CHANNELS           (4)
+#endif
+
+/* LEDC timer0 channels and offset */
+
+#ifdef CONFIG_ESP32_LEDC_TIM0
+#  if defined(CONFIG_PWM_NCHANNELS) && CONFIG_PWM_NCHANNELS > 1
+#    define LEDC_TIM0_CHANS       CONFIG_ESP32_LEDC_TIM0_CHANNELS
+#  else
+#    define LEDC_TIM0_CHANS       (1)
+#  endif
+#    define LEDC_TIM0_CHANS_OFF   (0)
+#endif
+
+/* LEDC timer1 channels and offset */
+
+#ifdef CONFIG_ESP32_LEDC_TIM1
+#  if defined(CONFIG_PWM_NCHANNELS) && CONFIG_PWM_NCHANNELS > 1
+#    define LEDC_TIM1_CHANS       CONFIG_ESP32_LEDC_TIM1_CHANNELS
+#  else
+#    define LEDC_TIM1_CHANS       (1)
+#  endif
+#  define LEDC_TIM1_CHANS_OFF     (LEDC_TIM0_CHANS_OFF + LEDC_TIM0_CHANS)
+#endif
+
+/* LEDC timer2 channels and offset */
+
+#ifdef CONFIG_ESP32_LEDC_TIM2
+#  if defined(CONFIG_PWM_NCHANNELS) && CONFIG_PWM_NCHANNELS > 1
+#    define LEDC_TIM2_CHANS       CONFIG_ESP32_LEDC_TIM2_CHANNELS
+#  else
+#    define LEDC_TIM2_CHANS       (1)
+#  endif
+
+#  define LEDC_TIM2_CHANS_OFF     (LEDC_TIM1_CHANS_OFF + LEDC_TIM1_CHANS)
+#endif
+
+/* LEDC timer3 channels and offset */
+
+#ifdef CONFIG_ESP32_LEDC_TIM3
+#  if defined(CONFIG_PWM_NCHANNELS) && CONFIG_PWM_NCHANNELS > 1
+#    define LEDC_TIM3_CHANS       CONFIG_ESP32_LEDC_TIM3_CHANNELS
+#  else
+#    define LEDC_TIM3_CHANS       (1)
+#  endif
+
+#  define LEDC_TIM3_CHANS_OFF     (LEDC_TIM2_CHANS_OFF + LEDC_TIM2_CHANS)
+#endif
+
+/* LEDC clock resource */
+
+#define LEDC_CLK_RES              (1)         /* APB clock */
+
+/* LEDC timer max reload */
+
+#define LEDC_RELOAD_MAX           (1048576)   /* 2^20 */
+
+/* LEDC timer max clock divider parameter */
+
+#define LEDC_CLKDIV_MAX           (1024)      /* 2^10 */
+
+/* LEDC timer registers mapping */
+
+#define LEDC_TIMER_REG(r, n)      ((r) + (n) * (LEDC_LSTIMER1_CONF_REG - \
+                                                LEDC_LSTIMER0_CONF_REG))
+
+/* LEDC timer channel registers mapping */
+
+#define setbits(bs, a)            modifyreg32(a, 0, bs)
+#define resetbits(bs, a)          modifyreg32(a, bs, 0)
+
+#define LEDC_CHAN_REG(r, n)       ((r) + (n) * (LEDC_LSCH1_CONF0_REG - \
+                                                LEDC_LSCH0_CONF0_REG))
+
+#define SET_TIMER_BITS(t, r, b)   setbits(b, LEDC_TIMER_REG(r, (t)->num));
+#define SET_TIMER_REG(t, r, v)    putreg32(v, LEDC_TIMER_REG(r, (t)->num));
+
+#define SET_CHAN_BITS(c, r, b)    setbits(b, LEDC_CHAN_REG(r, (c)->num));
+#define SET_CHAN_REG(c, r, v)     putreg32(v, LEDC_CHAN_REG(r, (c)->num));
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-struct esp32_ledctimer_s {
-	FAR const struct ledc_ops_s *ops;
-	ledc_timer_config_t *tmrcfg;
-	ledc_channel_config_t *chlcfg;
+
+/* LEDC timer channel configuration */
+
+struct esp32_ledc_chan_s {
+	const uint8_t num;                    /* Timer channel ID */
+	const uint8_t pin;                    /* Timer channel GPIO pin number */
+
+	uint16_t duty;                        /* Timer channel current duty */
+};
+
+/* This structure represents the state of one LEDC timer */
+
+struct esp32_ledc_s {
+	const struct pwm_ops_s *ops;          /* PWM operations */
+
+	const uint8_t num;                    /* Timer ID */
+
+	const uint8_t channels;               /* Timer channels number */
+	struct esp32_ledc_chan_s *chans;      /* Timer channels pointer */
+
+	uint32_t frequency;                   /* Timer current frequency */
+	uint32_t reload;                      /* Timer current reload */
 };
 
 /****************************************************************************
- * Private Functions
+ * Private Function Prototypes
  ****************************************************************************/
-typedef struct {
-	uint16_t speed_mode;
-	uint16_t direction;
-	uint32_t target_duty;
-	int cycle_num;
-	int scale;
-	ledc_fade_mode_t mode;
-} ledc_fade_t;
 
-static ledc_fade_t *s_ledc_fade_rec[LEDC_SPEED_MODE_MAX][LEDC_CHANNEL_MAX];
+static int pwm_setup(struct pwm_lowerhalf_s *dev);
+static int pwm_shutdown(struct pwm_lowerhalf_s *dev);
+static int pwm_start(struct pwm_lowerhalf_s *dev,
+                     const struct pwm_info_s *info);
+static int pwm_stop(struct pwm_lowerhalf_s *dev);
+static int pwm_ioctl(struct pwm_lowerhalf_s *dev, int cmd,
+                     unsigned long arg);
 
-#define LEDC_VAL_NO_CHANGE        (-1)
-#define LEDC_STEP_NUM_MAX         (1023)
-#define LEDC_DUTY_DECIMAL_BIT_NUM (4)
-#define LEDC_HPOINT_VAL_MAX       (LEDC_HPOINT_HSCH1_V)
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
-static int ledc_fade_channel_init(ledc_mode_t speed_mode, ledc_channel_t channel)
+/* LEDC PWM operations */
+
+static const struct pwm_ops_s g_pwmops =
 {
-	if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-		s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *)kmm_calloc(1, sizeof(ledc_fade_t));
-	}
-	if (s_ledc_fade_rec[speed_mode][channel]) {
+  .setup       = pwm_setup,
+  .shutdown    = pwm_shutdown,
+  .start       = pwm_start,
+  .stop        = pwm_stop,
+  .ioctl       = pwm_ioctl
+};
 
-		return OK;
-	} else {
-		return -1;
-	}
-}
+/* LEDC channels table */
 
-static int ledc_fade_channel_deinit(ledc_mode_t speed_mode, ledc_channel_t channel)
+static struct esp32_ledc_chan_s g_ledc_chans[LEDC_CHANNELS] =
 {
-	if (s_ledc_fade_rec[speed_mode][channel]) {
-		kmm_free(s_ledc_fade_rec[speed_mode][channel]);
-		s_ledc_fade_rec[speed_mode][channel] = NULL;
-	}
-	return OK;
-}
+  {
+    .num       = 0,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL0_PIN
+  },
 
-static void ledc_ls_timer_update(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
+  {
+    .num       = 1,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL1_PIN
+  },
+
+  {
+    .num       = 2,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL2_PIN
+  },
+
+  {
+    .num       = 3,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL3_PIN
+  },
+
+#if LEDC_CHANNELS > 4
+  {
+    .num       = 4,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL4_PIN
+  },
+
+  {
+    .num       = 5,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL5_PIN
+  },
+
+  {
+    .num       = 6,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL6_PIN
+  },
+
+  {
+    .num       = 7,
+    .pin       = CONFIG_ESP32_LEDC_CHANNEL7_PIN
+  }
+#endif
+};
+
+/* LEDC timer0 private data */
+
+#ifdef CONFIG_ESP32_LEDC_TIM0
+static struct esp32_ledc_s g_pwm0dev =
 {
-	if (speed_mode == LEDC_LOW_SPEED_MODE) {
-		LEDC.timer_group[speed_mode].timer[timer_sel].conf.low_speed_update = 1;
-	}
-}
+  .ops         = &g_pwmops,
+  .num         = 0,
+  .channels    = LEDC_TIM0_CHANS,
+  .chans       = &g_ledc_chans[LEDC_TIM0_CHANS_OFF]
+};
+#endif /* CONFIG_ESP32_LEDC_TIM0 */
 
-static IRAM_ATTR void ledc_ls_channel_update(ledc_mode_t speed_mode, ledc_channel_t channel_num)
+/* LEDC timer1 private data */
+
+#ifdef CONFIG_ESP32_LEDC_TIM1
+static struct esp32_ledc_s g_pwm1dev =
 {
-	if (speed_mode == LEDC_LOW_SPEED_MODE) {
-		LEDC.channel_group[speed_mode].channel[channel_num].conf0.low_speed_update = 1;
-	}
-}
+  .ops         = &g_pwmops,
+  .num         = 1,
+  .channels    = LEDC_TIM1_CHANS,
+  .chans       = &g_ledc_chans[LEDC_TIM1_CHANS_OFF]
+};
+#endif /* CONFIG_ESP32_LEDC_TIM1 */
 
-static int ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel, ledc_intr_type_t type)
+/* LEDC timer2 private data */
+
+#ifdef CONFIG_ESP32_LEDC_TIM2
+static struct esp32_ledc_s g_pwm2dev =
 {
-	uint32_t value;
-	uint32_t intr_type = type;
-	value = LEDC.int_ena.val;
-	uint8_t int_en_base = LEDC_DUTY_CHNG_END_HSCH0_INT_ENA_S;
-	if (speed_mode == LEDC_LOW_SPEED_MODE) {
-		int_en_base = LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
-	}
-	if (intr_type == LEDC_INTR_FADE_END) {
-		LEDC.int_ena.val = value | BIT(int_en_base + channel);
-	} else {
-		LEDC.int_ena.val = (value & (~(BIT(int_en_base + channel))));
-	}
-	return OK;
-}
+  .ops         = &g_pwmops,
+  .num         = 2,
+  .channels    = LEDC_TIM2_CHANS,
+  .chans       = &g_ledc_chans[LEDC_TIM2_CHANS_OFF]
+};
+#endif /* CONFIG_ESP32_LEDC_TIM2 */
 
-static int ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
+/* LEDC timer3 private data */
+
+#ifdef CONFIG_ESP32_LEDC_TIM3
+static struct esp32_ledc_s g_pwm3dev =
 {
-	// The arguments are checked before internally calling this function.
-	int timer_sel = LEDC.channel_group[speed_mode].channel[channel].conf0.timer_sel;
-	int max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution));
-	return max_duty;
-}
+  .ops         = &g_pwmops,
+  .num         = 3,
+  .channels    = LEDC_TIM3_CHANS,
+  .chans       = &g_ledc_chans[LEDC_TIM3_CHANS_OFF]
+};
+#endif /* CONFIG_ESP32_LEDC_TIM3 */
 
-int ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src)
+/* Clock reference count */
+
+static uint32_t g_clk_ref;
+
+/****************************************************************************
+ * Private functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ledc_enable_clk
+ *
+ * Description:
+ *   Enable LEDC clock.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void ledc_enable_clk(void)
 {
-	LEDC.timer_group[speed_mode].timer[timer_sel].conf.clock_divider = clock_divider;
-	LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
-	LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution = duty_resolution;
-	ledc_ls_timer_update(speed_mode, timer_sel);
-	return OK;
-}
+	irqstate_t flags;
 
-static IRAM_ATTR int ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel_num, int hpoint_val, int duty_val, uint32_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
-{
-	if (hpoint_val >= 0) {
-		LEDC.channel_group[speed_mode].channel[channel_num].hpoint.hpoint = hpoint_val & LEDC_HPOINT_HSCH1_V;
-	}
-	if (duty_val >= 0) {
-		LEDC.channel_group[speed_mode].channel[channel_num].duty.duty = duty_val;
-	}
-	LEDC.channel_group[speed_mode].channel[channel_num].conf1.val = ((duty_direction & LEDC_DUTY_INC_HSCH0_V) << LEDC_DUTY_INC_HSCH0_S) | ((duty_num & LEDC_DUTY_NUM_HSCH0_V) << LEDC_DUTY_NUM_HSCH0_S) | ((duty_cycle & LEDC_DUTY_CYCLE_HSCH0_V) << LEDC_DUTY_CYCLE_HSCH0_S) | ((duty_scale & LEDC_DUTY_SCALE_HSCH0_V) << LEDC_DUTY_SCALE_HSCH0_S);
-	ledc_ls_channel_update(speed_mode, channel_num);
-	return OK;
-}
+	flags = enter_critical_section();
 
-int ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t timer_idx)
-{
-	LEDC.channel_group[speed_mode].channel[channel].conf0.timer_sel = timer_idx;
-	ledc_ls_channel_update(speed_mode, channel);
-	return OK;
-}
+	if (g_clk_ref == 0) {
+		setbits(DPORT_LEDC_CLK_EN, DPORT_PERIP_CLK_EN_REG);
+		resetbits(DPORT_LEDC_RST, DPORT_PERIP_RST_EN_REG);
 
-int ledc_timer_rst(ledc_mode_t speed_mode, uint32_t timer_sel)
-{
-	LEDC.timer_group[speed_mode].timer[timer_sel].conf.rst = 1;
-	LEDC.timer_group[speed_mode].timer[timer_sel].conf.rst = 0;
-	ledc_ls_timer_update(speed_mode, timer_sel);
-	return OK;
-}
+		putreg32(LEDC_CLK_RES, LEDC_CONF_REG);
 
-int ledc_timer_config(const ledc_timer_config_t *timer_conf)
-{
-	uint32_t freq_hz = timer_conf->freq_hz;
-	uint32_t duty_resolution = timer_conf->duty_resolution;
-	uint32_t timer_num = timer_conf->timer_num;
-	uint32_t speed_mode = timer_conf->speed_mode;
-	periph_module_enable(PERIPH_LEDC_MODULE);
-
-	int ret = OK;
-	uint32_t precision = (0x1 << duty_resolution);	// 2**depth
-	// Try calculating divisor based on LEDC_APB_CLK
-	ledc_clk_src_t timer_clk_src = LEDC_APB_CLK;
-	// div_param is a Q10.8 fixed point value
-	uint64_t div_param = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
-	if (div_param < 256) {
-		// divisor is too low
-		ret = -1;
-	}
-	if (div_param > LEDC_DIV_NUM_HSTIMER0_V) {
-		// APB_CLK results in divisor which too high. Try using REF_TICK as clock source.
-		timer_clk_src = LEDC_REF_TICK;
-		div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
-		if (div_param < 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) {
-			ret = -1;
-		}
-	} else {
-		if (speed_mode == LEDC_LOW_SPEED_MODE) {
-			//for now, we only select 80mhz for slow clk of LEDC low speed channels.
-			LEDC.conf.slow_clk_sel = 1;
-		}
-	}
-	// set timer parameters
-	ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
-	// reset timer
-	ledc_timer_rst(speed_mode, timer_num);
-	return ret;
-}
-
-int ledc_channel_config(const ledc_channel_config_t *ledc_conf)
-{
-	uint32_t speed_mode = ledc_conf->speed_mode;
-	uint32_t gpio_num = ledc_conf->gpio_num;
-	uint32_t ledc_channel = ledc_conf->channel;
-	uint32_t timer_select = ledc_conf->timer_sel;
-	uint32_t intr_type = ledc_conf->intr_type;
-	uint32_t duty = ledc_conf->duty;
-	uint32_t hpoint = ledc_conf->hpoint;
-
-	periph_module_enable(PERIPH_LEDC_MODULE);
-
-	int ret = OK;
-	/*set channel parameters */
-	/*   channel parameters decide how the waveform looks like in one period */
-	/*   set channel duty and hpoint value, duty range is (0 ~ ((2 ** duty_resolution) - 1)), max hpoint value is 0xfffff */
-	ledc_set_duty_with_hpoint(speed_mode, ledc_channel, duty, hpoint);
-	/*update duty settings */
-	ledc_update_duty(speed_mode, ledc_channel);
-	/*bind the channel with the timer */
-	ledc_bind_channel_timer(speed_mode, ledc_channel, timer_select);
-	/*set interrupt type */
-	ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
-	//printf("LEDC_PWM CHANNEL %1u|GPIO %02u|Duty %04u|Time %01u",
-	//  ledc_channel, gpio_num, duty, timer_select);
-	/*set LEDC signal in gpio matrix */
-	esp32_configgpio(gpio_num, OUTPUT_FUNCTION_2);
-	if (speed_mode == LEDC_HIGH_SPEED_MODE) {
-		gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
-	} else {
-		gpio_matrix_out(gpio_num, LEDC_LS_SIG_OUT0_IDX + ledc_channel, 0, 0);
-	}
-	return ret;
-}
-
-int ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
-{
-	LEDC.channel_group[speed_mode].channel[channel].conf0.sig_out_en = 1;
-	LEDC.channel_group[speed_mode].channel[channel].conf1.duty_start = 1;
-	ledc_ls_channel_update(speed_mode, channel);
-	return OK;
-}
-
-int ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idle_level)
-{
-	LEDC.channel_group[speed_mode].channel[channel].conf0.idle_lv = idle_level & 0x1;
-	LEDC.channel_group[speed_mode].channel[channel].conf0.sig_out_en = 0;
-	LEDC.channel_group[speed_mode].channel[channel].conf1.duty_start = 0;
-	ledc_ls_channel_update(speed_mode, channel);
-	return OK;
-}
-
-int ledc_set_duty_with_hpoint(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty, uint32_t hpoint)
-{
-	/* The channel configuration should not be changed before the fade operation is done. */
-	ledc_duty_config(speed_mode, channel,	//uint32_t chan_num,
-					 hpoint,	//uint32_t hpoint_val,
-					 duty << 4,	//uint32_t duty_val,the least 4 bits are decimal part
-					 1,			//uint32_t increase,
-					 1,			//uint32_t duty_num,
-					 1,			//uint32_t duty_cycle,
-					 0			//uint32_t duty_scale
-					);
-	return OK;
-}
-
-int ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty)
-{
-	/* The channel configuration should not be changed before the fade operation is done. */
-	ledc_duty_config(speed_mode, channel,	//uint32_t chan_num,
-					 LEDC_VAL_NO_CHANGE, duty << 4,	//uint32_t duty_val,the least 4 bits are decimal part
-					 1,			//uint32_t increase,
-					 1,			//uint32_t duty_num,
-					 1,			//uint32_t duty_cycle,
-					 0			//uint32_t duty_scale
-					);
-	return OK;
-}
-
-void IRAM_ATTR ledc_fade_isr(void *arg)
-{
-	int channel;
-	uint32_t intr_status = LEDC.int_st.val;	//read LEDC interrupt status.
-	LEDC.int_clr.val = intr_status;	//clear LEDC interrupt status.
-	int speed_mode = LEDC_HIGH_SPEED_MODE;
-	for (channel = 0; channel < LEDC_CHANNEL_MAX; channel++) {
-		if (intr_status & (BIT(LEDC_DUTY_CHNG_END_HSCH0_INT_ST_S + channel) | BIT(LEDC_DUTY_CHNG_END_LSCH0_INT_ST_S + channel))) {
-			if (intr_status & BIT(LEDC_DUTY_CHNG_END_HSCH0_INT_ST_S + channel)) {
-				speed_mode = LEDC_HIGH_SPEED_MODE;
-			} else {
-				speed_mode = LEDC_LOW_SPEED_MODE;
-			}
-			if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-				//fade object not initialized yet.
-				continue;
-			}
-			uint32_t duty_cur = LEDC.channel_group[speed_mode].channel[channel].duty_rd.duty_read >> LEDC_DUTY_DECIMAL_BIT_NUM;
-			if (duty_cur == s_ledc_fade_rec[speed_mode][channel]->target_duty) {
-				continue;
-			}
-			uint32_t duty_tar = s_ledc_fade_rec[speed_mode][channel]->target_duty;
-			int scale = s_ledc_fade_rec[speed_mode][channel]->scale;
-			if (scale == 0) {
-				continue;
-			}
-			int cycle = s_ledc_fade_rec[speed_mode][channel]->cycle_num;
-			int delta = s_ledc_fade_rec[speed_mode][channel]->direction == LEDC_DUTY_DIR_DECREASE ? duty_cur - duty_tar : duty_tar - duty_cur;
-			int step = delta / scale > LEDC_STEP_NUM_MAX ? LEDC_STEP_NUM_MAX : delta / scale;
-			if (delta > scale) {
-				ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur << LEDC_DUTY_DECIMAL_BIT_NUM, s_ledc_fade_rec[speed_mode][channel]->direction, step, cycle, scale);
-			} else {
-				ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_tar << LEDC_DUTY_DECIMAL_BIT_NUM, s_ledc_fade_rec[speed_mode][channel]->direction, 1, 1, 0);
-			}
-			LEDC.channel_group[speed_mode].channel[channel].conf1.duty_start = 1;
-		}
-	}
-	LEDC.int_clr.val = intr_status;	//clear LEDC interrupt status.
-}
-
-static int _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int scale, int cycle_num)
-{
-
-	uint32_t duty_cur = LEDC.channel_group[speed_mode].channel[channel].duty_rd.duty_read >> LEDC_DUTY_DECIMAL_BIT_NUM;
-	// When duty == max_duty, meanwhile, if scale == 1 and fade_down == 1, counter would overflow.
-	if (duty_cur == ledc_get_max_duty(speed_mode, channel)) {
-		duty_cur -= 1;
-	}
-	s_ledc_fade_rec[speed_mode][channel]->speed_mode = speed_mode;
-	s_ledc_fade_rec[speed_mode][channel]->target_duty = target_duty;
-	s_ledc_fade_rec[speed_mode][channel]->cycle_num = cycle_num;
-	s_ledc_fade_rec[speed_mode][channel]->scale = scale;
-	int step_num = 0;
-	int dir = LEDC_DUTY_DIR_DECREASE;
-	if (scale > 0) {
-		if (duty_cur > target_duty) {
-			s_ledc_fade_rec[speed_mode][channel]->direction = LEDC_DUTY_DIR_DECREASE;
-			step_num = (duty_cur - target_duty) / scale;
-			step_num = step_num > LEDC_STEP_NUM_MAX ? LEDC_STEP_NUM_MAX : step_num;
-		} else {
-			s_ledc_fade_rec[speed_mode][channel]->direction = LEDC_DUTY_DIR_INCREASE;
-			dir = LEDC_DUTY_DIR_INCREASE;
-			step_num = (target_duty - duty_cur) / scale;
-			step_num = step_num > LEDC_STEP_NUM_MAX ? LEDC_STEP_NUM_MAX : step_num;
-		}
+		pwminfo("Enable ledc clock\n");
 	}
 
-	if (scale > 0 && step_num > 0) {
-		ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur << 4, dir, step_num, cycle_num, scale);
-		//printf("cur duty: %d; target: %d, step: %d, cycle: %d; scale: %d; dir: %d\n",
-		//      duty_cur, target_duty, step_num, cycle_num, scale, dir);
-	} else {
-		ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty << 4, dir, 0, 1, 0);
-		//  printf("Set to target duty: %d", target_duty);
-	}
-	return OK;
-}
+	g_clk_ref++;
 
-uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
-{
-	uint32_t freq = 0;
-	uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
-	uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
-	uint32_t clock_divider = LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider;
-	uint32_t precision = (0x1 << duty_resolution);
-	if (timer_source_clk == LEDC_APB_CLK) {
-		freq = ((uint64_t) LEDC_APB_CLK_HZ << 8) / precision / clock_divider;
-	} else {
-		freq = ((uint64_t) LEDC_REF_CLK_HZ << 8) / precision / clock_divider;
-	}
-	return freq;
-}
-
-int ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int max_fade_time_ms)
-{
-
-	ledc_fade_channel_init(speed_mode, channel);
-
-	int timer_sel = LEDC.channel_group[speed_mode].channel[channel].conf0.timer_sel;
-	uint32_t freq = ledc_get_freq(speed_mode, timer_sel);
-	uint32_t duty_cur = LEDC.channel_group[speed_mode].channel[channel].duty_rd.duty_read >> LEDC_DUTY_DECIMAL_BIT_NUM;
-	uint32_t duty_delta = target_duty > duty_cur ? target_duty - duty_cur : duty_cur - target_duty;
-
-	if (duty_delta == 0) {
-		return _ledc_set_fade_with_step(speed_mode, channel, target_duty, 0, 0);
-	}
-	int total_cycles = max_fade_time_ms * freq / 1000;
-	if (total_cycles == 0) {
-		//ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_FAST_STR);
-		return _ledc_set_fade_with_step(speed_mode, channel, target_duty, 0, 0);
-	}
-	int scale, cycle_num;
-	if (total_cycles > duty_delta) {
-		scale = 1;
-		cycle_num = total_cycles / duty_delta;
-		if (cycle_num > LEDC_DUTY_NUM_HSCH0_V) {
-			//  ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_SLOW_STR);
-			cycle_num = LEDC_DUTY_NUM_HSCH0_V;
-		}
-	} else {
-		cycle_num = 1;
-		scale = duty_delta / total_cycles;
-	}
-	return _ledc_set_fade_with_step(speed_mode, channel, target_duty, scale, cycle_num);
-}
-
-int ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_fade_mode_t fade_mode)
-{
-	s_ledc_fade_rec[speed_mode][channel]->mode = fade_mode;
-	// Clear interrupt status of channel
-	int duty_resolution_ch0 = (speed_mode == LEDC_HIGH_SPEED_MODE) ? LEDC_DUTY_CHNG_END_HSCH0_INT_ENA_S : LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
-	LEDC.int_clr.val |= BIT(duty_resolution_ch0 + channel);
-	// Enable interrupt for channel
-	ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_FADE_END);
-	ledc_update_duty(speed_mode, channel);
-	return OK;
-}
-
-int ledc_fade_func_install()
-{
-	return irq_attach(ETS_LEDC_INTR_SOURCE, (xcpt_t) ledc_fade_isr, NULL);
-}
-
-void ledc_fade_func_uninstall()
-{
-
-	int channel, mode;
-	for (mode = 0; mode < LEDC_SPEED_MODE_MAX; mode++) {
-		for (channel = 0; channel < LEDC_CHANNEL_MAX; channel++) {
-			ledc_fade_channel_deinit(mode, channel);
-		}
-	}
-	return;
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
- * Name: esp32_ledc_setup
+ * Name: ledc_disable_clk
+ *
+ * Description:
+ *   Disable LEDC clock.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+static void ledc_disable_clk(void)
+{
+	irqstate_t flags;
+
+	flags = enter_critical_section();
+
+	g_clk_ref--;
+
+	if (g_clk_ref == 0) {
+		pwminfo("Disable ledc clock\n");
+
+		setbits(DPORT_LEDC_RST, DPORT_PERIP_RST_EN_REG);
+		resetbits(DPORT_LEDC_CLK_EN, DPORT_PERIP_CLK_EN_REG);
+	}
+
+	leave_critical_section(flags);
+}
+
+/****************************************************************************
+ * Name: setup_timer
+ *
+ * Description:
+ *   Setup LEDC timer frequency and reload.
+ *
+ * Input Parameters:
+ *   priv - A reference to the LEDC timer state structure
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void setup_timer(struct esp32_ledc_s *priv)
+{
+	irqstate_t flags;
+	uint32_t regval;
+	uint32_t reload;
+	uint32_t prescaler;
+	uint32_t shift = 1;
+	uint64_t pwmclk = esp_clk_apb_freq();
+
+	/* Reset timer */
+
+	SET_TIMER_BITS(priv, LEDC_LSTIMER0_CONF_REG, LEDC_LSTIMER0_RST);
+
+	/* Calculate optimal values for the timer prescaler and for the timer
+	 * modulo register.  If' frequency' is the desired frequency, then
+	 *
+	 *   tpmclk = pwmclk / presc
+	 *   frequency = tpmclk / reload
+	 *
+	 * ==>
+	 *
+	 *   reload = pwmclk / presc / frequency
+	 *
+	 * In ESP32, there are 2 clock resources for PWM:
+	 *
+	 *   1. APB clock (80 MHz)
+	 *   2. RTC clock (8 MHz)
+	 *
+	 * We mostly use APB clock generally.
+	 *
+	 * There are many solutions to this, but the best solution will be the one
+	 * that has the largest reload value and the smallest prescaler value.
+	 * That is the solution that should give us the most accuracy in the timer
+	 * control.  Subject to:
+	 *
+	 *   2 <= presc  <= 2^20(1,048,576)
+	 *   1 <= clkdiv <= 2^10
+	 *
+	 * clkdiv has 8-bit decimal precision, so
+	 * clkdiv = pwmclk * 256 / 1048576 / frequency would be optimal.
+	 *
+	 * Example:
+	 *
+	 *  pwmclk    = 80 MHz
+	 *  frequency = 100 Hz
+	 *
+	 *  presc     = 80,000,000 * 256 / 16,384 / 100
+	 *            = 12,500
+	 *  timclk    = 80,000,000 / (12,500 / 256)
+	 *            = 1,638,400
+	 *  counter   = 1,638,400 / 100
+	 *            = 16,384
+	 *            = 2^14
+	 *  shift     = 14
+	 */
+
+	reload = (pwmclk * 256 / priv->frequency + LEDC_CLKDIV_MAX) /
+	         LEDC_CLKDIV_MAX;
+	if (reload == 0) {
+		reload = 1;
+	} else if (reload > LEDC_RELOAD_MAX) {
+		reload = LEDC_RELOAD_MAX;
+	}
+
+	for (int c = 2; c <= LEDC_RELOAD_MAX; c *= 2) {
+		if (c * 2 > reload) {
+			reload = c;
+			break;
+		}
+
+		shift++;
+	}
+
+	prescaler = pwmclk * 256 / reload / priv->frequency;
+
+	pwminfo("PWM timer%" PRIu8 " frequency=%0.4f reload=%" PRIu32 " shift=%"
+	        PRIu32 " prescaler=%0.4f\n",
+	        priv->num, (float)pwmclk / reload / ((float)prescaler / 256),
+	        reload, shift, (float)prescaler / 256);
+
+	/* Store reload for channel duty */
+
+	priv->reload = reload;
+
+	flags = enter_critical_section();
+
+	/* Set timer clock divide and reload */
+
+	regval = (shift << LEDC_LSTIMER0_DUTY_RES_S) |
+	         (prescaler << LEDC_DIV_NUM_LSTIMER0_S);
+	SET_TIMER_REG(priv, LEDC_LSTIMER0_CONF_REG, regval);
+
+	/* Setup to timer to use APB clock (80MHz) */
+
+	SET_TIMER_BITS(priv, LEDC_LSTIMER0_CONF_REG, LEDC_TICK_SEL_LSTIMER0);
+
+	/* Update clock divide and reload to hardware */
+
+	SET_TIMER_BITS(priv, LEDC_LSTIMER0_CONF_REG, LEDC_LSTIMER0_PARA_UP);
+
+	leave_critical_section(flags);
+}
+
+/****************************************************************************
+ * Name: setup_channel
+ *
+ * Description:
+ *   Setup LEDC timer channel duty.
+ *
+ * Input Parameters:
+ *   priv - A reference to the LEDC timer state structure
+ *   cn   - Timer channel number
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+static void setup_channel(struct esp32_ledc_s *priv, int cn)
+{
+	irqstate_t flags;
+	uint32_t regval;
+	struct esp32_ledc_chan_s *chan = &priv->chans[cn];
+
+	/* Duty cycle:
+	 *
+	 * duty cycle = duty / 65536 * reload (fractional value)
+	 */
+
+	regval = b16toi(chan->duty * priv->reload + b16HALF);
+
+	pwminfo("channel=%" PRIu8 " duty=%" PRIu16 "(%0.4f) regval=%" PRIu32
+	        " reload=%" PRIu32 "\n",
+	        chan->num, chan->duty, (float)chan->duty / UINT16_MAX,
+	        regval, priv->reload);
+
+	flags = enter_critical_section();
+
+	/* Reset config 0 & 1 registers */
+
+	SET_CHAN_REG(chan, LEDC_LSCH0_CONF0_REG, 0);
+	SET_CHAN_REG(chan, LEDC_LSCH0_CONF1_REG, 0);
+
+	/* Set pulse phase 0 */
+
+	SET_CHAN_REG(chan, LEDC_LSCH0_HPOINT_REG, 0);
+
+	/* Duty register uses bits [18:4]  */
+
+	SET_CHAN_REG(chan, LEDC_LSCH0_DUTY_REG, regval << 4);
+
+	/* Start GPIO output  */
+
+	SET_CHAN_BITS(chan, LEDC_LSCH0_CONF0_REG, LEDC_SIG_OUT_EN_LSCH0);
+
+	/* Start Duty counter  */
+
+	SET_CHAN_BITS(chan, LEDC_LSCH0_CONF1_REG, LEDC_DUTY_START_LSCH0);
+
+	/* Update duty and phase to hardware */
+
+	SET_CHAN_BITS(chan, LEDC_LSCH0_CONF0_REG, LEDC_PARA_UP_LSCH0);
+
+	leave_critical_section(flags);
+}
+
+/****************************************************************************
+ * Name: pwm_setup
  *
  * Description:
  *   This method is called when the driver is opened.  The lower half driver
  *   should configure and initialize the device so that it is ready for use.
  *   It should not, however, output pulses until the start method is called.
  *
- * Input parameters:
- *   dev - A reference to the lower half LEDC driver state structure
- *
- * Returned Value:
- *   Zero on success; a negated errno value on failure
- *
- * Assumptions:
- *   APB1 or 2 clocking for the GPIOs has already been configured by the RCC
- *   logic at power up.
- *
- ****************************************************************************/
-
-static int esp32_ledc_setup(FAR struct ledc_lowerhalf_s *dev)
-{
-	FAR struct esp32_ledctimer_s *priv = (FAR struct esp32_ledctimer_s *)dev;
-
-	ledc_timer_config(priv->tmrcfg);
-	ledc_channel_config(priv->chlcfg);
-	ledc_fade_func_install();
-	return OK;
-}
-
-/****************************************************************************
- * Name: esp32_ledc_start
- *
- * Description:
- *   (Re-)initialize the timer resources and start the pulsed output
- *
- * Input parameters:
- *   dev - A reference to the lower half LEDC driver state structure
- *   info - A reference to the characteristics of the pulsed output
+ * Input Parameters:
+ *   dev - A reference to the lower half PWM driver state structure
  *
  * Returned Value:
  *   Zero on success; a negated errno value on failure
  *
  ****************************************************************************/
-static int esp32_ledc_start(FAR struct ledc_lowerhalf_s *dev, FAR const struct ledc_info_s *info)
-{
-	FAR struct esp32_ledctimer_s *priv = (FAR struct esp32_ledctimer_s *)dev;
 
-	if (info->duty != priv->chlcfg->duty) {
-		priv->chlcfg->duty = info->duty;
+static int pwm_setup(struct pwm_lowerhalf_s *dev)
+{
+	struct esp32_ledc_s *priv = (struct esp32_ledc_s *)dev;
+
+	pwminfo("PWM timer%u\n", priv->num);
+
+	ledc_enable_clk();
+
+	/* Setup channel GPIO pins */
+
+	for (int i = 0; i < priv->channels; i++) {
+		pwminfo("channel%d --> pin%d\n", priv->chans[i].num,
+		        priv->chans[i].pin);
+
+		esp32_configgpio(priv->chans[i].pin, OUTPUT | PULLUP);
+		esp32_gpio_matrix_out(priv->chans[i].pin,
+		                        LEDC_LS_SIG_OUT0_IDX + priv->chans[i].num,
+		                        0, 0);
 	}
 
-	if (info->ishwfade) {
-		ledc_set_fade_with_time(priv->chlcfg->speed_mode, priv->chlcfg->channel, priv->chlcfg->duty, LEDC_TEST_FADE_TIME);
-		ledc_fade_start(priv->chlcfg->speed_mode, priv->chlcfg->channel, LEDC_FADE_NO_WAIT);
-	} else {
-		ledc_set_duty(priv->chlcfg->speed_mode, priv->chlcfg->channel, priv->chlcfg->duty);
-		ledc_update_duty(priv->chlcfg->speed_mode, priv->chlcfg->channel);
-	}
-	return OK;
+	return 0;
 }
 
 /****************************************************************************
- * Name: esp32_ledc_stop
- *
- * Description:
- *   Stop the pulsed output and reset the timer resources
- *
- * Input parameters:
- *   dev - A reference to the lower half LEDC driver state structure
- *
- * Returned Value:
- *   Zero on success; a negated errno value on failure
- *
- * Assumptions:
- *   This function is called to stop the pulsed output at anytime.  This
- *   method is also called from the timer interrupt handler when a repetition
- *   count expires... automatically stopping the timer.
- *
- ****************************************************************************/
-static int esp32_ledc_stop(FAR struct ledc_lowerhalf_s *dev)
-{
-	FAR struct esp32_ledctimer_s *priv = (FAR struct esp32_ledctimer_s *)dev;
-	ledc_stop(priv->chlcfg->speed_mode, priv->chlcfg->channel, 1);
-	return OK;
-}
-
-/****************************************************************************
- * Name: esp32_ledc_shutdown
+ * Name: pwm_shutdown
  *
  * Description:
  *   This method is called when the driver is closed.  The lower half driver
  *   stop pulsed output, free any resources, disable the timer hardware, and
  *   put the system into the lowest possible power usage state
  *
- * Input parameters:
- *   dev - A reference to the lower half LEDC driver state structure
+ * Input Parameters:
+ *   dev - A reference to the lower half PWM driver state structure
  *
  * Returned Value:
  *   Zero on success; a negated errno value on failure
  *
  ****************************************************************************/
-static int esp32_ledc_shutdown(FAR struct ledc_lowerhalf_s *dev)
+
+static int pwm_shutdown(struct pwm_lowerhalf_s *dev)
 {
-	FAR struct esp32_ledctimer_s *priv = (FAR struct esp32_ledctimer_s *)dev;
-	/* Make sure that the output has been stopped */
-	ledc_fade_func_uninstall();
-	ledc_stop(priv->chlcfg->speed_mode, priv->chlcfg->channel, 1);
-	periph_module_disable(PERIPH_LEDC_MODULE);
-	return OK;
+	struct esp32_ledc_s *priv = (struct esp32_ledc_s *)dev;
+#ifdef CONFIG_PWM_NCHANNELS
+	int channels = MIN(priv->channels, CONFIG_PWM_NCHANNELS);
+#else
+	int channels = 1;
+#endif
+
+	/* Stop timer */
+
+	pwm_stop(dev);
+
+	/* Clear timer and channel configuration */
+
+	priv->frequency = 0;
+	priv->reload    = 0;
+	for (int i = 0; i < channels; i++) {
+		priv->chans[i].duty = 0;
+	}
+
+	ledc_disable_clk();
+
+	return 0;
 }
 
 /****************************************************************************
- * Name: esp32_ledc_ioctl
+ * Name: pwm_start
+ *
+ * Description:
+ *   (Re-)initialize the timer resources and start the pulsed output
+ *
+ * Input Parameters:
+ *   dev  - A reference to the lower half PWM driver state structure
+ *   info - A reference to the characteristics of the pulsed output
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure
+ *
+ ****************************************************************************/
+
+static int pwm_start(struct pwm_lowerhalf_s *dev,
+                     const struct pwm_info_s *info)
+{
+	struct esp32_ledc_s *priv = (struct esp32_ledc_s *)dev;
+#ifdef CONFIG_PWM_NCHANNELS
+	int channels = MIN(priv->channels, CONFIG_PWM_NCHANNELS);
+#else
+	int channels = 1;
+#endif
+
+	pwminfo("PWM timer%d\n", priv->num);
+
+	/* Update timer with given PWM timer frequency */
+
+	if (priv->frequency != info->frequency) {
+		priv->frequency = info->frequency;
+		setup_timer(priv);
+	}
+
+	/* Update timer with given PWM channel duty */
+
+	for (int i = 0; i < channels; i++) {
+#ifdef CONFIG_PWM_NCHANNELS
+		if (priv->chans[i].duty != info->channels[i].duty)
+#else
+		if (priv->chans[i].duty != info[i].duty)
+#endif
+		{
+#ifdef CONFIG_PWM_NCHANNELS
+			priv->chans[i].duty = info->channels[i].duty;
+#else
+			priv->chans[i].duty = info[i].duty;
+#endif
+			setup_channel(priv, i);
+		}
+	}
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: pwm_stop
+ *
+ * Description:
+ *   Stop the pulsed output and reset the timer resources.
+ *
+ * Input Parameters:
+ *   dev - A reference to the lower half PWM driver state structure
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure
+ *
+ ****************************************************************************/
+
+static int pwm_stop(struct pwm_lowerhalf_s *dev)
+{
+	irqstate_t flags;
+	struct esp32_ledc_s *priv = (struct esp32_ledc_s *)dev;
+
+	pwminfo("PWM timer%d\n", priv->num);
+
+	flags = enter_critical_section();
+
+	/* Stop timer */
+
+	SET_TIMER_BITS(priv, LEDC_LSTIMER0_CONF_REG, LEDC_LSTIMER0_PAUSE);
+
+	/* Reset timer */
+
+	SET_TIMER_BITS(priv, LEDC_LSTIMER0_CONF_REG, LEDC_LSTIMER0_RST);
+
+	leave_critical_section(flags);
+	return 0;
+}
+
+/****************************************************************************
+ * Name: pwm_ioctl
  *
  * Description:
  *   Lower-half logic may support platform-specific ioctl commands
  *
- * Input parameters:
- *   dev - A reference to the lower half LEDC driver state structure
+ * Input Parameters:
+ *   dev - A reference to the lower half PWM driver state structure
  *   cmd - The ioctl command
  *   arg - The argument accompanying the ioctl command
  *
@@ -617,64 +739,74 @@ static int esp32_ledc_shutdown(FAR struct ledc_lowerhalf_s *dev)
  *   Zero on success; a negated errno value on failure
  *
  ****************************************************************************/
-static int esp32_ledc_ioctl(FAR struct ledc_lowerhalf_s *dev, int cmd, unsigned long arg)
+
+static int pwm_ioctl(struct pwm_lowerhalf_s *dev, int cmd,
+                     unsigned long arg)
 {
+#ifdef CONFIG_DEBUG_PWM_INFO
+	struct esp32_ledc_s *priv = (struct esp32_ledc_s *)dev;
+
+	pwminfo("PWM timer%d\n", priv->num);
+#endif
+
 	return -ENOTTY;
 }
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-static const struct ledc_ops_s g_ledc_ops = {
-	.setup = esp32_ledc_setup,
-	.shutdown = esp32_ledc_shutdown,
-	.start = esp32_ledc_start,
-	.stop = esp32_ledc_stop,
-	.ioctl = esp32_ledc_ioctl,
-};
-
-static ledc_timer_config_t ledc_timer = {
-	.duty_resolution = LEDC_TIMER_13_BIT,	// resolution of PWM duty
-	.freq_hz = 5000,			// frequency of PWM signal
-	.speed_mode = LEDC_HS_MODE,	// timer mode
-	.timer_num = LEDC_HS_TIMER,	// timer index
-};
-
-static ledc_channel_config_t ledc_channel = {
-	.channel = LEDC_HS_CH0_CHANNEL,
-	.duty = 50,
-	.gpio_num = LEDC_HS_CH0_GPIO,
-	.speed_mode = LEDC_HS_MODE,
-	.timer_sel = LEDC_HS_TIMER
-};
-
-static struct esp32_ledctimer_s g_ledc = {
-	.ops = &g_ledc_ops,
-	.tmrcfg = &ledc_timer,
-	.chlcfg = &ledc_channel,
-};
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: esp32_ledcinitialize
+ * Name: esp32_ledc_init
  *
  * Description:
- *   Initialize one timer for use with the upper_level LEDC driver.
+ *   Initialize one LEDC timer for use with the upper_level PWM driver.
  *
  * Input Parameters:
- *   timer - A number identifying the timer use. The number of valid timer
- *     IDs varies with the ESP32 family but is somewhere in the range of
- *     {0,...,5}.
+ *   timer - A number identifying the timer use.
  *
  * Returned Value:
- *   On success, a pointer to the lower-half LEDC driver is returned.
- *   NULL is returned on any failure.
+ *   On success, a pointer to the ESP32 LEDC lower half PWM driver is
+ *   returned. NULL is returned on any failure.
  *
  ****************************************************************************/
-FAR struct ledc_lowerhalf_s *esp32_ledcinitialize()
+
+struct pwm_lowerhalf_s *esp32_ledc_init(int timer)
 {
-	return (struct ledc_lowerhalf_s *)&g_ledc;
+	struct esp32_ledc_s *lower = NULL;
+
+	pwminfo("TIM%u\n", timer);
+
+	switch (timer) {
+#ifdef CONFIG_ESP32_LEDC_TIM0
+	case 0:
+		lower = &g_pwm0dev;
+		break;
+#endif
+
+#ifdef CONFIG_ESP32_LEDC_TIM1
+	case 1:
+		lower = &g_pwm1dev;
+		break;
+#endif
+
+#ifdef CONFIG_ESP32_LEDC_TIM2
+	case 2:
+		lower = &g_pwm2dev;
+		break;
+#endif
+
+#ifdef CONFIG_ESP32_LEDC_TIM3
+	case 3:
+		lower = &g_pwm3dev;
+		break;
+#endif
+
+	default:
+		pwmerr("ERROR: No such timer configured %d\n", timer);
+		lower = NULL;
+		break;
+	}
+
+	return (struct pwm_lowerhalf_s *)lower;
 }
