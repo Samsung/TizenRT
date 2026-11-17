@@ -31,6 +31,5 @@ tags
 *.log
 *.log.old
 
-# CODA AI Code Tracker
-.ai-tracker/
-.vscode/
+# Optional storage of the repositories cloned by the build (NXTMPDIR)
+/nxtmpdir
