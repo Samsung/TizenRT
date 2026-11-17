@@ -800,88 +800,42 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	if (ret != OK) {
 	    auddbg("[E] Model send fail!\n");
 		goto errout;
-	} else {
-		priv->lower->irq_enable(true);
 	}
 
-	//enable AI_MODEL_CUSTOM1 interrupt
+	/* Restore the selected model interrupt after an ADAM110 reset.
+	 * No model has been selected yet during the initial firmware load.
+	 */
+	if ((priv->kd_num >= AI_MODEL_HIBIXBY) && (priv->kd_num < AI_MODEL_MAX)) {
+		ret = ADAM110_AI_SET_INTR(priv, priv->kd_num, true, &rxpkt);
+		if (ret != OK) {
+			auddbg("Restore KD model interrupt failed. kd_num : %d ret : %d\n", priv->kd_num, ret);
+			goto errout;
+		}
+	}
+
+	/* Enable the custom model interrupt. */
 	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
 	if (ret != OK) {
-		auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
+		auddbg("Enable custom model interrupt failed. ret : %d\n", ret);
+		goto errout;
 	}
+
+	/* Host KD state survives the reset; apply it to the device again. */
+	ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R,
+						   priv->kd_enabled && !priv->mute, &rxpkt);
+	if (ret != OK) {
+		auddbg("Restore KD seamless interrupt failed. ret : %d\n", ret);
+		goto errout;
+	}
+
+	priv->lower->irq_enable(true);
 errout:
 	/* Regardless result, set fw_loaded as true for next check */
 	priv->fw_loaded = true;
 	return ret;
 }
 
-static int adam110_restore_state(FAR struct adam110_dev_s *priv)
-{
-	t_proto_pkt rxpkt;
-	int ret = OK;
-
-	if ((priv->kd_num >= AI_MODEL_HIBIXBY) && (priv->kd_num < AI_MODEL_MAX)) {
-		ret = ADAM110_AI_SET_INTR(priv, priv->kd_num, true, &rxpkt);
-		if (ret != OK) {
-			auddbg("[E] restore KD intr failed. kd_num : %d\n", priv->kd_num);
-		}
-		if (priv->sensitivity <= ADAM110_SENSITIVITY_MAX) {
-			ADAM110_AI_SET_THD(priv, priv->kd_num, priv->sensitivity, &rxpkt);
-		}
-	}
-
-	if (!priv->mute) {
-		if (priv->kd_enabled) {
-			ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
-			if (ret != OK) {
-				auddbg("[E] restore seamless intr failed\n");
-			}
-		}
-		if (priv->recording) {
-			ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, true, &rxpkt);
-			if (ret != OK) {
-				auddbg("[E] restore audio intr failed\n");
-			}
-		}
-	}
-
-	auddbg("[I] state restored kd_num:%d kd_en:%d rec:%d mute:%d\n",
-		   priv->kd_num, priv->kd_enabled, priv->recording, priv->mute);
-	return ret;
-}
-
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
-/* re-download model only (FW alive, model none after ADAM110 reboot) */
-static int adam110_reload_model(FAR struct adam110_dev_s *priv)
-{
-	int ret = OK;
-	t_proto_pkt rxpkt;
-
-	auddbg("[I] model none, reload model\n");
-	priv->lower->irq_enable(false);
-
-	ret = ADAM110_SET_MIC_CLK(priv, PDM_CLOCK_PDM_RATE, &rxpkt);
-	if (ret != OK) {
-		auddbg("[E] PDM clock set failed ret : %d\n", ret);
-		return ret;
-	}
-
-	ret = ADAM110_SET_MODEL(priv);
-	if (ret != OK) {
-		auddbg("[E] Model send fail!\n");
-		return ret;
-	}
-	priv->lower->irq_enable(true);
-
-	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
-	if (ret != OK) {
-		auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
-	}
-
-	adam110_restore_state(priv);
-	return ret;
-}
-
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
 	static int wait_stable_cnt = 0;
@@ -900,11 +854,11 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 		if (ret == OK) {
 			break;
 		}
-		/* XSOSC not ready : FW alive, do not download model yet. check next period */
+		/* XSOSC not ready : FW alive, do not reload yet. check next period */
 		if (ret == -EAGAIN) {
 			/* FW gives up XSOSC check after 10s and keeps 0x07 : reset and reload after ADAM110_XSOSC_WAIT_MAX_CNT */
 			if (++wait_stable_cnt < ADAM110_XSOSC_WAIT_MAX_CNT) {
-				auddbg("[I] XSOSC wait stable (%d), skip model download\n", wait_stable_cnt);
+				auddbg("[I] XSOSC wait stable (%d), skip reload\n", wait_stable_cnt);
 				return OK;
 			}
 			auddbg("[E] XSOSC not stable (%d), reset and reload\n", wait_stable_cnt);
@@ -924,9 +878,10 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 	wait_stable_cnt = 0;
 	busy_cnt = 0;
 
-	/* XSOSC ready but model none (ADAM110 rebooted) : download model */
+	/* FW alive but model is gone (ADAM110 silently rebooted) : reload */
 	if ((ret == OK) && (rxpkt.parm3 & KA_FLAG_MODEL_NONE)) {
-		return adam110_reload_model(priv);
+		auddbg("[E] FW alive but model none, reset and reload\n");
+		ret = -EIO;
 	}
 
 	/* if aliveness failed, then load firmware again */
@@ -934,8 +889,6 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 		ret = adam110_load_firmware(priv);
 		if (ret != OK) {
 			auddbg("FW update failed.\n");
-		} else {
-			adam110_restore_state(priv);
 		}
 	}
 	return ret;
@@ -1011,15 +964,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 				up_udelay(ADAM110_RETRIAL_DELAY * 1000);
 				continue;
 			}
-			retry = SEAMLESS_RETRY_COUNT;			
-			uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, data_size);
-			uint8_t recv_sum = s_temp_chunk[data_size];
-			if (cal_sum != recv_sum) {
-				auddbg("[E] KD checksum calc:0x%02x, Recv:0x%02x\n", cal_sum, recv_sum);
-				ret = -EIO;
-				priv->seamless_in_progress = false;
-                goto errout_seamless;
-			}
+			retry = SEAMLESS_RETRY_COUNT;
 
 			memcpy(&priv->keyword_buffer[priv->keyword_bytes_left], s_temp_chunk, data_size);
 			priv->keyword_bytes_left += data_size;
@@ -1048,6 +993,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
         return OK;
 	}
 	if (rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
+		auddbg("[E] Unknown event parm1=0x%x parm2=0x%x, drop\n", rxpkt.parm1, rxpkt.parm2);
 		goto out_unlock;
 	}
 
@@ -1067,19 +1013,10 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 
 		ret = ADAM110_GET_AUDIOBUFFER(priv, rxpkt.parm2, s_temp_chunk, &pcm_size);
 		if (ret != OK) {
-            auddbg("[E] PCM GET_AUDIOBUFFER failed ret=%d\n", ret);
-            goto errout_record;
+            auddbg("[E] PCM GET_AUDIOBUFFER failed ret=%d, drop this packet\n", ret);
+            goto out_unlock;
         }
-        
-        uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, pcm_size);
-        uint8_t recv_sum = s_temp_chunk[pcm_size];
 
-        if (cal_sum != recv_sum) {
-            auddbg("[PCM] checksum mismatch calc=0x%02x recv=0x%02x size=%u\n", cal_sum, recv_sum, pcm_size);
-            ret = -EIO;
-            goto errout_record;
-        }
-		
         pcm_apb = pcm_waitq_take_one(priv);
         if (pcm_apb) {
             audvdbg("pcm_apb : %p\n", pcm_apb);
@@ -1108,14 +1045,6 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 errout_seamless:
     adam110_givesem(&priv->devsem);
     priv->lower->irq_enable(true);
-    return ret;
-
-errout_record:
-    adam110_givesem(&priv->devsem);
-    priv->lower->irq_enable(true);
-    if (priv->dev.upper) {
-        priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_IOERR, NULL, ret);
-    }
     return ret;
 
 out_unlock:
@@ -2146,7 +2075,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
 	/* 4096 overflows: adam110_send_model()'s chunk_buf alone is
 	 * ADAM110_MODEL_CHUNK_SIZE+1 (3841) bytes, reached from here via
-	 * adam110_check_aliveness() -> adam110_reload_model()/adam110_load_firmware(). */
+	 * adam110_check_aliveness() -> adam110_load_firmware(). */
 	pid_t pid = kernel_thread("alive_check", 100, 8192, adam110_app_device_alive_check, NULL);
 	if (pid < 0) {
 		auddbg("Device alive check thread creatiopn failed\n");
