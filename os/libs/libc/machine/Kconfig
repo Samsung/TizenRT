@@ -786,6 +786,7 @@ endif
 if ARCH_ARM64
 endif
 if ARCH_RISCV
+source "libs/libc/machine/risc-v/Kconfig"
 endif
 if ARCH_SIM
 endif
