@@ -30,7 +30,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <time.h>
-#include <tinyara/time.h>
+#include <tinyara/clock.h>
 #include <sys/types.h>
 #include <math.h>
 #include <float.h>

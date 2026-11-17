@@ -54,7 +54,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <tinyara/i2c.h>
-#include <tinyara/math.h>
+#include <math.h>
 
 #define TCS34725_ADDRESS          (0x29)
 #define TCS34725_COMMAND_BIT      (0x80)

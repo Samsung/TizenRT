@@ -32,8 +32,8 @@
 #include <strings.h>
 #include <signal.h>
 
-#include <tinyara/float.h>
-#include <tinyara/math.h>
+#include <float.h>
+#include <math.h>
 
 #include "tc_internal.h"
 
