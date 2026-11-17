@@ -202,6 +202,7 @@ config TC_KERNEL_IRQ
 	bool "irq"
 	default n
 	depends on TIMER
+	select IRQ_FIN_WAIT
 
 config ITC_KERNEL_ENVIRON
 	bool "ITC Environ"
