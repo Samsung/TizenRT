@@ -70,6 +70,17 @@ static sq_queue_t g_smp_call_queue[CONFIG_SMP_NCPUS];
 static spinlock_t g_smp_call_lock;
 
 /****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/* CPUs on which the scheduler may run tasks.  nx_smp_start() marks CPU0
+ * and sched_cpuon() adds a CPU as it brings it up.  sched_getactivecpu()
+ * returns the mask to the PM code; that source is not in the build yet.
+ */
+
+cpu_set_t g_active_cpus_mask;
+
+/****************************************************************************
  * Private Functions
  ****************************************************************************/
 

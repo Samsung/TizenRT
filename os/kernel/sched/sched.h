@@ -204,6 +204,12 @@ extern dq_queue_t g_readytorun;
 
 extern FAR struct tcb_s *g_assignedtasks[CONFIG_SMP_NCPUS];
 
+/* The set of CPUs on which the scheduler may run tasks, defined in
+ * sched_smp.c.
+ */
+
+extern cpu_set_t g_active_cpus_mask;
+
 /* g_delivertasks is used to indicate that a task switch is scheduled for
  * another cpu to be processed.
  */

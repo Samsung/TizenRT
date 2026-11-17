@@ -45,6 +45,7 @@
 
 #include <sys/types.h>
 #include <stdio.h>
+#include <sched.h>
 #include <assert.h>
 #include <debug.h>
 
@@ -140,14 +141,18 @@ int nx_smp_start(void)
 
 	up_flush_dcache_all();
 
+	/* CPU0 is running: record it before the secondary CPUs join. */
+
+	CPU_SET(0, &g_active_cpus_mask);
+
 	/* Start all of the other CPUs.  CPU0 is already running. */
 
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		/* Start the CPU */
+		/* Power on and start the CPU */
 
-		ret = up_cpu_start(cpu);
+		ret = sched_cpuon(cpu);
 		if (ret < 0) {
-			serr("ERROR: Failed to start CPU%d: %d\n", cpu, ret);
+			serr("ERROR: Failed to power on CPU%d: %d\n", cpu, ret);
 			return ret;
 		}
 	}

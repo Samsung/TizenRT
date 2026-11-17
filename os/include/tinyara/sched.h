@@ -1348,6 +1348,31 @@ int nxsched_get_affinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask);
 #endif
 
 /****************************************************************************
+ * Name: sched_cpuon
+ *
+ * Description:
+ *   Request to bring a CPU to the powered-on state.  Calls the board
+ *   up_cpu_on() hook and marks the CPU active in g_active_cpus_mask.
+ *   A CPU cannot turn itself on, CPU 0 is always on and a CPU that is
+ *   already active is not touched again.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index to turn on (1 .. CONFIG_SMP_NCPUS-1)
+ *
+ * Returned Value:
+ *   Zero (OK) on success; otherwise a negated errno value:
+ *
+ *     EINVAL  The CPU number is invalid or names the calling CPU.
+ *     EBUSY   Another power transition is in progress.
+ *     ENOTSUP The CPU is already on.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int sched_cpuon(int cpu);
+#endif
+
+/****************************************************************************
  * Name: nxsched_set_affinity
  *
  * Description:
