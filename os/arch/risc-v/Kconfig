@@ -1,0 +1,395 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_RISCV
+comment "RISC-V Options"
+
+choice
+	prompt "RISC-V chip selection"
+	default ARCH_CHIP_QEMU_RV
+
+config ARCH_CHIP_QEMU_RV
+	bool "QEMU RV"
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_DPFPU
+	select ARCH_HAVE_MULTICPU
+	select ARCH_HAVE_MPU
+	select ARCH_MMU_TYPE_SV39 if ARCH_CHIP_QEMU_RV64
+	select ARCH_MMU_TYPE_SV32 if ARCH_CHIP_QEMU_RV32
+	select NUTTSBI_LATE_INIT if NUTTSBI
+	select ARCH_HAVE_ADDRENV
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_HAVE_S_MODE
+	select ARCH_HAVE_ELF_EXECUTABLE
+	select ONESHOT
+	select ONESHOT_COUNT
+	select ONESHOT_FAST_DIVISION
+	select ALARM_ARCH
+	select ARCH_HAVE_DEBUG
+	---help---
+		QEMU Generic RV32/RV64 processor
+
+config ARCH_CHIP_ESP32C6
+	bool "ESP32-C6"
+	select ARCH_RV32
+	select ARCH_RV_ISA_M
+	select ARCH_RV_ISA_A
+	select ARCH_RV_ISA_C
+	select ARCH_VECNOTIRQ
+	select ARCH_HAVE_BOOTLOADER if !ESPRESSIF_SIMPLE_BOOT
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_RNG
+	select ARCH_HAVE_TICKLESS
+	select LIBC_ARCH_MEMCPY
+	select LIBC_ARCH_MEMCHR
+	select LIBC_ARCH_MEMCMP
+	select LIBC_ARCH_MEMMOVE
+	select LIBC_ARCH_MEMSET
+	select LIBC_ARCH_STRCHR
+	select LIBC_ARCH_STRCMP
+	select LIBC_ARCH_STRCPY
+	select LIBC_ARCH_STRLCPY
+	select LIBC_ARCH_STRNCPY
+	select LIBC_ARCH_STRLEN
+	select LIBC_ARCH_STRNLEN
+	select ESPRESSIF_SOC_RTC_MEM_SUPPORTED
+	select ARCH_CHIP_ESPRESSIF
+	select ARCH_HAVE_RAMFUNCS
+	select ONESHOT_COUNT if ONESHOT
+	select ONESHOT_FAST_DIVISION if ONESHOT
+	---help---
+		Espressif ESP32-C6 (RV32IMAC).
+
+endchoice # RISC-V chip selection
+
+config ARCH_RV32
+	bool
+	default n
+
+config ARCH_RV64
+	bool
+	default n
+	select ARCH_64BIT if !ARCH_RV64ILP32
+
+config ARCH_RV64ILP32
+	bool
+	depends on ARCH_RV64
+	default n
+
+config ARCH_RV_ISA_M
+	bool
+	default n
+
+config ARCH_RV_ISA_A
+	bool
+	default n
+	select ARCH_HAVE_TESTSET
+
+config ARCH_RV_ISA_C
+	bool
+	default n
+
+config ARCH_RV_ISA_V
+	bool
+	default n
+	depends on ARCH_FPU
+
+if ARCH_RV_ISA_V
+
+config ARCH_RV_VECTOR_BYTE_LENGTH
+	int "Vector Register Length in bytes"
+	default 32
+	---help---
+		Predefined vector register length. If CSR vlenb is greater than the
+		current reserved value, appropriate memory will be allocated to
+		save/restore the vector registers.
+		The XLEN-bit-wide read-only CSR vlenb holds the value VLEN/8, i.e.,
+		the vector register length in bytes.  The value in vlenb is a
+		design-time constant in any implementation.  Without this CSR, several
+		instructions are needed to calculate VLEN in bytes. The code has to
+		disturb current vl and vtype settings which require them to be saved and restored.
+
+endif
+
+config ARCH_RV_MACHINE_ISA_1_13
+	bool "Machine ISA Version 1.13 or later"
+	default n
+	---help---
+		Indicates support for Machine ISA Version 1.13 or later.
+		This version defined hardware error and software check exception codes,
+		which extend the range of exception codes from 0 ~ 15 to 0 ~ 19.
+
+config ARCH_RV_ISA_ZICSR_ZIFENCEI
+	bool "Enable Zicsr and Zifencei extensions (GCC >= 12.1.0.)"
+	default y
+	---help---
+		https://sourceware.org/git/?p=binutils-gdb.git;a=commit;h=aed44286efa8ae8717a77d94b51ac3614e2ca6dc
+		https://gcc.gnu.org/git/?p=gcc.git;a=commit;h=98416dbb0a62579d4a7a4a76bab51b5b52fec2cd
+		GCC-12.1.0 bumped the default ISA spec to the newer 20191213 version,
+		which moves some instructions from the I extension to the Zicsr and
+		Zifencei extensions. This requires explicitly specifying Zicsr and
+		Zifencei when GCC >= 12.1.0. To make life easier, and avoid forcing
+		toolchains that default to a newer ISA spec to version 2.2. For
+		clang < 17 or GCC < 11.3.0, for which this is not possible or need
+		special treatment.
+
+config ARCH_RV_EXPERIMENTAL_EXTENSIONS
+	string "LLVM RISC-V Experimental Extensions"
+	default ""
+	depends on RISCV_TOOLCHAIN_CLANG
+	---help---
+		This option allows the platform to enable experimental extensions,
+		LLVM supports (to various degrees) a number of experimental extensions.
+		All experimental extensions have experimental- as a prefix. There is
+		explicitly no compatibility promised between versions of the toolchain,
+		and regular users are strongly advised not to make use of experimental
+		extensions before they reach ratification.
+
+config ARCH_RV_ISA_VENDOR_EXTENSIONS
+	string "Vendor Custom RISC-V Instruction Set Architecture Extensions"
+	default ""
+	---help---
+		This option allows the platform to enable some vendor-customized ISA extensions,
+		E.g OpenHW, SiFive, T-Head.
+
+		SiFive Intelligence Extensions:
+		    SiFive Vector Coprocessor Interface(VCIX): xsfvcp
+		    SiFive FP32-to-int8 Ranged Clip Instructions: Xsfvfnrclipxfqf
+		    SiFive Matrix Multiply Accumulate Instructions: Xsfvfwmaccqqq
+		    SiFive Int8 Matrix Multiplication Instructions: XSFvqmaccqoq
+		Command Line:
+		    xsfvcp0p1_xsfvfnrclipxfqf0p1_xsfvfwmaccqqq0p1_xsfvqmaccqoq0p1
+
+config ARCH_RV_MMIO_BITS
+	int
+	# special cases
+	default 32 if ARCH_CHIP_K230
+	# general fallbacks
+	default 32 if ARCH_RV32
+	default 64 if ARCH_RV64
+
+config ARCH_RV_CPUID_MAP
+	bool "Enable CPUID mapping"
+	default n
+	---help---
+		Enable CPUID mapping for systems where the hardware CPU IDs
+		need to be mapped to logical CPU IDs. This is useful for
+		systems with non-contiguous or non-linear CPU numbering.
+
+config ARCH_RV_HARTID_BASE
+	int "Base hartid of this cluster"
+	default 0
+	---help---
+		This setting is used in multi-cluster RISC-V systems where each hardware
+		thread (hart) has a globally unique mhartid value.
+
+		Purpose:
+		- Maps global hardware thread IDs (mhartid) to cluster-local IDs
+		- Enables NuttX to work with cluster-local hart IDs while maintaining
+		  global uniqueness across the system
+
+		Example:
+		In a system with:
+		- Cluster A: harts 100-103
+		- Cluster B: harts 200-203
+		- Cluster C: harts 300-303
+
+		If this is Cluster B's configuration, set ARCH_RV_HARTID_BASE=200.
+		NuttX will then map:
+		- Global hart 200 -> Local hart 0
+		- Global hart 201 -> Local hart 1
+		- Global hart 202 -> Local hart 2
+		- Global hart 203 -> Local hart 3
+
+		Key Points:
+		1. SMP_NCPUS defines the number of harts in this cluster
+		2. Global hart IDs within a cluster must be consecutive
+		3. Some chips like K230 don't use global mhartid numbering
+		4. The base value should match the starting mhartid of this cluster
+		5. Local hart IDs always start from 0 within each cluster
+
+		Special Cases:
+		- For chips like K230 that don't use global mhartid numbering,
+		  this value should typically be set to 0
+		- In single-cluster systems, this can usually remain at default (0)
+
+config ARCH_FAMILY
+	string
+	default "rv32" if ARCH_RV32
+	default "rv64" if ARCH_RV64
+
+config ARCH_CHIP
+	string
+	default "esp32c6"               if ARCH_CHIP_ESP32C6
+	default "qemu-rv"               if ARCH_CHIP_QEMU_RV
+
+config ARCH_RISCV_INTXCPT_EXTENSIONS
+	bool "RISC-V Integer Context Extensions"
+	default n
+	---help---
+		RISC-V could be customized with extensions. Some Integer Context
+		Registers have to be saved and restored when Contexts switch.
+
+if ARCH_RISCV_INTXCPT_EXTENSIONS
+
+config ARCH_RISCV_INTXCPT_EXTREGS
+	int "Number of Extral RISC-V Integer Context Registers"
+	default 0
+
+endif
+
+config ARCH_MMU_TYPE_SV39
+	bool
+	default n
+	select ARCH_HAVE_MMU
+
+config ARCH_MMU_TYPE_SV32
+	bool
+	default n
+	select ARCH_HAVE_MMU
+
+config ARCH_MMU_EXT_THEAD
+	bool "Enable T-Head MMU extension support"
+	default n
+	depends on ARCH_HAVE_MMU
+	---help---
+		Enable support for T-Head MMU extension.
+
+config ARCH_HAVE_S_MODE
+	bool
+	default n
+
+config ARCH_HAVE_MISALIGN_EXCEPTION
+	bool
+	default n
+	---help---
+		The chip will raise a exception while misaligned memory access.
+
+config RISCV_MISALIGNED_HANDLER
+	bool "Software misaligned memory access handler"
+	depends on ARCH_HAVE_MISALIGN_EXCEPTION
+	default y
+
+config RISCV_PERCPU_SCRATCH
+	bool "Enable Scratch-based Per-CPU storage"
+	default y if LIB_SYSCALL
+	---help---
+		In some special chipsets, multiple CPUs may be bundled in one hardware
+		thread cluster, which results in hartid and cpuindex not being exactly
+		the same.
+		This option will enable Scratch-based Per-CPU storage to distinguish
+		the real cpu index.
+
+# Option to run NuttX in supervisor mode. This is obviously not usable in
+# flat mode, is questionable in protected mode, but is mandatory in kernel
+# mode.
+#
+# Kernel mode requires this as M-mode uses flat addressing and the kernel
+# memory must be mapped in order to share memory between the kernel and
+# different user tasks which reside in virtual memory.
+#
+# Note that S-mode requires a companion software (SBI)
+#
+
+config ARCH_USE_S_MODE
+	bool "Run NuttX in S-mode"
+	default n
+	depends on ARCH_HAVE_S_MODE
+	select RISCV_PERCPU_SCRATCH
+	---help---
+		Most of the RISC-V implementations run in M-mode (flat addressing)
+		and/or U-mode (in case of separate kernel-/userspaces). This provides
+		an option to run the kernel in S-mode, if the target supports it.
+
+config ARCH_RV_EXT_SSTC
+	bool "Enable RISC-V SSTC extension support"
+	default n
+	depends on ARCH_USE_S_MODE
+
+config ARCH_RV_HAVE_APLIC
+	bool "Enable RISC-V Advanced Platform-Level Interrupt Controller support"
+	default n
+	---help---
+		Instead of PLIC, RISC-V also defines Advanced Platform-Level Interrupt
+		Controller (APLIC) to provide flexible interrupt control. This device
+		is not backward compatible with PLIC.
+
+config ARCH_RV_EXT_AIA
+	bool "Enable RISC-V SxAIA support"
+	default n
+	---help---
+		Advanced Interrupt Architecture defines necessary features that
+		impact the ISA at a hart. This should not be selected if the
+		target does not support SxAIA for the operating mode of NuttX.
+
+if ARCH_RV_EXT_AIA
+
+config ARCH_RV_HAVE_IMSIC
+	bool "Enable RISC-V AIA Incoming Message Controller support"
+	default n
+
+endif # ARCH_RV_EXT_AIA
+
+choice
+	prompt "Toolchain Selection"
+	default RISCV_TOOLCHAIN_GNU_RV64
+
+config RISCV_TOOLCHAIN_GNU_RV64
+	bool "Generic GNU RV64 toolchain"
+	select ARCH_TOOLCHAIN_GNU
+	---help---
+		This option should work for any modern GNU toolchain (GCC 5.2 or newer)
+		configured for riscv64-unknown-elf.
+
+config RISCV_TOOLCHAIN_GNU_RV32
+	bool "Generic GNU RV32 toolchain"
+	select ARCH_TOOLCHAIN_GNU
+	---help---
+		This option should work for any modern GNU toolchain (GCC 5.2 or newer)
+		configured for riscv32-unknown-elf.
+
+config RISCV_TOOLCHAIN_CLANG
+	bool "LLVM Clang toolchain"
+	select ARCH_TOOLCHAIN_CLANG
+
+config RISCV_TOOLCHAIN_GNU_RV64ILP32
+	bool "Generic GNU RV64ILP32 toolchain"
+	select ARCH_TOOLCHAIN_GNU
+	select ARCH_RV64ILP32
+	---help---
+		This option work with Ruyisdk toolchain (GCC 13 or newer)
+		configured for riscv64-unknown-elf.
+
+endchoice # Toolchain Selection
+
+config RISCV_SEMIHOSTING_HOSTFS
+	bool "Semihosting HostFS"
+	depends on FS_HOSTFS
+	---help---
+		Mount HostFS through semihosting.
+
+		This doesn't support some directory operations like readdir because
+		of the limitations of semihosting mechanism.
+
+if RISCV_SEMIHOSTING_HOSTFS
+
+config RISCV_SEMIHOSTING_HOSTFS_CACHE_COHERENCE
+	bool "Cache coherence in semihosting hostfs"
+	depends on ARCH_DCACHE
+	---help---
+		Flush & Invalidate cache before & after bkpt instruction.
+
+endif # RISCV_SEMIHOSTING_HOSTFS
+
+if ARCH_CHIP_ESP32C6
+source "arch/risc-v/src/esp32c6/Kconfig"
+endif
+if ARCH_CHIP_QEMU_RV
+source "arch/risc-v/src/qemu-rv/Kconfig"
+endif
+
+endif # ARCH_RISCV
