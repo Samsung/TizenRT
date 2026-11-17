@@ -48,6 +48,14 @@
 #include <assert.h>
 
 /****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+#ifdef CONFIG_LIBCXXTOOLCHAIN
+int __xpg_strerror_r(int errnum, FAR char *buf, size_t buflen);
+#endif
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -76,3 +84,21 @@ int strerror_r(int errnum, FAR char *buf, size_t buflen)
 	strlcpy(buf, errstr, buflen);
 	return OK;
 }
+
+/****************************************************************************
+ * Name: __xpg_strerror_r
+ *
+ * Description:
+ *   newlib names the POSIX strerror_r() __xpg_strerror_r() (its strerror_r()
+ *   is the GNU one).  The libstdc++ of a toolchain that is built with newlib
+ *   calls it from std::generic_category(), so it is needed to link with the
+ *   C++ library of the toolchain.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_LIBCXXTOOLCHAIN
+int __xpg_strerror_r(int errnum, FAR char *buf, size_t buflen)
+{
+	return strerror_r(errnum, buf, buflen);
+}
+#endif
