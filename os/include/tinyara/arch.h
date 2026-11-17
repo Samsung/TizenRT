@@ -2380,6 +2380,57 @@ int8_t up_fetchsub8(FAR volatile int8_t *addr, int8_t value);
 int up_cpu_idlestack(int cpu, FAR struct tcb_s *tcb, size_t stack_size);
 
 /****************************************************************************
+ * Name: up_cpu_on
+ *
+ * Description:
+ *   Bring CPUn out of power-off and hand it to its kernel entry point.
+ *   The generic armv7-a implementation (arch/arm/src/armv7-a/arm_cpuon.c)
+ *   validates the request and delegates the hardware sequence to the board
+ *   hook up_cpu_up().  On a board whose cores are already powered and only
+ *   wait to be released (imx6: imx_cpu_enable() parks them in
+ *   arm_cpu_boot()), up_cpu_up() is simply up_cpu_start(), the CPUSTART
+ *   SGI.  Where the secondary core is powered off at cold boot (amebasmart:
+ *   power domain, then PSCI CPU_ON) up_cpu_up() performs the power-on, and
+ *   where the firmware offers PSCI (qemu) up_cpu_up() is up_cpu_start()
+ *   issuing that CPU_ON call.  A PSCI request carries the entry point, so
+ *   no CPUSTART SGI is needed after it.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being powered on (1 .. CONFIG_SMP_NCPUS-1)
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_on(int cpu);
+#endif
+
+/****************************************************************************
+ * Name: up_cpu_up
+ *
+ * Description:
+ *   Board hook of up_cpu_on(): power the core on and release it at its
+ *   kernel entry point.  Every board that enables CONFIG_SMP must provide
+ *   this function.  It is deliberately declared without a default
+ *   implementation: --whole-archive is not used in this build, so a weak
+ *   default would satisfy the reference and the linker would silently drop
+ *   the board implementation instead of booting without its secondary core.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being powered on (1 .. CONFIG_SMP_NCPUS-1)
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int up_cpu_up(int cpu);
+#endif
+
+/****************************************************************************
  * Name: up_cpu_start
  *
  * Description:
