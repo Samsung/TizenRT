@@ -26,6 +26,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/sched.h>
+#include "sched/sched.h"
 
 /****************************************************************************
  * Public Functions
@@ -51,12 +52,12 @@
 
 int fin_notify(pid_t pid, int data)
 {
-	int saved_state;
-	struct tcb_s *tcb;
+	irqstate_t saved_state;
+	FAR struct tcb_s *tcb;
 
 	saved_state = enter_critical_section();
 
-	tcb = sched_gettcb(pid);
+	tcb = nxsched_get_tcb(pid);
 	if (tcb == NULL) {
 		leave_critical_section(saved_state);
 		return ERROR;
@@ -71,10 +72,23 @@ int fin_notify(pid_t pid, int data)
 	}
 
 	if (tcb->task_state == TSTATE_WAIT_FIN) {
-		up_unblock_task(tcb);
+		/* Remove the task from the fin waiting list */
+
+		dq_rem((FAR dq_entry_t *)tcb, list_waitingforfin());
+
+		/* Add the task to the ready-to-run task list and perform the
+		 * context switch if one is needed
+		 */
+
+		if (nxsched_add_readytorun(tcb)) {
+			FAR struct tcb_s *rtcb = this_task();
+
+			up_switch_context(this_task(), rtcb);
+		}
 	}
 
 	leave_critical_section(saved_state);
 
 	return OK;
 }
+

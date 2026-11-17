@@ -28,6 +28,18 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/sched.h>
+#include "sched/sched.h"
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/* This is the list of all tasks that are blocked waiting for a fin
+ * (irq finalization) notification.  Like the other global task lists it
+ * is zero-initialized in BSS, so no boot-time initialization is needed.
+ */
+
+dq_queue_t g_waitingforfin;
 
 /****************************************************************************
  * Private Functions
@@ -65,13 +77,13 @@ static void update_fin_queue(struct tcb_s *tcb)
 int fin_wait(void)
 {
 	int ret = NO_FIN_DATA;
-	int saved_state;
-	struct tcb_s *tcb;
+	irqstate_t saved_state;
+	FAR struct tcb_s *tcb;
 
 	saved_state = enter_critical_section();
 
-	tcb = sched_self();
-	DEBUGASSERT(tcb);
+	tcb = this_task();
+	DEBUGASSERT(tcb != NULL);
 
 	if (tcb->fin_data != NO_FIN_DATA) {
 		/* If there is already pending irq, return saved irq data. */
@@ -83,7 +95,21 @@ int fin_wait(void)
 		return ret;
 	}
 
-	up_block_task(tcb, TSTATE_WAIT_FIN);
+	/* Remove the tcb task from the ready-to-run list and move it to the
+	 * fin waiting list.  fin_notify() removes the task from the list and
+	 * makes it ready-to-run again.
+	 */
+
+	nxsched_remove_self(tcb);
+
+	tcb->task_state = TSTATE_WAIT_FIN;
+	nxsched_add_prioritized(tcb, list_waitingforfin());
+
+	/* Now, perform the context switch */
+
+	up_switch_context(this_task(), tcb);
+
+	/* Resumed: fin_notify() delivered the data and unblocked us */
 
 	if (tcb->fin_data != NO_FIN_DATA) {
 		ret = tcb->fin_data;

@@ -68,6 +68,10 @@
 #define irq_detach_wqueue(irq) irq_attach_wqueue(irq, NULL, NULL, NULL, 0)
 #define irq_detach_thread(irq) irq_attach_thread(irq, NULL, NULL, NULL, 0, 0)
 
+/* Special fin_wait() data meaning "no irq event received" */
+
+#define NO_FIN_DATA -999
+
 /* Maximum/minimum values of IRQ integer types */
 
 #if NR_IRQS <= 256
@@ -324,6 +328,18 @@ int irqchain_detach(int irq, xcpt_t isr, FAR void *arg);
 #else
 #  define irqchain_detach(irq, isr, arg) irq_detach(irq)
 #endif
+
+/* fin_wait()/fin_notify() pair: per-task mailbox for kernel irq events.
+ *
+ * fin_notify() delivers data to the task with the given pid.  If that task
+ * is blocked in fin_wait() (task_state TSTATE_WAIT_FIN) it is unblocked,
+ * otherwise the data is only queued in its TCB for the next fin_wait().
+ * fin_wait() returns the received data, or NO_FIN_DATA if none was pending
+ * and none arrives.
+ */
+
+int fin_notify(pid_t pid, int data);
+int fin_wait(void);
 
 /****************************************************************************
  * Name: enter_critical_section
