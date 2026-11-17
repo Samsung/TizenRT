@@ -61,8 +61,8 @@
 #include <tinyara/irq.h>
 #include <tinyara/progmem.h>
 
-#include "up_arch.h"
-#include "cache.h"
+#include "arm_internal.h"
+#include <tinyara/cache.h>
 #include "chip.h"
 
 #include "s5j_clock.h"
@@ -104,19 +104,21 @@ ssize_t up_progmem_getpage(size_t addr)
 	return (addr - S5J_FLASH_PADDR) / up_progmem_pagesize(0);
 }
 
-ssize_t up_progmem_erasepage(size_t page)
+ssize_t up_progmem_eraseblock(size_t block)
 {
 	size_t addr;
+	size_t erasesize;
 	irqstate_t irqs;
 
-	if (page >= up_progmem_npages()) {
+	if (block >= up_progmem_neraseblocks()) {
 		return -EFAULT;
 	}
 
-	addr = up_progmem_getaddress(page);
+	erasesize = up_progmem_erasesize(block);
+	addr = S5J_FLASH_PADDR + erasesize * block;
 
 	/* Disable IRQs while erasing sector */
-	irqs = irqsave();
+	irqs = enter_critical_section();
 
 	s5j_sflash_disable_wp();
 
@@ -130,12 +132,12 @@ ssize_t up_progmem_erasepage(size_t page)
 	s5j_sflash_enable_wp();
 
 	/* Invalidate cache */
-	arch_invalidate_dcache(addr, addr + up_progmem_blocksize());
+	up_invalidate_dcache(addr, addr + erasesize);
 
 	/* Restore IRQs */
-	irqrestore(irqs);
+	leave_critical_section(irqs);
 
-	return up_progmem_blocksize();
+	return erasesize;
 }
 
 ssize_t up_progmem_ispageerased(size_t page)
@@ -143,21 +145,24 @@ ssize_t up_progmem_ispageerased(size_t page)
 	size_t addr;
 	size_t count;
 	size_t bwritten;
+	uint8_t erasestate;
 
-	if (page >= up_progmem_npages()) {
+	if (page >= up_progmem_neraseblocks() *
+		(up_progmem_erasesize(0) / up_progmem_pagesize(0))) {
 		return -EFAULT;
 	}
 
 	bwritten = 0;
+	erasestate = up_progmem_erasestate();
 	addr = up_progmem_getaddress(page);
 	for (count = up_progmem_pagesize(page); count; count--) {
-		if (getreg32(addr) != 0xffffff) {
+		if (getreg8(addr) != erasestate) {
 			bwritten++;
 		}
-		addr += sizeof(int);
+		addr++;
 	}
 
-	return bwritten * sizeof(int);
+	return bwritten;
 }
 
 ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
@@ -182,7 +187,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		}
 
 		/* Disable IRQs */
-		irqs = irqsave();
+		irqs = enter_critical_section();
 
 		s5j_sflash_disable_wp();
 
@@ -190,12 +195,12 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		memcpy((void *)addr, buf, tmp);
 
 		/* Flush cache */
-		arch_flush_dcache(addr, addr + tmp);
+		up_flush_dcache(addr, addr + tmp);
 
 		s5j_sflash_enable_wp();
 
 		/* Restore IRQs */
-		irqrestore(irqs);
+		leave_critical_section(irqs);
 
 		buf += tmp;
 		addr += tmp;
@@ -203,6 +208,11 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 	}
 
 	return count;
+}
+
+uint8_t up_progmem_erasestate(void)
+{
+	return 0xff;
 }
 #endif							/* CONFIG_MTD_PROGMEM */
 

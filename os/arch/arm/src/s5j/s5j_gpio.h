@@ -60,7 +60,7 @@
 #include <tinyara/config.h>
 
 #include <tinyara/irq.h>
-#include <tinyara/gpio.h>
+#include <tinyara/ioexpander/gpio.h>
 
 #include "chip.h"
 #include "chip/s5jt200_gpio.h"
@@ -230,7 +230,7 @@ extern "C"
  * Description:
  *
  ****************************************************************************/
-struct gpio_lowerhalf_s *s5j_gpio_lowerhalf(uint16_t pincfg);
+struct gpio_dev_s *s5j_gpio_lowerhalf(uint16_t pincfg);
 
 /****************************************************************************
  * Name: s5j_configgpio
@@ -267,6 +267,25 @@ void s5j_gpiowrite(uint32_t pinset, bool value);
  *
  ****************************************************************************/
 bool s5j_gpioread(uint32_t pinset);
+
+/****************************************************************************
+ * Name: s5j_gpio_irqvector
+ *
+ * Description:
+ *   Return the external interrupt vector of the selected GPIO pin, or 0 if
+ *   the pin cannot generate an interrupt.
+ *
+ ****************************************************************************/
+uint8_t s5j_gpio_irqvector(uint32_t pincfg);
+
+/****************************************************************************
+ * Name: s5j_gpio_clear_pending
+ *
+ * Description:
+ *   Clear the pending external interrupt of the selected GPIO pin
+ *
+ ****************************************************************************/
+void s5j_gpio_clear_pending(uint32_t pincfg);
 
 #undef EXTERN
 #ifdef __cplusplus

@@ -61,146 +61,177 @@
 #include <errno.h>
 
 #include <arch/irq.h>
-#include <tinyara/gpio.h>
+#include <tinyara/irq.h>
+#include <tinyara/ioexpander/gpio.h>
 #include <tinyara/kmalloc.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_gpio.h"
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-struct s5j_lowerhalf_s {
-	FAR const struct gpio_ops_s *ops;
-	struct gpio_upperhalf_s *parent;
-
+struct s5j_gpio_dev_s {
+	struct gpio_dev_s gpio;		/* Must be the first member */
 	uint32_t pincfg;
-	gpio_handler_t handler;
+	pin_interrupt_t callback;
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+static int s5j_gpio_read(FAR struct gpio_dev_s *dev, FAR bool *value);
+static int s5j_gpio_write(FAR struct gpio_dev_s *dev, bool value);
+static int s5j_gpio_attach(FAR struct gpio_dev_s *dev, pin_interrupt_t callback);
+static int s5j_gpio_enable(FAR struct gpio_dev_s *dev, bool enable);
+static int s5j_gpio_setpintype(FAR struct gpio_dev_s *dev, enum gpio_pintype_e pintype);
+static int s5j_gpio_setdebounce(FAR struct gpio_dev_s *dev, unsigned long duration);
+static int s5j_gpio_setmask(FAR struct gpio_dev_s *dev, bool mask);
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+static const struct gpio_operations_s s5j_gpio_ops = {
+	.go_read        = s5j_gpio_read,
+	.go_write       = s5j_gpio_write,
+	.go_attach      = s5j_gpio_attach,
+	.go_enable      = s5j_gpio_enable,
+	.go_setpintype  = s5j_gpio_setpintype,
+	.go_setdebounce = s5j_gpio_setdebounce,
+	.go_setmask     = s5j_gpio_setmask,
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#ifndef CONFIG_DISABLE_POLL
 static int s5j_gpio_interrupt(int irq, FAR void *context, FAR void *arg)
 {
-	struct s5j_lowerhalf_s *lower = (struct s5j_lowerhalf_s *)arg;
+	FAR struct s5j_gpio_dev_s *priv = (FAR struct s5j_gpio_dev_s *)arg;
 
-	s5j_gpio_clear_pending(lower->pincfg);
+	s5j_gpio_clear_pending(priv->pincfg);
 
-	if (lower->handler != NULL) {
-		DEBUGASSERT(lower->handler != NULL);
-		lower->handler(lower->parent);
+	if (priv->callback != NULL) {
+		priv->callback(&priv->gpio, 0);
 	}
 
 	return OK;
 }
-#endif
 
 /****************************************************************************
- * Name: s5j_gpio_get
+ * Name: s5j_gpio_pintype
  *
  * Description:
- *   Get GPIO value
+ *   Translate the bit-encoded S5J pin configuration into the GPIO pin type
+ *   reported to the upper half driver.
  *
- * Input Parameters:
- *   lower - lowerhalf GPIO driver
- *
- * Returned Value:
- *   >= 0: gpio value
- *   == -EINVAL: invalid gpio
  ****************************************************************************/
-static int s5j_gpio_get(FAR struct gpio_lowerhalf_s *lower)
+static enum gpio_pintype_e s5j_gpio_pintype(uint32_t pincfg)
 {
-	struct s5j_lowerhalf_s *priv = (struct s5j_lowerhalf_s *)lower;
+	switch (pincfg & GPIO_FUNC_MASK) {
+	case GPIO_OUTPUT:
+		return GPIO_OUTPUT_PIN;
 
-	return s5j_gpioread(priv->pincfg);
+	case GPIO_EINT:
+		switch (pincfg & GPIO_EINT_MASK) {
+		case GPIO_EINT_LOW:
+			return GPIO_INTERRUPT_LOW_PIN;
+		case GPIO_EINT_HIGH:
+			return GPIO_INTERRUPT_HIGH_PIN;
+		case GPIO_EINT_FALLING_EDGE:
+			return GPIO_INTERRUPT_FALLING_PIN;
+		case GPIO_EINT_RISING_EDGE:
+			return GPIO_INTERRUPT_RISING_PIN;
+		default:
+			return GPIO_INTERRUPT_BOTH_PIN;
+		}
+
+	default:
+		break;
+	}
+
+	switch (pincfg & GPIO_PUPD_MASK) {
+	case GPIO_PULLUP:
+		return GPIO_INPUT_PIN_PULLUP;
+	case GPIO_PULLDOWN:
+		return GPIO_INPUT_PIN_PULLDOWN;
+	default:
+		return GPIO_INPUT_PIN;
+	}
 }
 
 /****************************************************************************
- * Name: s5j_gpio_set
+ * Name: s5j_gpio_read
  *
  * Description:
- *   Set GPIO value
- *
- * Input Parameters:
- *   lower - lowerhalf GPIO driver
- *   value - value to set
- *
- * Returned Value:
- *   None
+ *   Read the current value of the pin.
  *
  ****************************************************************************/
-static void s5j_gpio_set(FAR struct gpio_lowerhalf_s *lower,
-						 FAR unsigned int value)
+static int s5j_gpio_read(FAR struct gpio_dev_s *dev, FAR bool *value)
 {
-	struct s5j_lowerhalf_s *priv = (struct s5j_lowerhalf_s *)lower;
+	FAR struct s5j_gpio_dev_s *priv = (FAR struct s5j_gpio_dev_s *)dev;
+
+	DEBUGASSERT(priv != NULL && value != NULL);
+
+	*value = s5j_gpioread(priv->pincfg);
+	return OK;
+}
+
+/****************************************************************************
+ * Name: s5j_gpio_write
+ *
+ * Description:
+ *   Drive the output pin.
+ *
+ ****************************************************************************/
+static int s5j_gpio_write(FAR struct gpio_dev_s *dev, bool value)
+{
+	FAR struct s5j_gpio_dev_s *priv = (FAR struct s5j_gpio_dev_s *)dev;
+
+	DEBUGASSERT(priv != NULL);
 
 	s5j_gpiowrite(priv->pincfg, value);
+	return OK;
 }
 
-static int s5j_gpio_setdir(FAR struct gpio_lowerhalf_s *lower,
-						   unsigned long arg)
+/****************************************************************************
+ * Name: s5j_gpio_attach
+ *
+ * Description:
+ *   Remember the upper half interrupt callback.  The interrupt itself is
+ *   attached and enabled by s5j_gpio_enable().
+ *
+ ****************************************************************************/
+static int s5j_gpio_attach(FAR struct gpio_dev_s *dev, pin_interrupt_t callback)
 {
-	struct s5j_lowerhalf_s *priv = (struct s5j_lowerhalf_s *)lower;
+	FAR struct s5j_gpio_dev_s *priv = (FAR struct s5j_gpio_dev_s *)dev;
 
-	priv->pincfg &= ~GPIO_FUNC_MASK;
+	DEBUGASSERT(priv != NULL);
 
-	if (arg == GPIO_DIRECTION_OUT) {
-		priv->pincfg |= GPIO_OUTPUT;
-	} else {
-		priv->pincfg |= GPIO_INPUT;
-	}
-
-	return s5j_configgpio(priv->pincfg);
+	priv->callback = callback;
+	return OK;
 }
 
-static int s5j_gpio_pull(FAR struct gpio_lowerhalf_s *lower, unsigned long arg)
+/****************************************************************************
+ * Name: s5j_gpio_enable
+ *
+ * Description:
+ *   Enable or disable the external interrupt of the pin.
+ *
+ ****************************************************************************/
+static int s5j_gpio_enable(FAR struct gpio_dev_s *dev, bool enable)
 {
-	struct s5j_lowerhalf_s *priv = (struct s5j_lowerhalf_s *)lower;
-
-	priv->pincfg &= ~GPIO_PUPD_MASK;
-
-	if (arg == GPIO_DRIVE_FLOAT) {
-		priv->pincfg |= GPIO_FLOAT;
-	} else if (arg == GPIO_DRIVE_PULLUP) {
-		priv->pincfg |= GPIO_PULLUP;
-	} else if (arg == GPIO_DRIVE_PULLDOWN) {
-		priv->pincfg |= GPIO_PULLDOWN;
-	} else {
-		return -EINVAL;
-	}
-
-	return s5j_configgpio(priv->pincfg);
-}
-
-static int s5j_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
-						   int rising, gpio_handler_t handler)
-{
+	FAR struct s5j_gpio_dev_s *priv = (FAR struct s5j_gpio_dev_s *)dev;
 	int irqvector;
-	struct s5j_lowerhalf_s *priv = (struct s5j_lowerhalf_s *)lower;
+
+	DEBUGASSERT(priv != NULL);
 
 	irqvector = s5j_gpio_irqvector(priv->pincfg);
 	if (!irqvector) {
 		return -EINVAL;
 	}
 
-	/* clear function mask */
-	priv->pincfg &= ~GPIO_FUNC_MASK;
-
-	if (falling && rising) {
-		priv->pincfg |= GPIO_EINT | GPIO_EINT_BOTH_EDGE;
-	} else if (falling) {
-		priv->pincfg |= GPIO_EINT | GPIO_EINT_FALLING_EDGE;
-	} else if (rising) {
-		priv->pincfg |= GPIO_EINT | GPIO_EINT_RISING_EDGE;
-	} else {
-		priv->pincfg |= GPIO_INPUT;
-		handler = NULL;
-	}
-
-	priv->handler = handler;
-	if (handler) {
+	if (enable && priv->callback != NULL) {
+		s5j_gpio_clear_pending(priv->pincfg);
 		irq_attach(irqvector, s5j_gpio_interrupt, priv);
 		up_enable_irq(irqvector);
 	} else {
@@ -208,19 +239,86 @@ static int s5j_gpio_enable(FAR struct gpio_lowerhalf_s *lower, int falling,
 		irq_detach(irqvector);
 	}
 
-	return s5j_configgpio(priv->pincfg);
+	return OK;
 }
 
 /****************************************************************************
- * Private Data
+ * Name: s5j_gpio_setpintype
+ *
+ * Description:
+ *   Reconfigure the pin for the requested pin type.
+ *
  ****************************************************************************/
-static const struct gpio_ops_s s5j_gpio_ops = {
-	.set    = s5j_gpio_set,
-	.get    = s5j_gpio_get,
-	.pull   = s5j_gpio_pull,
-	.setdir = s5j_gpio_setdir,
-	.enable = s5j_gpio_enable,
-};
+static int s5j_gpio_setpintype(FAR struct gpio_dev_s *dev, enum gpio_pintype_e pintype)
+{
+	FAR struct s5j_gpio_dev_s *priv = (FAR struct s5j_gpio_dev_s *)dev;
+	uint32_t pincfg;
+	int ret;
+
+	DEBUGASSERT(priv != NULL);
+
+	pincfg = priv->pincfg & ~(GPIO_FUNC_MASK | GPIO_PUPD_MASK | GPIO_EINT_MASK);
+
+	switch (pintype) {
+	case GPIO_INPUT_PIN:
+		pincfg |= GPIO_INPUT | GPIO_FLOAT;
+		break;
+	case GPIO_INPUT_PIN_PULLUP:
+		pincfg |= GPIO_INPUT | GPIO_PULLUP;
+		break;
+	case GPIO_INPUT_PIN_PULLDOWN:
+		pincfg |= GPIO_INPUT | GPIO_PULLDOWN;
+		break;
+	case GPIO_OUTPUT_PIN:
+		pincfg |= GPIO_OUTPUT | GPIO_FLOAT;
+		break;
+	case GPIO_INTERRUPT_PIN:
+	case GPIO_INTERRUPT_BOTH_PIN:
+		pincfg |= GPIO_EINT | GPIO_EINT_BOTH_EDGE;
+		break;
+	case GPIO_INTERRUPT_HIGH_PIN:
+		pincfg |= GPIO_EINT | GPIO_EINT_HIGH;
+		break;
+	case GPIO_INTERRUPT_LOW_PIN:
+		pincfg |= GPIO_EINT | GPIO_EINT_LOW;
+		break;
+	case GPIO_INTERRUPT_RISING_PIN:
+		pincfg |= GPIO_EINT | GPIO_EINT_RISING_EDGE;
+		break;
+	case GPIO_INTERRUPT_FALLING_PIN:
+		pincfg |= GPIO_EINT | GPIO_EINT_FALLING_EDGE;
+		break;
+	default:
+		/* Open-drain output and the wakeup interrupt types are not
+		 * supported by the S5J GPIO block.
+		 */
+		return -EINVAL;
+	}
+
+	if ((pincfg & GPIO_FUNC_MASK) == GPIO_EINT && !s5j_gpio_irqvector(pincfg)) {
+		/* Only the GPG1, GPG2 and GPA0 ports can generate interrupts */
+		return -EINVAL;
+	}
+
+	ret = s5j_configgpio(pincfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	priv->pincfg = pincfg;
+	priv->gpio.gp_pintype = pintype;
+	return OK;
+}
+
+static int s5j_gpio_setdebounce(FAR struct gpio_dev_s *dev, unsigned long duration)
+{
+	return -ENOSYS;
+}
+
+static int s5j_gpio_setmask(FAR struct gpio_dev_s *dev, bool mask)
+{
+	return -ENOSYS;
+}
 
 /****************************************************************************
  * Public Functions
@@ -233,32 +331,35 @@ static const struct gpio_ops_s s5j_gpio_ops = {
  *   Instantiate the GPIO lower half driver for the S5J.
  *   General usage:
  *
- *     #include <tinyara/gpio.h>
+ *     #include <tinyara/ioexpander/gpio.h>
  *     #include "s5j_gpio.h"
  *
- *     struct gpio_lowerhalf_s *lower;
- *     lower = 5j_gpio_lowerhalf();
- *     gpio_register(0, lower);
+ *     struct gpio_dev_s *dev;
+ *     dev = s5j_gpio_lowerhalf(pincfg);
+ *     gpio_pin_register(dev, minor);
+ *
+ *   The pin is not reconfigured here; the initial pin type is derived from
+ *   pincfg and the pin is configured when the pin type is changed.
  *
  * Input Parameters:
  *   pincfg - bit encoded pinmux configuration
  *
  * Returned Value:
- *   On success, a non-NULL GPIO lower interface is returned. Otherwise, NULL.
+ *   On success, a non-NULL GPIO device is returned. Otherwise, NULL.
  *
  ****************************************************************************/
-FAR struct gpio_lowerhalf_s *s5j_gpio_lowerhalf(uint16_t pincfg)
+FAR struct gpio_dev_s *s5j_gpio_lowerhalf(uint16_t pincfg)
 {
-	struct s5j_lowerhalf_s *lower;
+	FAR struct s5j_gpio_dev_s *priv;
 
-	lower = (struct s5j_lowerhalf_s *)
-						kmm_malloc(sizeof(struct s5j_lowerhalf_s));
-	if (!lower) {
+	priv = (FAR struct s5j_gpio_dev_s *)kmm_zalloc(sizeof(struct s5j_gpio_dev_s));
+	if (!priv) {
 		return NULL;
 	}
 
-	lower->pincfg = pincfg;
-	lower->ops    = &s5j_gpio_ops;
+	priv->pincfg = pincfg;
+	priv->gpio.gp_pintype = s5j_gpio_pintype(pincfg);
+	priv->gpio.gp_ops = &s5j_gpio_ops;
 
-	return (struct gpio_lowerhalf_s *)lower;
+	return &priv->gpio;
 }

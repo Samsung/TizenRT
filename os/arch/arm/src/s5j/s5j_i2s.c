@@ -78,9 +78,8 @@
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/i2s.h>
 
-#include "up_internal.h"
-#include "up_arch.h"
-#include "cache.h"
+#include "arm_internal.h"
+#include <tinyara/cache.h>
 
 #include "chip.h"
 #include "chip/s5jt200_i2s.h"
@@ -459,14 +458,14 @@ static struct s5j_buffer_s *i2s_buf_rx_allocate(struct s5j_i2s_s *priv)
 
 	/* Get the buffer from the head of the free list */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer = priv->freelist_rx;
 	ASSERT(bfcontainer);
 
 	/* Unlink the buffer from the freelist */
 
 	priv->freelist_rx = bfcontainer->flink;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return bfcontainer;
 }
@@ -484,14 +483,14 @@ static struct s5j_buffer_s *i2s_buf_tx_allocate(struct s5j_i2s_s *priv)
 
 	/* Get the buffer from the head of the free list */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer = priv->freelist_tx;
 	ASSERT(bfcontainer);
 
 	/* Unlink the buffer from the freelist */
 
 	priv->freelist_tx = bfcontainer->flink;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return bfcontainer;
 }
@@ -520,10 +519,10 @@ static void i2s_buf_rx_free(struct s5j_i2s_s *priv, struct s5j_buffer_s *bfconta
 
 	/* Put the buffer container back on the free list */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer->flink = priv->freelist_rx;
 	priv->freelist_rx = bfcontainer;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Wake up any threads waiting for a buffer container */
 
@@ -536,10 +535,10 @@ static void i2s_buf_tx_free(struct s5j_i2s_s *priv, struct s5j_buffer_s *bfconta
 
 	/* Put the buffer container back on the free list */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	bfcontainer->flink = priv->freelist_tx;
 	priv->freelist_tx = bfcontainer;
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Wake up any threads waiting for a buffer container */
 
@@ -679,7 +678,7 @@ static int i2s_rx_start(struct s5j_i2s_s *priv)
 	bool notimeout;
 	int ret;
 	irqstate_t flags;
-	volatile u32 reg;
+	volatile uint32_t reg;
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->rx.act)) {
@@ -721,7 +720,7 @@ static int i2s_rx_start(struct s5j_i2s_s *priv)
 	/* Container will be removed on the interrupt level */
 	sq_addlast((sq_entry_t *) bfcontainer, &priv->rx.act);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	/* FLUSH RX FIFO */
 	putreg32(I2S_FIC_RFLUSH, priv->base + S5J_I2S_FIC);
 	putreg32(0, priv->base + S5J_I2S_FIC);
@@ -733,7 +732,7 @@ static int i2s_rx_start(struct s5j_i2s_s *priv)
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_RXDMACTIVE);
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_I2SACTIVE);
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FRXOFINTEN);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 
 	/* Start a watchdog to catch DMA timeouts */
@@ -799,9 +798,9 @@ static void i2s_rx_worker(void *arg)
 		 * also modified from the interrupt level.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* Perform the RX transfer done callback */
 
@@ -1029,7 +1028,7 @@ static int i2s_txp_start(struct s5j_i2s_s *priv)
 	bool notimeout;
 	int ret;
 	irqstate_t flags;
-	volatile u32 reg;
+	volatile uint32_t reg;
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->txp.act)) { 
@@ -1068,7 +1067,7 @@ static int i2s_txp_start(struct s5j_i2s_s *priv)
 	/* Add the container to the list of active DMAs */
 	sq_addlast((sq_entry_t *) bfcontainer, &priv->txp.act);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	/* Start the DMA, saving the container as the current active transfer */
 	s5j_dmastart(priv->txp.dma, bfcontainer->dmatask);
 
@@ -1078,7 +1077,7 @@ static int i2s_txp_start(struct s5j_i2s_s *priv)
 
 	/* Enable TX interrupt to catch the end of TX */
 	modifyreg32(priv->base + S5J_I2S_CON, 0, I2S_CR_FTXURINTEN);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Start a watchdog to catch DMA timeouts */
 
@@ -1143,9 +1142,9 @@ static void i2s_txp_worker(void *arg)
 		 * also modified from the interrupt level.
 		 */
 
-		flags = irqsave();
+		flags = enter_critical_section();
 		bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
-		irqrestore(flags);
+		leave_critical_section(flags);
 
 		/* Perform the TX transfer done callback */
 
@@ -1500,9 +1499,9 @@ static int i2s_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callb
 	i2s_rxdma_prep(priv, bfcontainer);
 
 	/* Add the buffer container to the end of the RX pending queue */
-	flags = irqsave();
+	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *) bfcontainer, &priv->rx.pend);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Then start the next transfer through.
 	 * If ther is no active transfer, then one except us can start the process.
@@ -1599,7 +1598,7 @@ static uint32_t i2s_txdatawidth(struct i2s_dev_s *dev, int bits)
 static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 {
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
-	volatile u32 reg = 0;
+	volatile uint32_t reg = 0;
 	DEBUGASSERT(priv);
 
 	reg = getreg32(priv->base + S5J_I2S_CON);
@@ -1620,7 +1619,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 static int i2s_resume(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 {
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
-	volatile u32 reg;
+	volatile uint32_t reg;
 	DEBUGASSERT(priv);
 
 	reg = getreg32(priv->base + S5J_I2S_CON);
@@ -1644,7 +1643,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)dev;
 	irqstate_t flags;
 	struct s5j_buffer_s *bfcontainer;
-	volatile u32 reg;
+	volatile uint32_t reg;
 	DEBUGASSERT(priv);
 
 #ifdef I2S_HAVE_TX_P
@@ -1655,25 +1654,25 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 		s5j_dmastop(priv->txp.dma);
 
 		while (sq_peek(&priv->txp.pend) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.pend);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->txp.act) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.act);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->txp.done) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->txp.done);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 	}
@@ -1687,25 +1686,25 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 		s5j_dmastop(priv->rx.dma);
 
 		while (sq_peek(&priv->rx.pend) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.pend);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->rx.act) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.act);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 
 		while (sq_peek(&priv->rx.done) != NULL) {
-			flags = irqsave();
+			flags = enter_critical_section();
 			bfcontainer = (struct s5j_buffer_s *)sq_remfirst(&priv->rx.done);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 	}
@@ -1812,9 +1811,9 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 
 	/* Add the buffer container to the end of the TX pending queue */
 
-	flags = irqsave();
+	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *) bfcontainer, &priv->txp.pend);
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	/* Then start the next transfer.  If there is already a transfer in progess,
 	 * then this will do nothing.
@@ -2156,7 +2155,7 @@ static int i2s_configure(struct s5j_i2s_s *priv)
 
 static int i2s_irq_handler(int irq, FAR void *context, FAR void *arg)
 {
-	volatile u32 reg;
+	volatile uint32_t reg;
 	struct s5j_i2s_s *priv = (struct s5j_i2s_s *)arg;
 	struct s5j_buffer_s *bfcontainer;
 

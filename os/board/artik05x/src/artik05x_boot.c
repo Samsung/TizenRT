@@ -59,14 +59,14 @@
 #include <debug.h>
 #include <assert.h>
 
-#include <tinyara/gpio.h>
+#include <tinyara/ioexpander/gpio.h>
 #include <tinyara/board.h>
 #ifdef CONFIG_HWCONFIG
 #include <tinyara/prodconfig.h>
 #include <sys/types.h>
 #endif
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_gpio.h"
 #include "s5j_i2c.h"
 #include "s5j_watchdog.h"
@@ -83,9 +83,9 @@
  ****************************************************************************/
 static void board_gpio_initialize(void)
 {
-#ifdef CONFIG_GPIO
+#ifdef CONFIG_DEV_GPIO
 	int i;
-	struct gpio_lowerhalf_s *lower;
+	struct gpio_dev_s *dev;
 
 	struct {
 		uint8_t minor;
@@ -126,10 +126,12 @@ static void board_gpio_initialize(void)
 	};
 
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
-		lower = s5j_gpio_lowerhalf(pins[i].pincfg);
-		gpio_register(pins[i].minor, lower);
+		dev = s5j_gpio_lowerhalf(pins[i].pincfg);
+		if (dev != NULL) {
+			gpio_pin_register(dev, pins[i].minor);
+		}
 	}
-#endif							/* CONFIG_GPIO */
+#endif							/* CONFIG_DEV_GPIO */
 }
 
 /****************************************************************************
@@ -140,7 +142,7 @@ static void board_gpio_initialize(void)
  ****************************************************************************/
 static void board_i2c_initialize(void)
 {
-#if defined(CONFIG_I2C) && defined(CONFIG_S5J_I2C)
+#if defined(CONFIG_I2C_DRIVER) && defined(CONFIG_S5J_I2C)
 	s5j_i2c_register(0);
 	s5j_i2c_register(1);
 #endif
@@ -279,25 +281,25 @@ static void board_sensor_initialize(void)
 #endif
 }
 
-#ifdef CONFIG_BOARD_INITIALIZE
+#ifdef CONFIG_BOARD_LATE_INITIALIZE
 /****************************************************************************
- * Name: board_initialize
+ * Name: board_late_initialize
  *
  * Description:
- *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
+ *   If CONFIG_BOARD_LATE_INITIALIZE is selected, then an additional
  *   initialization call will be performed in the boot-up sequence to a
- *   function called board_initialize().  board_initialize() will be
- *   called immediately after up_initialize() is called and just before the
- *   initial application is started.  This additional initialization phase
- *   may be used, for example, to initialize board-specific device drivers.
+ *   function called board_late_initialize().  board_late_initialize() will
+ *   be called after up_initialize() is called and just before the initial
+ *   application is started.  This additional initialization phase may be
+ *   used, for example, to initialize board-specific device drivers.
  *
  ****************************************************************************/
-void board_initialize(void)
+void board_late_initialize(void)
 {
 	artik05x_clear_bootcount();
 
 	/* Perform app-specific initialization here instaed of from the TASH. */
-	board_app_initialize();
+	board_app_initialize(0);
 
 #ifdef CONFIG_SCSC_WLAN
 	slsi_driver_initialize();
@@ -319,4 +321,4 @@ void board_initialize(void)
 	sssro_verify();
 #endif
 }
-#endif							/* CONFIG_BOARD_INITIALIZE */
+#endif							/* CONFIG_BOARD_LATE_INITIALIZE */

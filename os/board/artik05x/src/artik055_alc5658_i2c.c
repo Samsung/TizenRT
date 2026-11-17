@@ -27,7 +27,7 @@
 
 #include <tinyara/board.h>
 #include <arch/board/board.h>
-#include <tinyara/i2c.h>
+#include <tinyara/i2c/i2c_master.h>
 #include <arch/board/artik055_alc5658_i2c.h>
 
 /****************************************************************************

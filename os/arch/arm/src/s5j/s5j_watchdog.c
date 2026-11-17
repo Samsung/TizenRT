@@ -65,7 +65,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 
 #include "s5j_watchdog.h"
 #include <arch/irq.h>

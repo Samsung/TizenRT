@@ -61,8 +61,7 @@
 
 #include <tinyara/init.h>
 
-#include "up_arch.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 #include <chip.h>
 #include "s5j_watchdog.h"
@@ -70,8 +69,8 @@
 #ifdef CONFIG_ARMV7M_MPU
 #include "mpu.h"
 #endif
-#include "cache.h"
-#include "fpu.h"
+#include <tinyara/cache.h>
+#include <tinyara/arch.h>
 
 /****************************************************************************
  * Public Data
@@ -161,14 +160,14 @@ void arm_boot(void)
 
 #ifdef CONFIG_ARMV7M_MPU
 	s5j_mpu_initialize();
-	arch_enable_icache();
-	arch_enable_dcache();
+	up_enable_icache();
+	up_enable_dcache();
 #endif
 
 	s5j_clkinit();
 
 #ifdef USE_EARLYSERIALINIT
-	up_earlyserialinit();
+	arm_earlyserialinit();
 #endif
 
 	/*
@@ -183,14 +182,11 @@ void arm_boot(void)
 	 */
 	s5j_board_initialize();
 
-#ifdef CONFIG_STACK_COLORATION
 	/*
-	 * This function makes idle stack colored.
-	 * Do not call any function between this and os_start.
+	 * With CONFIG_STACK_COLORATION, up_initial_state() colors the IDLE
+	 * thread stack (g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE) when
+	 * nx_start() initializes the IDLE task.
 	 */
 
-	go_os_start((void *)&_sidle_stack, CONFIG_IDLETHREAD_STACKSIZE);
-#else
-	os_start();
-#endif
+	nx_start();
 }

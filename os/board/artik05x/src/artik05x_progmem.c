@@ -61,9 +61,9 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-size_t up_progmem_npages(void)
+size_t up_progmem_neraseblocks(void)
 {
-	return CONFIG_FLASH_SIZE / INTERNAL_SECTOR_SIZE;
+	return CONFIG_FLASH_SIZE / CONFIG_ARTIK05X_FLASH_PAGE_SIZE;
 }
 
 bool up_progmem_isuniform(void)
@@ -76,7 +76,7 @@ size_t up_progmem_pagesize(size_t page)
 	return INTERNAL_SECTOR_SIZE;
 }
 
-size_t up_progmem_blocksize(void)
+size_t up_progmem_erasesize(size_t block)
 {
 	return CONFIG_ARTIK05X_FLASH_PAGE_SIZE;
 }

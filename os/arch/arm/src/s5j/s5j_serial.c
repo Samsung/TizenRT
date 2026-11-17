@@ -69,8 +69,7 @@
 
 #include "s5j_gpio.h"
 #include "s5j_clock.h"
-#include "up_arch.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 #include "chip/s5jt200_uart.h"
 
@@ -501,9 +500,11 @@ static void up_detach(struct uart_dev_s *dev)
  *   All ioctl calls will be routed through this method
  *
  ****************************************************************************/
-static int up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
+static int up_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 #if defined(CONFIG_SERIAL_TERMIOS)
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct uart_dev_s *dev = inode->i_private;
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 	int ret = OK;
 	struct termios *termiosp = (struct termios *)arg;
@@ -575,7 +576,7 @@ static int up_ioctl(FAR struct uart_dev_s *dev, int cmd, unsigned long arg)
  *   return 'status'.
  *
  ****************************************************************************/
-static int up_receive(struct uart_dev_s *dev, uint32_t *status)
+static int up_receive(FAR struct uart_dev_s *dev, FAR unsigned int *status)
 {
 	struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
@@ -897,16 +898,16 @@ static uart_dev_t g_uart4port = {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_earlyserialinit
+ * Name: arm_earlyserialinit
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
  *   serial console will be available during bootup.  This must be called
- *   before up_serialinit.
+ *   before arm_serialinit.
  *
  ****************************************************************************/
 #if defined(USE_EARLYSERIALINIT)
-void up_earlyserialinit(void)
+void arm_earlyserialinit(void)
 {
 	/* Disable clocks on UARTs by default except UARTDBG */
 	s5j_clk_disable(CLK_GATE_UART0_EXTCLK);
@@ -926,17 +927,17 @@ void up_earlyserialinit(void)
 #endif /* USE_EARLYSERIALINIT */
 
 /****************************************************************************
- * Name: up_serialinit
+ * Name: arm_serialinit
  *
  * Description:
  *   Register serial console and serial ports.  This assumes
- *   that up_earlyserialinit was called previously.
+ *   that arm_earlyserialinit was called previously.
  *
  ****************************************************************************/
 #if defined(USE_SERIALDRIVER)
-void up_serialinit(void)
+void arm_serialinit(void)
 {
-#if CONFIG_NFILE_DESCRIPTORS > 0
+#if CONFIG_NFILE_DESCRIPTORS_PER_BLOCK > 0
 
 
 	/* Register the console */
@@ -960,7 +961,7 @@ void up_serialinit(void)
 #ifdef TTYS4_DEV
 	uart_register("/dev/ttyS4", &TTYS4_DEV);
 #endif
-#endif /* CONFIG_NFILE_DESCRIPTORS > 0 */
+#endif /* CONFIG_NFILE_DESCRIPTORS_PER_BLOCK > 0 */
 }
 #endif /* USE_SERIALDRIVER */
 
@@ -977,7 +978,7 @@ void up_serialinit(void)
  *  sent character
  *
  ****************************************************************************/
-int up_putc(int ch)
+void up_putc(int ch)
 {
 #if defined(HAVE_SERIAL_CONSOLE)
 	/* Check for LF */
@@ -988,8 +989,6 @@ int up_putc(int ch)
 
 	up_lowputc(ch);
 #endif
-
-	return ch;
 }
 
 /****************************************************************************
@@ -1008,7 +1007,7 @@ int up_putc(int ch)
 int up_getc(void)
 {
 #ifdef HAVE_SERIAL_CONSOLE
-	uint32_t state;
+	unsigned int state;
 	uint32_t ufstat = uart_getreg32(CONSOLE_DEV.priv, S5J_UART_UFSTAT_OFFSET);
 
 	if ((ufstat & (UART_UFSTAT_RX_FIFO_COUNT_MASK |
@@ -1035,7 +1034,7 @@ int up_getc(void)
  *   None
  *
  ****************************************************************************/
-void up_lowputc(char ch)
+void up_lowputc(int ch)
 {
 #if defined(HAVE_SERIAL_CONSOLE)
 	irqstate_t flags;
@@ -1051,17 +1050,17 @@ void up_lowputc(char ch)
 		 * Disable interrupts so that the test and the transmission are
 		 * atomic
 		 */
-		flags = irqsave();
+		flags = enter_critical_section();
 
 		if ((uart_getreg32(CONSOLE_DEV.priv, S5J_UART_UTRSTAT_OFFSET) &
 					UART_UTRSTAT_TX_BUF_MASK) == UART_UTRSTAT_TX_BUF_EMPTY) {
 			/* Send the character */
 			uart_putreg32(CONSOLE_DEV.priv, S5J_UART_UTXH_OFFSET, ch);
-			irqrestore(flags);
+			leave_critical_section(flags);
 			return;
 		}
 
-		irqrestore(flags);
+		leave_critical_section(flags);
 	}
 #endif
 }

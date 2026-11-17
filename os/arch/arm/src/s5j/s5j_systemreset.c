@@ -58,7 +58,7 @@
 
 #include <tinyara/board.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 
 /****************************************************************************
  * Public functions
@@ -71,7 +71,7 @@
  *   Internal, reset logic.
  *
  ****************************************************************************/
-static void up_systemreset(void)
+void up_systemreset(void)
 {
 	putreg32(0x1, 0x80090400);
 

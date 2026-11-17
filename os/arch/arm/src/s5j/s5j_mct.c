@@ -69,8 +69,7 @@
 #include <arch/board/board.h>
 
 #include "chip.h"
-#include "up_internal.h"
-#include "up_arch.h"
+#include "arm_internal.h"
 
 #include "chip/s5jt200_mct.h"
 #include "s5j_mct.h"

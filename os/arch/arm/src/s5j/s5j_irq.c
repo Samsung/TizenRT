@@ -63,8 +63,7 @@
 #include <tinyara/arch.h>
 #include <arch/irq.h>
 
-#include "up_arch.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "gic.h"
 
 #include "chip.h"
@@ -86,5 +85,5 @@ void up_irqinitialize(void)
 
 	s5j_gpio_irqinitialize();
 
-	(void)irqenable();
+	(void)arm_gic_nlines();
 }
