@@ -25,6 +25,13 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
+/* The GIC of the BCM4390x is initialized inside the prebuilt libbcmarch.a
+ * (up_irqinitialize/up_timer_initialize are provided by the library), so
+ * the common armv7-r GIC helpers that reference CHIP_MPCORE_VBASE are
+ * compiled but never called for this chip.
+ */
+#define CHIP_MPCORE_VBASE 0
 #ifndef __ASSEMBLY__
 
 #include <stdint.h>
