@@ -1,0 +1,125 @@
+hw/char/esp32c6_uart: decode CONF1 and the RX timeout as on the ESP32-C6
+
+The ESP32-C6 UART model takes the register decoding of the ESP32-C3
+model.  On the ESP32-C6 the FIFO thresholds of UART_CONF1_REG are 8 bits
+wide (rxfifo_full_thrhd [7:0], txfifo_empty_thrhd [15:8]) and the RX
+timeout is enabled and set in UART_TOUT_CONF_SYNC_REG (0x64), not in
+CONF1 and MEM_CONF.  With the ESP32-C3 decoding the RX timeout is never
+enabled, so a driver that waits for the RXFIFO_TOUT interrupt (the NuttX
+one, with an RXFIFO_FULL threshold of 120 bytes) gets no input until 120
+bytes are received.
+
+Applies to the esp-develop-9.2.2-20261109 release of the Espressif QEMU
+(commit 7411393a2f61e6f0b05af00276d30780769e0839).
+
+diff --git a/hw/char/esp32c6_uart.c b/hw/char/esp32c6_uart.c
+index 5442747..013f557 100644
+--- a/hw/char/esp32c6_uart.c
++++ b/hw/char/esp32c6_uart.c
+@@ -11,14 +11,71 @@
+ #include "qemu/module.h"
+ #include "hw/char/esp32c6_uart.h"
+ 
++static uint64_t esp32c6_uart_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    ESP32C6UARTClass *class = ESP32C6_UART_GET_CLASS(opaque);
++    ESP32C6UARTState *s = ESP32C6_UART(opaque);
++
++    switch (addr) {
++    case A_ESP32C6_UART_TOUT_CONF_SYNC:
++        return s->tout_conf;
++
++    default:
++        return class->c3_uart_read(opaque, addr, size);
++    }
++}
++
++static void esp32c6_uart_write(void *opaque, hwaddr addr,
++                               uint64_t value, unsigned int size)
++{
++    ESP32C6UARTClass *class = ESP32C6_UART_GET_CLASS(opaque);
++    ESP32C6UARTState *s = ESP32C6_UART(opaque);
++    ESP32UARTState *uart = ESP32_UART(opaque);
++
++    switch (addr) {
++    case A_ESP32C6_UART_CONF1:
++        /* Same mirror as the ESP32-C3 class, which returns it on a read */
++        s->parent.conf1 = value;
++        uart->tx_empty_threshold = FIELD_EX32(value, ESP32C6_UART_CONF1, TXFIFO_EMPTY_THRHD);
++        uart->rx_full_threshold = FIELD_EX32(value, ESP32C6_UART_CONF1, RXFIFO_FULL_THRHD);
++        esp32_uart_update_irq(uart);
++        break;
++
++    case A_ESP32C6_UART_MEM_CONF:
++        /* No RX timeout threshold in this register on the ESP32-C6 */
++        break;
++
++    case A_ESP32C6_UART_TOUT_CONF_SYNC:
++        s->tout_conf = value;
++        uart->rx_tout_ena = FIELD_EX32(value, ESP32C6_UART_TOUT_CONF_SYNC, RX_TOUT_EN) != 0;
++        uart->rx_tout_thres = FIELD_EX32(value, ESP32C6_UART_TOUT_CONF_SYNC, RX_TOUT_THRHD);
++        esp32_uart_set_rx_timeout(uart);
++        esp32_uart_update_irq(uart);
++        break;
++
++    default:
++        class->c3_uart_write(opaque, addr, value, size);
++        break;
++    }
++}
++
+ static void esp32c6_uart_init(Object *obj)
+ {
+ }
+ 
+ static void esp32c6_uart_class_init(ObjectClass *klass, void *data)
+ {
++    ESP32C6UARTClass *esp32c6 = ESP32C6_UART_CLASS(klass);
++    ESP32UARTClass *esp32 = ESP32_UART_CLASS(klass);
++
+     ESP32C3_UART_CLASS(klass)->rxd_cnt_reg = ESP32C6_UART_RXD_CNT_REG;
+-    ESP32_UART_CLASS(klass)->rxfifo_rst_mask = R_ESP32C6_UART_CONF0_SYNC_RXFIFO_RST_MASK;
++    esp32->rxfifo_rst_mask = R_ESP32C6_UART_CONF0_SYNC_RXFIFO_RST_MASK;
++
++    /* Decode the registers that differ from the ESP32-C3 here */
++    esp32c6->c3_uart_write = esp32->uart_write;
++    esp32c6->c3_uart_read = esp32->uart_read;
++    esp32->uart_write = esp32c6_uart_write;
++    esp32->uart_read = esp32c6_uart_read;
+ }
+ 
+ static const TypeInfo esp32c6_uart_info = {
+diff --git a/include/hw/char/esp32c6_uart.h b/include/hw/char/esp32c6_uart.h
+index e49532e..56565ac 100644
+--- a/include/hw/char/esp32c6_uart.h
++++ b/include/hw/char/esp32c6_uart.h
+@@ -18,8 +18,29 @@
+ 
+ typedef struct ESP32C6UARTState {
+     ESP32C3UARTState parent;
++
++    /* Mirror of UART_TOUT_CONF_SYNC_REG, as the application reads it back */
++    uint32_t tout_conf;
+ } ESP32C6UARTState;
+ 
+ typedef struct ESP32C6UARTClass {
+     ESP32C3UARTClass parent_class;
++
++    /* Register accessors of the ESP32-C3 class, for the registers that both chips share */
++    void (*c3_uart_write)(void *opaque, hwaddr addr, uint64_t value, unsigned int size);
++    uint64_t (*c3_uart_read)(void *opaque, hwaddr addr, unsigned int size);
+ } ESP32C6UARTClass;
++
++/* On the ESP32-C6 the FIFO thresholds of CONF1 are 8 bits wide and the RX timeout
++ * is configured in UART_TOUT_CONF_SYNC_REG, not in CONF1 and MEM_CONF as on the
++ * ESP32-C3. */
++REG32(ESP32C6_UART_CONF1, 0x24)
++    FIELD(ESP32C6_UART_CONF1, RXFIFO_FULL_THRHD, 0, 8)
++    FIELD(ESP32C6_UART_CONF1, TXFIFO_EMPTY_THRHD, 8, 8)
++
++REG32(ESP32C6_UART_MEM_CONF, 0x60)
++
++REG32(ESP32C6_UART_TOUT_CONF_SYNC, 0x64)
++    FIELD(ESP32C6_UART_TOUT_CONF_SYNC, RX_TOUT_EN, 0, 1)
++    FIELD(ESP32C6_UART_TOUT_CONF_SYNC, RX_TOUT_FLOW_DIS, 1, 1)
++    FIELD(ESP32C6_UART_TOUT_CONF_SYNC, RX_TOUT_THRHD, 2, 10)
