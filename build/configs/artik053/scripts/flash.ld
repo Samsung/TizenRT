@@ -72,6 +72,7 @@ SECTIONS
 
 	.text : {
 		_stext_flash = ABSOLUTE(.);
+		_stext = ABSOLUTE(.);
 		*(.vectors)
 		*(.text .text.*)
 		*(.fixup)
@@ -84,6 +85,7 @@ SECTIONS
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
 		_etext_flash = ABSOLUTE(.);
+		_etext = ABSOLUTE(.);
 	} > FLASH
 
 	.init_section : {
