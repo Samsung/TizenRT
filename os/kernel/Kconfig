@@ -333,6 +333,22 @@ config PREALLOC_IRQCHAIN
 
 endif # IRQCHAIN
 
+config IRQ_FIN_WAIT
+	bool "Fin irq-event wait interface (fin_wait/fin_notify)"
+	default y
+	---help---
+		This option enables the fin irq-event wait interface: a per-task
+		mailbox that lets a task block in fin_wait() until an ISR or
+		kernel context calls fin_notify(pid, data), which wakes it with
+		the data or stashes it for its next wait.  fin_block() waits
+		without consuming the mailbox.  The binary manager recovery task
+		and the le_tc irq testcase select this option because they need
+		the functional interface.  Disable to compile the entry points
+		as inert no-ops (fin_wait() returns NO_FIN_DATA immediately,
+		fin_notify()/fin_block() do nothing) and to exclude the task
+		state (TSTATE_WAIT_FIN), the per-TCB mailbox and the wait queue
+		from the build.
+
 config IRQ_NWORKS
 	int "Max num of active irq wqueue"
 	default 8

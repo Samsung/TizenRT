@@ -269,6 +269,9 @@ enum tstate_e {
 
 	TSTATE_TASK_INACTIVE,       /* BLOCKED      - Initialized but not yet activated */
 	TSTATE_WAIT_SEM,            /* BLOCKED      - Waiting for a semaphore */
+#ifdef CONFIG_IRQ_FIN_WAIT
+	TSTATE_WAIT_FIN,            /* BLOCKED      - Waiting to be unblocked by fin */
+#endif
 	TSTATE_WAIT_SIG,            /* BLOCKED      - Waiting for a signal */
 #ifdef CONFIG_SCHED_EVENTS
 	TSTATE_WAIT_EVENT,          /* BLOCKED      - Waiting for a event */
@@ -725,6 +728,11 @@ struct tcb_s {
 
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];  /* Task name (with NUL terminator) */
+#endif
+
+#ifdef CONFIG_IRQ_FIN_WAIT
+	int fin_data;                          /* Irq notification Data to be handled */
+	int pending_fin_data;                  /* Pended irq notification data */
 #endif
 
 #if CONFIG_SCHED_STACK_RECORD > 0

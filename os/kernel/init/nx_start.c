@@ -287,6 +287,13 @@ static void tasklist_initialize(void)
 	tlist[TSTATE_WAIT_SEM].attr = TLIST_ATTR_PRIORITIZED |
 	                              TLIST_ATTR_OFFSET;
 
+#ifdef CONFIG_IRQ_FIN_WAIT
+	/* TSTATE_WAIT_FIN */
+
+	tlist[TSTATE_WAIT_FIN].list = list_waitingforfin();
+	tlist[TSTATE_WAIT_FIN].attr = 0;
+#endif
+
 #ifdef CONFIG_SCHED_EVENTS
 	/* TSTATE_WAIT_EVENT */
 
