@@ -116,6 +116,14 @@ EXTERN volatile enum nx_initstate_e g_nx_initstate;  /* See enum nx_initstate_e 
  * Public Function Prototypes
  ****************************************************************************/
 
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_BUILD_PROTECTED)
+/* TizenRT preapp entry point (apps/system/init), started by nx_bringup()
+ * before the init task in the flat build (TD-INIT-04).
+ */
+
+int preapp_start(int argc, FAR char *argv[]);
+#endif
+
 /* Functions contained in nx_task.c *****************************************/
 
 /* OS entry point called by boot logic */

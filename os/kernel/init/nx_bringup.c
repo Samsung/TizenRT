@@ -348,6 +348,20 @@ static inline void nx_start_application(void)
 	coredump_initialize();
 #endif
 
+#if defined(CONFIG_SYSTEM_PREAPP_INIT) && !defined(CONFIG_APP_BINARY_SEPARATION)
+	/* TizenRT: start the application init task (TASH etc.) before the init
+	 * task.  The user application is the init task itself (CONFIG_INIT_ENTRY)
+	 * or is not started at all (CONFIG_INIT_NONE).  In the protected build
+	 * this is handled together with the binary manager (TD-KERNEL-06).
+	 */
+
+	sinfo("Starting application init task\n");
+
+	ret = task_create("appinit", SCHED_PRIORITY_DEFAULT + 1,
+	                  CONFIG_SYSTEM_PREAPP_STACKSIZE, preapp_start, NULL);
+	DEBUGASSERT(ret > 0);
+#endif
+
 #ifdef CONFIG_INIT_NONE
 
 	UNUSED(ret);
