@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <debug.h>
 
+#include <tinyara/arch.h>
+
 #include "sheipa.h"
 #include "ameba_soc.h"
 #include "psci.h"
@@ -180,9 +182,63 @@ int vPortSecondaryBoot(int cpu)
 	return OK;
 }
 
+/****************************************************************************
+ * Name: up_cpu_up
+ *
+ * Description:
+ *   Board hook of up_cpu_on(): power on and boot a CPU core.  Cold boot
+ *   uses it to bring the secondary core up; the hot-plug path (currently
+ *   parked behind CONFIG_CPU_HOTPLUG) is meant to reuse it once that
+ *   option is revived.  It enables the CPU power domain and cold-boots
+ *   the core via PSCI.  The PSCI CPU_ON request carries the entry point,
+ *   so no CPUSTART SGI is sent afterwards.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to power on
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure
+ *
+ * Assumptions:
+ *   - Called from CPU0
+ *   - Target CPU is currently powered off
+ *   - System is ready to bring additional CPU online
+ *
+ ****************************************************************************/
+
+int up_cpu_up(int cpu)
+{
+	int ret;
+
+	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
+		smplldbg("cpu number out of range\n");
+		return -EINVAL;
+	}
+
+	/* Power on the CPU core */
+	ret = cpu_core_poweron(cpu);
+	if (ret != OK) {
+		smplldbg("Failed to power on CPU%d: errno = %d\n", cpu, ret);
+		return ret;
+	}
+
+	smpllvdbg("Booting secondary core... \n");
+
+	/* cold-boot the core via PSCI */
+	ret = vPortSecondaryBoot(cpu);
+	if (ret != OK) {
+		smplldbg("Failed to boot CPU%d: %d\n", cpu, ret);
+		return ret;
+	}
+
+	smpllvdbg("Secondary core booted successfully\n");
+	return OK;
+}
+
 /* CPU hot-plug of the old TizenRT (CONFIG_CPU_HOTPLUG, selected with SMP and
- * PM).  NuttX 12.13.0 has no such option and no up_cpu_up/down/die(); keep
- * the code for the PM port.
+ * PM).  The Kconfig option is not defined in the NuttX 12.13.0 tree and
+ * up_cpu_up/down/die() have no callers yet; keep the code for the PM port,
+ * which will wire it through sched_cpuoff()/up_cpu_off().
  */
 
 #ifdef CONFIG_CPU_HOTPLUG
@@ -285,7 +341,7 @@ void up_cpu_die(void)
  *   cpu - The index of the CPU to power down
  *
  * Returned Value:
- *   Zero (OK) on success, negated error no on failure
+ *   Zero (OK) on success; a negated errno value on failure
  *
  * Assumptions:
  *   - Called from CPU0
@@ -315,54 +371,4 @@ int up_cpu_down(int cpu)
 	return OK;
 }
 
-/****************************************************************************
- * Name: up_cpu_up
- *
- * Description:
- *   Power on and boot a CPU core that was previously powered down. This function
- *   performs the complete power-on sequence: enables the CPU power domain,
- *   reinitializes the SCU for cache coherency, and cold-boots the secondary
- *   core via PSCI to the specified entry point.
- *
- * Input Parameters:
- *   cpu - The index of the CPU to power on
- *
- * Returned Value:
- *   Zero (OK) on success, negated error no on failure
- *
- * Assumptions:
- *   - Called from CPU0
- *   - Target CPU is currently powered off
- *   - System is ready to bring additional CPU online
- *
- ****************************************************************************/
-
-int up_cpu_up(int cpu)
-{
-	int ret;
-
-	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
-		smplldbg("cpu number out of range\n");
-		return -EINVAL;
-	}
-
-	/* Power on the CPU core */
-	ret = cpu_core_poweron(cpu);
-	if (ret != OK) {
-		smplldbg("Failed to power on CPU%d: errno = %d\n", cpu, ret);
-		return ret;
-	}
-
-	smpllvdbg("Booting secondary core... \n");
-
-	/* cold-boot the core via PSCI */
-	ret = vPortSecondaryBoot(cpu);
-	if (ret != OK) {
-		smplldbg("Failed to boot CPU%d: %d\n", cpu, ret);
-		return ret;
-	}
-
-	smpllvdbg("Secondary core booted successfully\n");
-	return OK;
-}
 #endif /* CONFIG_CPU_HOTPLUG */
