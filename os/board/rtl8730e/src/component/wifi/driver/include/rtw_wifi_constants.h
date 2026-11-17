@@ -1094,13 +1094,5 @@ enum UAPSD_MAX_SP {
 
 #include "rtw_ethernet.h"
 #include "rtw_80211spec_macro.h"
-#include "rtw_80211spec_struct.h"
-#include "rtw_80211spec_enum.h"
-#include "rtw_80211spec_ft.h"
-#include "rtw_80211spec_he.h"
-#include "rtw_80211spec_ht.h"
-#include "rtw_80211spec_twt.h"
-#include "rtw_80211spec_vht.h"
-#include "rtw_80211spec_wnm.h"
 
 #endif
