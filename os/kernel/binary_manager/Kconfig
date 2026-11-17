@@ -37,6 +37,7 @@ config BINMGR_RECOVERY
 	default y
 	depends on APP_BINARY_SEPARATION && BINFMT_LOADABLE
 	depends on !BINMGR_RELOAD_REBOOT
+	select IRQ_FIN_WAIT
 	---help---
 		Enable the recovery management.
 		If any fault occurs in a system, it will either restart binary or reboot the system
