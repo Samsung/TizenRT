@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#if defined(CONFIG_NET_IPv4) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET_IPv4)
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -117,4 +117,4 @@ int netlib_set_ipv4netmask(FAR const char *ifname, FAR const struct in_addr *add
 	return ret;
 }
 
-#endif							/* CONFIG_NET_IPv4 && CONFIG_NSOCKET_DESCRIPTORS */
+#endif							/* CONFIG_NET_IPv4 */

@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET)
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -155,4 +155,4 @@ int netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 	return ret;
 }
 
-#endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS */
+#endif							/* CONFIG_NET */

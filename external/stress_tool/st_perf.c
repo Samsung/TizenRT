@@ -23,7 +23,7 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <assert.h>
 #include <stress_tool/st_perf.h>
 #include "st_perf_print.h"

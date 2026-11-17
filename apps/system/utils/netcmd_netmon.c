@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <netutils/netlib.h>

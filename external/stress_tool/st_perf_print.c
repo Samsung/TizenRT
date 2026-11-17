@@ -22,7 +22,7 @@
 #include <sys/time.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <stress_tool/st_perf.h>
 
 typedef enum {
