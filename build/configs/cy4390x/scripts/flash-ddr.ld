@@ -48,6 +48,7 @@ SECTIONS
 
 	.text : {
 		_stext_flash = ABSOLUTE(.);
+		_stext = ABSOLUTE(.);
 		KEEP(*(.text.startup))
 		*(.text .text.*)
 		*(.fixup)
@@ -60,6 +61,7 @@ SECTIONS
 		*(.gcc_except_table)
 		*(.gnu.linkonce.r.*)
 		_etext_flash = ABSOLUTE(.);
+		_etext = ABSOLUTE(.);
 	} > DDR
 
 	.vectors : {

@@ -115,6 +115,10 @@ LIBEXT = .a
 EXEEXT =
 
 LDFLAGS += -nostartfiles -nodefaultlibs
+# The prebuilt libbcmarch.a defines the GIC helpers (up_enable_irq,
+# up_disable_irq, arm_decodeirq) that armv7-r/arm_gicv2.c also provides;
+# the armv7-r definitions win for the NuttX 12.13.0 build.
+LDFLAGS += --allow-multiple-definition
 
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
