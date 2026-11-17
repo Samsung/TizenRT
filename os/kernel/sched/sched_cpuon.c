@@ -33,11 +33,11 @@
 #include <debug.h>
 #include <errno.h>
 #include <assert.h>
-#include <queue.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/spinlock.h>
 #include <tinyara/irq.h>
+#include <tinyara/queue.h>
 #include <tinyara/sched.h>
 
 #include "sched/sched.h"
@@ -100,7 +100,7 @@ int sched_cpuon(int cpu)
 		return -EINVAL;
 	}
 
-	if (spin_trylock(&g_state_transition_lock) == SP_LOCKED) {
+	if (!spin_trylock(&g_state_transition_lock)) {
 		return -EBUSY;
 	}
 
