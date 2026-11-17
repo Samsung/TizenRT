@@ -126,15 +126,12 @@ KBIN = libkarch$(LIBEXT)
 UBIN = libuarch$(LIBEXT)
 BIN  = libarch$(LIBEXT)
 
-# Boards opt in when their linker script uses configuration macros.
-ifeq ($(PREPROCESS_LDSCRIPT),y)
+# The linker script is always preprocessed with the configuration macros,
+# like upstream NuttX does; plain scripts pass through cpp unchanged.
 LDFLAGS += -T$(ARCHSCRIPT).tmp
 LINKSCRIPT_DEP = $(ARCHSCRIPT).tmp
 $(ARCHSCRIPT).tmp: $(ARCHSCRIPT) $(TOPDIR)/include/tinyara/config.h
 	$(call PREPROCESS, $<, $@)
-else
-LDFLAGS += $(ARCHSCRIPT)
-endif
 
 # Override in Make.defs if linker is not 'ld'
 
