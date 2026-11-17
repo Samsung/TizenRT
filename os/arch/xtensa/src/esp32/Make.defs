@@ -1,158 +1,318 @@
-############################################################################
+###########################################################################
 #
-# Copyright 2019 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
 #
-############################################################################
+###########################################################################
 ############################################################################
 # arch/xtensa/src/esp32/Make.defs
 #
-#   Copyright (C) 2016 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 ############################################################################
 
+include common/Make.defs
+
+STORAGETMP = $(if $(wildcard $(NXTMPDIR)/.*),y,)
+
 # The start-up, "head", file.  May be either a .S or a .c file.
 
-HEAD_ASRC  = xtensa_vectors.S xtensa_window_vector.S xtensa_windowspill.S
-HEAD_ASRC += xtensa_int_handlers.S  xtensa_user_handler.S
-HEAD_CSRC  = esp32_start.c
+HEAD_CSRC  = esp32_start.c esp32_wdt.c
 
-# Common XTENSA files (arch/xtensa/src/common)
-
-CMN_ASRCS  = xtensa_context.S xtensa_coproc.S xtensa_cpuint.S xtensa_panic.S
-CMN_ASRCS += xtensa_sigtramp.S
-
-CMN_CSRCS  = xtensa_assert.c xtensa_blocktask.c xtensa_copystate.c
-CMN_CSRCS += xtensa_cpenable.c xtensa_createstack.c xtensa_exit.c xtensa_idle.c
-CMN_CSRCS += xtensa_initialize.c xtensa_initialstate.c xtensa_interruptcontext.c
-CMN_CSRCS += xtensa_irqdispatch.c xtensa_lowputs.c xtensa_mdelay.c
-CMN_CSRCS += xtensa_modifyreg8.c xtensa_modifyreg16.c xtensa_modifyreg32.c
-CMN_CSRCS += xtensa_puts.c xtensa_releasepending.c xtensa_releasestack.c
-CMN_CSRCS += xtensa_reprioritizertr.c xtensa_schedsigaction.c
-CMN_CSRCS += xtensa_sigdeliver.c xtensa_stackframe.c xtensa_udelay.c
-CMN_CSRCS += xtensa_unblocktask.c xtensa_usestack.c
-
-# Configuration-dependent common XTENSA files
-
-ifeq ($(CONFIG_DEBUG_ERROR),y)
-  CMN_CSRCS += xtensa_dumpstate.c
+ifeq ($(CONFIG_XTENSA_HAVE_WINDOW_EXCEPTION_HOOKS),y)
+HEAD_ASRC += esp32_window_hooks.S
 endif
 
-ifeq ($(CONFIG_SPINLOCK),y)
-  CMN_CSRCS += xtensa_testset.c
+# Required ESP32 files (arch/xtensa/src/esp32)
+
+CHIP_CSRCS  = esp32_allocateheap.c esp32_clockconfig.c esp32_gpio.c
+CHIP_CSRCS += esp32_systemreset.c esp32_resetcause.c
+CHIP_CSRCS += esp32_irq.c esp32_region.c esp32_rtc_gpio.c
+CHIP_CSRCS += esp32_hal_shim.c
+CHIP_CSRCS += esp32_user.c esp32_libc_stubs.c
+CHIP_CSRCS += esp32_dma.c
+
+ifneq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
+CHIP_CSRCS += esp32_idle.c
 endif
 
-ifeq ($(CONFIG_SMP),y)
-  CMN_CSRCS += xtensa_cpupause.c
-endif
-
-ifeq ($(CONFIG_STACK_COLORATION),y)
-  CMN_CSRCS += xtensa_checkstack.c
-endif
-
-
-# Use of common/xtensa_etherstub.c is deprecated.  The preferred mechanism
-# is to use CONFIG_NETDEV_LATEINIT=y to suppress the call to
-# up_netinitialize() in xtensa_initialize.c.  Then this stub would not be
-# needed.
-
-ifneq ($(CONFIG_LX6_ETHERNET),y)
-ifeq ($(CONFIG_NET),y)
-  CMN_CSRCS += xtensa_etherstub.c
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+CHIP_CSRCS += esp32_userspace.c
+ifeq ($(CONFIG_ESP32_PID),y)
+CHIP_CSRCS += esp32_userspace_pid.c
 endif
 endif
 
-# Required ESP32 files (arch/xtensa/src/lx6)
-
-CHIP_ASRCS  =
-CHIP_CSRCS  = esp32_allocateheap.c esp32_clockconfig.c esp32_cpuint.c
-CHIP_CSRCS += esp32_gpio.c esp32_intdecode.c esp32_irq.c esp32_region.c
-CHIP_CSRCS += esp32_timerisr.c esp32_periph_ctrl.c
-
-ifeq ($(CONFIG_ESP32_SPIFLASH),y)
-	VPATH += chip/spi_flash
-	CHIP_CSRCS += cache_utils.c flash_mmap.c flash_ops.c partition.c spi_flash_rom_patch.c esp_ota_eps.c esp32_flash.c
+ifeq ($(CONFIG_SCHED_TICKLESS),y)
+CHIP_CSRCS += esp32_tickless.c
+else
+CHIP_CSRCS += esp32_timerisr.c
 endif
 
-ifeq ($(CONFIG_GPIO),y)
-    CHIP_CSRCS += esp32_gpio_lowerhalf.c
+ifeq ($(CONFIG_PM),y)
+ifneq ($(CONFIG_ARCH_CUSTOM_PMINIT),y)
+CHIP_CSRCS += esp32_pminitialize.c
+endif
+CHIP_CSRCS += esp32_pm.c
 endif
 
-ifeq ($(CONFIG_MCPWM),y)
-    CHIP_CSRCS += esp32_pwm.c
+ifeq ($(CONFIG_XTENSA_IMEM_USE_SEPARATE_HEAP),y)
+CHIP_CSRCS += esp32_imm.c
 endif
 
-ifeq ($(CONFIG_LEDC),y)
-    CHIP_CSRCS += esp32_ledc.c
+ifeq ($(CONFIG_DAC),y)
+CHIP_CSRCS += esp32_dac.c
 endif
 
-ifeq ($(CONFIG_I2C),y)
+ifeq ($(CONFIG_ESP32_LEDC),y)
+CHIP_CSRCS += esp32_ledc.c
+endif
+
+ifeq ($(CONFIG_ESP32_I2C),y)
+ifeq ($(CONFIG_ESPRESSIF_I2C_PERIPH_MASTER_MODE),y)
 CHIP_CSRCS += esp32_i2c.c
 endif
+endif
 
-ifeq ($(CONFIG_SPI),y)
+
+ifeq ($(CONFIG_ESP32_TWAI),y)
+CHIP_CSRCS += esp32_twai.c
+endif
+
+ifeq ($(CONFIG_ESP32_PCNT_AS_QE),y)
+CHIP_CSRCS += esp32_qencoder.c
+endif
+
+ifeq ($(CONFIG_ESP32_SPI),y)
 CHIP_CSRCS += esp32_spi.c
+ifeq ($(CONFIG_SPI_SLAVE),y)
+CHIP_CSRCS += esp32_spi_slave.c
+endif
 endif
 
-ifeq ($(CONFIG_ADC),y)
-CHIP_CSRCS += esp32_adc.c
-CHIP_CSRCS += esp32_rtc_module.c
-CHIP_CSRCS += esp32_rtc_periph.c
+ifeq ($(CONFIG_ESP32_SPIRAM),y)
+CHIP_CSRCS += esp32_spiram.c
+CHIP_CSRCS += esp32_psram.c
+CHIP_CSRCS += esp32_himem.c
+CHIP_CSRCS += esp32_himem_chardev.c
 endif
 
-ifeq ($(CONFIG_I2S),y)
-CHIP_CSRCS += esp32_i2s.c
+ifeq ($(CONFIG_ESP32_EMAC),y)
+CHIP_CSRCS += esp32_emac.c
 endif
-
-CFLAGS += -Ichip/chip
-CFLAGS += -Ichip/spi_flash/include
 
 # Configuration-dependent ESP32 files
 
 ifeq ($(CONFIG_SMP),y)
-CHIP_ASRCS  = esp32_cpuindex.S
-CMN_CSRCS  += esp32_cpuidlestack.c esp32_cpustart.c esp32_intercpu_interrupt.c
+CHIP_CSRCS += esp32_cpuidlestack.c esp32_cpustart.c esp32_intercpu_interrupt.c
 endif
 
 ifeq ($(CONFIG_ESP32_UART),y)
-CMN_CSRCS += esp32_serial.c
+CHIP_CSRCS += esp32_serial.c
 endif
+
+ifeq ($(CONFIG_ESP32_RNG),y)
+CHIP_CSRCS += esp32_rng.c
+endif
+
+ifeq ($(CONFIG_ESP32_TIMER),y)
+CHIP_CSRCS += esp32_tim.c
+ifeq ($(CONFIG_TIMER),y)
+CHIP_CSRCS += esp32_tim_lowerhalf.c
+endif
+endif
+
+ifeq ($(CONFIG_ESP32_ONESHOT),y)
+CHIP_CSRCS += esp32_oneshot.c
+ifeq ($(CONFIG_ONESHOT),y)
+CHIP_CSRCS += esp32_oneshot_lowerhalf.c
+endif
+endif
+
+ifeq ($(CONFIG_ESP32_FREERUN),y)
+CHIP_CSRCS += esp32_freerun.c
+endif
+
+ifeq ($(CONFIG_ESP32_PARTITION_TABLE),y)
+CHIP_CSRCS += esp32_spiflash.c
+CHIP_CSRCS += esp32_partition.c
+endif
+
+ifeq ($(CONFIG_WATCHDOG),y)
+CHIP_CSRCS += esp32_wdt_lowerhalf.c
+endif
+
+ifeq ($(CONFIG_ARCH_HAVE_EXTRA_HEAPS),y)
+CHIP_CSRCS += esp32_extraheaps.c
+endif
+
+ifeq ($(CONFIG_ESP32_RTC_HEAP),y)
+CHIP_CSRCS += esp32_rtcheap.c
+endif
+
+ifeq ($(CONFIG_ESP32_IRAM_HEAP),y)
+CHIP_CSRCS += esp32_iramheap.c
+endif
+
+ifeq ($(CONFIG_ARCH_USE_TEXT_HEAP),y)
+CHIP_CSRCS += esp32_textheap.c
+endif
+
+ifeq ($(CONFIG_ESP32_RT_TIMER),y)
+CHIP_CSRCS += esp32_rt_timer.c
+endif
+
+ifeq ($(CONFIG_ESP32_TOUCH),y)
+CHIP_CSRCS += esp32_touch.c
+endif
+
+ifeq ($(CONFIG_ESP32_AES_ACCELERATOR),y)
+CHIP_CSRCS += esp32_aes.c
+endif
+
+ifeq ($(CONFIG_ESP32_SHA_ACCELERATOR),y)
+CHIP_CSRCS += esp32_sha.c
+endif
+
+ifeq ($(CONFIG_CRYPTO_CRYPTODEV_HARDWARE),y)
+CHIP_CSRCS += esp32_crypto.c
+endif
+
+ifeq ($(CONFIG_ESP32_RTC),y)
+CHIP_CSRCS += esp32_rtc.c
+ifeq ($(CONFIG_RTC_DRIVER),y)
+CHIP_CSRCS += esp32_rtc_lowerhalf.c
+endif
+endif
+
+ifeq ($(CONFIG_ESP32_OPENETH),y)
+CHIP_CSRCS += esp_openeth.c
+endif
+
+ifeq ($(CONFIG_ESPRESSIF_WIFI),y)
+CHIP_CSRCS += esp32_wifi_adapter.c
+endif
+
+ifeq ($(CONFIG_ESPRESSIF_BLE),y)
+CHIP_CSRCS += esp32_ble_adapter.c esp32_ble.c
+EXTRA_LIBS += -lbtdm_app
+endif
+
+#############################################################################
+# Espressif HAL for 3rd Party Platforms
+#############################################################################
+
+# Fetch source files and add them to build
+
+ESP_HAL_3RDPARTY_REPO   = esp-hal-3rdparty
+ifndef ESP_HAL_3RDPARTY_VERSION
+	ESP_HAL_3RDPARTY_VERSION = b9472bd56b916cced7447e25c2b2e1390d7e0d90
+endif
+
+ifndef ESP_HAL_3RDPARTY_URL
+	ESP_HAL_3RDPARTY_URL = https://github.com/espressif/esp-hal-3rdparty.git
+endif
+
+ifndef DISABLE_GIT_DEPTH
+ifndef GIT_DEPTH
+	GIT_DEPTH=1
+endif
+	GIT_DEPTH_PARAMETER = --depth=$(GIT_DEPTH)
+endif
+
+# TizenRT's tools/Config.mk does not provide the NuttX CLONE/CHECK_COMMITSHA/
+# NXTMPDIR macros, so the repository is fetched with plain git commands:
+# clone the default branch shallowly, then fetch the pinned commit.
+
+define CLONE_ESP_HAL_3RDPARTY_REPO
+	git clone --quiet $(GIT_DEPTH_PARAMETER) $(ESP_HAL_3RDPARTY_URL) chip/$(ESP_HAL_3RDPARTY_REPO) || true
+	git -C chip/$(ESP_HAL_3RDPARTY_REPO) fetch --quiet $(GIT_DEPTH_PARAMETER) origin $(ESP_HAL_3RDPARTY_VERSION) || true
+endef
+
+chip/$(ESP_HAL_3RDPARTY_REPO):
+	$(Q) echo "Cloning Espressif HAL for 3rd Party Platforms"
+	$(Q) $(call CLONE_ESP_HAL_3RDPARTY_REPO)
+ifneq ($(USE_NXTMPDIR_ESP_REPO_DIRECTLY),y)
+	$(Q) echo "Espressif HAL for 3rd Party Platforms: ${ESP_HAL_3RDPARTY_VERSION}"
+	$(Q) git -C chip/$(ESP_HAL_3RDPARTY_REPO) checkout --quiet $(ESP_HAL_3RDPARTY_VERSION)
+endif
+
+# Silent preprocessor warnings
+
+CFLAGS += -Wno-undef -Wno-unused-variable -fno-jump-tables -fno-tree-switch-conversion
+
+# Enable strict volatile bitfield access
+
+CFLAGS += -fstrict-volatile-bitfields
+
+# Files that require the HAL recipe
+
+CHIP_SERIES = $(patsubst "%",%,$(CONFIG_ESPRESSIF_CHIP_SERIES))
+
+include chip/Bootloader.mk
+
+include chip/hal.mk
+
+include common/espressif/Make.defs
+
+context:: chip/$(ESP_HAL_3RDPARTY_REPO)
+ifneq ($(USE_NXTMPDIR_ESP_REPO_DIRECTLY),y)
+	$(Q) echo "Espressif HAL for 3rd Party Platforms: initializing submodules..."
+	$(Q) git -C chip/$(ESP_HAL_3RDPARTY_REPO) submodule --quiet update --init $(GIT_DEPTH_PARAMETER) components/mbedtls/mbedtls components/esp_phy/lib components/esp_wifi/lib components/bt/controller/lib_esp32 components/esp_coex/lib || true
+	$(Q) git -C chip/$(ESP_HAL_3RDPARTY_REPO)/components/mbedtls/mbedtls reset --quiet --hard || true
+	$(Q) echo "Fetching the pinned commit of the mbedtls submodule..."
+	$(Q) if [ ! -d chip/$(ESP_HAL_3RDPARTY_REPO)/components/mbedtls/mbedtls/.git ]; then \
+		sm=components/mbedtls/mbedtls; \
+		sha=$$(git -C chip/$(ESP_HAL_3RDPARTY_REPO) ls-tree HEAD $$sm | awk '{print $$3}'); \
+		url=$$(git -C chip/$(ESP_HAL_3RDPARTY_REPO) config -f .gitmodules submodule.$$sm.url); \
+		case $$url in \
+			http*) abs=$$url ;; \
+			*) abs=$$(echo $$url | sed 's|\.\./\.\./|https://github.com/|') ;; \
+		esac; \
+		rm -rf chip/$(ESP_HAL_3RDPARTY_REPO)/$$sm; \
+		mkdir -p chip/$(ESP_HAL_3RDPARTY_REPO)/$$sm; \
+		git -C chip/$(ESP_HAL_3RDPARTY_REPO)/$$sm init -q; \
+		git -C chip/$(ESP_HAL_3RDPARTY_REPO)/$$sm remote add origin $$abs; \
+		git -C chip/$(ESP_HAL_3RDPARTY_REPO)/$$sm fetch --quiet --depth 1 origin $$sha && \
+		git -C chip/$(ESP_HAL_3RDPARTY_REPO)/$$sm checkout --quiet FETCH_HEAD; \
+	fi
+endif
+	$(Q) echo "Mapping the nuttx include paths of the HAL sources to tinyara..."
+	$(Q) find chip/$(ESP_HAL_3RDPARTY_REPO) -type f \( -name '*.c' -o -name '*.h' \) -exec sed -i -E 's|#(\s*)include(\s*)<nuttx/|#\1include\2<tinyara/|g' {} +
+	$(Q) echo "Applying patches..."
+	$(Q) cd chip/$(ESP_HAL_3RDPARTY_REPO)/components/mbedtls/mbedtls && git apply ../../../nuttx/patches/components/mbedtls/mbedtls/*.patch || true
+ifeq ($(CONFIG_ESPRESSIF_WIRELESS),y)
+ifneq ($(USE_NXTMPDIR_ESP_REPO_DIRECTLY),y)
+	$(Q) git -C chip/$(ESP_HAL_3RDPARTY_REPO) submodule --quiet update --init $(GIT_DEPTH_PARAMETER) components/esp_phy/lib components/esp_wifi/lib components/bt/controller/lib_esp32 components/esp_coex/lib
+endif
+endif
+
+distclean::
+	$(call DELDIR,chip/$(ESP_HAL_3RDPARTY_REPO))
+	$(call DELFILE,../../../vefuse.bin)
+
+INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common$(DELIM)espressif

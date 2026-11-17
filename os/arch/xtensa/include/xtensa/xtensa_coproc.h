@@ -1,31 +1,27 @@
-/******************************************************************
+/****************************************************************************
  *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  *
- ******************************************************************/
-
+ ****************************************************************************/
 /****************************************************************************
+ * arch/xtensa/include/xtensa/xtensa_coproc.h
  *
- * Adapted from use in NuttX by:
- *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *
- * Derives from logic originally provided by Cadence Design Systems Inc.
- *
- *   Copyright (c) 2006-2015 Cadence Design Systems Inc.
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2016 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2005-2015 Cadence Design Systems, Inc.
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,7 +51,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <arch/esp32/core-isa.h>
+#include <assert.h>
+#include <arch/chip/core-isa.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -63,15 +60,17 @@
 
 #if XCHAL_CP_NUM > 0
 
-/* Align a value up/down to nearest n-byte boundary, where n is a power of 2. */
+/* Align a value up/down to nearest n-byte boundary,
+ * where n is a power of 2.
+ */
 
 #define _CP_MASK(n)           ((n) - 1)
-#define _CP_ALIGNUP(n, val)   (((val) + _CP_MASK(n)) & ~_CP_MASK(n))
-#define _CP_ALIGNDOWN(n, val) ((val) & ~_CP_MASK(n))
+#define _CP_ALIGNUP(n,val)   (((val) + _CP_MASK(n)) & ~_CP_MASK(n))
+#define _CP_ALIGNDOWN(n,val) ((val) & ~_CP_MASK(n))
 
 /* A set of all co-processors */
 
-#define XTENSA_CP_ALLSET     ((1 << XCHAL_CP_NUM) - 1)
+#define XTENSA_CP_ALLSET     XCHAL_CP_MASK
 
 /* CO-PROCESSOR STATE SAVE AREA FOR A THREAD
  *
@@ -82,7 +81,7 @@
  * loses control of the processor. An Xtensa co-processor exception is
  * triggered when any co-processor instruction is executed by a thread that
  * is not the owner, and the context switch of that co-processor is then
- * peformed by the handler. Ownership represents which thread's state is
+ * performed by the handler. Ownership represents which thread's state is
  * currently in the co-processor.
  *
  * Co-processors may not be used by interrupt or exception handlers. If an
@@ -105,26 +104,29 @@
  *   The contents of a non-running thread's CPENABLE register.
  *   It represents the co-processors owned (and whose state is still needed)
  *   by the thread. When a thread is preempted, its CPENABLE is saved here.
- *   When a thread solicits a context-swtich, its CPENABLE is cleared - the
+ *   When a thread solicits a context-switch, its CPENABLE is cleared - the
  *   compiler has saved the (caller-saved) co-proc state if it needs to.
  *   When a non-running thread loses ownership of a CP, its bit is cleared.
- *   When a thread runs, it's XTENSA_CPENABLE is loaded into the CPENABLE reg.
- *   Avoids co-processor exceptions when no change of ownership is needed.
+ *   When a thread runs, it's XTENSA_CPENABLE is loaded into the CPENABLE
+ *   reg. Avoids co-processor exceptions when no change of ownership is
+ *   needed.
  *
  * XTENSA_CPSTORED
  *   A bitmask with the same layout as CPENABLE, a bit per co-processor.
  *   Indicates whether the state of each co-processor is saved in the state
- *   save area. When the state of a thread is saved, only the state of co-procs
- *   still enabled in CPENABLE is saved. When the co-processor state is
- *   is restored, the state is only resotred for a co-processor if this bit
- *   is set.  This bist set is cleared after after co-processor state has
- *   been restored.
+ *   save area. When the state of a thread is saved, only the state of
+ *   co-procs still enabled in CPENABLE is saved. When the co-processor
+ *   state is restored, the state is only restored for a co-processor if
+ *   this bit is set.  This bist set is cleared after after co-processor
+ *   state has been restored.
  *
  * XTENSA_CPASA
  *   Pointer to the aligned save area.  Allows it to be aligned more than
- *   the overall save area (which might only be stack-aligned or TCB-aligned).
+ *   the overall save area (which might only be stack-aligned or
+ *   TCB-aligned).
  *   Especially relevant for Xtensa cores configured with a very large data
- *   path that requires alignment greater than 16 bytes (ABI stack alignment).
+ *   path that requires alignment greater than 16 bytes (ABI stack
+ *   alignment).
  */
 
 /* Offsets of each coprocessor save area within the 'aligned save area': */
@@ -141,9 +143,9 @@
 
 /* Offsets within the overall save area: */
 
-#define XTENSA_CPENABLE   0		/* (2 bytes) coprocessors active for this thread */
-#define XTENSA_CPSTORED   2		/* (2 bytes) coprocessors saved for this thread */
-#define XTENSA_CPASA      4		/* (4 bytes) ptr to aligned save area */
+#define XTENSA_CPENABLE   0  /* (2 bytes) coprocessors active for this thread */
+#define XTENSA_CPSTORED   2  /* (2 bytes) coprocessors saved for this thread */
+#define XTENSA_CPASA      8  /* (8 bytes) ptr to aligned save area */
 
 /****************************************************************************
  * Public Types
@@ -151,11 +153,21 @@
 
 #ifndef __ASSEMBLY__
 
+#if 0
+
+/* This struct is not used as CP context switch was implement in interrupt
+ * handler. Will be reused when lazy context switch is implemented.
+ */
+
 struct xtensa_cpstate_s {
-	uint16_t cpenable;			/* (2 bytes) Co-processors active for this thread */
-	uint16_t cpstored;			/* (2 bytes) Co-processors saved for this thread */
-	uint32_t *cpasa;			/* (4 bytes) Pointer to aligned save area */
+	uint16_t cpenable;                                 /* (2 bytes) Co-processors active for this thread */
+	uint16_t cpstored;                                 /* (2 bytes) Co-processors saved for this thread */
+	uint8_t  cpasa[XTENSA_CP_SA_SIZE] aligned_data(8); /* cp save area */
 };
+
+static_assert(offsetof(struct xtensa_cpstate_s, cpasa) == XTENSA_CPASA,
+              "CP save area address alignment violation.");
+#endif
 
 /****************************************************************************
  * Inline Functions
@@ -167,8 +179,11 @@ static inline uint32_t xtensa_get_cpenable(void)
 {
 	uint32_t cpenable;
 
-	__asm__ __volatile__("\trsr %0, CPENABLE\n"
-						 : "=r"(cpenable));
+	__asm__ __volatile__
+	(
+	  "\trsr %0, CPENABLE\n"
+	  : "=r" (cpenable)
+	);
 
 	return cpenable;
 }
@@ -177,11 +192,14 @@ static inline uint32_t xtensa_get_cpenable(void)
 
 static inline void xtensa_set_cpenable(uint32_t cpenable)
 {
-	__asm__ __volatile__("\twsr %0, CPENABLE\n"
-						 "\trsync\n"
-						 : : "r"(cpenable));
+	__asm__ __volatile__
+	(
+	  "\twsr %0, CPENABLE\n"
+	  "\trsync\n"
+	  : : "r" (cpenable)
+	);
 }
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* #if XCHAL_CP_NUM > 0 */
-#endif							/* __ARCH_XTENSA_INCLUDE_XTENSA_XTENSA_COPROC_H */
+#endif /* __ASSEMBLY__ */
+#endif /* #if XCHAL_CP_NUM > 0 */
+#endif /* __ARCH_XTENSA_INCLUDE_XTENSA_XTENSA_COPROC_H */

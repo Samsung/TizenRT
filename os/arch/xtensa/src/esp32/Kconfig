@@ -1,3 +1,20 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
 #
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
@@ -5,13 +22,234 @@
 
 if ARCH_CHIP_ESP32
 
+comment "ESP32 Configuration Options"
+
+choice
+	prompt "ESP32 Chip Selection"
+	default ARCH_CHIP_ESP32WROVER
+
+config ARCH_CHIP_ESP32S0WD
+	bool "ESP32-S0WD"
+	select ESP32_ESP32SXWDXX
+	---help---
+		ESP32 chip with a single Xtensa LX6 core, no embedded Flash memory
+
+config ARCH_CHIP_ESP32D0WD
+	bool "ESP32-D0WD"
+	select ESP32_ESP32DXWDXX
+	---help---
+		ESP32 chip with a dual Xtensa LX6 core, no embedded Flash memory
+
+config ARCH_CHIP_ESP32D2WD
+	bool "ESP32-D2WD"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_2M
+	---help---
+		ESP32 chip with a dual Xtensa LX6 core, 2 MB of in-package Flash memory
+
+config ARCH_CHIP_ESP32U4WD
+	bool "ESP32-U4WD"
+	select ESP32_ESP32UXWDXX
+	select ESP32_FLASH_4M
+	---help---
+		ESP32 chip with a single Xtensa LX6 core, 4 MB of in-package Flash memory
+
+config ARCH_CHIP_ESP32WROOM32
+	bool "ESP32-WROOM-32"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_4M
+	---help---
+		Generic module with an embedded ESP32-D0WD chip, 4 MB of Flash memory
+
+config ARCH_CHIP_ESP32WROOM32_8MB
+	bool "ESP32-WROOM-32 (8MB)"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_8M
+	---help---
+		Generic module with an embedded ESP32-D0WD chip, 8 MB of Flash memory
+
+config ARCH_CHIP_ESP32WROOM32_16MB
+	bool "ESP32-WROOM-32 (16MB)"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_16M
+	---help---
+		Generic module with an embedded ESP32-D0WD chip, 16 MB of Flash memory
+
+config ARCH_CHIP_ESP32WROVER
+	bool "ESP32-WROVER"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_4M
+	select ESP32_PSRAM_8M
+	---help---
+		Generic module with an embedded ESP32-D0WD chip, 4 MB of Flash memory,
+		8 MB of PSRAM
+
+config ARCH_CHIP_ESP32MINI1
+	bool "ESP32-MINI-1"
+	select ESP32_ESP32UXWDXX
+	select ESP32_FLASH_4M
+	---help---
+		Generic module with an embedded ESP32-U4WD chip
+
+config ARCH_CHIP_ESP32SOLO1
+	bool "ESP32-SOLO-1"
+	select ESP32_ESP32SXWDXX
+	select ESP32_FLASH_4M
+	---help---
+		Generic module with an embedded ESP32-S0WD chip, 4 MB of Flash memory
+
+config ARCH_CHIP_ESP32_A1S
+	bool "Ai-Thinker ESP32-A1S"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_16M
+	select ESP32_PSRAM_8M
+	---help---
+		Ai-Thinker ESP32-A1S module with an embedded ESP32-D0WD chip, 16 MB of
+		Flash memory, 8 MB of PSRAM
+
+config ARCH_CHIP_ESP32PICOD4
+	bool "ESP32-PICO-D4"
+	select ESP32_ESP32DXWDXX
+	select ESP32_FLASH_4M
+	---help---
+		ESP32 chip with a dual Xtensa LX6 core, 4 MB of in-package Flash memory
+
+endchoice # ESP32 Chip Selection
+
+config ESPRESSIF_CHIP_SERIES
+	string
+	default "esp32"
+
+config ESPRESSIF_NUM_CPUS
+	int
+	default 1 if ESP32_SINGLE_CPU
+	default 2 if ESP32_DUAL_CPU
+
+config ESP32_SINGLE_CPU
+	bool
+	default n
+
+config ESP32_DUAL_CPU
+	bool
+	default n
+
+config ESP32_FLASH_2M
+	bool
+	default n
+
+config ESP32_FLASH_4M
+	bool
+	default n
+
+config ESP32_FLASH_8M
+	bool
+	default n
+
+config ESP32_FLASH_16M
+	bool
+	default n
+
+config ESP32_FLASH_DETECT
+	bool "Auto-detect FLASH size"
+	default y
+	---help---
+		Auto detect flash size when flashing.
+
+config ESP32_PSRAM_8M
+	bool
+	default n
+
+config ESP32_ESP32SXWDXX
+	bool
+	default n
+	select ESP32_SINGLE_CPU
+	select ARCH_HAVE_I2CRESET
+
+config ESP32_ESP32UXWDXX
+	bool
+	default n
+	select ESP32_SINGLE_CPU
+	select ARCH_HAVE_I2CRESET
+
+config ESP32_ESP32DXWDXX
+	bool
+	default n
+	select ESP32_DUAL_CPU
+	select ARCH_HAVE_I2CRESET
+
+choice ESP32_DEFAULT_CPU_FREQ
+	prompt "CPU frequency"
+	default ESP32_DEFAULT_CPU_FREQ_240
+	---help---
+		CPU frequency to be set on application startup.
+
+config ESP32_DEFAULT_CPU_FREQ_80
+	bool "80 MHz"
+
+config ESP32_DEFAULT_CPU_FREQ_160
+	bool "160 MHz"
+
+config ESP32_DEFAULT_CPU_FREQ_240
+	bool "240 MHz"
+
+endchoice # ESP32_DEFAULT_CPU_FREQ
+
+config ESP32_DEFAULT_CPU_FREQ_MHZ
+	int
+	default 80 if ESP32_DEFAULT_CPU_FREQ_80
+	default 160 if ESP32_DEFAULT_CPU_FREQ_160
+	default 240 if ESP32_DEFAULT_CPU_FREQ_240
+
+choice
+	prompt "On-board Crystal Frequency"
+	default ESP32_XTAL_40MZ
+
+config ESP32_XTAL_40MZ
+	bool "40MHz"
+
+config ESP32_XTAL_26MHz
+	bool "26MHz"
+
+endchoice # On-board Crystal Frequency
+
+config ESP32_RT_TIMER
+	bool "Real-time Timer"
+	default n
+	select ESP32_TIMER0
+
+config ESP32_RUN_IRAM
+	bool "Run from IRAM"
+	default n
+	---help---
+		This loads all of NuttX inside IRAM.  Used to test somewhat small
+		images that can fit entirely in IRAM.
+
+config ESP32_IGNORE_CHIP_REVISION_CHECK
+	bool "Ignore CHIP Revision Check"
+	default n
+	---help---
+		Some old ESP32 chips (before ESP32 ECO V3) has some issues
+		related to PSRAM Cache Bug, 32KHz crystal stability and
+		fault injection regarding security boot. So it is always
+		recommended to use an ESP32 ECO V3 or new chip. However some
+		old boards are still available in the market or in some users'
+		hand and in this case it is necessary to enable this bypass to
+		use this boards.
+		WARNING: Use it only for your own board, not in a product.
+
 menu "ESP32 Peripheral Selection"
+
+source "arch/xtensa/src/common/espressif/Kconfig"
 
 config ESP32_UART
 	bool
 	default n
 
-config ESP32_SPI
+config ESP32_TIMER
+	bool
+	default n
+
+config ESP32_WDT
 	bool
 	default n
 
@@ -22,74 +260,71 @@ config ESP32_BT
 	---help---
 		No yet implemented
 
+config ESP32_EFUSE
+	bool
+	select ESPRESSIF_EFUSE
+
 config ESP32_EMAC
 	bool "Ethernet MAC"
 	default n
-	depends on EXPERIMENTAL
+	select NET
 	---help---
-		No yet implemented
+		Enable ESP32 ethernet support.
+
+config ESP32_OPENETH
+	bool "Opencores Ethernet MAC"
+	default n
+	depends on !ESP32_EMAC
+	select NET
+	select SCHED_WORKQUEUE
+	---help---
+		Enable ESP32 ethernet opencores support for use with QEMU.
+		Disable this if you are using the real device.
+
+if ESP32_OPENETH
+config ESP32_OPENETH_DMA_RX_BUFFER_NUM
+	int "Number of Ethernet DMA Rx buffers"
+	range 1 64
+	default 4
+	---help---
+		Number of DMA receive buffers, each buffer is 1600 bytes.
+
+endif # ESP32_OPENETH
 
 config ESP32_I2C
-	bool "I2C"
+	bool
 	default n
 	select I2C
-	---help---
-		No yet implemented
+	select I2C_DRIVER
 
-config ESP32_I2C0
-	bool "I2C 0"
+config ESP32_TWAI
+	bool
 	default n
-	select ESP32_I2C
-	---help---
-		No yet implemented
-
-config ESP32_I2C1
-	bool "I2C 1"
-	default n
-	select ESP32_I2C
-	---help---
-		No yet implemented
-
-config ESP32_I2S0
-	bool "I2S 0"
-	default n
-	depends on EXPERIMENTAL
-	---help---
-		No yet implemented
-
-config ESP32_I2S1
-	bool "I2S 2"
-	default n
-	depends on EXPERIMENTAL
-	---help---
-		No yet implemented
-
-config ESP32_SPIFLASH
-	bool "SPI FLASH"
-	default n
-	---help---
-		ESP32 spi flash driver	
+	select CAN
 
 config ESP32_LEDC
-	bool "LED PWM (LEDC)"
+	bool "LEDC (PWM)"
 	default n
-	depends on EXPERIMENTAL
+	select PWM
+	select ARCH_HAVE_PWM_MULTICHAN
 	---help---
-		No yet implemented
+		Enable support to PWM on ESP32 using LEDC peripheral.
 
 config ESP32_PCNT
-	bool "Pulse Count Module (PCNT)"
+	bool "Pulse Counter (PCNT / QE) Module (Legacy Driver)"
 	default n
-	depends on EXPERIMENTAL
+	depends on !ESP_PCNT
 	---help---
-		No yet implemented
+		Warning: this is deprecated option. Please use ESP_PCNT option
+		Pulse Counter is currently used to implement Quadracture
+		Encoder.
 
-config ESP32_RMT
-	bool "Remote Control Module (RMT)"
+config ESP32_RNG
+	bool "Random Number Generator (RNG)"
 	default n
-	depends on EXPERIMENTAL
+	select ARCH_HAVE_RNG
 	---help---
-		No yet implemented
+		ESP32 supports a RNG that passed on Dieharder test suite.
 
 config ESP32_SDIO_SAVE
 	bool "SDIO Slave"
@@ -105,33 +340,335 @@ config ESP32_SDMMC
 	---help---
 		No yet implemented
 
-config ESP32_SPI0
-	bool "SPI 0"
-	default n
-	depends on EXPERIMENTAL
+config ESP32_I2S
+	bool "I2S (legacy implementation: read help)"
+	select I2S
 	---help---
-		No yet implemented
+		This is a deprecated Kconfig macro. Its kept for retrocompatibility only.
+		Use "CONFIG_ESPRESSIF_I2S" instead.
 
-config ESP32_SPI1
-	bool "SPI 1"
+if ESP32_I2S
+
+config ESP32_I2S0
+	bool "I2S 0"
 	default n
-	depends on EXPERIMENTAL
+	select ARCH_DMA
+	select ESP32_GPIO_IRQ
+	select ESPRESSIF_I2S0
+
+if ESP32_I2S0
+
+config ESP32_I2S0_RX
+	bool "Enable I2S receiver"
+	default y
 	---help---
-		No yet implemented
+		Enable I2S receive logic
+
+config ESP32_I2S0_TX
+	bool "Enable I2S transmitter"
+	default y
+	---help---
+		Enable I2S transmit logic
+
+choice
+	prompt "I2S0 role"
+	default ESP32_I2S0_ROLE_MASTER
+	---help---
+		Selects the operation role of the I2S0.
+
+config ESP32_I2S0_ROLE_MASTER
+	bool "Master"
+
+config ESP32_I2S0_ROLE_SLAVE
+	bool "Slave"
+
+endchoice
+
+choice
+	prompt "Bit width"
+	---help---
+		Selects the valid data bits per sample.
+		Note that this option may be overwritten by the audio
+		according to the bit width of the file being played
+
+config ESP32_I2S0_DATA_BIT_WIDTH_8BIT
+	bool "8 bits"
+
+config ESP32_I2S0_DATA_BIT_WIDTH_16BIT
+	bool "16 bits"
+
+config ESP32_I2S0_DATA_BIT_WIDTH_24BIT
+	bool "24 bits"
+
+config ESP32_I2S0_DATA_BIT_WIDTH_32BIT
+	bool "32 bits"
+
+endchoice
+
+config ESP32_I2S0_DATA_BIT_WIDTH
+	int
+	default 8 if ESP32_I2S0_DATA_BIT_WIDTH_8BIT
+	default 16 if ESP32_I2S0_DATA_BIT_WIDTH_16BIT
+	default 24 if ESP32_I2S0_DATA_BIT_WIDTH_24BIT
+	default 32 if ESP32_I2S0_DATA_BIT_WIDTH_32BIT
+
+config ESP32_I2S0_SAMPLE_RATE
+	int "I2S0 sample rate"
+	default 44100
+	range 8000 48000
+	---help---
+		Selects the sample rate.
+		Note that this option may be overwritten by the audio
+		according to the bit width of the file being played
+
+config ESP32_I2S0_BCLKPIN
+	int "I2S0 BCLK pin"
+	default 4
+	range 0 33 if ESP32_I2S0_ROLE_MASTER
+	range 0 39 if ESP32_I2S0_ROLE_SLAVE
+
+config ESP32_I2S0_WSPIN
+	int "I2S0 WS pin"
+	default 5
+	range 0 33 if ESP32_I2S0_ROLE_MASTER
+	range 0 39 if ESP32_I2S0_ROLE_SLAVE
+
+config ESP32_I2S0_DINPIN
+	int "I2S0 DIN pin"
+	depends on ESP32_I2S0_RX
+	default 19
+	range 0 39
+
+config ESP32_I2S0_DOUTPIN
+	int "I2S0 DOUT pin"
+	depends on ESP32_I2S0_TX
+	default 18
+	range 0 33
+
+config ESP32_I2S0_MCLK
+	bool "Enable I2S Master Clock"
+	depends on ESP32_I2S0_ROLE_MASTER
+	default n
+	---help---
+		Enable I2S master clock
+
+choice
+	prompt "I2S0 MCLK pin"
+	depends on ESP32_I2S0_MCLK
+	default ESP32_I2S0_MCLKPIN_GPIO0
+	---help---
+		Selects the pin to output master clock.
+
+config ESP32_I2S0_MCLKPIN_GPIO0
+	bool "GPIO0"
+
+config ESP32_I2S0_MCLKPIN_GPIO1
+	bool "GPIO1 (U0TXD)"
+
+config ESP32_I2S0_MCLKPIN_GPIO3
+	bool "GPIO3 [U0RXD]"
+
+endchoice
+
+config ESP32_I2S0_MCLKPIN
+	int
+	default 0
+	default 0 if ESP32_I2S0_MCLKPIN_GPIO0
+	default 1 if ESP32_I2S0_MCLKPIN_GPIO1
+	default 3 if ESP32_I2S0_MCLKPIN_GPIO3
+
+endif #ESP32_I2S0
+
+config ESP32_I2S1
+	bool "I2S 1"
+	default n
+	select ARCH_DMA
+	select ESP32_GPIO_IRQ
+	select ESPRESSIF_I2S1
+
+if ESP32_I2S1
+
+config ESP32_I2S1_RX
+	bool "Enable I2S receiver"
+	default y
+	---help---
+		Enable I2S receive logic
+
+config ESP32_I2S1_TX
+	bool "Enable I2S transmitter"
+	default y
+	---help---
+		Enable I2S transmit logic
+
+choice
+	prompt "I2S1 role"
+	default ESP32_I2S1_ROLE_MASTER
+	---help---
+		Selects the operation role of the I2S1.
+
+config ESP32_I2S1_ROLE_MASTER
+	bool "Master"
+
+config ESP32_I2S1_ROLE_SLAVE
+	bool "Slave"
+
+endchoice
+
+choice
+	prompt "Bit width"
+	---help---
+		Selects the valid data bits per sample.
+		Note that this option may be overwritten by the audio
+		according to the bit width of the file being played
+
+config ESP32_I2S1_DATA_BIT_WIDTH_8BIT
+	bool "8 bits"
+
+config ESP32_I2S1_DATA_BIT_WIDTH_16BIT
+	bool "16 bits"
+
+config ESP32_I2S1_DATA_BIT_WIDTH_24BIT
+	bool "24 bits"
+
+config ESP32_I2S1_DATA_BIT_WIDTH_32BIT
+	bool "32 bits"
+
+endchoice
+
+config ESP32_I2S1_DATA_BIT_WIDTH
+	int
+	default 8 if ESP32_I2S1_DATA_BIT_WIDTH_8BIT
+	default 16 if ESP32_I2S1_DATA_BIT_WIDTH_16BIT
+	default 24 if ESP32_I2S1_DATA_BIT_WIDTH_24BIT
+	default 32 if ESP32_I2S1_DATA_BIT_WIDTH_32BIT
+
+config ESP32_I2S1_SAMPLE_RATE
+	int "I2S1 sample rate"
+	default 44100
+	range 8000 48000
+	---help---
+		Selects the sample rate.
+		Note that this option may be overwritten by the audio
+		according to the bit width of the file being played
+
+config ESP32_I2S1_BCLKPIN
+	int "I2S1 BCLK pin"
+	default 22
+	range 0 33 if ESP32_I2S1_ROLE_MASTER
+	range 0 39 if ESP32_I2S1_ROLE_SLAVE
+
+config ESP32_I2S1_WSPIN
+	int "I2S1 WS pin"
+	default 23
+	range 0 33 if ESP32_I2S1_ROLE_MASTER
+	range 0 39 if ESP32_I2S1_ROLE_SLAVE
+
+config ESP32_I2S1_DINPIN
+	int "I2S1 DIN pin"
+	depends on ESP32_I2S1_RX
+	default 26
+	range 0 39
+
+config ESP32_I2S1_DOUTPIN
+	int "I2S1 DOUT pin"
+	depends on ESP32_I2S1_TX
+	default 25
+	range 0 33
+
+config ESP32_I2S1_MCLK
+	bool "Enable I2S Master Clock"
+	depends on ESP32_I2S1_ROLE_MASTER
+	default n
+	---help---
+		Enable I2S master clock
+
+choice
+	prompt "I2S1 MCLK pin"
+	depends on ESP32_I2S1_MCLK
+	default ESP32_I2S1_MCLKPIN_GPIO0
+	---help---
+		Selects the pin to output master clock.
+
+config ESP32_I2S1_MCLKPIN_GPIO0
+	bool "GPIO0"
+
+config ESP32_I2S1_MCLKPIN_GPIO1
+	bool "GPIO1 (U0TXD)"
+
+config ESP32_I2S1_MCLKPIN_GPIO3
+	bool "GPIO3 [U0RXD]"
+
+endchoice
+
+config ESP32_I2S1_MCLKPIN
+	int
+	default 0
+	default 0 if ESP32_I2S1_MCLKPIN_GPIO0
+	default 1 if ESP32_I2S1_MCLKPIN_GPIO1
+	default 3 if ESP32_I2S1_MCLKPIN_GPIO3
+
+endif #ESP32_I2S1
+
+config I2S_DMADESC_NUM
+	int "I2S DMA maximum number of descriptors"
+	default 2
+	---help---
+		Configure the maximum number of out-link/in-link descriptors to
+		be chained for a I2S DMA transfer.
+
+endif #ESP32_I2S
+
+
+config ESP32_SPI
+	bool
+	default n
+
+config ESP32_SPIFLASH
+	bool "SPI Flash"
+	default n
+	select MTD
+	select MTD_BYTE_WRITE
+	select MTD_PARTITION
+	select ESPRESSIF_SPIFLASH
 
 config ESP32_SPI2
 	bool "SPI 2"
 	default n
 	select ESP32_SPI
-	---help---
-		Enable HSPI port setting
+	select ESP32_GPIO_IRQ
+	select SPI
+	select ESPRESSIF_SPI_PERIPH
 
 config ESP32_SPI3
 	bool "SPI 3"
 	default n
 	select ESP32_SPI
+	select ESP32_GPIO_IRQ
+	select SPI
+	select ESPRESSIF_SPI_PERIPH
+
+config ESP32_SPIRAM
+	bool "SPI RAM"
+	default n
+	select ARCH_HAVE_HEAP2
+
+if ESP32_SPIRAM && SMP
+
+choice
+	prompt "How does SPIRAM share cache?"
+	default ESP32_MEMMAP_SPIRAM_CACHE_EVENODD
 	---help---
-		Enable VSPI port setting
+		Selects the cache mode to CPU access the external memory.
+
+config ESP32_MEMMAP_SPIRAM_CACHE_EVENODD
+	bool "Pro CPU uses even 32 byte ranges, App uses odd ones"
+
+config ESP32_MEMMAP_SPIRAM_CACHE_LOWHIGH
+	bool "Pro CPU uses low 2MB ranges, App uses high ones"
+
+endchoice # How does SPIRAM share cache?
+
+endif
 
 config XTENSA_TIMER1
 	bool "Xtensa Timer 1"
@@ -142,107 +679,187 @@ config XTENSA_TIMER2
 	default n
 
 config ESP32_TIMER0
-	bool "64-bit Timer 0"
+	bool "64-bit Timer 0 (Group 0 Timer 0)"
 	default n
-	depends on EXPERIMENTAL
+	select ESP32_TIMER
 	---help---
-		No yet implemented
+		Enables Timer
 
 config ESP32_TIMER1
-	bool "64-bit Timer 1"
+	bool "64-bit Timer 1 (Group 0 Timer 1)"
 	default n
-	depends on EXPERIMENTAL
+	select ESP32_TIMER
 	---help---
-		No yet implemented
+		Enables Timer
 
 config ESP32_TIMER2
-	bool "64-bit Timer 2"
+	bool "64-bit Timer 2 (Group 1 Timer 0)"
 	default n
-	depends on EXPERIMENTAL
+	select ESP32_TIMER
 	---help---
-		No yet implemented
+		Enables Timer
 
 config ESP32_TIMER3
-	bool "64-bit Timer 3"
+	bool "64-bit Timer 3 (Group 1 Timer 1)"
 	default n
-	depends on EXPERIMENTAL
+	select ESP32_TIMER
 	---help---
-		No yet implemented
+		Enables Timer
 
 config ESP32_MWDT0
-	bool "Timer 0 Watchdog"
+	bool "Main System Watchdog Timer (Group 0)"
 	default n
-	depends on EXPERIMENTAL
-	select ESP32_TIMER0
+	select ESP32_WDT
 	---help---
-		No yet implemented
+		Includes MWDT0. This watchdog timer is part of the Group 0
+		timer submodule.
 
 config ESP32_MWDT1
-	bool "Timer 1 Watchdog"
+	bool "Main System Watchdog Timer (Group 1)"
 	default n
-	depends on EXPERIMENTAL
-	select ESP32_TIMER1
+	select ESP32_WDT
 	---help---
-		No yet implemented
-
-config ESP32_MWDT2
-	bool "Timer 2 Watchdog"
-	default n
-	depends on EXPERIMENTAL
-	select ESP32_TIMER2
-	---help---
-		No yet implemented
-
-config ESP32_MWDT3
-	bool "Timer 3 Watchdog"
-	default n
-	depends on EXPERIMENTAL
-	select ESP32_TIMER3
-	---help---
-		No yet implemented
+		Includes MWDT1. This watchdog timer is part of the Group 0
+		timer submodule.
 
 config ESP32_RWDT
-	bool "RTC Watchdog"
+	bool "RTC Watchdog Timer"
 	default n
-	depends on EXPERIMENTAL
+	select ESP32_WDT
+	select ESP32_RTCIO_IRQ
 	---help---
-		No yet implemented
+		Includes RWDT. This watchdog timer is from the RTC module.
+		When it is selected, if the developer sets it to reset on expiration
+		it will reset Main System and the RTC module. If you don't want
+		to have the RTC module reset, please, use the Timers' Module WDTs.
+		They will only reset Main System.
+
+config ESP32_RTC
+	bool "Real Time Clock (RTC)"
+	default y
 
 config ESP32_UART0
 	bool "UART 0"
 	default n
 	select ESP32_UART
-	select ARCH_HAVE_UART0
+	select UART0_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config ESP32_UART1
 	bool "UART 1"
 	default n
 	select ESP32_UART
-	select ARCH_HAVE_UART1
+	select UART1_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
 config ESP32_UART2
 	bool "UART 2"
 	default n
 	select ESP32_UART
-	select ARCH_HAVE_UART2
+	select UART2_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 
-config ESP32_WIRELESS
-	bool "Wireless"
+config ESP32_I2C0
+	bool "I2C 0"
 	default n
-	depends on EXPERIMENTAL
+	select ESP32_I2C
+
+config ESP32_I2C1
+	bool "I2C 1"
+	default n
+	select ESP32_I2C
+
+config ESP32_I2C_PERIPH_MASTER_MODE
+	bool
+	depends on (ESP32_I2C0_MASTER_MODE || ESP32_I2C1_MASTER_MODE)
+	default n
+	select ESPRESSIF_I2C_PERIPH_MASTER_MODE
+
+config ESP32_I2C_PERIPH_SLAVE_MODE
+	bool
+	depends on (ESP32_I2C0_SLAVE_MODE || ESP32_I2C1_SLAVE_MODE)
+	default n
+	select ESPRESSIF_I2C_PERIPH_SLAVE_MODE
+	select ESPRESSIF_I2C0_SLAVE if ESP32_I2C0_SLAVE_MODE
+	select ESPRESSIF_I2C1_SLAVE if ESP32_I2C1_SLAVE_MODE
+
+choice ESP32_I2C0_MODE
+	prompt "I2C0 Mode"
+	depends on ESP32_I2C0
+	default ESP32_I2C0_MASTER_MODE
+
+config ESP32_I2C0_MASTER_MODE
+	bool "I2C0 Master Mode"
+	select ESP32_I2C_PERIPH_MASTER_MODE
+
+config ESP32_I2C0_SLAVE_MODE
+	bool "I2C0 Slave Mode"
+	select I2C_SLAVE
+	select I2C_SLAVE_DRIVER
+	select ESP32_I2C_PERIPH_SLAVE_MODE
+
+endchoice # ESP32_I2C0_MODE
+
+choice ESP32_I2C1_MODE
+	prompt "I2C1 Mode"
+	depends on ESP32_I2C1
+	default ESP32_I2C1_MASTER_MODE
+
+config ESP32_I2C1_MASTER_MODE
+	bool "I2C1 Master Mode"
+	select ESP32_I2C_PERIPH_MASTER_MODE
+
+config ESP32_I2C1_SLAVE_MODE
+	bool "I2C1 Slave Mode"
+	select I2C_SLAVE
+	select I2C_SLAVE_DRIVER
+	select ESP32_I2C_PERIPH_SLAVE_MODE
+
+endchoice # ESP32_I2C1_MODE
+
+config ESP32_TWAI0
+	bool "TWAI (CAN) 0"
+	default n
+	select ESP32_TWAI
+
+config ESP32_AES_ACCELERATOR
+	bool "AES Accelerator"
+	default n
+config ESP32_SHA_ACCELERATOR
+	bool "SHA Accelerator"
+	default n
 	---help---
-		No yet implemented
+		Enable ESP32 SHA accelerator support.
+
+config ESP32_PID
+	bool "PID Controller"
+	default n
+	select ARCH_USE_MPU
+	select XTENSA_HAVE_GENERAL_EXCEPTION_HOOKS if BUILD_PROTECTED
+	select XTENSA_HAVE_WINDOW_EXCEPTION_HOOKS if BUILD_PROTECTED
+	depends on EXPERIMENTAL
 
 endmenu # ESP32 Peripheral Selection
+
+menu "Interrupt Configuration"
+
+config ESP32_IRAM_ISR_DEBUG
+	bool "Enable debugging of the IRAM-enabled interrupts"
+	default n
+	---help---
+		This option enables keeping track of the IRAM-enabled interrupts by
+		registering its execution when non-IRAM interrupts are disabled. It
+		keeps track of the IRQ executed and register how many times since
+		boot it was executed.
+
+endmenu # Interrupt Configuration
 
 menu "Memory Configuration"
 
 config ESP32_BT_RESERVE_DRAM
 	int "Reserved BT DRAM"
-	default 0
+	default 0 if !ESPRESSIF_BLE
+	default 65536 if ESPRESSIF_BLE
 
 config ESP32_TRACEMEM_RESERVE_DRAM
 	int "Reserved trace memory DRAM"
@@ -252,17 +869,87 @@ config ESP32_ULP_COPROC_RESERVE_MEM
 	int "Reserved ULP co-processor DRAM"
 	default 0
 
+comment "Additional Heaps"
+
+choice ESP32_SPIRAM_HEAP
+	prompt "SPI RAM heap function"
+	default ESP32_SPIRAM_COMMON_HEAP if BUILD_FLAT
+	default ESP32_SPIRAM_USER_HEAP if BUILD_PROTECTED
+	depends on ESP32_SPIRAM
+	---help---
+		Select how the SPI RAM will be used as heap.
+
+config ESP32_SPIRAM_COMMON_HEAP
+	bool "Additional region to kernel heap"
+
+config ESP32_SPIRAM_USER_HEAP
+	bool "Separated userspace heap"
+	select MM_KERNEL_HEAP
+	select ESP32_USER_DATA_EXTMEM if BUILD_PROTECTED
+
+endchoice # ESP32_SPIRAM_HEAP
+
+config ESP32_IMM_HEAP
+	bool "Reserve part of DRAM as a separate heap"
+	select XTENSA_IMEM_USE_SEPARATE_HEAP
+	default n
+	depends on ESP32_SPIRAM_COMMON_HEAP
+
+config ESP32_RTC_HEAP
+	bool "Use the RTC memory as a separate heap"
+	select ARCH_HAVE_EXTRA_HEAPS
+	default n
+
+config ESP32_IRAM_HEAP
+	bool "Use the rest of IRAM as a separate heap"
+	select ARCH_HAVE_EXTRA_HEAPS
+	select LIBC_ARCH_ATOMIC
+	default n
+
 endmenu # Memory Configuration
 
 config ESP32_GPIO_IRQ
 	bool "GPIO pin interrupts"
+	default n
 	---help---
 		Enable support for interrupting GPIO pins
 
-menu "UART configuration"
+config ESP32_RTCIO_IRQ
+	bool "RTC IO interrupts"
+	default n
+	---help---
+		Enable support for interrupting RTC peripherals
+
+menu "UART Configuration"
 	depends on ESP32_UART
 
 if ESP32_UART0
+
+config ESP32_UART0_RS485
+	bool "RS-485 on UART0"
+	default n
+	---help---
+		Enable RS-485 interface on UART0. Your board config will have to
+		provide GPIO_UART0_RS485_DIR pin definition. Currently it cannot be
+		used with UART0_RXDMA.
+
+config ESP32_UART0_RS485_DIR_PIN
+	int "UART0 RS-485 DIR pin"
+	default 4
+	range 1 39
+	depends on ESP32_UART0_RS485
+	---help---
+		DIR pin for RS-485 on UART0. This pin will control the RS485 enable
+		TX of the RS485 transceiver.
+
+config ESP32_UART0_RS485_DIR_POLARITY
+	int "UART0 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on ESP32_UART0_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART0. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
 
 config ESP32_UART0_TXPIN
 	int "UART0 Tx Pin"
@@ -274,21 +961,62 @@ config ESP32_UART0_RXPIN
 	default 3
 	range 0 39
 
-if SERIAL_IFLOWCONTROL || SERIAL_OFLOWCONTROL
 config ESP32_UART0_RTSPIN
 	int "UART0 RTS Pin"
+	depends on SERIAL_IFLOWCONTROL
 	default 22
 	range 0 39
 
 config ESP32_UART0_CTSPIN
 	int "UART0 CTS Pin"
-	default 19
+	depends on SERIAL_OFLOWCONTROL
+	default 23
 	range 0 39
 
-endif # SERIAL_IFLOWCONTROL || SERIAL_OFLOWCONTROL
+config ESP32_UART0_TXDMA
+	bool "Enable UART0 TX DMA"
+	select ARCH_DMA
+	select UART0_TXDMA
+	select ESP32_IMM_HEAP if ESP32_SPIRAM_COMMON_HEAP
+	depends on EXPERIMENTAL
+	---help---
+		Due to a hardware bug on the DMA used by the UART
+		only TX DMA can be used. RX DMA is not available.
+		And when TX DMA is working, RX can't work properly, even
+		without using DMA.
+		So, it's not possible to have full duplex when TX DMA is enabled
+		and for not losing RX data it's recommended to implement the use
+		of flow control while a TX DMA transfer is ongoing.
+
 endif # ESP32_UART0
 
 if ESP32_UART1
+
+config ESP32_UART1_RS485
+	bool "RS-485 on UART1"
+	default n
+	---help---
+		Enable RS-485 interface on UART1. Your board config will have to
+		provide GPIO_UART1_RS485_DIR pin definition. Currently it cannot be
+		used with UART1_RXDMA.
+
+config ESP32_UART1_RS485_DIR_PIN
+	int "UART1 RS-485 DIR pin"
+	default 14
+	range 1 39
+	depends on ESP32_UART1_RS485
+	---help---
+		DIR pin for RS-485 on UART1. This pin will control the RS485 enable
+		TX of the RS485 transceiver.
+
+config ESP32_UART1_RS485_DIR_POLARITY
+	int "UART1 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on ESP32_UART1_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART1. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
 
 config ESP32_UART1_TXPIN
 	int "UART1 Tx Pin"
@@ -300,222 +1028,1885 @@ config ESP32_UART1_RXPIN
 	default 9
 	range 0 39
 
-if SERIAL_IFLOWCONTROL || SERIAL_OFLOWCONTROL
 config ESP32_UART1_RTSPIN
 	int "UART1 RTS Pin"
+	depends on SERIAL_IFLOWCONTROL
 	default 11
 	range 0 39
 
 config ESP32_UART1_CTSPIN
 	int "UART1 CTS Pin"
+	depends on SERIAL_OFLOWCONTROL
 	default 6
 	range 0 39
 
-endif # SERIAL_IFLOWCONTROL || SERIAL_OFLOWCONTROL
+config ESP32_UART1_TXDMA
+	bool "Enable UART1 TX DMA"
+	select ARCH_DMA
+	select UART1_TXDMA
+	select ESP32_IMM_HEAP if ESP32_SPIRAM_COMMON_HEAP
+	depends on EXPERIMENTAL
+	---help---
+		Due to a hardware bug on the DMA used by the UART
+		only TX DMA can be used. RX DMA is not available.
+		And when TX DMA is working, RX can't work properly, even
+		without using DMA.
+		So, it's not possible to have full duplex when TX DMA is enabled
+		and for not losing rx data it's recommended to implement the use
+		of flow control while a TX DMA transfer is ongoing.
+
 endif # ESP32_UART1
 
 if ESP32_UART2
 
+config ESP32_UART2_RS485
+	bool "RS-485 on UART2"
+	default n
+	---help---
+		Enable RS-485 interface on UART2. Your board config will have to
+		provide GPIO_UART2_RS485_DIR pin definition. Currently it cannot be
+		used with UART2_RXDMA.
+
+config ESP32_UART2_RS485_DIR_PIN
+	int "UART2 RS-485 DIR pin"
+	default 18
+	range 1 39
+	depends on ESP32_UART2_RS485
+	---help---
+		DIR pin for RS-485 on UART2. This pin will control the RS485 enable
+		TX of the RS485 transceiver.
+
+config ESP32_UART2_RS485_DIR_POLARITY
+	int "UART2 RS-485 DIR pin polarity"
+	default 1
+	range 0 1
+	depends on ESP32_UART2_RS485
+	---help---
+		Polarity of DIR pin for RS-485 on UART2. Set to state on DIR pin which
+		enables TX (0 - low / nTXEN, 1 - high / TXEN).
+
 config ESP32_UART2_TXPIN
 	int "UART2 Tx Pin"
-	default 17
+	default 19
 	range 0 39
 
 config ESP32_UART2_RXPIN
 	int "UART2 Rx Pin"
-	default 16
+	default 18
 	range 0 39
 
-if SERIAL_IFLOWCONTROL || SERIAL_OFLOWCONTROL
 config ESP32_UART2_RTSPIN
 	int "UART2 RTS Pin"
+	depends on SERIAL_IFLOWCONTROL
 	default 7
 	range 0 39
 
 config ESP32_UART2_CTSPIN
 	int "UART2 CTS Pin"
+	depends on SERIAL_OFLOWCONTROL
 	default 8
 	range 0 39
 
-endif # SERIAL_IFLOWCONTROL || SERIAL_OFLOWCONTROL
+config ESP32_UART2_TXDMA
+	bool "Enable UART2 TX DMA"
+	select ARCH_DMA
+	select UART2_TXDMA
+	select ESP32_IMM_HEAP if ESP32_SPIRAM_COMMON_HEAP
+	depends on EXPERIMENTAL
+	---help---
+		Due to a hardware bug on the DMA used by the UART
+		only TX DMA can be used. RX DMA is not available.
+		And when TX DMA is working, RX can't work properly simultaneously, even
+		without using DMA.
+		So, it's not possible to have full duplex when TX DMA is enabled
+		and for not losing rx data it's recommended to implement the use
+		of flow control while a TX DMA transfer is ongoing.
+
 endif # ESP32_UART2
 
-endmenu # UART configuration
-
-
-menu "I2C configuration"
-	depends on ESP32_I2C
-	
-if ESP32_I2C0
-
 choice
-	prompt "I2C 0 mode"
-	default ESP32_I2C0_MODE_MASTER
+	prompt "UART with exclusive DMA"
+	default ESP32_UART0_EXC
+	depends on ESP32_UART0_TXDMA && ESP32_UART1_TXDMA && ESP32_UART2_TXDMA
+	---help---
+		The three UARTs from ESP32 share 2 DMA channels.
+		Select which UART should have exclusive access to
+		a DMA channel.
 
-config ESP32_I2C0_MODE_MASTER
-	bool "I2C0 master mode"
+config ESP32_UART0_EXC
+	bool "UART 0"
 
-config ESP32_I2C0_MODE_SLAVE
-	bool "I2C0 slave mode"
+config ESP32_UART1_EXC
+	bool "UART 1"
+
+config ESP32_UART2_EXC
+	bool "UART 2"
 
 endchoice
 
-config ESP32_I2C0_SCLK_PIN
-	int "I2C 0 Sclk Pin"
-	default 4
+config UART_DMADESC_NUM
+	int "UART DMA descriptor list size"
+	depends on SERIAL_TXDMA
+	default 2
+
+endmenu # UART configuration
+
+menu "I2C Configuration"
+	depends on ESP32_I2C
+
+if ESP32_I2C0
+
+config ESP32_I2C0_SCLPIN
+	int "I2C0 SCL Pin"
+	default 22
 	range 0 39
 
-config ESP32_I2C0_SCLK_PULLUP_EN
-	bool "I2C 0 Sclk Pullup enable"
-	default n
-
-config ESP32_I2C0_SDA_PIN
+config ESP32_I2C0_SDAPIN
 	int "I2C0 SDA Pin"
-	default 5
+	default 23
 	range 0 39
-	
-config ESP32_I2C0_SDA_PULLUP_EN
-	bool "I2C0 SDA Pullup enable"
-	default n
-	
+
 endif # ESP32_I2C0
 
 if ESP32_I2C1
 
-choice
-	prompt "I2C 1 mode"
-	default ESP32_I2C1_MODE_MASTER
-
-config ESP32_I2C1_MODE_MASTER
-	bool "I2C1 master mode"
-
-config ESP32_I2C1_MODE_SLAVE
-	bool "I2C1 slave mode"
-
-endchoice
-
-config ESP32_I2C1_SCLK_PIN
-	int "I2C 1 SCLK Pin"
-	default 18
+config ESP32_I2C1_SCLPIN
+	int "I2C1 SCL Pin"
+	default 26
 	range 0 39
 
-config ESP32_I2C1_SCLK_PULLUP_EN
-	bool "I2C 1 Sclk Pullup enable"
-	default n
-
-config ESP32_I2C1_SDA_PIN
-	int "I2C 1 SDA Pin"
-	default 19
-	range 0 39
-	
-config ESP32_I2C1_SDA_PULLUP_EN
-	bool "I2C1 SDA Pullup enable"
-	default n
-
-endif # ESP32_I2C1
-
-endmenu # I2C configuration
-
-source arch/xtensa/src/esp32/spi_flash/Kconfig
-
-menu "SPI configuration"
-	depends on ESP32_SPI
-
-config ESP32_SPI_CS
-	int "SPI CS channel"
-	default 0
-	range 0 2
-	---help---
-		use SPI_SELECT to select this CS channel
-
-if ESP32_SPI2
-
-config GPIO_SPI2_CS0_PIN
-	int "HSPI CS0 Pin"
-	default 22
-	range 0 39
-	depends on ESP32_SPI_CS != 1 && ESP32_SPI_CS != 2
-
-config GPIO_SPI2_CS1_PIN
-	int "HSPI CS1 Pin"
-	default 22
-	range 0 39
-	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 2
-
-config GPIO_SPI2_CS2_PIN
-	int "HSPI CS2 Pin"
-	default 22
-	range 0 39
-	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 1
-
-config GPIO_SPI2_CLK_PIN
-	int "HSPI CLK Pin"
-	default 19
-	range 0 39
-
-config GPIO_SPI2_MISO_PIN
-	int "HSPI MISO Pin"
+config ESP32_I2C1_SDAPIN
+	int "I2C1 SDA Pin"
 	default 25
 	range 0 39
 
-config GPIO_SPI2_MOSI_PIN
-	int "HSPI MOSI Pin"
-	default 23
+endif # ESP32_I2C1
+
+config ESP32_I2CTIMEOSEC
+	int "Timeout seconds"
+	default 0
+	depends on ESP32_I2C_PERIPH_MASTER_MODE
+
+config ESP32_I2CTIMEOMS
+	int "Timeout milliseconds"
+	default 500
+	depends on ESP32_I2C_PERIPH_MASTER_MODE
+
+endmenu # I2C configuration
+
+menu "TWAI driver options"
+	depends on ESP32_TWAI
+
+if ESP32_TWAI0
+
+config ESP32_TWAI0_TXPIN
+	int "TWAI0 TX Pin"
+	default 21
+
+config ESP32_TWAI0_RXPIN
+	int "TWAI0 RX Pin"
+	default 22
+
+config ESP32_TWAI0_BITRATE
+	int "TWAI0 bitrate"
+	default 1000000
+	---help---
+		TWAI0 bit rate.  Required if ESP32_TWAI0 is defined.
+
+config ESP32_TWAI0_SAMPLEP
+	int "TWAI0 sample point"
+	default 80
+	---help---
+		TWAI0 sample point location as a percent value.  Required
+		if ESP32_TWAI0 is defined.
+
+config ESP32_TWAI0_SJW
+	int "TWAI0 synchronization jump width"
+	default 3
+	---help---
+		SJW limits the number of Time Quanta corrections during bit
+		Resynchronization. Default: 3
+
+config ESP32_TWAI0_SAM
+	bool "TWAI0 sampling"
+	default n
+	---help---
+		The bus is sampled 3 times (recommended for low to medium speed buses
+		to spikes on the bus-line).
+
+endif # ESP32_TWAI0
+
+config ESP32_TWAI_REGDEBUG
+	bool "TWAI register level debug"
+	depends on DEBUG_CAN_INFO
+	default n
+	---help---
+		Output detailed register-level TWAI debug information. Requires also
+		CONFIG_DEBUG_CAN_INFO.
+
+endmenu #ESP32_TWAI
+
+menu "SPI Configuration"
+	depends on ESP32_SPI
+
+config ESP32_SPI_SWCS
+	bool "SPI software CS"
+	default y
+	---help---
+		Use SPI software CS.
+
+config ESP32_SPI_UDCS
+	bool "User defined CS"
+	default n
+	depends on ESP32_SPI_SWCS
+	---help---
+		Use user defined CS.
+
+config ESP32_SPI2_DMA
+	bool "SPI2 use DMA"
+	default y
+	select ARCH_DMA
+	select ESP32_IMM_HEAP if ESP32_SPIRAM_COMMON_HEAP
+	depends on ESP32_SPI2
+
+config ESP32_SPI3_DMA
+	bool "SPI3 use DMA"
+	default y
+	select ARCH_DMA
+	select ESP32_IMM_HEAP if ESP32_SPIRAM_COMMON_HEAP
+	depends on ESP32_SPI3
+
+config SPI_DMADESC_NUM
+	int "SPI master DMA description number"
+	default 2
+
+config SPI_SLAVE_BUFSIZE
+	int "SPI slave buffer size"
+	default 2048
+	depends on SPI_SLAVE
+
+config ESP32_SPI_DMATHRESHOLD
+	int "SPI DMA threshold"
+	default 64
+	depends on ESP32_SPI2_DMA || ESP32_SPI3_DMA
+	---help---
+		When SPI DMA is enabled, DMA transfers whose size are below the
+		defined threshold will be performed by polling logic.
+
+if ESP32_SPI2
+
+config ESP32_SPI2_CSPIN
+	int "SPI2 CS Pin"
+	default 15
 	range 0 39
 
-config SPI2_DMA_CHANNEL
-	int "HSPI DMA Channel, 0 is disable"
-	default 1
-	range 0 2
+config ESP32_SPI2_CLKPIN
+	int "SPI2 CLK Pin"
+	default 14
+	range 0 39
+
+config ESP32_SPI2_MOSIPIN
+	int "SPI2 MOSI Pin"
+	default 13
+	range 0 39
+
+config ESP32_SPI2_MISOPIN
+	int "SPI2 MISO Pin"
+	default 12
+	range 0 39
+
+choice ESP32_SPI2_MASTER_IO
+	prompt "SPI2 master I/O mode"
+	default ESP32_SPI2_MASTER_IO_RW
+
+config ESP32_SPI2_MASTER_IO_RW
+	bool "Read & Write"
+
+config ESP32_SPI2_MASTER_IO_RO
+	bool "Read Only"
+
+config ESP32_SPI2_MASTER_IO_WO
+	bool "Write Only"
+
+endchoice # ESP32_SPI2_MASTER_IO
+
+choice ESP32_SPI2_SLAVE_IO
+	prompt "SPI2 slave I/O mode"
+	default ESP32_SPI2_SLAVE_IO_RW
+	depends on SPI_SLAVE
+
+config ESP32_SPI2_SLAVE_IO_RW
+	bool "Read & Write"
+
+config ESP32_SPI2_SLAVE_IO_RO
+	bool "Read Only"
+
+config ESP32_SPI2_SLAVE_IO_WO
+	bool "Write Only"
+
+endchoice # ESP32_SPI2_SLAVE_IO
 
 endif # ESP32_SPI2
 
 if ESP32_SPI3
 
-config GPIO_SPI3_CS0_PIN
-	int "VSPI CS0 Pin"
-	default 22
-	range 0 39
-	depends on ESP32_SPI_CS != 1 && ESP32_SPI_CS != 2
-
-config GPIO_SPI3_CS1_PIN
-	int "VSPI CS1 Pin"
-	default 22
-	range 0 39
-	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 2
-
-config GPIO_SPI3_CS2_PIN
-	int "VSPI CS2 Pin"
-	default 22
-	range 0 39
-	depends on ESP32_SPI_CS != 0 && ESP32_SPI_CS != 1
-
-config GPIO_SPI3_CLK_PIN
-	int "VSPI CLK Pin"
-	default 19
+config ESP32_SPI3_CSPIN
+	int "SPI3 CS Pin"
+	default 5
 	range 0 39
 
-config GPIO_SPI3_MISO_PIN
-	int "VSPI MISO Pin"
-	default 25
+config ESP32_SPI3_CLKPIN
+	int "SPI3 CLK Pin"
+	default 18
 	range 0 39
 
-config GPIO_SPI3_MOSI_PIN
-	int "VSPI MOSI Pin"
+config ESP32_SPI3_MOSIPIN
+	int "SPI3 MOSI Pin"
 	default 23
 	range 0 39
 
-config SPI3_DMA_CHANNEL
-	int "VSPI DMA Channel, 0 is disable"
-	default 0
-	range 0 2
+config ESP32_SPI3_MISOPIN
+	int "SPI3 MISO Pin"
+	default 19
+	range 0 39
+
+choice ESP32_SPI3_MASTER_IO
+	prompt "SPI3 master I/O mode"
+	default ESP32_SPI3_MASTER_IO_RW
+
+config ESP32_SPI3_MASTER_IO_RW
+	bool "Read & Write"
+
+config ESP32_SPI3_MASTER_IO_RO
+	bool "Read Only"
+
+config ESP32_SPI3_MASTER_IO_WO
+	bool "Write Only"
+
+endchoice # ESP32_SPI3_MASTER_IO
+
+choice ESP32_SPI3_SLAVE_IO
+	prompt "SPI3 slave I/O mode"
+	default ESP32_SPI3_SLAVE_IO_RW
+	depends on SPI_SLAVE
+
+config ESP32_SPI3_SLAVE_IO_RW
+	bool "Read & Write"
+
+config ESP32_SPI3_SLAVE_IO_RO
+	bool "Read Only"
+
+config ESP32_SPI3_SLAVE_IO_WO
+	bool "Write Only"
+
+endchoice # ESP32_SPI3_SLAVE_IO
 
 endif # ESP32_SPI3
 
-config SPI_DMA_MAX_DATALEN
-	int "SPI DMA data length"
-	default 4080
-	range 32 4080
+endmenu # ESP32_SPI
 
-endmenu # SPI configuration
+menu "Pulse Counter (PCNT) Configuration"
+	depends on ESP32_PCNT
+
+config ESP32_PCNT_AS_QE
+	bool
+	default n
+
+config ESP32_PCNT_U0
+	bool "Enable PCNT Unit 0"
+	default n
+
+if ESP32_PCNT_U0
+
+config ESP32_PCNT_U0_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U0_CH0_EDGE_PIN
+	int "PCNT_U0 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U0_CH0_LEVEL_PIN
+	int "PCNT_U0 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U0_QE
+
+config ESP32_PCNT_U0_CH1_EDGE_PIN
+	int "PCNT_U0 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U0_QE
+
+config ESP32_PCNT_U0_CH1_LEVEL_PIN
+	int "PCNT_U0 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U0_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U0_FILTER_EN
+
+config ESP32_PCNT_U0_FILTER_THRES
+	int "PCNT_U0 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U0_FILTER_EN
+
+endif # ESP32_PCNT_U0
+
+config ESP32_PCNT_U1
+	bool "Enable PCNT Unit 1"
+	default n
+
+if ESP32_PCNT_U1
+
+config ESP32_PCNT_U1_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U1_CH0_EDGE_PIN
+	int "PCNT_U1 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U1_CH0_LEVEL_PIN
+	int "PCNT_U1 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U1_QE
+
+config ESP32_PCNT_U1_CH1_EDGE_PIN
+	int "PCNT_U1 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U1_QE
+
+config ESP32_PCNT_U1_CH1_LEVEL_PIN
+	int "PCNT_U1 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U1_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U1_FILTER_EN
+
+config ESP32_PCNT_U1_FILTER_THRES
+	int "PCNT_U1 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U1_FILTER_EN
+
+endif # ESP32_PCNT_U1
+
+config ESP32_PCNT_U2
+	bool "Enable PCNT Unit 2"
+	default n
+
+if ESP32_PCNT_U2
+
+config ESP32_PCNT_U2_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U2_CH0_EDGE_PIN
+	int "PCNT_U2 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U2_CH0_LEVEL_PIN
+	int "PCNT_U2 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U2_QE
+
+config ESP32_PCNT_U2_CH1_EDGE_PIN
+	int "PCNT_U2 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U2_QE
+
+config ESP32_PCNT_U2_CH1_LEVEL_PIN
+	int "PCNT_U2 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U2_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U2_FILTER_EN
+
+config ESP32_PCNT_U2_FILTER_THRES
+	int "PCNT_U2 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U2_FILTER_EN
+
+endif # ESP32_PCNT_U2
+
+config ESP32_PCNT_U3
+	bool "Enable PCNT Unit 3"
+	default n
+
+if ESP32_PCNT_U3
+
+config ESP32_PCNT_U3_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U3_CH0_EDGE_PIN
+	int "PCNT_U3 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U3_CH0_LEVEL_PIN
+	int "PCNT_U3 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U3_QE
+
+config ESP32_PCNT_U3_CH1_EDGE_PIN
+	int "PCNT_U3 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U3_QE
+
+config ESP32_PCNT_U3_CH1_LEVEL_PIN
+	int "PCNT_U3 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U3_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U3_FILTER_EN
+
+config ESP32_PCNT_U3_FILTER_THRES
+	int "PCNT_U3 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U3_FILTER_EN
+
+endif # ESP32_PCNT_U3
+
+config ESP32_PCNT_U4
+	bool "Enable PCNT Unit 4"
+	default n
+
+if ESP32_PCNT_U4
+
+config ESP32_PCNT_U4_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U4_CH0_EDGE_PIN
+	int "PCNT_U4 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U4_CH0_LEVEL_PIN
+	int "PCNT_U4 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U4_QE
+
+config ESP32_PCNT_U4_CH1_EDGE_PIN
+	int "PCNT_U4 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U4_QE
+
+config ESP32_PCNT_U4_CH1_LEVEL_PIN
+	int "PCNT_U4 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U4_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U4_FILTER_EN
+
+config ESP32_PCNT_U4_FILTER_THRES
+	int "PCNT_U4 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U4_FILTER_EN
+
+endif # ESP32_PCNT_U4
+
+config ESP32_PCNT_U5
+	bool "Enable PCNT Unit 5"
+	default n
+	select ESP32_PCNT_AS_QE
+
+if ESP32_PCNT_U5
+
+config ESP32_PCNT_U5_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+
+config ESP32_PCNT_U5_CH0_EDGE_PIN
+	int "PCNT_U5 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U5_CH0_LEVEL_PIN
+	int "PCNT_U5 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U5_QE
+
+config ESP32_PCNT_U5_CH1_EDGE_PIN
+	int "PCNT_U5 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U5_QE
+
+config ESP32_PCNT_U5_CH1_LEVEL_PIN
+	int "PCNT_U5 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U5_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U5_FILTER_EN
+
+config ESP32_PCNT_U5_FILTER_THRES
+	int "PCNT_U5 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U5_FILTER_EN
+
+endif # ESP32_PCNT_U5
+
+config ESP32_PCNT_U6
+	bool "Enable PCNT Unit 6"
+	default n
+
+if ESP32_PCNT_U6
+
+config ESP32_PCNT_U6_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U6_CH0_EDGE_PIN
+	int "PCNT_U6 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U6_CH0_LEVEL_PIN
+	int "PCNT_U6 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U6_QE
+
+config ESP32_PCNT_U6_CH1_EDGE_PIN
+	int "PCNT_U6 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U6_QE
+
+config ESP32_PCNT_U6_CH1_LEVEL_PIN
+	int "PCNT_U6 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U6_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U6_FILTER_EN
+
+config ESP32_PCNT_U6_FILTER_THRES
+	int "PCNT_U6 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U6_FILTER_EN
+
+endif # ESP32_PCNT_U6
+
+config ESP32_PCNT_U7
+	bool "Enable PCNT Unit 7"
+	default n
+
+if ESP32_PCNT_U7
+
+config ESP32_PCNT_U7_QE
+	bool "Use this PCNT Unit as Quadrature Encoder"
+	default y
+	select ESP32_PCNT_AS_QE
+
+config ESP32_PCNT_U7_CH0_EDGE_PIN
+	int "PCNT_U7 CH0 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+
+config ESP32_PCNT_U7_CH0_LEVEL_PIN
+	int "PCNT_U7 CH0 Level/Control Pin Number"
+	default 4
+	range -1 39
+	depends on !ESP32_PCNT_U7_QE
+
+config ESP32_PCNT_U7_CH1_EDGE_PIN
+	int "PCNT_U7 CH1 Edge/Pulse Pin Number"
+	default 0
+	range -1 39
+	depends on !ESP32_PCNT_U7_QE
+
+config ESP32_PCNT_U7_CH1_LEVEL_PIN
+	int "PCNT_U7 CH1 Level/Control Pin Number"
+	default 4
+	range -1 39
+
+config ESP32_PCNT_U7_FILTER_EN
+	bool "Enable Glitch Filter for this PCNT Unit"
+	default n
+
+if ESP32_PCNT_U7_FILTER_EN
+
+config ESP32_PCNT_U7_FILTER_THRES
+	int "PCNT_U7 Filter Threshold value"
+	default 5
+	---help---
+		If a pulse is shorter than this number of APB_CLK clock cycles
+		then it will not be considered as a valid pulse.
+
+endif # ESP32_PCNT_U7_FILTER_EN
+
+endif # ESP32_PCNT_U7
+
+endmenu # ESP32_PCNT
+
+menu "SPI Flash Configuration"
+
+choice ESP32_FLASH_MODE
+	prompt "SPI Flash mode"
+	default ESP32_FLASH_MODE_DIO
+	---help---
+		These options control how many I/O pins are used for communication with the attached SPI Flash chip.
+		The option selected here is then used by esptool when flashing.
+
+config ESP32_FLASH_MODE_DIO
+	bool "Dual IO (DIO)"
+
+config ESP32_FLASH_MODE_DOUT
+	bool "Dual Output (DOUT)"
+
+config ESP32_FLASH_MODE_QIO
+	bool "Quad IO (QIO)"
+
+config ESP32_FLASH_MODE_QOUT
+	bool "Quad Output (QOUT)"
+
+endchoice # ESP32_FLASH_MODE
+
+choice ESP32_FLASH_FREQ
+	prompt "SPI Flash frequency"
+	default ESP32_FLASH_FREQ_40M
+	---help---
+		SPI Flash frequency.
+
+config ESP32_FLASH_FREQ_80M
+	bool "80 MHz"
+
+config ESP32_FLASH_FREQ_40M
+	bool "40 MHz"
+
+config ESP32_FLASH_FREQ_26M
+	bool "26 MHz"
+
+config ESP32_FLASH_FREQ_20M
+	bool "20 MHz"
+
+endchoice # ESP32_FLASH_FREQ
+
+if ESP32_HAVE_OTA_PARTITION
+
+comment "Application Image OTA Update support"
+
+config ESP32_OTA_PARTITION_ENCRYPT
+	bool
+	---help---
+		This option is deprecated.
+
+config ESP32_OTA_PRIMARY_SLOT_OFFSET
+	hex "Application image primary slot offset"
+	default 0x20000
+
+config ESP32_OTA_PRIMARY_SLOT_DEVPATH
+	string "Application image primary slot device path"
+	default "/dev/ota0"
+
+config ESP32_OTA_SECONDARY_SLOT_OFFSET
+	hex "Application image secondary slot offset"
+	default 0x120000
+
+config ESP32_OTA_SECONDARY_SLOT_DEVPATH
+	string "Application image secondary slot device path"
+	default "/dev/ota1"
+
+config ESP32_OTA_SLOT_SIZE
+	hex "Application image slot size (in bytes)"
+	default 0x100000
+
+config ESP32_OTA_SCRATCH_OFFSET
+	hex "Scratch partition offset"
+	default 0x220000
+
+config ESP32_OTA_SCRATCH_SIZE
+	hex "Scratch partition size"
+	default 0x40000
+
+config ESP32_OTA_SCRATCH_DEVPATH
+	string "Scratch partition device path"
+	default "/dev/otascratch"
+
+endif
+
+if ESP32_SPIFLASH
+
+comment "General storage MTD Configuration"
+
+config ESP32_STORAGE_MTD_ENCRYPT
+	bool
+	---help---
+		This option is deprecated.
+
+config ESP32_STORAGE_MTD_OFFSET
+	hex "Storage MTD base address in SPI Flash"
+	default 0x180000 if !ESP32_HAVE_OTA_PARTITION
+	default 0x260000 if ESP32_HAVE_OTA_PARTITION
+	---help---
+		MTD base address in SPI Flash.
+
+config ESP32_STORAGE_MTD_SIZE
+	hex "Storage MTD size in SPI Flash"
+	default 0x100000
+	---help---
+		MTD size in SPI Flash.
+
+config ESP32_SPIFLASH_DEBUG
+	bool "Debug SPI Flash"
+	default n
+	depends on DEBUG_FS_INFO
+	---help---
+		Enable this option, read and write of SPI Flash
+		will show input arguments and result.
+
+config ESP32_SPI_FLASH_SUPPORT_PSRAM_STACK
+	bool "Support PSRAM As Task Stack"
+	default n
+	depends on ESP32_SPIRAM
+	select SCHED_LPWORK
+	---help---
+		Enable this option, Tasks which use PSRAM as stack
+		can do SPI Flash read/write/erase/map/unmap.
+		Otherwise, it may cause exception.
+
+if ESP32_APP_FORMAT_LEGACY
+
+comment "Partition Table Configuration"
+
+config ESP32_PARTITION_TABLE
+	bool "Create MTD partitions from Partition Table"
+	default n
+	---help---
+		Decode partition table and initialize partitions as MTD.
+
+config ESP32_PARTITION_MOUNTPT
+	string "Partition mount point"
+	default "/dev/esp/partition/"
+	depends on ESP32_PARTITION_TABLE
+
+endif # ESP32_PARTITION_TABLE
+
+config ESP32_SPIFLASH_OP_TASK_STACKSIZE
+	int "The SPI flash operation task stack size"
+	default 768
+	depends on SMP
+	---help---
+		When SMP is enabled, it is needed to create two tasks (one for each
+		core) to be able to run IRAM-enabled interrupts. These tasks ensures
+		that the core that isn't performing the SPI flash operation is able
+		to disable non-IRAM interrupts and wait for the SPI flash operation
+		to be finished.
+
+endif # ESP32_SPIFLASH
+
+endmenu # SPI Flash configuration
+
+menu "SPI RAM Configuration"
+	depends on ESP32_SPIRAM
+
+choice ESP32_SPIRAM_TYPE
+	prompt "Type of SPI RAM chip in use"
+	default ESP32_SPIRAM_TYPE_AUTO
+
+config ESP32_SPIRAM_TYPE_AUTO
+	bool "Auto-detect"
+
+config ESP32_SPIRAM_TYPE_ESPPSRAM32
+	bool "ESP-PSRAM32 or IS25WP032"
+
+config ESP32_SPIRAM_TYPE_ESPPSRAM64
+	bool "ESP-PSRAM64 or LY68L6400"
+
+endchoice # ESP32_SPIRAM_TYPE
+
+config ESP32_SPIRAM_SIZE
+	int
+	default -1 if ESP32_SPIRAM_TYPE_AUTO
+	default 4194304 if ESP32_SPIRAM_TYPE_ESPPSRAM32
+	default 8388608 if ESP32_SPIRAM_TYPE_ESPPSRAM64
+	default 0
+
+choice ESP32_SPIRAM_SPEED
+	prompt "Set RAM clock speed"
+	default ESP32_SPIRAM_SPEED_40M
+	---help---
+		Select the speed for the SPI RAM chip.
+
+config ESP32_SPIRAM_SPEED_40M
+	bool "40MHz clock speed"
+
+config ESP32_SPIRAM_SPEED_80M
+	bool "80MHz clock speed"
+
+endchoice # ESP32_SPIRAM_SPEED
+
+config ESP32_SPIRAM_BOOT_INIT
+	bool "Initialize SPI RAM during startup"
+	depends on ESP32_SPIRAM && !ESP32_USER_DATA_EXTMEM
+	default y
+	---help---
+		If this is enabled, the SPI RAM will be enabled during initial
+		boot. Unless you have specific requirements, you'll want to leave
+		this enabled so memory allocated during boot-up can also be
+		placed in SPI RAM.
+
+config ESP32_SPIRAM_IGNORE_NOTFOUND
+	bool "Ignore PSRAM when not found"
+	default n
+	depends on ESP32_SPIRAM_BOOT_INIT && !BOOT_SDRAM_DATA
+	---help---
+		Normally, if psram initialization is enabled during compile time
+		but not found at runtime, it is seen as an error making the CPU
+		panic. If this is enabled, booting will complete but no PSRAM
+		will be available.
+
+config ESP32_SPIRAM_MEMTEST
+	bool "Run write-read test on SPIRAM during startup"
+	default y
+	depends on ESP32_SPIRAM_BOOT_INIT
+	---help---
+		If enabled, SPI RAM will be tested during initial boot.
+		Disabling this test will reduce startup time at the expense
+		of testing the external memory.
+
+config ESP32_SPIRAM_2T_MODE
+	bool "Enable SPI PSRAM 2T mode"
+	depends on ESP32_SPIRAM
+	default n
+	---help---
+		Enable this option to fix single bit errors inside 64Mbit PSRAM.
+		Some 64Mbit PSRAM chips have a hardware issue in the RAM which
+		causes bit errors at multiple fixed bit positions.
+		Note: If this option is enabled, the 64Mbit PSRAM chip will appear
+		to be 32Mbit in size.
+		Applications will not be affected unless the use the esp_himem
+		APIs, which are not supported in 2T mode.
+
+config ESP32_SPIRAM_BANKSWITCH_ENABLE
+	bool "Enable bank switching for >4MiB external RAM"
+	default n
+	---help---
+		The ESP32 only supports 4MiB of external RAM in its address
+		space. The hardware does support larger memories, but these
+		have to be bank-switched in and out of this address space.
+		Enabling this allows you to reserve some MMU pages for this,
+		which allows the use of the esp_himem api to manage these
+		banks.
+		#Note that this is limited to 62 banks, as
+		#esp_spiram_writeback_cache needs some kind of mapping of
+		#some banks below that mark to work. We cannot at this
+		#moment guarantee this to exist when himem is enabled.
+		If spiram 2T mode is enabled, the size of 64Mbit psram will
+		be changed as 32Mbit, so himem will be unusable.
+
+config SPIRAM_BANKSWITCH_RESERVE
+	int "Amount of 32K pages to reserve for bank switching"
+	depends on ESP32_SPIRAM_BANKSWITCH_ENABLE
+	default 8
+	range 1 62
+	---help---
+		Select the amount of banks reserved for bank switching. Note
+		that the amount of RAM allocatable with malloc will decrease
+		by 32K for each page reserved here.
+		Note that this reservation is only actually done if your
+		program actually uses the himem API. Without any himem
+		calls, the reservation is not done and the original amount
+		of memory will be available.
+
+endmenu #SPI RAM Config
+
+menu "Ethernet Configuration"
+	depends on ESP32_EMAC
+
+config ESP32_ETH_NRXDESC
+	int "RX description number"
+	default 9
+	---help---
+		Descriptions of RX should be more than TX's.
+
+config ESP32_ETH_NTXDESC
+	int "TX description number"
+	default 8
+
+config ESP32_ETH_MDCPIN
+	int "MDC Pin"
+	default 23
+	range 0 39
+
+config ESP32_ETH_MDIOPIN
+	int "MDIO Pin"
+	default 18
+	range 0 39
+
+config ESP32_ETH_ENABLE_PHY_RSTPIN
+	bool "Enable Reset PHY Pin"
+	default y
+
+config ESP32_ETH_PHY_RSTPIN
+	int "Reset PHY Pin"
+	default 5
+	range 0 39
+	depends on ESP32_ETH_ENABLE_PHY_RSTPIN
+
+config ESP32_ETH_PHY_ADDR
+	int "PHY address"
+	default 1
+
+endmenu # ESP32_EMAC
+
+choice ESP32_UNIVERSAL_MAC_ADDRESSES
+	bool "Number of universally administered (by IEEE) MAC addresses"
+	default ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
+	depends on ESPRESSIF_WIFI || ESPRESSIF_BLE
+	---help---
+		Configure the number of universally administered (by IEEE) MAC addresses.
+		During initialization, MAC addresses for each network interface are generated or derived from a
+		single base MAC address.
+		If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap,
+		Bluetooth and Ethernet) receive a universally administered MAC address. These are generated
+		sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
+		If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth)
+		receive a universally administered MAC address. These are generated sequentially by adding 0
+		and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet)
+		receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC
+		addresses, respectively.
+		When using the default (Espressif-assigned) base MAC address, either setting can be used. When using
+		a custom universal MAC address range, the correct setting will depend on the allocation of MAC
+		addresses in this range (either 2 or 4 per device.)
+
+config ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_BT
+
+config ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
+	bool "Four"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+	select ESP_MAC_ADDR_UNIVERSE_BT
+	select ESP_MAC_ADDR_UNIVERSE_ETH
+
+endchoice
+
+config ESP32_UNIVERSAL_MAC_ADDRESSES
+	int
+	default 2 if ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
+	default 4 if ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
+
+menu "PHY"
+	depends on ESP32_PARTITION_TABLE
+
+menuconfig ESP32_PHY_INIT_DATA_IN_PARTITION
+	bool "Use a partition to store PHY init data"
+	default n
+	---help---
+		If enabled, PHY init data will be loaded from a partition.
+		When using a custom partition table, make sure that PHY data
+		partition is included (type: 'data', subtype: 'phy').
+		With default partition tables, this is done automatically.
+		If PHY init data is stored in a partition, it has to be flashed there,
+		otherwise runtime error will occur.
+
+		If this option is not enabled, PHY init data will be embedded
+		into the application binary.
+
+		If unsure, choose 'n'.
+
+config ESP32_PHY_DEFAULT_INIT_IF_INVALID
+	bool "Reset default PHY init data if invalid"
+	default n
+	depends on ESP32_PHY_INIT_DATA_IN_PARTITION
+	---help---
+		If enabled, PHY init data will be restored to default if
+		it cannot be verified successfully to avoid endless bootloops.
+
+		If unsure, choose 'n'.
+
+if ESP32_PHY_INIT_DATA_IN_PARTITION
+config ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA
+	bool "Support multiple PHY init data bin"
+	depends on ESP32_PHY_INIT_DATA_IN_PARTITION
+	default n
+	---help---
+		If enabled, the corresponding PHY init data type can be automatically switched
+		according to the country code. China's PHY init data bin is used by default.
+		Can be modified by country information in API esp_wifi_set_country().
+		The priority of switching the PHY init data type is:
+		1. Country configured by API esp_wifi_set_country()
+		and the parameter policy is WIFI_COUNTRY_POLICY_MANUAL.
+		2. Country notified by the connected AP.
+		3. Country configured by API esp_wifi_set_country()
+		and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
+
+config ESP32_PHY_INIT_DATA_ERROR
+	bool "Terminate operation when PHY init data error"
+	depends on ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA
+	default n
+	---help---
+		If enabled, when an error occurs while the PHY init data is updated,
+		the program will terminate and restart.
+		If not enabled, the PHY init data will not be updated when an error occurs.
+endif
+
+endmenu # PHY
+
+menu "Real-Time Timer"
+	depends on ESP32_RT_TIMER
+
+config ESP32_RT_TIMER_TASK_NAME
+	string "Timer task name"
+	default "rt_timer"
+
+config ESP32_RT_TIMER_TASK_PRIORITY
+	int "Timer task priority"
+	default 223
+	---help---
+		Priority level of the RT Timer task.
+		Must be lower than the SCHED_HPWORKPRIORITY.
+
+config ESP32_RT_TIMER_TASK_STACK_SIZE
+	int "Timer task stack size"
+	default 2048
+
+endmenu # Real-Time Timer
+
+if ESP32_TIMER
+menu "Timer/counter Configuration"
+
+config ESP32_ONESHOT
+	bool "One-shot wrapper"
+	default n
+	---help---
+		Enable a wrapper around the low level timer/counter functions to
+		support one-shot timer.
+
+config ESP32_FREERUN
+	bool "TIM free-running wrapper"
+	default n
+	---help---
+		Enable a wrapper around the low level timer/counter functions to
+		support a free-running timer.
+
+endmenu # Timer/counter Configuration
+endif # ESP32_TIMER
+
+menu "RTC Configuration"
+	depends on ESP32_RTC
+
+choice ESP32_RTC_CLK_SRC
+	prompt "RTC clock source"
+	default ESP32_RTC_CLK_SRC_INT_RC
+	---help---
+		Choose which clock is used as RTC clock source.
+
+		- "Internal 150kHz oscillator" option provides lowest deep sleep current
+			consumption, and does not require extra external components. However
+			frequency stability with respect to temperature is poor, so time may
+			drift in deep/light sleep modes.
+		- "External 32kHz crystal" provides better frequency stability, at the
+			expense of slightly higher (1uA) deep sleep current consumption.
+		- "External 32kHz oscillator" allows using 32kHz clock generated by an
+			external circuit. In this case, external clock signal must be connected
+			to 32K_XN pin. Amplitude should be <1.2V in case of sine wave signal,
+			and <1V in case of square wave signal. Common mode voltage should be
+			0.1 < Vcm < 0.5Vamp, where Vamp is the signal amplitude.
+			Additionally, 1nF capacitor must be connected between 32K_XP pin and
+			ground. 32K_XP pin can not be used as a GPIO in this case.
+		- "Internal 8.5MHz oscillator divided by 256" option results in higher
+			deep sleep current (by 5uA) but has better frequency stability than
+			the internal 150kHz oscillator. It does not require external components.
+
+config ESP32_RTC_CLK_SRC_INT_RC
+	bool "Internal 150kHz RC oscillator"
+
+config ESP32_RTC_CLK_SRC_EXT_XTAL
+	bool "External 32kHz crystal"
+	select ESP_SYSTEM_RTC_EXT_XTAL
+
+config ESP32_RTC_CLK_SRC_EXT_OSC
+	bool "External 32kHz oscillator at 32K_XN pin"
+
+config ESP32_RTC_CLK_SRC_INT_8MD256
+	bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
+
+endchoice
+endmenu # "RTC Configuration"
+
+menu "DAC Configuration"
+	depends on ANALOG && DAC
+
+config ESP32_DAC_DEVPATH
+	string "DAC device path"
+	default "/dev/dac0"
+
+choice ESP32_DAC_MODE
+	prompt "DAC mode of operation"
+	default ESP32_DAC_MODE_ONE_SHOT
+	---help---
+		One-shot mode requires to write every single value with a write call while
+		retaining the last value on output.
+
+		Following modes are not implemented yet.
+		Timer mode utilizes timer IRQs to call handler which can manage the write.
+		DMA is using a ring buffer accessed directly by the driver.
+		Cosine Wave Generator can output preset wave without the need to generate
+		the data and write in memory.
+
+config ESP32_DAC_MODE_ONE_SHOT
+	bool "One-shot mode"
+	---help---
+		One-shot mode requires to write every single value with a write call while
+		retaining the last value on output.
+
+endchoice # "DAC mode of operation"
+endmenu # "DAC Configuration"
+
+menu "LEDC Configuration"
+	depends on ESP32_LEDC
+
+menuconfig ESP32_LEDC_TIM0
+	bool "Timer 0"
+	default n
+
+if ESP32_LEDC_TIM0
+
+config ESP32_LEDC_TIM0_CHANNELS
+	int "Number of Timer 0 channels"
+	default 2
+
+endif # ESP32_LEDC_TIM0
+
+menuconfig ESP32_LEDC_TIM1
+	bool "Timer 1"
+	default n
+
+if ESP32_LEDC_TIM1
+
+config ESP32_LEDC_TIM1_CHANNELS
+	int "Number of Timer 1 channels"
+	default 2
+
+endif # ESP32_LEDC_TIM1
+
+menuconfig ESP32_LEDC_TIM2
+	bool "Timer 2"
+	default n
+
+if ESP32_LEDC_TIM2
+
+config ESP32_LEDC_TIM2_CHANNELS
+	int "Number of Timer 2 channels"
+	default 2
+
+endif # ESP32_LEDC_TIM2
+
+menuconfig ESP32_LEDC_TIM3
+	bool "Timer 3"
+	default n
+
+if ESP32_LEDC_TIM3
+
+config ESP32_LEDC_TIM3_CHANNELS
+	int "Number of Timer 3 channels"
+	default 2
+
+endif # ESP32_LEDC_TIM2
+
+config ESP32_LEDC_CHANNEL0_PIN
+	int "Channel 0 pin"
+	default 2
+
+config ESP32_LEDC_CHANNEL1_PIN
+	int "Channel 1 pin"
+	default 3
+
+config ESP32_LEDC_CHANNEL2_PIN
+	int "Channel 2 pin"
+	default 4
+
+config ESP32_LEDC_CHANNEL3_PIN
+	int "Channel 3 pin"
+	default 5
+
+config ESP32_LEDC_CHANNEL4_PIN
+	int "Channel 4 pin"
+	default 6
+
+config ESP32_LEDC_CHANNEL5_PIN
+	int "Channel 5 pin"
+	default 7
+
+config ESP32_LEDC_CHANNEL6_PIN
+	int "Channel 6 pin"
+	default 8
+
+config ESP32_LEDC_CHANNEL7_PIN
+	int "Channel 7 pin"
+	default 9
+
+endmenu # LEDC configuration
+
+menu "MCPWM Configuration"
+	depends on ESP_MCPWM
+
+config ESP_MCPWM_MOTOR
+	bool "MCPWM Motor Support"
+	default n
+
+menu "MCPWM Motor Configuration"
+	depends on ESP_MCPWM_MOTOR
+
+config ESP_MCPWM_MOTOR_BDC
+	bool "Brushed DC Motor Control"
+	depends on ESP_MCPWM
+	depends on ESP_MCPWM_MOTOR
+	select MOTOR
+	select MOTOR_UPPER
+	select MOTOR_UPPER_HAVE_SPEED
+	default n
+	---help---
+		Enables the use of the MCPWM submodule for control of brushed DC
+		motor.
+
+if ESP_MCPWM_MOTOR_BDC
+
+config ESP_MCPWM_MOTOR_CH0
+	bool "Motor Control Channel 0"
+	default n
+	---help---
+		Enables motor control on channel 0.
+
+if ESP_MCPWM_MOTOR_CH0
+
+config ESP_MCPWM_MOTOR_CH0_PWMA_GPIO
+	int "Output Pin PWM_A"
+	default 15
+	---help---
+		Output pin assigned to channel 0 PWM output PWM_A.
+
+config ESP_MCPWM_MOTOR_CH0_PWMB_GPIO
+	int "Output Pin PWM_B"
+	default 16
+	---help---
+		Output pin assigned to channel 0 PWM output PWM_B.
+
+config ESP_MCPWM_MOTOR_CH0_PWM_FREQ
+	int "PWM output frequency for channel 0 [Hz]"
+	default 1000
+	---help---
+		Select PWM frequency for channel 0.
+		Minimum is 25 Hz and maximum is 3000 Hz.
+
+config ESP_MCPMW_MOTOR_CH0_FAULT
+	bool "Enable fault for channel 0"
+	default n
+	---help---
+		Enables the use of a fault pin to quickly stop the motor when
+		a GPIO pin pulled high.
+
+if ESP_MCPMW_MOTOR_CH0_FAULT
+
+config ESP_MCPMW_MOTOR_CH0_FAULT_GPIO
+	int "GPIO Pin for fault detection"
+	default 10
+	---help---
+		Input pin assigned to channel 0 fault indicator.
+
+endif # ESP_MCPMW_MOTOR_CH0_FAULT
+
+endif # ESP_MCPWM_MOTOR_CH0
+
+config ESP_MCPWM_MOTOR_CH1
+	bool "Motor Control Channel 1"
+	default n
+	---help---
+		Enables motor control on channel 1.
+
+if ESP_MCPWM_MOTOR_CH1
+
+config ESP_MCPWM_MOTOR_CH1_PWMA_GPIO
+	int "Output Pin CH1 PWM_A"
+	default 15
+	---help---
+		Output pin assigned to channel 1 PWM output PWM_A.
+
+config ESP_MCPWM_MOTOR_CH1_PWMB_GPIO
+	int "Output Pin CH1 PWM_B"
+	default 16
+	---help---
+		Output pin assigned to channel 1 PWM output PWM_B.
+
+endif # ESP_MCPWM_MOTOR_CH1
+
+endif # ESP_MCPWM_MOTOR_BDC
+
+endmenu # MCPWM Motor Settings
+
+config ESP_MCPWM_CAPTURE
+	bool "MCPWM Capture Submodule"
+	depends on ESP_MCPWM
+	select CAPTURE
+	default n
+	---help---
+		Enables the use of the MCPWM capture submodule.
+
+if ESP_MCPWM_CAPTURE
+
+config ESP_MCPWM_CAPTURE_CH0
+	bool "Capture Channel 0"
+	default n
+	---help---
+		Enables capture on channel 0.
+
+if ESP_MCPWM_CAPTURE_CH0
+
+config ESP_MCPWM_CAPTURE_CH0_GPIO
+	int "GPIO Pin"
+	default 12
+	---help---
+		GPIO pin assigned to capture channel 0.
+
+endif # ESP_MCPWM_CAPTURE_CH0
+
+config ESP_MCPWM_CAPTURE_CH1
+	bool "Capture Channel 1"
+	default n
+	---help---
+		Enables capture on channel 1.
+
+if ESP_MCPWM_CAPTURE_CH1
+
+config ESP_MCPWM_CAPTURE_CH1_GPIO
+	int "GPIO Pin"
+	default 15
+	---help---
+		GPIO pin assigned to capture channel 1.
+
+endif # ESP_MCPWM_CAPTURE_CH1
+
+config ESP_MCPWM_CAPTURE_CH2
+	bool "Capture Channel 2"
+	default n
+	---help---
+		Enables capture on channel 2.
+
+if ESP_MCPWM_CAPTURE_CH2
+
+config ESP_MCPWM_CAPTURE_CH2_GPIO
+	int "GPIO Pin"
+	default 16
+	---help---
+		GPIO pin assigned to capture channel 2.
+
+endif # ESP_MCPWM_CAPTURE_CH2
+
+endif # ESP_MCPWM_CAPTURE
+
+config ESP_MCPWM_TEST_LOOPBACK
+	bool "MCPWM loopback test mode"
+	depends on EXPERIMENTAL
+	default n
+	---help---
+		This enables a lower-half driver-specific loopback test
+		mode that attaches a capture device to the PWM output on
+		motor tests.
+
+endmenu # MCPWM Configuration
+
+menu "ADC Configuration"
+	depends on ESPRESSIF_ADC
+
+if ESPRESSIF_ADC_1
+
+config ESPRESSIF_ADC_1_DEVNAME
+	string "ADC 1 Device Name"
+	default "/dev/adc0"
+
+choice ESPRESSIF_ADC_1_ATTENUATION
+	prompt "ADC 1 Input Attenuation"
+	default ESPRESSIF_ADC_1_ATTEN_12
+	---help---
+		Select input attenuation for the ADC unit.
+		Relates to maximum measurable input voltage.
+		See ESP32 Technical Reference Manual for details.
+
+config ESPRESSIF_ADC_1_ATTEN_0
+	bool "0 dB (1.1 V)"
+
+config ESPRESSIF_ADC_1_ATTEN_2_5
+	bool "2.5 dB (1.47 V)"
+
+config ESPRESSIF_ADC_1_ATTEN_6
+	bool "6 dB (2.2 V)"
+
+config ESPRESSIF_ADC_1_ATTEN_12
+	bool "12 dB (4.4 V)"
+
+endchoice  # ESPRESSIF_ADC_1_ATTENUATION
+
+config ESPRESSIF_ADC_1_ATTENUATION
+	int
+	default 0 if ESPRESSIF_ADC_1_ATTEN_0
+	default 1 if ESPRESSIF_ADC_1_ATTEN_2_5
+	default 2 if ESPRESSIF_ADC_1_ATTEN_6
+	default 3 if ESPRESSIF_ADC_1_ATTEN_12
+
+choice ESPRESSIF_ADC_1_MODE
+	prompt "ADC 1 Mode"
+	default ESPRESSIF_ADC_1_MODE_ONE_SHOT
+	---help---
+		Select operating mode for ADC 1.
+
+config ESPRESSIF_ADC_1_MODE_ONE_SHOT
+	bool "One-Shot Mode"
+
+config ESPRESSIF_ADC_1_MODE_CONTINUOUS
+	bool "Continuous Mode"
+
+endchoice  # ESPRESSIF_ADC_1_MODE
+
+menu "ADC 1 Channel Selection"
+
+config ESPRESSIF_ADC_1_CH0
+	bool "Channel 0"
+	default y
+
+config ESPRESSIF_ADC_1_CH1
+	bool "Channel 1"
+	default n
+
+config ESPRESSIF_ADC_1_CH2
+	bool "Channel 2"
+	default n
+
+config ESPRESSIF_ADC_1_CH3
+	bool "Channel 3"
+	default y
+
+config ESPRESSIF_ADC_1_CH4
+	bool "Channel 4"
+	default y
+
+config ESPRESSIF_ADC_1_CH5
+	bool "Channel 5"
+	default n
+
+config ESPRESSIF_ADC_1_CH6
+	bool "Channel 6"
+	default n
+
+config ESPRESSIF_ADC_1_CH7
+	bool "Channel 7"
+	default n
+
+endmenu # ADC 1 Channel Selection
+
+endif  # ESPRESSIF_ADC_1
+
+if ESPRESSIF_ADC_2
+
+config ESPRESSIF_ADC_2_DEVNAME
+	string "ADC 2 Device Name"
+	default "/dev/adc1"
+
+choice ESPRESSIF_ADC_2_ATTENUATION
+	prompt "ADC 2 Input Attenuation"
+	default ESPRESSIF_ADC_2_ATTEN_12
+	---help---
+		Select input attenuation for the ADC unit.
+		Relates to maximum measurable input voltage (Vmax) and the internal ADC reference voltage (approx. 1100 mV).
+		See ESP32 Technical Reference Manual for details.
+
+config ESPRESSIF_ADC_2_ATTEN_0
+	bool "0 dB (1.1 V)"
+
+config ESPRESSIF_ADC_2_ATTEN_2_5
+	bool "2.5 dB (1.47 V)"
+
+config ESPRESSIF_ADC_2_ATTEN_6
+	bool "6 dB (2.2 V)"
+
+config ESPRESSIF_ADC_2_ATTEN_12
+	bool "12 dB (4.4 V)"
+
+endchoice  # ESPRESSIF_ADC_2_ATTENUATION
+
+config ESPRESSIF_ADC_2_ATTENUATION
+	int
+	default 0 if ESPRESSIF_ADC_2_ATTEN_0
+	default 1 if ESPRESSIF_ADC_2_ATTEN_2_5
+	default 2 if ESPRESSIF_ADC_2_ATTEN_6
+	default 3 if ESPRESSIF_ADC_2_ATTEN_12
+
+choice ESPRESSIF_ADC_2_MODE
+	prompt "ADC 2 Mode"
+	default ESPRESSIF_ADC_2_MODE_ONE_SHOT
+	---help---
+		Select operating mode for ADC 2.
+
+config ESPRESSIF_ADC_2_MODE_ONE_SHOT
+	bool "One-Shot Mode"
+
+config ESPRESSIF_ADC_2_MODE_CONTINUOUS
+	bool "Continuous Mode"
+
+endchoice  # ESPRESSIF_ADC_2_MODE
+
+menu "ADC 2 Channel Selection"
+
+config ESPRESSIF_ADC_2_CH0
+	bool "Channel 0"
+	default y
+
+config ESPRESSIF_ADC_2_CH1
+	bool "Channel 1"
+	default n
+
+config ESPRESSIF_ADC_2_CH2
+	bool "Channel 2"
+	default y
+
+config ESPRESSIF_ADC_2_CH3
+	bool "Channel 3"
+	default y
+
+config ESPRESSIF_ADC_2_CH4
+	bool "Channel 4"
+	default n
+
+config ESPRESSIF_ADC_2_CH5
+	bool "Channel 5"
+	default n
+
+config ESPRESSIF_ADC_2_CH6
+	bool "Channel 6"
+	default n
+
+config ESPRESSIF_ADC_2_CH7
+	bool "Channel 7"
+	default n
+
+config ESPRESSIF_ADC_2_CH8
+	bool "Channel 8"
+	default n
+
+config ESPRESSIF_ADC_2_CH9
+	bool "Channel 9"
+	default n
+
+endmenu # ADC 2 Channel Selection
+
+endif  # ESPRESSIF_ADC_2
+
+endmenu  # ADC Configuration
+
+config ESP32_HAVE_OTA_PARTITION
+	bool
+	default n
+
+menu "Bootloader and Image Configuration"
+
+config ESPRESSIF_SIMPLE_BOOT
+	bool
+	depends on !ESP32_APP_FORMAT_MCUBOOT && !ESP32_APP_FORMAT_LEGACY
+	default y
+
+config ESP32_APP_FORMAT_LEGACY
+	bool "Enable legacy IDF bootloader format"
+	default y if BUILD_PROTECTED
+	---help---
+		This is the legacy application image format, as supported by the ESP-IDF
+		2nd stage bootloader.
+
+config ESP32_APP_FORMAT_MCUBOOT
+	bool "Enable MCUboot-bootable format"
+	depends on !MCUBOOT_BOOTLOADER
+	select ESPRESSIF_BOOTLOADER_MCUBOOT
+	default n
+	select ESP32_HAVE_OTA_PARTITION
+	---help---
+		Enables the Espressif port of MCUboot to be used as 2nd stage bootloader.
+
+choice
+	prompt "Target slot for image flashing"
+	default ESP32_ESPTOOL_TARGET_PRIMARY
+	depends on ESP32_HAVE_OTA_PARTITION
+	---help---
+		Slot to which ESPTOOL will flash the generated binary image.
+
+config ESP32_ESPTOOL_TARGET_PRIMARY
+	bool "Application image primary slot"
+	---help---
+		This assumes that the generated image is already pre-validated.
+		This is the recommended option for the initial stages of the
+		application firmware image development.
+
+config ESP32_ESPTOOL_TARGET_SECONDARY
+	bool "Application image secondary slot"
+	---help---
+		The application needs to confirm the generated image as valid,
+		otherwise the bootloader may consider it invalid and perform the
+		rollback of the update after a reset.
+		This is the choice most suitable for the development and verification
+		of a secure firmware update workflow.
+
+endchoice
+
+config ESP32_MCUBOOT_VERSION
+	string "MCUboot version"
+	depends on ESP32_APP_FORMAT_MCUBOOT
+	default "8a07053d42e592c85cb35b79c4de1b7749943387"
+
+config ESP32_APP_MCUBOOT_HEADER_SIZE
+	int "Application image header size (in bytes)"
+	default 32
+	depends on ESP32_APP_FORMAT_MCUBOOT
+
+config ESP32_PARTITION_TABLE_OFFSET_DEFAULT
+	hex
+	default 0x8000
+	depends on ESP32_APP_FORMAT_LEGACY
+
+config ESP32_CUSTOM_PARTITION_TABLE_OFFSET
+	bool "Customize partition table offset"
+	default n
+	depends on ESP32_APP_FORMAT_LEGACY
+	---help---
+		Enable to select the offset of the partition table in the flash.
+
+if ESP32_CUSTOM_PARTITION_TABLE_OFFSET
+
+config ESP32_PARTITION_TABLE_OFFSET
+	hex "Partition Table offset"
+	default ESP32_PARTITION_TABLE_OFFSET_DEFAULT
+	depends on ESP32_APP_FORMAT_LEGACY
+
+endif # ESP32_CUSTOM_PARTITION_TABLE_OFFSET
+
+if !ESP32_CUSTOM_PARTITION_TABLE_OFFSET
+
+config ESP32_PARTITION_TABLE_OFFSET
+	hex
+	default ESP32_PARTITION_TABLE_OFFSET_DEFAULT
+	depends on ESP32_APP_FORMAT_LEGACY
+
+endif # !ESP32_CUSTOM_PARTITION_TABLE_OFFSET
+
+if BUILD_PROTECTED
+
+config ESP32_USER_IMAGE_OFFSET
+	hex "User image offset"
+	default 0x90000
+	---help---
+		Offset in SPI Flash for flashing the User application firmware image.
+
+config ESP32_USER_DATA_EXTMEM
+	bool "Allocate user data in SPI RAM (READ HELP FIRST)"
+	default n
+	depends on ESP32_SPIRAM && EXPERIMENTAL
+	---help---
+		Allocate all data from User application firmware image in the external
+		SPI RAM.
+
+		Enabling this configuration comes with the restriction of running the Userspace
+		with high privilege (same as Kernel space), which in turn makes the execution
+		under Protected Mode not really protected.
+
+		This feature is intended to allow experimentation of Protected Mode on ESP32 and
+		should not be used in production. Protected mode on ESP32 is only supported with
+		PSRAM disabled.
+
+endif
+
+source "arch/xtensa/src/esp32/Kconfig.security"
+
+endmenu # Application Image Configuration
+
+config ESP32_AUTO_SLEEP
+	bool "Auto-sleep"
+	default n
+	select PM
+	select ESP32_RT_TIMER
+	select ESP32_TIMER0
+	select ESP32_TICKLESS
+	---help---
+		Enable ESP32 Auto-sleep
+
+config ESP32_TICKLESS
+	bool "Enable ESP32 tickless OS"
+	default n
+	select ARCH_HAVE_TICKLESS
+	select SCHED_TICKLESS
+
 endif # ARCH_CHIP_ESP32
