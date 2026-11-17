@@ -60,7 +60,7 @@
 #include <tinyara/watchdog.h>
 #include <tinyara/kmalloc.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_watchdog.h"
 #include "s5j_clock.h"
 

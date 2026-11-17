@@ -61,17 +61,17 @@
 #include <errno.h>
 
 #include <tinyara/board.h>
-#include <tinyara/rtc.h>
+#include <tinyara/timers/rtc.h>
 #include <time.h>
 #include <chip.h>
 
 #include "s5j_rtc.h"
 #include "s5j_adc.h"
-#include "up_internal.h"
+#include <tinyara/arch.h>
 
 #include <apps/shell/tash.h>
 
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 
 #include "sidk_s5jt200.h"
 #include "s5j_mct.h"
@@ -284,7 +284,7 @@ int sidk_s5jt200_adc_setup(void)
 int ee_test_main(int argc, char **args);
 #endif
 
-int board_app_initialize(void)
+int board_app_initialize(uintptr_t arg)
 {
 	int ret;
 #ifdef CONFIG_SIDK_S5JT200_AUTOMOUNT

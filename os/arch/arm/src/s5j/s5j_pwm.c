@@ -60,9 +60,9 @@
 #include <debug.h>
 #include <errno.h>
 
-#include <tinyara/pwm.h>
+#include <tinyara/timers/pwm.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_pwm.h"
 #include "s5j_gpio.h"
 #include "s5j_clock.h"

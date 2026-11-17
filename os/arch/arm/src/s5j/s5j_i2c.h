@@ -64,7 +64,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 
-#include <tinyara/i2c.h>
+#include <tinyara/i2c/i2c_master.h>
 
 #ifdef CONFIG_S5J_S5JT200
 #include "chip/s5jt200_i2c.h"
@@ -76,13 +76,13 @@
  * Public Function Prototypes
  ****************************************************************************/
 
-unsigned int s5j_i2c_setclock(struct i2c_dev_s *dev, unsigned int frequency);
-int s5j_i2c_setaddress(FAR struct i2c_dev_s *dev, int addr, int nbits);
-int s5j_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgv, int msgc);
-int s5j_i2c_read(FAR struct i2c_dev_s *dev, FAR uint8_t *buffer, int buflen);
-int s5j_i2c_write(FAR struct i2c_dev_s *dev, FAR const uint8_t *buffer, int buflen);
-struct i2c_dev_s *up_i2cinitialize(int port);
-int s5j_i2cbus_uninitialize(FAR struct i2c_dev_s *dev);
+unsigned int s5j_i2c_setclock(struct i2c_master_s *dev, unsigned int frequency);
+int s5j_i2c_setaddress(FAR struct i2c_master_s *dev, int addr, int nbits);
+int s5j_i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgv, int msgc);
+int s5j_i2c_read(FAR struct i2c_master_s *dev, FAR uint8_t *buffer, int buflen);
+int s5j_i2c_write(FAR struct i2c_master_s *dev, FAR const uint8_t *buffer, int buflen);
+struct i2c_master_s *up_i2cinitialize(int port);
+int s5j_i2cbus_uninitialize(FAR struct i2c_master_s *dev);
 void s5j_i2c_register(int bus);
 
 #endif							/* __ARCH_ARM_SRC_S5J_I2C_H */

@@ -34,7 +34,7 @@
 
 #include <tinyara/configdata.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "artik05x.h"
 
 struct netif *wlan_netif;

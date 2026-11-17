@@ -41,9 +41,8 @@
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 
-#include "up_internal.h"
-#include "up_arch.h"
-#include "cache.h"
+#include "arm_internal.h"
+#include <tinyara/cache.h>
 
 #include "chip.h"
 #include "s5j_dma.h"

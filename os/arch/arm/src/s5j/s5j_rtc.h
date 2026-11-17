@@ -93,7 +93,7 @@ typedef void (*alarmcb_t)(void);
  *   Instantiate the RTC lower half driver for the S5J.
  *   General usage:
  *
- *     #include <tinyara/rtc.h>
+ *     #include <tinyara/timers/rtc.h>
  *     #include "s5j_rtc.h"
  *
  *     struct rtc_lowerhalf_s *lower;

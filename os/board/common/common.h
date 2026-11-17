@@ -23,7 +23,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 
 #ifdef CONFIG_FLASH_PARTITION
 struct partition_info_s {

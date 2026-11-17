@@ -59,7 +59,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <tinyara/pwm.h>
+#include <tinyara/timers/pwm.h>
 #include <tinyara/kthread.h>
 
 #include <tinyara/board.h>

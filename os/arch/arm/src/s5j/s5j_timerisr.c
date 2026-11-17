@@ -59,7 +59,7 @@
 #include <time.h>
 #include <tinyara/arch.h>
 #include <arch/board/board.h>
-#include "up_arch.h"
+#include "arm_internal.h"
 
 #include "chip.h"
 #include "s5j_rtc.h"
@@ -96,7 +96,7 @@ int up_timerisr(int irq, FAR void *context, FAR void *arg)
 	putreg32(RTC_INTP_TIMETIC0, S5J_RTC_INTP);
 
 	/* Process timer interrupt */
-	sched_process_timer();
+	nxsched_process_timer();
 
 	return 0;
 }

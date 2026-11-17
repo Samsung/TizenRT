@@ -229,6 +229,7 @@ config S5J_UART0
 	depends on S5J_HAVE_UART0
 	select ARCH_HAVE_UART0
 	select ARCH_HAVE_SERIAL_TERMIOS
+	select UART0_SERIALDRIVER
 
 config S5J_UART1
 	bool "UART1"
@@ -236,6 +237,7 @@ config S5J_UART1
 	depends on S5J_HAVE_UART1
 	select ARCH_HAVE_UART1
 	select ARCH_HAVE_SERIAL_TERMIOS
+	select UART1_SERIALDRIVER
 
 config S5J_UART2
 	bool "UART2"
@@ -243,6 +245,7 @@ config S5J_UART2
 	depends on S5J_HAVE_UART2
 	select ARCH_HAVE_UART2
 	select ARCH_HAVE_SERIAL_TERMIOS
+	select UART2_SERIALDRIVER
 
 config S5J_UART2_FLOWCONTROL
 	bool "UART2 Flow Control"
@@ -257,6 +260,7 @@ config S5J_UART3
 	depends on S5J_HAVE_UART3
 	select ARCH_HAVE_UART3
 	select ARCH_HAVE_SERIAL_TERMIOS
+	select UART3_SERIALDRIVER
 
 config S5J_UART3_FLOWCONTROL
 	bool "UART3 Flow Control"
@@ -272,6 +276,7 @@ config S5J_UART4
 	depends on S5J_HAVE_UART4
 	select ARCH_HAVE_UART4
 	select ARCH_HAVE_SERIAL_TERMIOS
+	select UART4_SERIALDRIVER
 
 config S5J_PWM
 	bool

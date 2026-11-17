@@ -64,7 +64,7 @@
 #include <tinyara/gpio.h>
 #include <tinyara/kmalloc.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_gpio.h"
 
 /****************************************************************************

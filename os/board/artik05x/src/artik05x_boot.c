@@ -66,7 +66,7 @@
 #include <sys/types.h>
 #endif
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_gpio.h"
 #include "s5j_i2c.h"
 #include "s5j_watchdog.h"
@@ -297,7 +297,7 @@ void board_initialize(void)
 	artik05x_clear_bootcount();
 
 	/* Perform app-specific initialization here instaed of from the TASH. */
-	board_app_initialize();
+	board_app_initialize(0);
 
 #ifdef CONFIG_SCSC_WLAN
 	slsi_driver_initialize();
