@@ -164,3 +164,22 @@ int up_cpu_start(int cpu)
 	return psci_cpu_on(cpu, (uintptr_t)__start);
 }
 #endif
+
+#ifdef CONFIG_SMP
+/****************************************************************************
+ * Name: up_cpu_up
+ *
+ * Description:
+ *   The QEMU virt firmware implements PSCI, so powering a core and
+ *   releasing it are a single operation: up_cpu_start() issues the CPU_ON
+ *   call carrying the kernel entry point (__start).  up_cpu_up() is
+ *   therefore a thin alias, present because up_cpu_on() requires the board
+ *   hook.
+ *
+ ****************************************************************************/
+
+int up_cpu_up(int cpu)
+{
+	return up_cpu_start(cpu);
+}
+#endif
