@@ -147,7 +147,8 @@ int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, voi
 
 	ret = binary_manager_set_request(&request_msg, BINMGR_REGISTER_STATECB, callback);
 	if (ret < 0) {
-		return BINMGR_COMMUNICATION_FAIL;
+		bmdbg("Failed to set request msg %d\n", ret);
+		goto errout_with_cleanup;
 	}
 
 	ret = binary_manager_send_request(&request_msg);
@@ -157,10 +158,23 @@ int binary_manager_register_state_changed_callback(binmgr_statecb_t handler, voi
 	}
 
 	ret = binary_manager_receive_response(&response_msg, sizeof(binmgr_statecb_response_t));
-	if (ret == BINMGR_OK) {
-		return response_msg.result;
+	if (ret != BINMGR_OK) {
+		bmdbg("Failed to receive response msg %d\n", ret);
+		goto errout_with_cleanup;
 	}
-	bmdbg("Failed to receive response msg %d\n", ret);
+
+	if (response_msg.result != BINMGR_OK) {
+		bmdbg("Failed to register callback %d\n", response_msg.result);
+		/* The kernel keeps cb_info only on success, so release it here.
+		 * Keep the signal handler if an earlier registration still uses it. */
+		if (response_msg.result != BINMGR_ALREADY_REGISTERED) {
+			act.sa_handler = SIG_DFL;
+			(void)sigaction(SIGBM_STATE, &act, NULL);
+		}
+		free(callback);
+	}
+
+	return response_msg.result;
 
 errout_with_cleanup:
 	act.sa_handler = SIG_DFL;
