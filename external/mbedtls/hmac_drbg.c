@@ -588,7 +588,7 @@ static int hmac_drbg_self_test_entropy(void *data,
     {                                       \
         if (verbose != 0)                  \
         mbedtls_printf("failed\n");  \
-        return 1;                        \
+        goto exit;                        \
     }
 
 /*
@@ -655,6 +655,10 @@ int mbedtls_hmac_drbg_self_test(int verbose)
     }
 
     return 0;
+
+exit:
+    mbedtls_hmac_drbg_free(&ctx);
+    return 1;
 }
 #endif /* MBEDTLS_SHA1_C */
 #endif /* MBEDTLS_SELF_TEST */

@@ -680,7 +680,7 @@ int mbedtls_ccm_self_test(int verbose)
         if (verbose != 0) {
             mbedtls_printf("  CCM: setup failed");
         }
-
+        mbedtls_ccm_free(&ctx);
         return 1;
     }
 
@@ -706,7 +706,7 @@ int mbedtls_ccm_self_test(int verbose)
             if (verbose != 0) {
                 mbedtls_printf("failed\n");
             }
-
+            mbedtls_ccm_free(&ctx);
             return 1;
         }
         memset(plaintext, 0, CCM_SELFTEST_PT_MAX_LEN);
@@ -723,7 +723,7 @@ int mbedtls_ccm_self_test(int verbose)
             if (verbose != 0) {
                 mbedtls_printf("failed\n");
             }
-
+            mbedtls_ccm_free(&ctx);
             return 1;
         }
 

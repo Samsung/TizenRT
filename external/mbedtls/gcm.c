@@ -922,6 +922,7 @@ int mbedtls_gcm_self_test(int verbose)
              */
             if (ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && key_len == 192) {
                 mbedtls_printf("skipped\n");
+                mbedtls_gcm_free(&ctx);
                 break;
             } else if (ret != 0) {
                 goto exit;
@@ -940,6 +941,7 @@ int mbedtls_gcm_self_test(int verbose)
             if (ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED &&
                 iv_len_test_data[i] != 12) {
                 mbedtls_printf("skipped\n");
+                mbedtls_gcm_free(&ctx);
                 break;
             }
 #endif /* defined(MBEDTLS_GCM_ALT) */
