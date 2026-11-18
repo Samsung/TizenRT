@@ -26,6 +26,9 @@ include $(TOPDIR)/tools/Config.mk
 include $(TOPDIR)/arch/arm/src/armv7-m/Toolchain.defs
 
 LDSCRIPT = stm32l4r9ai-disco.ld
+# The linker script needs values from the generated configuration header.
+PREPROCESS_LDSCRIPT = y
+
 ARCHSCRIPT += $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)$(LDSCRIPT)
 
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
