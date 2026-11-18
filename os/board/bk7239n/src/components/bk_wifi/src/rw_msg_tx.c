@@ -1544,6 +1544,11 @@ int rw_msg_send_sm_connect_req(CONNECT_PARAM_T *sme, void *cfm)
 	rwnx_connecting_handler(req->vif_idx); // FIXME: move to right place
 #endif
 
+#if defined(CONFIG_QUICK_MBO) && CONFIG_QUICK_MBO
+	// For WFA MBO test, sniffer may has time difference, and may not captured the assoc packet.
+	rtos_delay_milliseconds(1000);
+#endif
+
 	/* Send the SM_CONNECT_REQ message to LMAC FW */
 	return rw_msg_send(req, 1, SM_CONNECT_CFM, cfm);
 }

@@ -464,7 +464,7 @@ static void rtos_dump_system(uint32_t msp, uint32_t psp)
     bk_int_aon_wdt_feed();
 #endif
 #endif
-
+#if !defined(CONFIG_QUICK_TRACK)
     if(NULL != s_wifi_dump_func) {
         s_wifi_dump_func();
     }
@@ -474,7 +474,7 @@ static void rtos_dump_system(uint32_t msp, uint32_t psp)
     }
  
     rtos_dump_plat_sys_mems();
-    
+#endif
     BK_DUMP_OUT("***********************************************************************************************\r\n");
     BK_DUMP_OUT("************************************user except handler end************************************\r\n");
     BK_DUMP_OUT("***********************************************************************************************\r\n");

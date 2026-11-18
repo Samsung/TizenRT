@@ -462,10 +462,13 @@ void bk_wifi_test_hw_diag(void);
 void bk_wifi_set_hw_diag(uint8_t diag_type, uint16_t diag_no);
 
 /* bk_wifi_wpa_cmd*/
-int cmd_wlan_sta_exec(char *cmd);
+int cmd_wlan_sta_exec(const char *cmd, ...);
 int cmd_wlan_ap_exec(char *cmd);
 int cmd_wlan_p2p_exec(char *cmd);
 int cmd_wlan_get_ps_status(void);
+int cmd_wpas_parse_key_mgmt(const char *value);
+int cmd_wpas_parse_cipher(const char *value);
+int cmd_wpas_parse_proto(const char *value);
 
 /* bk_wifi_wpa */
 // TODO
@@ -574,7 +577,11 @@ int bk_wlan_ps_disable_send_msg(void);
 void bk_wlan_sta_init(network_InitTypeDef_st *inNetworkInitPara);
 bk_err_t bk_wlan_start_sta(network_InitTypeDef_st *inNetworkInitPara);
 
-int wlan_sta_set(const uint8_t *ssid, uint8_t ssid_len, const uint8_t *psk);
+#if CONFIG_QUICK_TRACK
+int wlan_sta_set(network_InitTypeDef_st *network, uint8_t *ssid, uint8_t ssid_len, uint8_t *psk);
+#else
+int wlan_sta_set(uint8_t *ssid, uint8_t ssid_len, uint8_t *psk);
+#endif
 int wlan_sta_set_config(wlan_sta_config_t *config);
 int wlan_sta_get_config(wlan_sta_config_t *config);
 int wlan_sta_set_autoreconnect(wlan_auto_reconnect_t *config);
@@ -590,6 +597,7 @@ int wlan_sta_scan_interval(int sec);
 int wlan_sta_bss_max_count(uint8_t count);
 int wlan_sta_bss_flush(int age);
 int wlan_sta_connect(int chan);
+int wlan_sta_reassoicate(void);
 int wlan_sta_disconnect(void);
 int wlan_sta_state(wlan_sta_states_t *state);
 int wlan_sta_twt_setup(uint8_t annouced,

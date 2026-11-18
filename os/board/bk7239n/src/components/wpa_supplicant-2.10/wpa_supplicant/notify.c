@@ -319,14 +319,19 @@ __IRAM_SEC bool sta_check_user_is_11b_1mbps_supported()
 #if BK_SUPPLICANT
 void wpas_notify_connected(struct wpa_supplicant *wpa_s)
 {
-	if (mhdr_get_station_status().state < WIFI_LINKSTATE_STA_CONNECTED) {
+	wifi_linkstate_reason_t cur_state = mhdr_get_station_status();
+
+	if (cur_state.state < WIFI_LINKSTATE_STA_CONNECTED ||
+		cur_state.state == WIFI_LINKSTATE_STA_GOT_IP) {
 		wifi_event_sta_connected_t sta_connected = {0};
 		wifi_linkstate_reason_t state = {
 			.state = WIFI_LINKSTATE_STA_CONNECTED,
 			.reason_code = WIFI_REASON_MAX};
 
 		/* set mac status */
-		mhdr_set_station_status(state);
+		if (cur_state.state != WIFI_LINKSTATE_STA_GOT_IP) {
+			mhdr_set_station_status(state);
+		}
 
 #if (CONFIG_RF_POLICY_WIFI_REQ)
 		wifi_station_status_event_notice(0, EVENT_WIFI_STA_CONNECTED);

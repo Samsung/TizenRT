@@ -133,6 +133,7 @@ struct rwnx_hw {
 	u8 avail_idx_map;
 	u8 vif_started;
 	bool adding_sta;
+	bool associated;
 
     /* RoC Management */
     struct rwnx_roc_elem *roc_elem;             /* Information provided by cfg80211 in its remain on channel request */
