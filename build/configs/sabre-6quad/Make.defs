@@ -30,6 +30,9 @@ ifeq ($(CONFIG_ARM_TOOLCHAIN_ARMCLANG),y)
 else
   LDSCRIPT = dramboot.ld
 endif
+# The linker script needs values from the generated configuration header.
+PREPROCESS_LDSCRIPT = y
+
 ARCHSCRIPT += $(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)$(LDSCRIPT)
 
 ARCHPICFLAGS = -fpic -msingle-pic-base -mpic-register=r10
