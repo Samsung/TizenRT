@@ -140,8 +140,8 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 				 * possibilities:* (1) the work has already been started and
 				 * is no longer queued, or (2) the work has not been started
 				 * and is still in the work queue.  Only the second case can
-				 * be canceled.  work_cancel() will return -ENOENT in the
-				 * first case.
+				 * be canceled.  work_cancel() reports -EBUSY for a work that is
+				 * executing and -ENOENT when it is no longer queued.
 				 */
 
 				status = work_cancel(LPWORK, &aioc->aioc_work);
@@ -188,8 +188,8 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 				 * possibilities:* (1) the work has already been started and
 				 * is no longer queued, or (2) the work has not been started
 				 * and is still in the work queue.  Only the second case can
-				 * be canceled.  work_cancel() will return -ENOENT in the
-				 * first case.
+				 * be canceled.  work_cancel() reports -EBUSY for a work that is
+				 * executing and -ENOENT when it is no longer queued.
 				 */
 
 				status = work_cancel(LPWORK, &aioc->aioc_work);
@@ -213,6 +213,14 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 
 					aio_signal(pid, aiocbp);
 				} else {
+					/* The work is executing (or no longer queued): it cannot
+					 * be cancelled and its worker owns the container.
+					 * Advance past it and continue with the rest of the
+					 * pending list.
+					 */
+
+					next =
+					  (FAR struct aio_container_s *)aioc->aioc_link.flink;
 					ret = AIO_NOTCANCELED;
 				}
 			}
