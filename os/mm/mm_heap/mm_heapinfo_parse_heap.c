@@ -78,10 +78,6 @@
 static inline int check_watchdog_state(int wd_fd, bool *is_watchdog_running)
 {
 	struct watchdog_status_s wd_status;
-	if (wd_fd < 0) {
-		mfdbg("Fail to open %s, errno %d\n", CONFIG_WATCHDOG_DEVPATH, get_errno());
-		return ERROR;
-	}
 
 	if (ioctl(wd_fd, WDIOC_GETSTATUS, (unsigned long)&wd_status) != OK) {
 		mfdbg("Fail to get watchdog state, errno %d\n", get_errno());
@@ -138,11 +134,21 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	ASSERT(mm_check_heap_corruption(heap) == OK);
 
 #ifdef CONFIG_WATCHDOG
-	bool is_watchdog_running;
+	bool is_watchdog_running = false;
 	int wd_fd = open(CONFIG_WATCHDOG_DEVPATH, O_RDONLY);
 
-	if (check_watchdog_state(wd_fd, &is_watchdog_running) != OK) {
+	if (wd_fd < 0) {
+		/* Nothing to close: open() failed. */
+		mfdbg("Fail to open %s, errno %d\n", CONFIG_WATCHDOG_DEVPATH, get_errno());
+	} else if (check_watchdog_state(wd_fd, &is_watchdog_running) != OK) {
+		/* The fd is valid but the state query failed. Release it now and
+		 * invalidate it so that the close at the end is skipped.
+		 */
 		close(wd_fd);
+		wd_fd = -1;
+	}
+
+	if (wd_fd < 0) {
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 		/* Anyway, it will reboot after printing the heap usage log.
 		 * Print as many logs as possible even if fail watchdog keepalive. */
@@ -314,7 +320,10 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 		}
 	}
 #ifdef CONFIG_WATCHDOG
-	if (is_watchdog_running) {
+	/* The fd is opened regardless of whether the watchdog is running, so it
+	 * must be closed regardless as well. Use the fd itself as the guard.
+	 */
+	if (wd_fd >= 0) {
 		close(wd_fd);
 	}
 #endif
