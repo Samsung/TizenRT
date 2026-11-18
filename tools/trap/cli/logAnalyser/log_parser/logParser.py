@@ -76,6 +76,8 @@ class logParser:
 		current_line = ""
 			
 		print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
+		if not self.elf:
+			print('(Notice: ELF file not available. Symbol resolution for call stack is skipped)')
 
 		# Parse the contents based on tokens in log file.
 		with open(self.log_file) as searchfile:
@@ -243,25 +245,30 @@ class logParser:
 	# Function to Parse the i/p log file in case of app crashes to corresponding app display debug symbols
 	def parse_log(self):
 
-		os.system("nm --defined-only -n -C " + self.bin_path + "tinyara.axf > " + self.bin_path + "Kernel.map")
-		utils.setup_symbol_table(self.bin_path + "Kernel.map", 0)
+		if self.elf and os.path.exists(self.elf):
+			os.system("nm --defined-only -n -C " + self.elf + " > " + self.bin_path + "Kernel.map")
+			utils.setup_symbol_table(self.bin_path + "Kernel.map", 0)
 
-		# Refine build feature flags from the kernel symbol table when .config
-		# did not provide them. This makes -t (log) mode work without .config.
-		# XIP ELF: the xipelf_initialize symbol is compiled in only when
-		# CONFIG_XIP_ELF is enabled, so its presence is an accurate indicator.
-		if not self.xip_enabled:
-			if utils.get_address_of_symbol("xipelf_initialize") is not None:
-				self.xip_enabled = True
-		# RAM kernel text: the _stext_ram/_etext_ram symbols exist only when
-		# the board maps kernel text into a RAM region.
-		if not self.have_ram_kernel_text:
-			if utils.get_address_of_symbol("_stext_ram") is not None and utils.get_address_of_symbol("_etext_ram") is not None:
-				self.have_ram_kernel_text = True
+			# Refine build feature flags from the kernel symbol table when .config
+			# did not provide them. This makes -t (log) mode work without .config.
+			# XIP ELF: the xipelf_initialize symbol is compiled in only when
+			# CONFIG_XIP_ELF is enabled, so its presence is an accurate indicator.
+			if not self.xip_enabled:
+				if utils.get_address_of_symbol("xipelf_initialize") is not None:
+					self.xip_enabled = True
+			# RAM kernel text: the _stext_ram/_etext_ram symbols exist only when
+			# the board maps kernel text into a RAM region.
+			if not self.have_ram_kernel_text:
+				if utils.get_address_of_symbol("_stext_ram") is not None and utils.get_address_of_symbol("_etext_ram") is not None:
+					self.have_ram_kernel_text = True
+		else:
+			print('Notice: Kernel symbol table could not be generated (Kernel ELF missing).')
 
 		for idx in range(self.g_app_idx):
-			os.system("nm --defined-only -n -C " + self.bin_path + self.app_name[idx] + "_dbg > " + self.bin_path + self.app_name[idx] + ".map")
-			utils.setup_symbol_table(self.bin_path + self.app_name[idx] + ".map", idx + 1)
+			app_elf = self.bin_path + self.app_name[idx] + "_dbg"
+			if os.path.exists(app_elf):
+				os.system("nm --defined-only -n -C " + app_elf + " > " + self.bin_path + self.app_name[idx] + ".map")
+				utils.setup_symbol_table(self.bin_path + self.app_name[idx] + ".map", idx + 1)
 
 		# Find crash Point
 		crashPoint.find_crash_point(self)

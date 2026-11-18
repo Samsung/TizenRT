@@ -123,10 +123,12 @@ def find_number_of_binaries(lparser):
         app_count = 0
         app_names = []
 
-        debug_files = [
-            f for f in os.listdir(lparser.bin_path)
-            if f.endswith("_dbg") and os.path.isfile(os.path.join(lparser.bin_path, f))
-        ]
+        debug_files = []
+        if os.path.isdir(lparser.bin_path):
+            debug_files = [
+                f for f in os.listdir(lparser.bin_path)
+                if f.endswith("_dbg") and os.path.isfile(os.path.join(lparser.bin_path, f))
+            ]
 
         for f in debug_files:
             app_names.append(f.split("_")[0])

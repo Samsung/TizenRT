@@ -98,9 +98,16 @@ def print_trap_output_header(lparser):
 		print('Number of binaries          : %d [kernel + apps]' % (lparser.g_app_idx + 1))
 	else:
 		print('Number of binary            : 1 [kernel]')
-	print('"kernel" elf_file           :', lparser.elf)
+	if lparser.elf:
+		print('"kernel" elf_file           :', lparser.elf)
+	else:
+		print('"kernel" elf_file           : None (not provided / not found)')
 	for app_idx in range(lparser.g_app_idx):
-		print('"' + lparser.app_name[app_idx] + '"', 'elf_file            :', lparser.bin_path + lparser.app_name[app_idx] + '_dbg ')
+		app_elf = lparser.bin_path + lparser.app_name[app_idx] + '_dbg'
+		if os.path.exists(app_elf):
+			print('"' + lparser.app_name[app_idx] + '"', 'elf_file            :', app_elf + ' ')
+		else:
+			print('"' + lparser.app_name[app_idx] + '"', 'elf_file            : None (not found)')
 	print('*************************************************************')
 	print('')
 
@@ -142,11 +149,15 @@ def check_required_config(data, arch_arg=None):
 def check_path(log_file, dump_file, elf_path):
 	if not elf_path:
 		# Read tinyara extension from Make.defs
-		with open(MAKEFILE_PATH, 'r') as fd:
-			lines = fd.readlines()
-			for line in lines:
-				if 'EXEEXT =' in line:
-					ext = (line.split("=")[1].strip())
+		ext = ''
+		try:
+			with open(MAKEFILE_PATH, 'r') as fd:
+				lines = fd.readlines()
+				for line in lines:
+					if 'EXEEXT =' in line:
+						ext = (line.split("=")[1].strip())
+		except (IOError, OSError):
+			pass
 		elf = (BIN_PATH + 'tinyara' + ext)
 	else:
 		elf = BIN_PATH + elf_path
@@ -156,17 +167,23 @@ def check_path(log_file, dump_file, elf_path):
 		print('Usage error: Must specify one of the -t or -e options. Plz find below for proper usage')
 		usage()
 
-	exist_check_list = [
-		("dump_file", dump_file),
-		("log_file", log_file),
-		("elf", elf)
-	]
-
-	#check if path exist for each required file.
-	for name, path in exist_check_list:
-		if path and not os.path.exists(path):
-			print(f"{path} does not exist. Please provide the proper path for {name}...")
+	if dump_file:
+		if not os.path.exists(dump_file):
+			print(f"{dump_file} does not exist. Please provide the proper path for dump_file...")
 			sys.exit(1)
+		if not os.path.exists(elf):
+			print(f"{elf} does not exist. Please provide the proper path for elf...")
+			sys.exit(1)
+
+	if log_file:
+		if not os.path.exists(log_file):
+			print(f"{log_file} does not exist. Please provide the proper path for log_file...")
+			sys.exit(1)
+		if not os.path.exists(elf):
+			print('Warning: Kernel ELF file not found at {0}'.format(elf))
+			print('         Continuing without ELF. Symbol resolution will be skipped.')
+			elf = None
+
 	return elf
 
 def main():
