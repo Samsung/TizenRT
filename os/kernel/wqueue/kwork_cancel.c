@@ -64,6 +64,9 @@ static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, bool sync,
 {
 	irqstate_t flags;
 	FAR sem_t *sync_wait = NULL;
+	FAR struct kworker_s *worker;
+	int ret = 0;
+	int wndx;
 
 	if (wqueue == NULL || work == NULL) {
 		return -EINVAL;
@@ -75,6 +78,7 @@ static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, bool sync,
 	 */
 
 	flags = spin_lock_irqsave(&wqueue->lock);
+	worker = wq_get_worker(wqueue);
 
 	if (!work_available(work)) {
 		/* If the head of the pending queue has changed, we should reset
@@ -84,6 +88,31 @@ static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, bool sync,
 		if (work_remove(wqueue, work)) {
 			work_timer_reset(wqueue);
 		}
+	} else {
+		/* The work is not in the ready state: it was either never queued,
+		 * has already completed, or it is currently being executed by a
+		 * worker thread.  An executing work cannot be cancelled: report
+		 * -EBUSY so that the caller (for instance aio_cancel()) knows the
+		 * work instance is still owned by its worker and must not be torn
+		 * down.  A synchronous cancel simply waits for the completion
+		 * below instead.
+		 */
+
+		for (wndx = 0; wndx < wqueue->nthreads; wndx++) {
+			if (worker[wndx].work == work) {
+				if (!sync) {
+					ret = -EBUSY;
+				}
+
+				break;
+			}
+		}
+
+		if (ret == 0 && wndx == wqueue->nthreads) {
+			/* There is no such work queued. */
+
+			ret = -ENOENT;
+		}
 	}
 
 	/* Note that cancel_sync can not be called in the interrupt
@@ -91,9 +120,7 @@ static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, bool sync,
 	 */
 
 	if (sync) {
-		int wndx;
 		pid_t pid = nxsched_gettid();
-		FAR struct kworker_s *worker = wq_get_worker(wqueue);
 
 		/* Wait until the worker thread finished the work. */
 
@@ -112,7 +139,7 @@ static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, bool sync,
 		nxsem_wait_uninterruptible(sync_wait);
 	}
 
-	return 0;
+	return ret;
 }
 
 /****************************************************************************
@@ -137,6 +164,7 @@ static int work_qcancel(FAR struct kwork_wqueue_s *wqueue, bool sync,
  *
  *   -ENOENT - There is no such work queued.
  *   -EINVAL - An invalid work queue was specified
+ *   -EBUSY  - The work is currently executing and cannot be cancelled.
  *
  ****************************************************************************/
 
@@ -165,7 +193,8 @@ int work_cancel_wq(FAR struct kwork_wqueue_s *wqueue,
  *   work   - The previously queued work structure to cancel
  *
  * Returned Value:
- *   Zero means the work was successfully cancelled.
+ *   Zero on success: the work was either cancelled before it started
+ *   or, if it was already executing, its execution has now completed.
  *   A negated errno value is returned on any failure:
  *
  *   -ENOENT - There is no such work queued.
