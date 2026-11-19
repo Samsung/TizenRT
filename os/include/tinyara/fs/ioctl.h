@@ -118,6 +118,7 @@
 #define _CELLIOCBASE    (0x3800) /* Cellular device ioctl commands */
 #define _MIPIDSIBASE    (0x3900) /* Mipidsi device ioctl commands */
 #define _SEIOCBASE      (0x3a00) /* Secure element ioctl commands */
+#define _SILENTRBCBASE  (0x3b00) /* Silent reboot ioctl commands */
 #define _SYSLOGBASE     (0x3c00) /* Syslog device ioctl commands */
 #define _STEPIOBASE     (0x3d00) /* Stepper device ioctl commands */
 #define _FPGACFGBASE    (0x3e00) /* FPGA configuration ioctl commands */
@@ -453,6 +454,19 @@
 
 #define _QEIOCVALID(c)    (_IOC_TYPE(c)==_QEIOCBASE)
 #define _QEIOC(nr)        _IOC(_QEIOCBASE,nr)
+
+/* Silent reboot driver ioctl definitions *************************************/
+/* (see tinyara/silent_reboot.h) */
+
+#define _SILENTRBIOCVALID(c)       (_IOC_TYPE(c) == _SILENTRBCBASE)
+#define _SILENTRBIOC(nr)           _IOC(_SILENTRBCBASE, nr)
+
+#define SILENTRBIOC_LOCK           _SILENTRBIOC(0x0001)
+#define SILENTRBIOC_UNLOCK         _SILENTRBIOC(0x0002)
+#define SILENTRBIOC_DELAY          _SILENTRBIOC(0x0003)
+#define SILENTRBIOC_CHECKMODE      _SILENTRBIOC(0x0004)
+#define SILENTRBIOC_GETSTATUS      _SILENTRBIOC(0x0005)
+#define SILENTRBIOC_FORCE_REBOOT   _SILENTRBIOC(0x0006)
 
 /* NuttX Audio driver ioctl definitions *************************************/
 

@@ -192,6 +192,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_PREFERENCE_UTC),y)
 	$(Q) $(call REGISTER,preference_utc,utc_preference_main,TASH_EXECMD_ASYNC,100,2048)
 endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_SILENT_REBOOT_UTC),y)
+	$(Q) $(call REGISTER,silent_reboot_utc,utc_silent_reboot_main,TASH_EXECMD_ASYNC,100,2048)
+endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC),y)
 	$(Q) $(call REGISTER,sysio_utc,utc_sysio_main,TASH_EXECMD_ASYNC,100,2048)
 endif

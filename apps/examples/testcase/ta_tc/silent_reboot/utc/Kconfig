@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/filelist.kconfig
+#
+
+config EXAMPLES_TESTCASE_SILENT_REBOOT_UTC
+	bool "Silent Reboot UTC TestCase Example"
+	default n
+	depends on SILENT_REBOOT && SYSTEM_REBOOT_REASON
+	---help---
+		Enable the Silent Reboot TestCase

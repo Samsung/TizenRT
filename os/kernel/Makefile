@@ -75,6 +75,7 @@ include preference/Make.defs
 include pthread/Make.defs
 include sched/Make.defs
 include semaphore/Make.defs
+include silent_reboot/Make.defs
 include signal/Make.defs
 include task/Make.defs
 include timer/Make.defs

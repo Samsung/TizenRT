@@ -50,8 +50,8 @@
 static bool g_is_silent_mode;
 static bool g_is_silent_timezone;
 static int g_silent_lock_count;
-static WDOG_ID g_silent_wdog;
-static WDOG_ID g_silent_delaywdog;
+static FAR struct wdog_s g_silent_wdog;
+static FAR struct wdog_s g_silent_delaywdog;
 
 enum SILENT_TIMER_CMD {
 	SILENT_START = 0,
@@ -173,9 +173,9 @@ static bool silent_reboot_is_timezone(void)
 	return false;
 }
 
-static void silent_timer_callback(int argc, uint32_t cmd)
+static void silent_timer_callback(wdparm_t arg)
 {
-	switch (cmd) {
+	switch ((uint32_t)arg) {
 	case SILENT_START:
 	case SILENT_RESTART:
 		/* Check whether current time is available for reboot because time can be changed after timer starts */
@@ -212,7 +212,7 @@ static int silent_reboot_set_timer(int cmd)
 		return ERROR;
 	}
 
-	ret = wd_start(g_silent_wdog, SEC2TICK(timeout), (wdentry_t)silent_timer_callback, 1, (uint32_t)cmd);
+	ret = wd_start(&g_silent_wdog, SEC2TICK(timeout), silent_timer_callback, (wdparm_t)cmd);
 	if (ret != OK) {
 		return ERROR;
 	}
@@ -284,15 +284,7 @@ int silent_reboot_delay(int delay)
 		return ERROR;
 	}
 
-	if (g_silent_delaywdog == NULL) {
-		g_silent_delaywdog = wd_create();
-		if (!g_silent_delaywdog) {
-			dbg("Failed to set timer to unlock\n");
-			return ERROR;
-		}
-	}
-
-	tick_remain = wd_gettime(g_silent_delaywdog);
+	tick_remain = wd_gettime(&g_silent_delaywdog);
 	if (SEC2TICK(delay) <= tick_remain) {
 		dbg("Already reboot delayed for %d seconds\n", TICK2SEC(tick_remain));
 		return OK;
@@ -306,7 +298,7 @@ int silent_reboot_delay(int delay)
 	dbg("Watchdog Start for unlock: timeout %ds\n", delay);
 
 	/* Unlock by timer callback */
-	ret = wd_start(g_silent_delaywdog, SEC2TICK(delay), (wdentry_t)silent_timer_callback, 1, SILENT_DELAY);
+	ret = wd_start(&g_silent_delaywdog, SEC2TICK(delay), silent_timer_callback, (wdparm_t)SILENT_DELAY);
 	if (ret != OK) {
 		dbg("Failed to start watchdog %d\n", get_errno());
 		return ERROR;
@@ -328,7 +320,7 @@ int silent_reboot_force_perform_after_timeout(int timeout)
 	int ret;
 	int tick_remain;
 
-	tick_remain = wd_gettime(g_silent_wdog);
+	tick_remain = wd_gettime(&g_silent_wdog);
 	if (SEC2TICK(timeout) > tick_remain) {
 		dbg("Timeout %d is smaller than remaining time of periodic reboot (%d s)\n", timeout, TICK2SEC(tick_remain));
 		return OK;
@@ -336,7 +328,7 @@ int silent_reboot_force_perform_after_timeout(int timeout)
 
 	dbg("Reboot watchdog will be expired after %d seconds\n", timeout);
 
-	ret = wd_start(g_silent_wdog, SEC2TICK(timeout), (wdentry_t)silent_timer_callback, 1, SILENT_RESTART);
+	ret = wd_start(&g_silent_wdog, SEC2TICK(timeout), silent_timer_callback, (wdparm_t)SILENT_RESTART);
 	if (ret != OK) {
 		dbg("Failed to start watchdog %d\n", get_errno());
 		return ERROR;
@@ -376,10 +368,10 @@ int silent_reboot_get_status(silent_reboot_status_t *status)
 		status->reboot_timezone_left = 0;
 	} else {
 		// Not available for reboot yet. Get remaining time until next available.
-		status->reboot_timezone_left = TICK2SEC(wd_gettime(g_silent_wdog));
+		status->reboot_timezone_left = TICK2SEC(wd_gettime(&g_silent_wdog));
 	}
 
-	status->reboot_delay_left = TICK2SEC(wd_gettime(g_silent_delaywdog));
+	status->reboot_delay_left = TICK2SEC(wd_gettime(&g_silent_delaywdog));
 
 	return OK;
 }
@@ -399,13 +391,6 @@ void silent_reboot_initialize(void)
 	/* Set silent mode by checking reboot reason. */
 	silent_reboot_set_mode();
 
-	/* Create timer to check the time zone available for silent reboot. */
-	g_silent_wdog = wd_create();
-	if (!g_silent_wdog) {
-		dbg("Failed to set timer periodic silent reboot\n");
-		return;
-	}
-
-	/* Create timer to check the time zone available for silent reboot. */
+	/* Start the periodic timer to check the time zone available for silent reboot. */
 	silent_reboot_set_timer(SILENT_START);
 }
