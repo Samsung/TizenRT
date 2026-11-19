@@ -10,7 +10,7 @@ PL011 UART console.  The board comes from
 | Config | What it does |
 |---|---|
 | `ostest` | Runs the NuttX OS test (`apps/examples/testcase/ostest`) as the entry point (`CONFIG_INIT_ENTRYPOINT="ostest_main"`) and powers QEMU off with the test result. |
-| `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the FS commands, the `ostest` command, the `smp` command (`apps/examples/smp`) and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
+| `tash` | Starts TASH via the preapp task (`apps/system/init`, `CONFIG_SYSTEM_PREAPP_INIT=y`, started by `nx_bringup`) with the FS commands, the `ostest` command, the `smp` command (`apps/examples/smp`) and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
 | `net` | `tash` with the network stack (`CONFIG_NET`, lwIP with netmgr): loopback and virtio-net interfaces, DHCP client and `ifconfig`/`ping`. |
 
 All configurations use SMP with 2 CPUs (`CONFIG_SMP=y`,

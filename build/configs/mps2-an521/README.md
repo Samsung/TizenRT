@@ -10,7 +10,7 @@ Cortex-M33) with a CMSDK UART console.  The board comes from
 | Config | What it does |
 |---|---|
 | `ostest` | Runs the NuttX OS test (`apps/examples/testcase/ostest`) as the entry point (`CONFIG_INIT_ENTRYPOINT="ostest_main"`). |
-| `tash` | Starts TASH (`CONFIG_INIT_ENTRYPOINT="preapp_start"`, `apps/system/init`) with the FS commands, the `ostest` command and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
+| `tash` | Starts TASH via the preapp task (`apps/system/init`, `CONFIG_SYSTEM_PREAPP_INIT=y`, started by `nx_bringup`) with the FS commands, the `ostest` command and the `helloxx` command (`apps/examples/helloxx`, toolchain C++ library with exceptions). |
 | `net` | `tash` with the network stack (`CONFIG_NET`, lwIP with netmgr): loopback and LAN9118 interfaces, DHCP client and `ifconfig`/`ping`. |
 
 The board has no `board_power_off()` in NuttX 12.13.0, so QEMU keeps
