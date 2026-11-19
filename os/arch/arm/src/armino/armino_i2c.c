@@ -335,8 +335,19 @@ int armino_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgs, int msgc)
 	 int ret = OK;
 	 bk_err_t err;
 	 uint8_t i = 0;
-	 uint16_t addr = msgs->addr;
+	 uint16_t addr;
 	 uint32_t timeout_ms = 2000;
+
+	 /* I2C_TRANSFER() passes dev/msgs through without any check, so the
+	  * callee must validate them. The sibling ops (setaddress/setclock)
+	  * already check dev the same way.
+	  */
+	 if (priv == NULL || msgs == NULL) {
+		 i2cinfo("i2c dev/msgs is NULL\n");
+		 return ERROR;
+	 }
+
+	 addr = msgs->addr;
 
 	 /* Ensure that address or flags don't change meanwhile */
 	 sem_wait(&priv->sem_excl);

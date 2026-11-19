@@ -70,6 +70,7 @@ static uint32_t s_aon_rtc_clock_freq = AON_RTC_DEFAULT_CLOCK_FREQ;
 #endif
 
 #define ANA_RTC_OPS_SAFE_DELAY_US (125)
+#define ANA_RTC_TICK_RESET_RETRY_MAX (100000)
 static uint64_t s_ana_rtc_base_tick = 0; // use for rtc reset
 #if defined(CONFIG_ROSC_COMPENSATION)
 static int64_t s_ana_rtc_diff_tick  = 0; // use for rtc compesation
@@ -914,11 +915,27 @@ static void ana_rtc_hw_init(void)
 
 	// wait until rtc tick reset ok, will cost about 32us
 #if !defined(CONFIG_AON_RTC_KEEP_TIME_SUPPORT)
-	while (1)
+	if (s_ana_rtc_base_tick == 0)
 	{
-		if (aon_pmu_hal_rtc_tick_l_get() < s_ana_rtc_base_tick)
+		// base==0 keeps the unsigned comparison below false forever, so
+		// waiting here would hang the boot sequence. Skip it.
+		ANA_RTC_LOGW("%s: rtc base tick is 0, skip tick reset wait\r\n", __func__);
+	}
+	else
+	{
+		// Bounded polling: a stalled 32K clock would also freeze any
+		// tick-based timeout, so bound the wait by iteration count.
+		uint32_t retry = ANA_RTC_TICK_RESET_RETRY_MAX;
+
+		while ((aon_pmu_hal_rtc_tick_l_get() >= s_ana_rtc_base_tick) && (retry > 0))
 		{
-			break;
+			retry--;
+		}
+
+		if (retry == 0)
+		{
+			ANA_RTC_LOGE("%s: wait rtc tick reset timeout, base=0x%llx cur=0x%x\r\n",
+				__func__, s_ana_rtc_base_tick, aon_pmu_hal_rtc_tick_l_get());
 		}
 	}
 #endif

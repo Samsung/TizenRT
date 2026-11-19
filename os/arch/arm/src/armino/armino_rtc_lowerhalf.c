@@ -209,6 +209,9 @@ static int armino_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time 
 	int ret;
 	
 	DEBUGASSERT(lower != NULL && rtctime != NULL);
+	if (lower == NULL || rtctime == NULL) {
+		return -EINVAL;
+	}
 	rtc = (FAR struct armino_lowerhalf_s *)lower;
 	ret = sem_wait(&rtc->devsem);
 	if (ret < 0) {
@@ -248,6 +251,10 @@ static int armino_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time 
 static int armino_settime(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_time *rtctime)
 {
 	struct timespec ts;
+
+	if (lower == NULL || rtctime == NULL) {
+		return -EINVAL;
+	}
 
 	/* Convert the struct rtc_time to a time_t.  Here we assume that struct
 	 * rtc_time is cast compatible with struct tm.
