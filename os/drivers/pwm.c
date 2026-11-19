@@ -577,6 +577,7 @@ static int pwm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 int pwm_register(FAR const char *path, FAR struct pwm_lowerhalf_s *dev)
 {
 	FAR struct pwm_upperhalf_s *upper;
+	int ret;
 
 	/* Allocate the upper-half data structure */
 
@@ -604,7 +605,17 @@ int pwm_register(FAR const char *path, FAR struct pwm_lowerhalf_s *dev)
 	/* Register the PWM device */
 
 	pwmvdbg("Registering %s\n", path);
-	return register_driver(path, &g_pwmops, 0666, upper);
+	ret = register_driver(path, &g_pwmops, 0666, upper);
+	if (ret < 0) {
+		pwmdbg("register_driver failed: %d\n", ret);
+#ifdef CONFIG_PWM_PULSECOUNT
+		sem_destroy(&upper->waitsem);
+#endif
+		sem_destroy(&upper->exclsem);
+		kmm_free(upper);
+	}
+
+	return ret;
 }
 
 /****************************************************************************
