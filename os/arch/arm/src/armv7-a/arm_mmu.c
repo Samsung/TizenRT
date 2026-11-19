@@ -42,6 +42,8 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <assert.h>
+#include <debug.h>
 
 #include "cp15_cacheops.h"
 #include "mmu.h"
@@ -340,6 +342,13 @@ uint32_t *mmu_allocate_app_l1_pgtbl(int app_id)
 uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
 {
 	dbg("app_id : %d, l2idx : %d\n", app_id, l2idx);
+
+	/* Each binary owns exactly CONFIG_NUM_L2_PER_APP L2 page tables. Going past
+	 * that would silently overwrite the L2 block of another binary (or the
+	 * memory beyond the page table area), so stop here instead.
+	 */
+	ASSERT(l2idx >= 0 && l2idx < CONFIG_NUM_L2_PER_APP);
+
 	/* Page table structure as follows:
 	 *
 	 * | Kernel L1 | App1 L1 | App2 L1 | Common L2 1 ... CONFIG_NUM_L2_PER_APP | App1 L2 1 ... CONFIG_NUM_L2_PER_APP | App2 L2 1 ... CONFIG_NUM_L2_PER_APP |
@@ -398,9 +407,15 @@ void mmu_clear_app_pgtbl(uint32_t app_id)
 	memset(addr, 0, CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE);
 
 	if (app_id == 0) {
-		// Reset the L2 page entries in L1 page table
+		// Common binary does not allocate an L1 page table, so l2_idx is not
+		// reset through mmu_allocate_app_l1_pgtbl(). Reset it here so that a
+		// reloaded common binary starts from the first L2 table of its block.
+		l2_idx = 0;
+
+		// Reset the L2 page entries in L1 page table.
+		// Start from 1 because the loop reads addr[i - 1].
 		addr = (uint32_t *) PGTABLE_BASE_VADDR;
-		for (int i = 0; i < L1_PGTBL_NENTRIES; i++) {
+		for (int i = 1; i < L1_PGTBL_NENTRIES; i++) {
 			if ((addr[i] & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
 				addr[i] = addr[i - 1] & PMD_SECT_PADDR_MASK;
 				addr[i] += SECTION_SIZE;
