@@ -30,6 +30,11 @@ else
 tfm_firmware_dir_name := tfm_loadable_build
 endif
 
+# Board (NS side) headers must be searched before the TF-M armino headers,
+# otherwise components/log.h and soc/soc.h resolve to the Secure side ones,
+# which require the CMake-generated armino_config.h.
+CFLAGS += -I$(TOPDIR)/board/bk7239n/src/include
+
 ifneq ($(wildcard $(TOPDIR)/board/bk7239n/src/components/tfm/tfm/CMakeLists.txt),)
 CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/tfm/interface/include
 CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/tfm/platform/ext/target/beken/armino/include
@@ -37,5 +42,4 @@ else
 CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/$(tfm_firmware_dir_name)/tfm_install/interface/include
 endif
 CFLAGS += -I$(TOPDIR)/se/armino/include
-CFLAGS += -I$(TOPDIR)/board/bk7239n/src/include
 endif
