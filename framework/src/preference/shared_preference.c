@@ -40,8 +40,13 @@ int preference_shared_set_int(const char *key, int value)
 	if (key == NULL) {
 		return PREFERENCE_INVALID_PARAMETER;
 	}
-
-	data.key = key;
+	if (strlen(key) >= PREFERENCE_KEY_MAX) {
+		prefdbg("Key is too long to notify, skipped\n");
+		return;
+	}
+	memset(&data, 0, sizeof(preference_callback_t));
+	strncpy(data.key, key, PREFERENCE_KEY_MAX - 1);
+	data.key[PREFERENCE_KEY_MAX - 1] = '\0';
 	data.type = SHARED_PREFERENCE;
 	data.attr.type = PREFERENCE_TYPE_INT;
 	data.attr.len = sizeof(int);
