@@ -73,6 +73,7 @@ include bluetooth$(DELIM)Make.defs
 include compression$(DELIM)Make.defs
 include cpuload$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
+include health_monitor$(DELIM)Make.defs
 include prodconfig$(DELIM)Make.defs
 include memory$(DELIM)Make.defs
 include i2c$(DELIM)Make.defs

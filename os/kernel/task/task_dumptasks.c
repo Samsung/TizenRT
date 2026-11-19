@@ -27,10 +27,16 @@
 #define CONFIG_DEBUG 1
 #define CONFIG_DEBUG_ERROR 1
 
+#include <assert.h>
+#include <stdint.h>
 #include <debug.h>
 #include <sys/types.h>
 #include <tinyara/arch.h>
+#include <tinyara/irq.h>
 #include <tinyara/sched.h>
+#include <tinyara/security_level.h>
+
+#include "task/task.h"
 
 /* NOTE : This file is for assert usage only. */
 
@@ -83,6 +89,83 @@
  * Private Functions
  ****************************************************************************/
 
+#if defined(CONFIG_ARCH_STACKDUMP) && (defined(CONFIG_ARCH_ARMV7A_FAMILY) || defined(CONFIG_ARCH_ARMV8M_FAMILY))
+/****************************************************************************
+ * Name: task_dump_registers
+ *
+ * Description:
+ *   Dump a stopped task's registers without reading its stack or changing context.
+ *   The caller protects the TCB lifetime and stops other CPUs before calling.
+ *
+ ****************************************************************************/
+
+void task_dump_registers(FAR struct tcb_s *tcb)
+{
+	const volatile void *regs;
+
+	DEBUGASSERT(tcb != NULL);
+	if (IS_SECURE_STATE()) {
+		return;
+	}
+
+	regs = up_get_task_registers(tcb);
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg_noarg("\nTask pid=%d name=%s\n", (int)tcb->pid, tcb->name);
+#else
+	lldbg_noarg("\nTask pid=%d\n", (int)tcb->pid);
+#endif
+	if (regs) {
+		up_registerdump(regs);
+	} else {
+		lldbg_noarg("register context unavailable\n");
+	}
+}
+
+/****************************************************************************
+ * Name: task_dump
+ *
+ * Description:
+ *   Dump a stopped task's registers and usable stack without changing context.
+ *   The caller protects the TCB lifetime and stops other CPUs before calling.
+ *
+ ****************************************************************************/
+
+void task_dump(FAR struct tcb_s *tcb)
+{
+	const volatile void *regs;
+	uintptr_t stack_end;
+	uintptr_t stack_start;
+	size_t stack_size;
+	uintptr_t sp;
+
+	DEBUGASSERT(tcb != NULL);
+	if (IS_SECURE_STATE()) {
+		return;
+	}
+
+	regs = up_get_task_registers(tcb);
+	task_dump_registers(tcb);
+	if (regs == NULL) {
+		lldbg_noarg("Stack pointer unavailable; stack dump skipped\n");
+		return;
+	}
+	sp = up_getusrsp(regs);
+
+	stack_end = up_get_task_stack_end(tcb);
+	stack_size = tcb->adj_stack_size;
+	if (!tcb->stack_alloc_ptr || stack_size == 0 || stack_end - stack_size < (uintptr_t)tcb->stack_alloc_ptr) {
+		lldbg("Task stack bounds unavailable\n");
+		return;
+	}
+	stack_start = stack_end - stack_size;
+	if ((sp % sizeof(uintptr_t)) != 0 || sp < stack_start || sp >= stack_end) {
+		lldbg_noarg("SP outside usable stack; stack dump skipped\n");
+		return;
+	}
+	up_stackdump(sp, stack_end);
+}
+#endif
+
 /****************************************************************************
  * Name: task_show_tcbinfo
  * 
@@ -95,8 +178,19 @@ void task_show_tcbinfo(struct tcb_s *tcb)
 	int nsyscall = tcb->xcp.nsyscalls;
 #endif
 	lldbg_noarg("===========================================================\n");
-	lldbg_noarg("Asserted task's TCB info \n");
+	lldbg_noarg("Task TCB info\n");
 	lldbg_noarg("===========================================================\n");
+	lldbg("PID         : %d\n", (int)tcb->pid);
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg("Name        : %s\n", tcb->name);
+#endif
+#ifdef CONFIG_SMP
+	lldbg("CPU         : %d\n", (int)tcb->cpu);
+#else
+	lldbg("CPU         : 0\n");
+#endif
+	lldbg("Priority    : %d\n", (int)tcb->sched_priority);
+	lldbg("TCB address : %p\n", tcb);
 	lldbg("State       : %u\n", tcb->task_state);
 	lldbg("Flags       : %u\n", tcb->flags);
 	lldbg("Lock count  : %u\n", tcb->lockcount);
@@ -142,6 +236,12 @@ static void task_taskdump(FAR struct tcb_s *tcb, FAR void *arg)
 #endif
 }
 
+static void task_stackdump(FAR struct tcb_s *tcb, FAR void *arg)
+{
+	(void)arg;
+	task_dump(tcb);
+}
+
 /****************************************************************************
  * Name: task_show_alivetask_list
  * 
@@ -161,5 +261,11 @@ void task_show_alivetask_list(void)
 
 	sched_foreach(task_taskdump, NULL);
 	lldbg_noarg("-------------------------------------------------------------------------------------------------------------------\n");
+
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("All tasks: register and stack dump\n");
+	lldbg_noarg("===========================================================\n");
+	sched_foreach(task_stackdump, NULL);
+	lldbg_noarg("===========================================================\n");
 
 }

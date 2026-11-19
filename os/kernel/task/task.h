@@ -134,6 +134,14 @@ void notify_cancellation(FAR struct tcb_s *tcb);
 void thread_termination_handler(void);
 #endif
 
+#if defined(CONFIG_ARCH_STACKDUMP) && (defined(CONFIG_ARCH_ARMV7A_FAMILY) || defined(CONFIG_ARCH_ARMV8M_FAMILY))
+void task_dump_registers(FAR struct tcb_s *tcb);
+void task_dump(FAR struct tcb_s *tcb);
+#else
+#define task_dump_registers(tcb) ((void)0)
+#define task_dump(tcb) ((void)0)
+#endif
+
 void task_show_alivetask_list(void);
 
 void task_show_tcbinfo(struct tcb_s *tcb);

@@ -74,6 +74,9 @@
 #include "group/group.h"
 #include "task/task.h"
 #include "clock/clock.h"
+#ifdef CONFIG_HEALTH_MONITOR
+#include "health_monitor/health_monitor.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -416,6 +419,10 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 
 	ret = task_assignpid(tcb);
 	if (ret == OK) {
+#ifdef CONFIG_HEALTH_MONITOR
+		health_monitor_init_task(tcb);
+#endif
+
 		/* Save task priority and entry point in the TCB */
 
 		tcb->sched_priority = (uint8_t)priority;

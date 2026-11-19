@@ -64,6 +64,9 @@
 #include "wdog/wdog.h"
 #include "mqueue/mqueue.h"
 #include "task/task.h"
+#ifdef CONFIG_HEALTH_MONITOR
+#include "health_monitor/health_monitor.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -114,6 +117,10 @@
 
 void task_recover(FAR struct tcb_s *tcb)
 {
+#ifdef CONFIG_HEALTH_MONITOR
+	health_monitor_deinit_task(tcb);
+#endif
+
 	/* The task is being deleted.  Cancel in pending timeout events. */
 
 	wd_recover(tcb);

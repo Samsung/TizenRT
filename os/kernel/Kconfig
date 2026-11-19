@@ -268,6 +268,49 @@ config PREALLOC_TIMERS
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
 		zero for all dynamic allocations.
 
+config HEALTH_MONITOR
+	bool "Health monitor"
+	default n
+	depends on WATCHDOG && !WATCHDOG_FOR_IRQ && !SCHED_TICKLESS && !SUPPRESS_INTERRUPTS && !SUPPRESS_TIMER_INTS && !SYSTEMTICK_EXTCLK
+	---help---
+		Monitor threads that register a timeout and periodically kick their
+		deadline. The system timer checks registered threads and enters the
+		existing panic path when a deadline has expired at inspection time.
+
+		The monitor uses per-TCB state and a statically sized timer heap.
+		Applications access it through a dedicated ioctl driver. Normal PM
+		tick suppression is supported; a tickless scheduler is not supported.
+
+		Board initialization registers the watchdog driver; system bring-up
+		starts it. A kernel thread refreshes the watchdog at the configured
+		interval. The thread is itself monitored with a 60-second timeout;
+		timer interrupts keep checking thread health but never refresh the
+		hardware watchdog.
+
+		The watchdog device is reserved for this kernel thread. Applications
+		must not change its timeout, stop it or refresh it independently.
+
+config HEALTH_MONITOR_WATCHDOG_INTERVAL_SEC
+	int "Health monitor hw watchdog refresh interval (seconds)"
+	default 10
+	range 1 59
+	depends on HEALTH_MONITOR
+	---help---
+		Delay between watchdog refreshes by the kernel thread. Keep it below
+		the thread's 60-second health monitor timeout,
+		with sufficient margin for scheduling and driver delays.
+
+config HEALTH_MONITOR_WATCHDOG_TIMEOUT_MS
+	int "Health monitor hw watchdog timeout (ms)"
+	default 180000
+	range 60001 180000
+	depends on HEALTH_MONITOR
+	---help---
+		Watchdog driver timeout in milliseconds. It must exceed the monitor
+		thread's 60-second timeout and leave time for diagnostic output.
+		The board driver must support the selected value. Armino uses its
+		existing NMI/software extension for timeouts above one HW period.
+
 endmenu # Clocks and Timers
 
 menu "Tasks and Scheduling"
