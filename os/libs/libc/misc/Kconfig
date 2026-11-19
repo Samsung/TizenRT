@@ -172,3 +172,9 @@ config LIBC_MUTEX_BACKTRACE_SKIP
 	---help---
 		Configure how many initial addresses to skip when dumping mutex backtraces.
 		When generating a backtrace, the first skip addresses will be skipped.
+
+config LIB_HASHMAP
+	bool "Generic hashmap implementation"
+	default n
+	---help---
+		Implementation of generic hashmap API's
