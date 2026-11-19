@@ -242,11 +242,16 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_SET_INTR(dev, data, enable, rx_ptr) \
     adam110_send_cmd(dev, AUD_INT_EN, (uint8_t)(data), (uint8_t)(enable), 0, 0, rx_ptr, false)
 
-#define ADAM110_AI_SET_THD(dev, model, h_thd_level, l_thd_level, rx_ptr) \
-    adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(model), (uint8_t)(h_thd_level), (uint8_t)(l_thd_level), 0, rx_ptr, false)
+/* thd : FW compare value as is (0 ~ 32767, converted by app) -> parm2 = high, parm3 = low */
+#define ADAM110_AI_SET_THD(dev, model, thd, rx_ptr) \
+    adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(model), (uint8_t)(((thd) >> 8) & 0xFF), (uint8_t)((thd) & 0xFF), 0, \
+                     rx_ptr, false)
 
 #define ADAM110_AI_GET_THD(dev, model, rx_ptr) \
     adam110_send_cmd(dev, AC_GET_THD, (uint8_t)(model), 0, 0, 0, rx_ptr, false)
+
+#define ADAM110_AI_SET_INT_HIGHT_TIME(dev, h_time, l_time, rx_ptr) \
+    adam110_send_cmd(dev, AC_SET_INT_HIGH_TIME, (uint8_t)(h_time), (uint8_t)(l_time), 0, 0, rx_ptr, false)
 
 #define ADAM110_AI_SET_INTR(dev, model, enable, rx_ptr) \
     adam110_send_cmd(dev, AC_INT_EN, (uint8_t)(model), (uint8_t)(enable), 0, 0, rx_ptr, false)
@@ -361,6 +366,10 @@ static int get_spi_command_error(int errcode)
 		return -EDOM;
 	case RSLT_SYNC_ERR:
 		return -ESTRPIPE;
+	case RSLT_SYS_WAIT_STABLE:
+		return -EAGAIN;
+	case RSLT_BUSY:
+		return -EBUSY;
 	default:
 		break;
 	}
@@ -388,7 +397,7 @@ static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *
 	}
 
 	if (rxpkt->op != RSLT_SUCCESS) {
-		if (rxpkt->op != RSLT_BUF_FULL) {
+		if ((rxpkt->op != RSLT_BUF_FULL) && (rxpkt->op != RSLT_SYS_WAIT_STABLE)) {
 			auddbg("[E] operation failed rxpkt->op : %d\n", rxpkt->op);
 		}
 		return get_spi_command_error(rxpkt->op);
@@ -673,24 +682,50 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 {
 	int ret = 0;
 	uint32_t recvsize = 0;
+	t_proto_pkt txpkt;
 	t_proto_pkt rxpkt;
 
+	memset(&txpkt, 0, sizeof(t_proto_pkt));
+	txpkt.header = PKT_HEADER_SEND;
+
+	/* 0x40/0x41: the FW sends the payload on the next clocks after the command (0x40: after its 7-byte response).
+	 * Command and payload read in one SPI bus lock, so no other command (SET_AEC etc.) comes in between */
+	adam110_spi_lock(dev);
+
 	switch(data) {
-	case AI_DATA_TYPE_SEAMLESS_R:		
-		ret = ADAM110_GET_SEAMLESS(dev, &rxpkt);		
-		if (ret != OK) {
-            auddbg("[E] GET_SEAMLESS failed op=%d ret=%d\n", rxpkt.op, ret);
-            return ret != OK ? ret : -EIO;
-        }
+	case AI_DATA_TYPE_SEAMLESS_R:
+		txpkt.op = AUD_GET_SEAMLESS_DATA;
+		txpkt.checksum = adam110_calculate_checksum((uint8_t *)&txpkt, sizeof(t_proto_pkt) - 1);
+		SPI_SNDBLOCK(dev->spi, (void *)&txpkt, sizeof(t_proto_pkt));
+		up_udelay(ADAM110_COM_RES_DELAY);
+		SPI_RECVBLOCK(dev->spi, (void *)&rxpkt, sizeof(t_proto_pkt));
+		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
+
+		if (rxpkt.header != PKT_HEADER_RECV) {
+			auddbg("[E] GET_SEAMLESS rxheader wrong : 0x%x\n", rxpkt.header);
+			ret = -EINVAL;
+			goto out;
+		}
+
+		if (rxpkt.op != RSLT_SUCCESS) {
+			ret = get_spi_command_error(rxpkt.op);
+			auddbg("[E] GET_SEAMLESS failed op=%d ret=%d\n", rxpkt.op, ret);
+			goto out;
+		}
 
 		recvsize = (uint32_t)(rxpkt.parm1 << 8 | rxpkt.parm2);
 		if (recvsize == 0) {
-			return -EAGAIN;
+			ret = -EAGAIN;
+			goto out;
 		}
-		*size_ptr = (recvsize < ADAM110_RX_MAX_SIZE) ? recvsize : ADAM110_RX_MAX_SIZE;		
+		*size_ptr = (recvsize < ADAM110_RX_MAX_SIZE) ? recvsize : ADAM110_RX_MAX_SIZE;
 		break;
 	case AI_DATA_TYPE_AUDIO:
-		ret = ADAM110_GET_AUDIO(dev, NULL);
+		txpkt.op = AUD_GET_PREP_DATA;
+		txpkt.checksum = adam110_calculate_checksum((uint8_t *)&txpkt, sizeof(t_proto_pkt) - 1);
+		SPI_SNDBLOCK(dev->spi, (void *)&txpkt, sizeof(t_proto_pkt));
+		up_udelay(ADAM110_COM_RES_DELAY);
+		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 		break;
 	default:
 		auddbg("[E] invalid data type\n");
@@ -698,8 +733,11 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 	}
 
 	if (ret == OK) {
-		adam110_spi_exchange(dev, NULL, 0, buffer, (*size_ptr) + 1, false);
+		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, true);
+		SPI_RECVBLOCK(dev->spi, (void *)buffer, (*size_ptr) + 1);
 	}
+out:
+	adam110_spi_unlock(dev);
 	return ret;
 }
 
@@ -753,7 +791,7 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	ret = ADAM110_SET_MIC_CLK(priv, PDM_CLOCK_PDM_RATE, &rxpkt);
 	if (ret != 0) {
 		auddbg("Adam110 PDM clock %s Hz failed ret : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz") ,ret);
-		return ret;
+		goto errout;
 	} else {
 		auddbg("Set Adam110 PDM clock %s Hz : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz"), ret);
 	}
@@ -761,15 +799,36 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	ret = ADAM110_SET_MODEL(priv);
 	if (ret != OK) {
 	    auddbg("[E] Model send fail!\n");
-	} else {
-		priv->lower->irq_enable(true);
+		goto errout;
 	}
 
-	//enable AI_MODEL_CUSTOM1 interrupt
+	/* Restore the selected model interrupt after an ADAM110 reset.
+	 * No model has been selected yet during the initial firmware load.
+	 */
+	if ((priv->kd_num >= AI_MODEL_HIBIXBY) && (priv->kd_num < AI_MODEL_MAX)) {
+		ret = ADAM110_AI_SET_INTR(priv, priv->kd_num, true, &rxpkt);
+		if (ret != OK) {
+			auddbg("Restore KD model interrupt failed. kd_num : %d ret : %d\n", priv->kd_num, ret);
+			goto errout;
+		}
+	}
+
+	/* Enable the custom model interrupt. */
 	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
 	if (ret != OK) {
-		auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
+		auddbg("Enable custom model interrupt failed. ret : %d\n", ret);
+		goto errout;
 	}
+
+	/* Host KD state survives the reset; apply it to the device again. */
+	ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R,
+						   priv->kd_enabled && !priv->mute, &rxpkt);
+	if (ret != OK) {
+		auddbg("Restore KD seamless interrupt failed. ret : %d\n", ret);
+		goto errout;
+	}
+
+	priv->lower->irq_enable(true);
 errout:
 	/* Regardless result, set fw_loaded as true for next check */
 	priv->fw_loaded = true;
@@ -779,6 +838,8 @@ errout:
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
+	static int wait_stable_cnt = 0;
+	static int busy_cnt = 0;
 	int ret = OK;
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
@@ -793,6 +854,34 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 		if (ret == OK) {
 			break;
 		}
+		/* XSOSC not ready : FW alive, do not reload yet. check next period */
+		if (ret == -EAGAIN) {
+			/* FW gives up XSOSC check after 10s and keeps 0x07 : reset and reload after ADAM110_XSOSC_WAIT_MAX_CNT */
+			if (++wait_stable_cnt < ADAM110_XSOSC_WAIT_MAX_CNT) {
+				auddbg("[I] XSOSC wait stable (%d), skip reload\n", wait_stable_cnt);
+				return OK;
+			}
+			auddbg("[E] XSOSC not stable (%d), reset and reload\n", wait_stable_cnt);
+			break;
+		}
+		/* FW busy (e.g. DM_ENTER_LP_MODE wake session open) : tolerate it once,
+		 * if it's still busy on the very next keepalive period, reset and reload. */
+		if (ret == -EBUSY) {
+			if (++busy_cnt < ADAM110_BUSY_WAIT_MAX_CNT) {
+				auddbg("[I] FW busy (%d), retry next period\n", busy_cnt);
+				return OK;
+			}
+			auddbg("[E] FW busy too long (%d), reset and reload\n", busy_cnt);
+			break;
+		}
+	}
+	wait_stable_cnt = 0;
+	busy_cnt = 0;
+
+	/* FW alive but model is gone (ADAM110 silently rebooted) : reload */
+	if ((ret == OK) && (rxpkt.parm3 & KA_FLAG_MODEL_NONE)) {
+		auddbg("[E] FW alive but model none, reset and reload\n");
+		ret = -EIO;
 	}
 
 	/* if aliveness failed, then load firmware again */
@@ -858,7 +947,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 
 	/* TODO if it is invalid event, should we return OK here? */
 	if (rxpkt.parm1 & ((1U << WWD_MODEL_MAX) - 1U)) {
-		if (!priv->kd_enabled || priv->recording) {
+		if (!priv->kd_enabled) {
 			auddbg("It's not possible to handle kd kd_enabled : %d recording : %d\n", priv->kd_enabled, priv->recording);
 			goto out_unlock;
 		}
@@ -875,15 +964,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 				up_udelay(ADAM110_RETRIAL_DELAY * 1000);
 				continue;
 			}
-			retry = SEAMLESS_RETRY_COUNT;			
-			uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, data_size);
-			uint8_t recv_sum = s_temp_chunk[data_size];
-			if (cal_sum != recv_sum) {
-				auddbg("[E] KD checksum calc:0x%02x, Recv:0x%02x\n", cal_sum, recv_sum);
-				ret = -EIO;
-				priv->seamless_in_progress = false;
-                goto errout_seamless;
-			}
+			retry = SEAMLESS_RETRY_COUNT;
 
 			memcpy(&priv->keyword_buffer[priv->keyword_bytes_left], s_temp_chunk, data_size);
 			priv->keyword_bytes_left += data_size;
@@ -912,6 +993,7 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
         return OK;
 	}
 	if (rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
+		auddbg("[E] Unknown event parm1=0x%x parm2=0x%x, drop\n", rxpkt.parm1, rxpkt.parm2);
 		goto out_unlock;
 	}
 
@@ -931,19 +1013,10 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 
 		ret = ADAM110_GET_AUDIOBUFFER(priv, rxpkt.parm2, s_temp_chunk, &pcm_size);
 		if (ret != OK) {
-            auddbg("[E] PCM GET_AUDIOBUFFER failed ret=%d\n", ret);
-            goto errout_record;
+            auddbg("[E] PCM GET_AUDIOBUFFER failed ret=%d, drop this packet\n", ret);
+            goto out_unlock;
         }
-        
-        uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, pcm_size);
-        uint8_t recv_sum = s_temp_chunk[pcm_size];
 
-        if (cal_sum != recv_sum) {
-            auddbg("[PCM] checksum mismatch calc=0x%02x recv=0x%02x size=%u\n", cal_sum, recv_sum, pcm_size);
-            ret = -EIO;
-            goto errout_record;
-        }
-		
         pcm_apb = pcm_waitq_take_one(priv);
         if (pcm_apb) {
             audvdbg("pcm_apb : %p\n", pcm_apb);
@@ -972,14 +1045,6 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 errout_seamless:
     adam110_givesem(&priv->devsem);
     priv->lower->irq_enable(true);
-    return ret;
-
-errout_record:
-    adam110_givesem(&priv->devsem);
-    priv->lower->irq_enable(true);
-    if (priv->dev.upper) {
-        priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_IOERR, NULL, ret);
-    }
     return ret;
 
 out_unlock:
@@ -1317,12 +1382,15 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			 * ADAM110 (Low/Mid/High)
 			 */
 			adam110_takesem(&priv->devsem);
-
+			
 			/* 1:Hi bixby, 2:Bixby, 3:Alexa, 4:WWD_CUSTOM_MODEL1 */
-			if (priv->kd_num >= WWD_CUSTOM_MODEL1) {
-				sensitivity = (uint16_t)(((uint32_t)sensitivity * 32768) / 1000);				
-			}			
-			ADAM110_AI_SET_THD(priv, priv->kd_num + 1, (sensitivity >> 8) & 0xff, sensitivity & 0xff, &rxpkt);
+			/* sensitivity : FW compare value as is, converted by app
+			 *   Hi-Bixby/Bixby/Alexa : logit x 128,      ex) 99.9634% -> 1012
+			 *   others               : probability x 32768, ex) 99.9634% -> 32757 */
+			if (sensitivity > ADAM110_SENSITIVITY_MAX) {
+				sensitivity = ADAM110_SENSITIVITY_MAX;
+			}
+			ADAM110_AI_SET_THD(priv, priv->kd_num, sensitivity, &rxpkt);
 
 			priv->sensitivity = sensitivity;
 			adam110_givesem(&priv->devsem);
@@ -1790,6 +1858,16 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		if (ret != OK) {
 			auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
 		}
+
+		/* Seamless may have been requested (AUDIOIOC_STARTPROCESS) before firmware
+		 * was ever loaded; reapply it now that the model/firmware are up.
+		 */
+		if (priv->kd_enabled && !priv->mute) {
+			ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
+			if (ret != OK) {
+				auddbg("Restore seamless interrupt failed.\n");
+			}
+		}
 	out_unlock:
 		adam110_givesem(&priv->devsem);
 		return ret;
@@ -1995,7 +2073,10 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
    g_adam110 = priv;
 
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
-	pid_t pid = kernel_thread("alive_check", 100, 4096, adam110_app_device_alive_check, NULL);
+	/* 4096 overflows: adam110_send_model()'s chunk_buf alone is
+	 * ADAM110_MODEL_CHUNK_SIZE+1 (3841) bytes, reached from here via
+	 * adam110_check_aliveness() -> adam110_load_firmware(). */
+	pid_t pid = kernel_thread("alive_check", 100, 8192, adam110_app_device_alive_check, NULL);
 	if (pid < 0) {
 		auddbg("Device alive check thread creatiopn failed\n");
 		goto errout;
