@@ -416,6 +416,13 @@ SYSCALL_LOOKUP(settimeofday,               2)
 
 SYSCALL_LOOKUP(signal,                     2)
 
+/* TizenRT-specific: kernel irq-event wait (TD-KERNEL-07 restore).
+ * Kept last in the unconditional list, matching the pre-migration
+ * placement, so the sync's existing syscall numbers are not shifted.
+ */
+
+SYSCALL_LOOKUP(fin_wait,                   0)
+
 #ifdef CONFIG_SCHED_INSTRUMENTATION_DUMP
   SYSCALL_LOOKUP(sched_note_vprintf_ip,    5)
   SYSCALL_LOOKUP(sched_note_event_ip,      5)

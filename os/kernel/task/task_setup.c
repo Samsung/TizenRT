@@ -53,6 +53,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/irq.h>
 #include <tinyara/sched.h>
 #include <tinyara/signal.h>
 #include <tinyara/tls.h>
@@ -486,6 +487,17 @@ static int nxthread_setup_scheduler(FAR struct tcb_s *tcb, int priority,
 		/* Initialize the processor-specific portion of the TCB */
 
 		up_initial_state(tcb);
+
+#ifdef CONFIG_IRQ_FIN_WAIT
+		/* Initialize the fin irq-event mailbox.  The fields are only
+		 * meaningful as "no event" when they hold NO_FIN_DATA, and a
+		 * zero-initialized TCB would otherwise look like a pending
+		 * event carrying data 0.
+		 */
+
+		tcb->fin_data = NO_FIN_DATA;
+		tcb->pending_fin_data = NO_FIN_DATA;
+#endif
 
 		/* Add the task to the inactive task list */
 

@@ -84,6 +84,9 @@ static const char *utils_statenames[] = {
 	"RUNNING ",
 	"INACTIVE",
 	"WAITSEM ",
+#ifdef CONFIG_IRQ_FIN_WAIT
+	"WAITFIN ",
+#endif
 	"WAITSIG ",
 #ifdef CONFIG_SCHED_EVENTS
 	"WAITEVENT",

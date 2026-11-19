@@ -28,6 +28,20 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/sched.h>
+#include "sched/sched.h"
+
+#ifdef CONFIG_IRQ_FIN_WAIT
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/* This is the list of all tasks that are blocked waiting for a fin
+ * (irq finalization) notification.  Like the other global task lists it
+ * is zero-initialized in BSS, so no boot-time initialization is needed.
+ */
+
+dq_queue_t g_waitingforfin;
 
 /****************************************************************************
  * Private Functions
@@ -65,13 +79,13 @@ static void update_fin_queue(struct tcb_s *tcb)
 int fin_wait(void)
 {
 	int ret = NO_FIN_DATA;
-	int saved_state;
-	struct tcb_s *tcb;
+	irqstate_t saved_state;
+	FAR struct tcb_s *tcb;
 
 	saved_state = enter_critical_section();
 
-	tcb = sched_self();
-	DEBUGASSERT(tcb);
+	tcb = this_task();
+	DEBUGASSERT(tcb != NULL);
 
 	if (tcb->fin_data != NO_FIN_DATA) {
 		/* If there is already pending irq, return saved irq data. */
@@ -83,7 +97,21 @@ int fin_wait(void)
 		return ret;
 	}
 
-	up_block_task(tcb, TSTATE_WAIT_FIN);
+	/* Remove the tcb task from the ready-to-run list and move it to the
+	 * fin waiting list.  fin_notify() removes the task from the list and
+	 * makes it ready-to-run again.
+	 */
+
+	nxsched_remove_self(tcb);
+
+	tcb->task_state = TSTATE_WAIT_FIN;
+	dq_addlast((FAR dq_entry_t *)tcb, list_waitingforfin());
+
+	/* Now, perform the context switch */
+
+	up_switch_context(this_task(), tcb);
+
+	/* Resumed: fin_notify() delivered the data and unblocked us */
 
 	if (tcb->fin_data != NO_FIN_DATA) {
 		ret = tcb->fin_data;
@@ -95,3 +123,59 @@ int fin_wait(void)
 
 	return ret;
 }
+
+/****************************************************************************
+ * Name: fin_block
+ *
+ * Description:
+ *   This function blocks the calling task in TSTATE_WAIT_FIN until a
+ *   fin_notify() unblocks it, without touching the fin data mailbox.
+ *   It is intended for kernel threads (e.g. the binary manager fault
+ *   message receiver) that use the fin notification as a pure wakeup
+ *   event and dequeue their own payload.
+ *
+ * Inputs:
+ *   None.
+ *
+ * Return Value:
+ *   OK
+ *
+ ****************************************************************************/
+
+void fin_block(void)
+{
+	irqstate_t saved_state;
+	FAR struct tcb_s *tcb;
+
+	saved_state = enter_critical_section();
+
+	tcb = this_task();
+	DEBUGASSERT(tcb != NULL);
+
+	nxsched_remove_self(tcb);
+
+	tcb->task_state = TSTATE_WAIT_FIN;
+	dq_addlast((FAR dq_entry_t *)tcb, list_waitingforfin());
+
+	up_switch_context(this_task(), tcb);
+
+	leave_critical_section(saved_state);
+}
+
+#else
+/* The interface is disabled (CONFIG_IRQ_FIN_WAIT is not set): the entry
+ * points still exist so that callers and the syscall plumbing link in
+ * every configuration, but they are inert - fin_wait() returns
+ * immediately with NO_FIN_DATA and fin_block() returns without blocking.
+ */
+
+int fin_wait(void)
+{
+	return NO_FIN_DATA;
+}
+
+void fin_block(void)
+{
+}
+
+#endif
