@@ -340,15 +340,26 @@ uint32_t *mmu_allocate_app_l1_pgtbl(int app_id)
 uint32_t *mmu_allocate_app_l2_pgtbl(int app_id, int l2idx)
 {
 	dbg("app_id : %d, l2idx : %d\n", app_id, l2idx);
+
+	/* Each binary owns exactly CONFIG_NUM_L2_PER_APP L2 page tables. Going past
+	 * that would silently overwrite the L2 block of another binary (or the
+	 * memory beyond the page table area), so stop here instead.
+	 */
+	ASSERT(l2idx >= 0 && l2idx < CONFIG_NUM_L2_PER_APP);
+
 	/* Page table structure as follows:
 	 *
 	 * | Kernel L1 | App1 L1 | App2 L1 | Common L2 1 ... CONFIG_NUM_L2_PER_APP | App1 L2 1 ... CONFIG_NUM_L2_PER_APP | App2 L2 1 ... CONFIG_NUM_L2_PER_APP |
 	 *
 	 * In the below calculation, we take (CONFIG_NUM_APPS + 1) because the first
 	 * page table is for kernel. Also, we reserve CONFIG_NUM_L2_PER_APP L2 page tables for each app.
+	 *
+	 * The L2 block index must be app_id so that it matches the layout above and
+	 * the address used by mmu_clear_app_pgtbl(). Common binary (app_id 0) takes
+	 * the first block, App1 the second, and so on.
 	 */
-	uint32_t *addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) + 
-			((CONFIG_NUM_APPS - app_id) * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
+	uint32_t *addr = (uint32_t *)(PGTABLE_BASE_VADDR + ((CONFIG_NUM_APPS + 1) * L1_PGTBL_SIZE) +
+			(app_id * CONFIG_NUM_L2_PER_APP * L2_PGTBL_SIZE) + (l2idx * L2_PGTBL_SIZE));
 	return addr;
 }
 
