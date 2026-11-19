@@ -1,0 +1,497 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# arch/risc-v/src/common/Toolchain.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Setup for the selected toolchain
+
+#
+# Handle old-style chip-specific toolchain names in the absence of
+# a new-style toolchain specification, force the selection of a single
+# toolchain and allow the selected toolchain to be overridden by a
+# command-line selection.
+#
+
+ifeq ($(filter y, $(CONFIG_RISCV_TOOLCHAIN_GNU_RV64)),y)
+  CONFIG_RISCV_TOOLCHAIN ?= GNU_RVG
+else ifeq ($(filter y, $(CONFIG_RISCV_TOOLCHAIN_GNU_RV64ILP32)),y)
+  CONFIG_RISCV_TOOLCHAIN ?= GNU_RVG
+else ifeq ($(filter y, $(CONFIG_RISCV_TOOLCHAIN_GNU_RV32)),y)
+  CONFIG_RISCV_TOOLCHAIN ?= GNU_RVG
+else ifeq ($(filter y, $(CONFIG_RISCV_TOOLCHAIN_CLANG)),y)
+  CONFIG_RISCV_TOOLCHAIN ?= GNU_RVG
+endif
+
+#
+# Supported toolchains
+#
+# Each toolchain definition should set:
+#
+#  CROSSDEV         The GNU toolchain triple (command prefix)
+#  ARCHCPUFLAGS     CPU-specific flags selecting the instruction set
+#                   options, etc.
+#  ARCHOPTIMIZATION The optimization level that results in
+#                   reliable code generation.
+#
+
+ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_OPTLEVEL)
+else ifeq ($(CONFIG_DEBUG_FULLOPT),y)
+  ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+    ARCHOPTIMIZATION += -Oz
+  else
+    ARCHOPTIMIZATION += -Os
+  endif
+endif
+
+ifneq ($(CONFIG_DEBUG_NOOPT),y)
+  ARCHOPTIMIZATION += -fno-strict-aliasing
+endif
+
+ifeq ($(CONFIG_FRAME_POINTER),y)
+  ARCHOPTIMIZATION += -fno-omit-frame-pointer -fno-optimize-sibling-calls
+else
+  ARCHOPTIMIZATION += -fomit-frame-pointer
+endif
+
+ifeq ($(CONFIG_STACK_CANARIES),y)
+  ARCHOPTIMIZATION += $(patsubst "%",%,$(CONFIG_STACK_CANARIES_LEVEL))
+endif
+
+ifeq ($(CONFIG_STACK_USAGE),y)
+  ARCHOPTIMIZATION += -fstack-usage
+endif
+
+ifneq ($(CONFIG_STACK_USAGE_WARNING),0)
+  ARCHOPTIMIZATION += -Wstack-usage=$(CONFIG_STACK_USAGE_WARNING)
+endif
+
+ARCHCFLAGS += -fno-common
+ARCHCXXFLAGS += -fno-common
+
+ARCHCFLAGS += -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-attributes -Wno-unknown-pragmas
+ARCHCXXFLAGS += -Wall -Wshadow -Wundef -Wno-attributes -Wno-unknown-pragmas
+
+# When all C++ code is built using GCC 7.1 or a higher version,
+# we can safely disregard warnings of the type "parameter passing for X changed in GCC 7.1."
+# Refer to : https://stackoverflow.com/questions/48149323/what-does-the-gcc-warning-project-parameter-passing-for-x-changed-in-gcc-7-1-m
+
+ifneq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  ARCHCXXFLAGS += -nostdinc++
+endif
+
+ifneq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+  ARCHCFLAGS += -Wno-psabi
+  ARCHCXXFLAGS += -Wno-psabi
+endif
+
+ifneq ($(CONFIG_CXX_STANDARD),)
+  ARCHCXXFLAGS += -std=$(CONFIG_CXX_STANDARD)
+endif
+
+ifneq ($(CONFIG_CXX_EXCEPTION),y)
+  ARCHCXXFLAGS += -fno-exceptions -fcheck-new
+endif
+
+ifneq ($(CONFIG_CXX_RTTI),y)
+  ARCHCXXFLAGS += -fno-rtti
+endif
+
+SHMODULEFLAGS = -Bsymbolic -G -Bdynamic --entry=__start
+
+ifeq ($(CONFIG_ARCH_RV32),y)
+LDFLAGS += -melf32lriscv
+SHMODULEFLAGS += -melf32lriscv
+else ifeq ($(CONFIG_ARCH_RV64ILP32),y)
+LDFLAGS += -melf32lriscv
+else
+LDFLAGS += -melf64lriscv
+endif
+
+# Optimization of unused sections
+
+ifeq ($(CONFIG_DEBUG_OPT_UNUSED_SECTIONS),y)
+  LDFLAGS          += --gc-sections
+  ARCHOPTIMIZATION += -ffunction-sections -fdata-sections
+endif
+
+LDFLAGS          += -nostdlib
+ARCHOPTIMIZATION += -nostdlib
+
+# Debug --whole-archive
+
+ifeq ($(CONFIG_DEBUG_LINK_WHOLE_ARCHIVE),y)
+  LDFLAGS += --whole-archive
+endif
+
+# Debug link map
+
+ifeq ($(CONFIG_DEBUG_LINK_MAP),y)
+  LDFLAGS += --cref -Map=$(call CONVERT_PATH,$(TOPDIR)$(DELIM)nuttx.map)
+endif
+
+ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_SYMBOLS_LEVEL)
+endif
+
+# Generic GNU RVG toolchain
+
+ifeq ($(CONFIG_RISCV_TOOLCHAIN),GNU_RVG)
+
+  # Generic GNU RVG toolchain, prefer to use riscv-none-elf-gcc from xPack
+  # if CROSSDEV is not defined.
+
+  ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+    CROSSDEV ?= riscv64-unknown-elf-
+  else
+    ifeq ($(shell riscv-none-elf-gcc --version > /dev/null 2>&1; echo $$?), 0)
+      CROSSDEV ?= riscv-none-elf-
+    else
+        ifeq ($(CONFIG_RISCV_TOOLCHAIN_GNU_RV32),y)
+          CROSSDEV ?= riscv32-unknown-elf-
+        else
+          CROSSDEV ?= riscv64-unknown-elf-
+        endif
+    endif
+  endif
+
+  # Detect cpu ISA support flags:
+  #
+  # Naming Convention
+  # RISC-V defines an exact order that must be used to define the RISC-V ISA subset:
+  #
+  # RV [32, 64, 128] I, M, A, F, D, G, Q, L, C, B, J, T, P, V, N
+  #
+  # For example, RV32IMAFDQC is legal, whereas RV32IMAFDCQ is not.
+
+  ARCHCPUEXTFLAGS = i
+
+  ifeq ($(CONFIG_ARCH_RV_ISA_M),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)m
+  endif
+
+  ifeq ($(CONFIG_ARCH_RV_ISA_A),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)a
+  endif
+
+  ifeq ($(CONFIG_ARCH_FPU),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)f
+  endif
+
+  ifeq ($(CONFIG_ARCH_DPFPU),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)d
+  endif
+
+  ifeq ($(CONFIG_ARCH_QPFPU),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)q
+  endif
+
+  ifeq ($(CONFIG_ARCH_RV_ISA_C),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)c
+  endif
+
+  ifeq ($(CONFIG_ARCH_RV_ISA_V),y)
+    ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)v
+  endif
+
+  ifeq ($(CONFIG_ARCH_RV_ISA_ZICSR_ZIFENCEI),y)
+    ifeq ($(shell expr "$(GCCVER)" \>= 12), 1)
+      ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)_zicsr_zifencei
+    endif
+    ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+      ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)_zicsr_zifencei
+    endif
+  endif
+
+  ARCH_RV_EXPERIMENTAL_EXTENSIONS = $(strip $(subst ",,$(CONFIG_ARCH_RV_EXPERIMENTAL_EXTENSIONS)))
+  ifneq ($(ARCH_RV_EXPERIMENTAL_EXTENSIONS),)
+      ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)_$(ARCH_RV_EXPERIMENTAL_EXTENSIONS)
+      ARCHOPTIMIZATION += -menable-experimental-extensions
+  endif
+
+  ARCH_RV_ISA_VENDOR_EXTENSIONS = $(strip $(subst ",,$(CONFIG_ARCH_RV_ISA_VENDOR_EXTENSIONS)))
+  ifneq ($(ARCH_RV_ISA_VENDOR_EXTENSIONS),)
+      ARCHCPUEXTFLAGS := $(ARCHCPUEXTFLAGS)_$(ARCH_RV_ISA_VENDOR_EXTENSIONS)
+  endif
+
+  # Detect abi type
+
+  ifeq ($(CONFIG_ARCH_RV32),y)
+    ARCHTYPE = rv32
+    ARCHABITYPE = ilp32
+    LLVM_ARCHTYPE := riscv32
+  else ifeq ($(CONFIG_ARCH_RV64),y)
+    ARCHTYPE = rv64
+    ifeq ($(CONFIG_ARCH_RV64ILP32),y)
+      ARCHABITYPE = ilp32
+    else
+      ARCHABITYPE = lp64
+    endif
+    LLVM_ARCHTYPE := riscv64
+    # https://www.sifive.com/blog/all-aboard-part-4-risc-v-code-models
+    ARCHCPUFLAGS = -mcmodel=medany
+  endif
+
+  # Construct arch flags
+
+  ARCHCPUFLAGS += -march=$(ARCHTYPE)$(ARCHCPUEXTFLAGS)
+
+  # Construct arch abi flags
+
+  ifeq ($(CONFIG_ARCH_DPFPU),y)
+    ARCHCPUFLAGS += -mabi=$(ARCHABITYPE)d
+    LLVM_ABITYPE := $(ARCHABITYPE)d
+  else ifeq ($(CONFIG_ARCH_FPU),y)
+    ARCHCPUFLAGS += -mabi=$(ARCHABITYPE)f
+    LLVM_ABITYPE := $(ARCHABITYPE)f
+  else
+    ARCHCPUFLAGS += -mabi=$(ARCHABITYPE)
+    LLVM_ABITYPE := $(ARCHABITYPE)
+  endif
+
+endif
+
+# RISCV has a modular instruction set. It's hard to define cpu-model to support all toolchain.
+# For Zig, cpu model is this formal: generic_rv[32|64][i][m][a][f][d][c]
+# For Rust, cpu model is this formal: riscv[32|64][i][m][a][f][d][c]
+# So, it's better to map the NuttX config to LLVM builtin cpu model, these models supported by
+# all LLVM based toolchain.
+# Refer to : https://github.com/llvm/llvm-project/blob/release/15.x/llvm/lib/Target/RISCV/RISCV.td
+# These models can't cover all implementation of RISCV, but it's enough for most cases.
+
+ifeq ($(CONFIG_ARCH_RV32),y)
+  ifeq ($(findstring imc,$(ARCHCPUEXTFLAGS)),imc)
+    LLVM_CPUTYPE := sifive-e20
+  else ifeq ($(findstring imac,$(ARCHCPUEXTFLAGS)),imac)
+    LLVM_CPUTYPE := sifive-e31
+  else ifeq ($(findstring imafc,$(ARCHCPUEXTFLAGS)),imafc)
+    LLVM_CPUTYPE := sifive-e76
+  endif
+else
+  ifeq ($(findstring imac,$(ARCHCPUEXTFLAGS)),imac)
+    LLVM_CPUTYPE := sifive-s51
+  else ifeq ($(findstring imafdc,$(ARCHCPUEXTFLAGS)),imafdc)
+    LLVM_CPUTYPE := sifive-u54
+  endif
+endif
+
+ifeq ($(CONFIG_MM_KASAN_INSTRUMENT_ALL),y)
+  ARCHOPTIMIZATION += -fsanitize=kernel-address
+  KASAN_PARAM += asan-stack=0
+  KASAN_PARAM += asan-instrumentation-with-call-threshold=0
+
+  ifeq ($(CONFIG_MM_KASAN_GLOBAL),y)
+    KASAN_PARAM += asan-globals=1
+  else
+    KASAN_PARAM += asan-globals=0
+  endif
+
+  ifeq ($(CONFIG_MM_KASAN_DISABLE_READS_CHECK),y)
+    KASAN_PARAM += asan-instrument-reads=0
+  endif
+
+  ifeq ($(CONFIG_MM_KASAN_DISABLE_WRITES_CHECK),y)
+    KASAN_PARAM += asan-instrument-writes=0
+  endif
+
+  ifeq ($(CONFIG_ARM_TOOLCHAIN_CLANG),y)
+    ARCHOPTIMIZATION += $(addprefix -mllvm ,$(KASAN_PARAM))
+  else
+    ARCHOPTIMIZATION += $(addprefix --param ,$(KASAN_PARAM))
+  endif
+endif
+
+ifeq ($(CONFIG_MM_UBSAN_ALL),y)
+  ARCHOPTIMIZATION += $(CONFIG_MM_UBSAN_OPTION)
+endif
+
+ifeq ($(CONFIG_MM_UBSAN_TRAP_ON_ERROR),y)
+  ARCHOPTIMIZATION += -fsanitize-undefined-trap-on-error
+endif
+
+# Instrumentation options
+
+ifeq ($(CONFIG_ARCH_INSTRUMENT_ALL),y)
+  ARCHOPTIMIZATION += -finstrument-functions
+endif
+
+# Link Time Optimization
+
+ifeq ($(CONFIG_LTO_THIN),y)
+  ARCHOPTIMIZATION += -flto=thin
+else ifeq ($(CONFIG_LTO_FULL),y)
+  ARCHOPTIMIZATION += -flto
+  ifeq ($(CONFIG_ARM_TOOLCHAIN_GNU_EABI),y)
+    ARCHOPTIMIZATION += -fuse-linker-plugin
+  endif
+endif
+
+# Clang toolchain
+
+ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+
+  CC      = $(CROSSDEV)clang
+  CXX     = $(CROSSDEV)clang++
+  CPP     = $(CROSSDEV)clang -E -P -x c
+  LD      = $(CROSSDEV)clang
+  STRIP   = $(CROSSDEV)llvm-strip --strip-unneeded
+  AR      = $(CROSSDEV)llvm-ar rcs
+  UNAR    = $(CROSSDEV)llvm-ar x
+  NM      = $(CROSSDEV)llvm-nm
+  OBJCOPY = $(CROSSDEV)llvm-objcopy
+  OBJDUMP = $(CROSSDEV)llvm-objdump
+
+  # Since the no_builtin attribute is not fully supported on Clang
+  # disable the built-in functions, refer:
+  # https://github.com/apache/nuttx/pull/5971
+
+  ARCHOPTIMIZATION += -fno-builtin
+
+  ARCHOPTIMIZATION += -fshort-enums
+
+# Default toolchain
+
+else
+
+  CC      = $(CROSSDEV)gcc
+  CXX     = $(CROSSDEV)g++
+  CPP     = $(CROSSDEV)gcc -E -P -x c
+  STRIP   = $(CROSSDEV)strip --strip-unneeded
+  OBJCOPY = $(CROSSDEV)objcopy
+  OBJDUMP = $(CROSSDEV)objdump
+  LD      = $(CROSSDEV)ld
+  AR      = $(CROSSDEV)ar rcs
+  UNAR    = $(CROSSDEV)ar x
+  NM      = $(CROSSDEV)nm
+
+# Link Time Optimization
+
+  ifeq ($(CONFIG_LTO_FULL),y)
+    ifeq ($(CONFIG_RISCV_TOOLCHAIN),GNU_RVG)
+      LD := $(CROSSDEV)gcc
+      AR := $(CROSSDEV)gcc-ar rcs
+      NM := $(CROSSDEV)gcc-nm
+      ARCHOPTIMIZATION += -fno-builtin
+    endif
+  endif
+
+  LDFLAGS += --print-memory-usage
+endif
+
+ifeq ($(CONFIG_ARCH_TOOLCHAIN_GNU),y)
+  ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),)
+    ifeq ($(GCCVER),)
+      export GCCVER := $(shell $(CC) --version | grep gcc | sed -E "s/.* ([0-9]+\.[0-9]+).*/\1/" | cut -d'.' -f1)
+    endif
+    ifeq ($(shell expr "$(GCCVER)" \>= 12), 1)
+      ifeq ($(CONFIG_ARCH_RAMFUNCS),y)
+        LDFLAGS += --no-warn-rwx-segments
+      else ifeq ($(CONFIG_BOOT_RUNFROMFLASH),)
+        LDFLAGS += --no-warn-rwx-segments
+      endif
+    endif
+  endif
+endif
+
+# Add the builtin library
+
+COMPILER_RT_LIB = $(shell $(CC) $(ARCHCPUFLAGS) --print-libgcc-file-name)
+ifeq ($(CONFIG_ARCH_TOOLCHAIN_CLANG),y)
+  ifeq ($(wildcard $(COMPILER_RT_LIB)),)
+    # if "--print-libgcc-file-name" unable to find the correct libgcc PATH
+    # then go ahead and try "--print-file-name"
+    COMPILER_RT_LIB := $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name $(notdir $(COMPILER_RT_LIB))))
+  endif
+endif
+
+EXTRA_LIBS += $(COMPILER_RT_LIB)
+
+ifeq ($(CONFIG_LIBM_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libm.a))
+endif
+
+ifeq ($(CONFIG_LIBSUPCXX_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libsupc++.a))
+endif
+
+ifeq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libstdc++.a))
+endif
+
+ifeq ($(CONFIG_COVERAGE_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libgcov.a))
+endif
+
+# Loadable module definitions
+
+CMODULEFLAGS = $(CFLAGS) -fvisibility=hidden
+LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
+
+# ELF module definitions
+
+CELFFLAGS = $(CFLAGS) -fvisibility=hidden
+CXXELFFLAGS = $(CXXFLAGS) -fvisibility=hidden
+
+LDELFFLAGS = -e _start
+
+ifeq ($(CONFIG_BINFMT_ELF_RELOCATABLE),y)
+  LDELFFLAGS += -r
+endif
+
+ifeq ($(CONFIG_ARCH_RV32),y)
+  LDELFFLAGS += --oformat elf32-littleriscv
+else
+  LDELFFLAGS += --oformat elf64-littleriscv
+endif
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  # Flat build and protected elf entry point use crt0,
+  # Kernel build will use apps/import/scripts/crt0
+
+  LDELFFLAGS += $(TOPDIR)$(DELIM)arch$(DELIM)risc-v$(DELIM)src$(DELIM)crt0.o
+endif
+
+LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
+
+# Shared library build flags
+
+SHCCFLAGS = -fPIC -fPIE -fvisibility=default
+SHLDFLAGS = -shared -Bsymbolic -Bdynamic -G
+
+ifeq ($(CONFIG_SIM_M32),y)
+  SHLDFLAGS += -melf_i386
+endif
