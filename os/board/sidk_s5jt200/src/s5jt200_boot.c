@@ -214,7 +214,7 @@ void s5j_board_initialize(void)
 void board_initialize(void)
 {
 	/* Perform app-specific initialization here instead of from the TASH. */
-	board_app_initialize();
+	board_app_initialize(0);
 
 #ifdef CONFIG_SCSC_WLAN
 	slldbg("Initialize SCSC driver\n");

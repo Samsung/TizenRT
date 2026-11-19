@@ -37,9 +37,8 @@
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
 
-#include "up_internal.h"
-#include "up_arch.h"
-#include "cache.h"
+#include "arm_internal.h"
+#include <tinyara/cache.h>
 
 #include "chip.h"
 #include "s5j_dma.h"
@@ -62,31 +61,31 @@ static struct dma_drvdata dma_dev[] = {
  * Private Functions
  ****************************************************************************/
 
-static u32 dma_get_intstatus(struct dma_drvdata *dma)
+static uint32_t dma_get_intstatus(struct dma_drvdata *dma)
 {
-	return getreg32(dma->base + (u32)(DMAC_INTMIS));
+	return getreg32(dma->base + (uint32_t)(DMAC_INTMIS));
 }
 
 static void dma_enable_ch_interrupt(struct dma_drvdata *dma, DMA_CHANNEL_NUM ch_num)
 {
-	volatile u32 inten_reg;
-	inten_reg = getreg32(dma->base + (u32)(DMAC_INTEN));
-	putreg32((inten_reg | (1 << ch_num)), (dma->base + (u32) DMAC_INTEN));
+	volatile uint32_t inten_reg;
+	inten_reg = getreg32(dma->base + (uint32_t)(DMAC_INTEN));
+	putreg32((inten_reg | (1 << ch_num)), (dma->base + (uint32_t) DMAC_INTEN));
 }
 
 static void dma_disable_ch_interrupt(struct dma_drvdata *dma, DMA_CHANNEL_NUM ch_num)
 {
-	volatile u32 inten_reg;
-	inten_reg = getreg32(dma->base + (u32)(DMAC_INTEN));
-	putreg32((inten_reg & ~(1 << ch_num)), (dma->base + (u32) DMAC_INTEN));
+	volatile uint32_t inten_reg;
+	inten_reg = getreg32(dma->base + (uint32_t)(DMAC_INTEN));
+	putreg32((inten_reg & ~(1 << ch_num)), (dma->base + (uint32_t) DMAC_INTEN));
 }
 
-static u32 dma_clear_ch_interrupt(struct dma_drvdata *dma, DMA_CHANNEL_NUM ch_num)
+static uint32_t dma_clear_ch_interrupt(struct dma_drvdata *dma, DMA_CHANNEL_NUM ch_num)
 {
 
-	volatile u32 reg = getreg32(dma->base + (u32)(DMAC_INTCLR));
-	putreg32((reg | (1 << ch_num)), (dma->base + (u32) DMAC_INTCLR));
-	return getreg32(dma->base + (u32)(DMAC_INTCLR));
+	volatile uint32_t reg = getreg32(dma->base + (uint32_t)(DMAC_INTCLR));
+	putreg32((reg | (1 << ch_num)), (dma->base + (uint32_t) DMAC_INTCLR));
+	return getreg32(dma->base + (uint32_t)(DMAC_INTCLR));
 }
 
 static void dma_ch_kill(DMA_CH_CONTEXT *dma_ch)
@@ -99,7 +98,7 @@ static void dma_ch_kill(DMA_CH_CONTEXT *dma_ch)
 
 	debug_inst0 = (0 << 24) | ((0x01) << 16) | (dma_ch->dma_chan_num << 8) | (1 << 0);
 
-	putreg32(debug_inst0, dma->base + (u32) DMAC_DBG_INTST0);
+	putreg32(debug_inst0, dma->base + (uint32_t) DMAC_DBG_INTST0);
 	putreg32(0, dma->base + DMAC_DBG_CMD);
 }
 
@@ -107,9 +106,9 @@ int pdma_irq_handler(int irq, FAR void *context, FAR void *arg)
 {
 
 	struct dma_drvdata *dma = (struct dma_drvdata *)arg;
-	u32 intstatus;
+	uint32_t intstatus;
 	int i;
-	volatile u32 reg;
+	volatile uint32_t reg;
 
 	intstatus = dma_get_intstatus(dma);
 
@@ -122,17 +121,17 @@ int pdma_irq_handler(int irq, FAR void *context, FAR void *arg)
 	}
 
 	/* Check faults here */
-	reg = getreg32(dma->base + (u32)(DMAC_FSRC));
+	reg = getreg32(dma->base + (uint32_t)(DMAC_FSRC));
 	if (reg) {
 		for (i = 0; i < dma->max_ch_num; i++) {
 			if (reg & (1 << i)) {
-				dmalldbg("\nChannel %d failt FTRD = 0x%x CH_FTR = 0x%x \n", i, getreg32(dma->base + (u32)(DMAC_FTRD)), getreg32(dma->base + (u32)(DMAC_CH_FTR(i))));
+				dmalldbg("\nChannel %d failt FTRD = 0x%x CH_FTR = 0x%x \n", i, getreg32(dma->base + (uint32_t)(DMAC_FTRD)), getreg32(dma->base + (uint32_t)(DMAC_CH_FTR(i))));
 
 				dmalldbg("- CSR 0x%x, CPC 0x%x, SAR 0x%x, DAR 0x%x,\
-							CCR 0x%x, LC0 0x%x, LC1 0x%x\n", getreg32(dma->base + (u32)(DMAC_CH_CSR(i))), getreg32(dma->base + (u32)(DMAC_CH_CPC(i))), getreg32(dma->base + (u32)(DMAC_CH_SAR(i))), getreg32(dma->base + (u32)(DMAC_CH_DAR(i))), getreg32(dma->base + (u32)(DMAC_CH_CCR(i))), getreg32(dma->base + (u32)(DMAC_CH_LC0(i))), getreg32(dma->base + (u32)(DMAC_CH_LC1(i))));
+							CCR 0x%x, LC0 0x%x, LC1 0x%x\n", getreg32(dma->base + (uint32_t)(DMAC_CH_CSR(i))), getreg32(dma->base + (uint32_t)(DMAC_CH_CPC(i))), getreg32(dma->base + (uint32_t)(DMAC_CH_SAR(i))), getreg32(dma->base + (uint32_t)(DMAC_CH_DAR(i))), getreg32(dma->base + (uint32_t)(DMAC_CH_CCR(i))), getreg32(dma->base + (uint32_t)(DMAC_CH_LC0(i))), getreg32(dma->base + (uint32_t)(DMAC_CH_LC1(i))));
 
 				dmalldbg("- INTEN 0x%x, RIS 0x%x, INTMIS 0x%x,\
-							FSRD 0x%x, FSRC 0x%x, FTRD 0x%x \n", getreg32(dma->base + (u32)(DMAC_INTEN)), getreg32(dma->base + (u32)(DMAC_INT_EVENT_RIS)), getreg32(dma->base + (u32)(DMAC_INTMIS)), getreg32(dma->base + (u32)(DMAC_FSRD)), getreg32(dma->base + (u32)(DMAC_FSRC)), getreg32(dma->base + (u32)(DMAC_FTRD)));
+							FSRD 0x%x, FSRC 0x%x, FTRD 0x%x \n", getreg32(dma->base + (uint32_t)(DMAC_INTEN)), getreg32(dma->base + (uint32_t)(DMAC_INT_EVENT_RIS)), getreg32(dma->base + (uint32_t)(DMAC_INTMIS)), getreg32(dma->base + (uint32_t)(DMAC_FSRD)), getreg32(dma->base + (uint32_t)(DMAC_FSRC)), getreg32(dma->base + (uint32_t)(DMAC_FTRD)));
 
 				dma_ch_kill(&dma->dma_ch[i]);
 				dma_disable_ch_interrupt(dma, i);
@@ -161,15 +160,15 @@ static struct dma_drvdata *get_dma_drvdata(char *name)
 
 static void dma_set_max_params(struct dma_drvdata *dma)
 {
-	volatile u32 reg_val;
+	volatile uint32_t reg_val;
 
-	reg_val = getreg32(dma->base + (u32)(DMAC_CR0));
+	reg_val = getreg32(dma->base + (uint32_t)(DMAC_CR0));
 	dma->max_ch_num = ((reg_val >> 4) & 0x7) + 1;
 
-	reg_val = getreg32(dma->base + (u32)(DMAC_CRD));
+	reg_val = getreg32(dma->base + (uint32_t)(DMAC_CRD));
 	dma->max_burst_size = ((reg_val) & 0x7) + 1;
 
-	reg_val = getreg32(dma->base + (u32)(DMAC_CRD));
+	reg_val = getreg32(dma->base + (uint32_t)(DMAC_CRD));
 	dma->max_burst_len = ((reg_val >> 20) & 0x1FF) + 1;
 }
 
@@ -201,7 +200,7 @@ static void dma_ch_exec(DMA_CH_CONTEXT *dma_ch)
 	secure_status = ((getreg32(dma->base + DMAC_CR0) >> 2) & 0x1);
 	debug_inst0 = (dma_ch->dma_chan_num << 24) | ((0xA0 | secure_status << 1) << 16) | (dma_ch->dma_chan_num << 8) | (0 << 0);
 
-	putreg32(debug_inst0, dma->base + (u32) DMAC_DBG_INTST0);
+	putreg32(debug_inst0, dma->base + (uint32_t) DMAC_DBG_INTST0);
 	putreg32((int)(dma_ch->task->microcode), dma->base + DMAC_DBG_INTST1);
 	putreg32(0, dma->base + DMAC_DBG_CMD);
 }

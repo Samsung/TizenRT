@@ -42,7 +42,7 @@ ifeq ($(WINTOOL),y)
   ARCHINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
   ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../framework/include}" -I "${shell cygpath -w $(TOPDIR)/../external/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include/libcxx}"
   ARCHXXINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
-  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
+  ARCHSCRIPT = "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
@@ -50,12 +50,11 @@ else
   ARCHINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../framework/include -I $(TOPDIR)/../external/include -isystem $(TOPDIR)/../external/include/libcxx
   ARCHXXINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
-  ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
+  ARCHSCRIPT = $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
 endif
 
 CC = $(CROSSDEV)gcc
 CXX = $(CROSSDEV)g++
-CPP = $(CROSSDEV)gcc -E
 LD = $(CROSSDEV)ld
 AR = $(CROSSDEV)ar rcs
 NM = $(CROSSDEV)nm
@@ -115,6 +114,10 @@ LIBEXT = .a
 EXEEXT =
 
 LDFLAGS += -nostartfiles -nodefaultlibs
+# The prebuilt libbcmarch.a defines the GIC helpers (up_enable_irq,
+# up_disable_irq, arm_decodeirq) that armv7-r/arm_gicv2.c also provides;
+# the armv7-r definitions win for the NuttX 12.13.0 build.
+LDFLAGS += --allow-multiple-definition
 
 ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g

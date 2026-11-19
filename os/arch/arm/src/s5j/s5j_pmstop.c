@@ -57,7 +57,7 @@
 
 #include <stdbool.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_pm.h"
 #include "s5j_clock.h"
 

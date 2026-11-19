@@ -61,7 +61,7 @@
 
 #include <tinyara/irq.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "s5j_pm.h"
 
 /****************************************************************************

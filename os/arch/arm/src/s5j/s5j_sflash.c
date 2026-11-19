@@ -61,8 +61,8 @@
 #include <tinyara/irq.h>
 #include <tinyara/progmem.h>
 
-#include "up_arch.h"
-#include "cache.h"
+#include "arm_internal.h"
+#include <tinyara/cache.h>
 #include "chip.h"
 
 #include "s5j_clock.h"
@@ -116,7 +116,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	addr = up_progmem_getaddress(page);
 
 	/* Disable IRQs while erasing sector */
-	irqs = irqsave();
+	irqs = enter_critical_section();
 
 	s5j_sflash_disable_wp();
 
@@ -133,7 +133,7 @@ ssize_t up_progmem_erasepage(size_t page)
 	arch_invalidate_dcache(addr, addr + up_progmem_blocksize());
 
 	/* Restore IRQs */
-	irqrestore(irqs);
+	leave_critical_section(irqs);
 
 	return up_progmem_blocksize();
 }
@@ -182,7 +182,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		}
 
 		/* Disable IRQs */
-		irqs = irqsave();
+		irqs = enter_critical_section();
 
 		s5j_sflash_disable_wp();
 
@@ -195,7 +195,7 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
 		s5j_sflash_enable_wp();
 
 		/* Restore IRQs */
-		irqrestore(irqs);
+		leave_critical_section(irqs);
 
 		buf += tmp;
 		addr += tmp;

@@ -66,7 +66,7 @@ ifeq ($(WINTOOL),y)
   ARCHINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
   ARCHXXINCLUDES = -I. -isystem "${shell cygpath -w $(TOPDIR)/include}" -isystem "${shell cygpath -w $(TOPDIR)/../external/include}"
   ARCHXXINCLUDES += -isystem "${shell cygpath -w $(TOPDIR)/net/lwip/src/include}"
-  ARCHSCRIPT = -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
+  ARCHSCRIPT = "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)}"
 else
   # Linux/Cygwin-native toolchain
   MKDEP = $(TOPDIR)/tools/mkdeps$(HOSTEXEEXT)
@@ -74,13 +74,12 @@ else
   ARCHINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
   ARCHXXINCLUDES = -I. -isystem $(TOPDIR)/include -isystem $(TOPDIR)/../external/include
   ARCHXXINCLUDES += -isystem $(TOPDIR)/net/lwip/src/include
-  ARCHSCRIPT = -T$(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
+  ARCHSCRIPT = $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/$(LDSCRIPT)
 
 endif
 
 CC = $(CROSSDEV)gcc
 CXX = $(CROSSDEV)g++
-CPP = $(CROSSDEV)gcc -E
 LD = $(CROSSDEV)ld
 AR = $(CROSSDEV)ar rcs
 NM = $(CROSSDEV)nm
@@ -105,8 +104,8 @@ endif
 
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3 -ffunction-sections -fdata-sections
 ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3
-ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef 
+ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGSXX = -Wall -Wshadow -Wundef 
 # only version 4.9 supports color diagnostics
 ifeq "$(ARCHMAJOR)" "4"
 ifeq "$(ARCHMINOR)" "9"

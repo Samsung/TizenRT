@@ -28,7 +28,7 @@
 
 #include <tinyara/configdata.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "sidk_s5jt200.h"
 
 struct wlanif {

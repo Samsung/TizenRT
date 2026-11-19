@@ -190,7 +190,7 @@ static int s5j_ppd42ns_irq_enable(struct ppd42ns_config_s *config, int enable)
 	}
 
 	/* disable interrupt */
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	pincfg = priv->pincfg;
 	pincfg &= ~GPIO_FUNC_MASK;
@@ -219,7 +219,7 @@ static int s5j_ppd42ns_irq_enable(struct ppd42ns_config_s *config, int enable)
 
 done:
 	/* enable interrupt */
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return result;
 }

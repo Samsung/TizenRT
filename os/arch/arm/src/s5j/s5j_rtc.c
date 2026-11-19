@@ -62,7 +62,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 
 #include "s5j_rtc.h"
 
@@ -203,7 +203,7 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 	irqstate_t flags;
 	struct rtc_regvals_s regvals;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* read bcd counters */
 	do {
@@ -216,7 +216,7 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 		regvals.bcdyear    = getreg32(S5J_RTC_BCDYEAR);
 	} while (regvals.bcdsec != getreg32(S5J_RTC_BCDSEC));
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	tp->tm_sec  = rtc_bcd2bin(regvals.bcdsec);
 	tp->tm_min  = rtc_bcd2bin(regvals.bcdmin);
@@ -251,7 +251,7 @@ int up_rtc_setdatetime(FAR struct tm *tm)
 
 	rtc_breakout(tm, &regvals);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	rtc_wprunlock();
 
@@ -266,7 +266,7 @@ int up_rtc_setdatetime(FAR struct tm *tm)
 
 	rtc_wprlock();
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return OK;
 }
@@ -321,10 +321,10 @@ int s5j_rtc_setalarm(FAR const struct timespec *tp, alarmcb_t callback)
 
 	rtc_breakout(&t, &regvals);
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	if (g_alarmcb != NULL) {
-		irqrestore(flags);
+		leave_critical_section(flags);
 		return -EBUSY;
 	}
 
@@ -348,7 +348,7 @@ int s5j_rtc_setalarm(FAR const struct timespec *tp, alarmcb_t callback)
 	irq_attach(IRQ_TOP_RTC_ALARM, rtc_alarm_handler, NULL);
 	up_enable_irq(IRQ_TOP_RTC_ALARM);
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 
 	return OK;
 }
