@@ -491,6 +491,7 @@ int work_queue_priority_wq(FAR struct kwork_wqueue_s *wqueue);
  *   Zero on success, a negated errno on failure
  *
  *   -ENOENT - There is no such work queued.
+ *   -EBUSY  - The work is currently executing and cannot be cancelled
  *   -EINVAL - An invalid work queue was specified
  *
  ****************************************************************************/

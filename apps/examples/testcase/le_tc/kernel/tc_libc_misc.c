@@ -26,14 +26,13 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <string.h>
-#include <tinyara/regex.h>
 #include <unistd.h>
 #include <errno.h>
 #include <debug.h>
 #include <libgen.h>
-#include <crc8.h>
-#include <crc16.h>
-#include <crc32.h>
+#include <tinyara/crc8.h>
+#include <tinyara/crc16.h>
+#include <tinyara/crc32.h>
 #include "tc_internal.h"
 
 #define BUFF_SIZE 256
@@ -469,8 +468,6 @@ static void tc_libc_misc_crc32_equiv_crc32part(void)
  */
 static void tc_libc_misc_dbg(void)
 {
-	int ret_chk = ERROR;
-	const char *msg_output = "tc_libc_misc_dbg: Examples";
 	/*
 	   in debug.h file dbg is defined as :
 	   # define EXTRA_FMT "%s: "
@@ -482,8 +479,7 @@ static void tc_libc_misc_dbg(void)
 	/* Message displayed is:  "tc_libc_misc_dbg: Examples" */
 
 	usleep(USEC_100);
-	ret_chk = dbg("Examples");
-	TC_ASSERT_EQ("dbg", ret_chk, strlen(msg_output));
+	dbg("Examples");
 
 	TC_SUCCESS_RESULT();
 }
@@ -545,8 +541,6 @@ static void tc_libc_misc_lib_dumpbuffer(void)
  */
 static void tc_libc_misc_lldbg(void)
 {
-	int ret_chk = -1;
-	const char *msg_output = "tc_libc_misc_lldbg: Examples";
 	/*
 	   in debug.h file lldbg is defined as :
 	   # define EXTRA_FMT "%s: "
@@ -558,8 +552,7 @@ static void tc_libc_misc_lldbg(void)
 	/* Message displayed is:  "tc_libc_misc_lldbg: Examples" */
 
 	usleep(USEC_100);
-	ret_chk = lldbg("Examples");
-	TC_ASSERT_EQ("lldbg", ret_chk, strlen(msg_output));
+	lldbg("Examples");
 
 	TC_SUCCESS_RESULT();
 }

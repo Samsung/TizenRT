@@ -22,7 +22,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include <crc16.h>
+#include <tinyara/crc16.h>
 
 /************************************************************************************************
  * Private Data
