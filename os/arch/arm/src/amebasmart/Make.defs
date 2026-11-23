@@ -106,7 +106,13 @@ ifeq ($(CONFIG_SCHED_THREAD_LOCAL),y)
   CMN_CSRCS += arm_tls.c
 endif
 
-ifeq ($(CONFIG_SCHED_BACKTRACE),y)
+# The arch up_backtrace() (arm_backtrace_thumb.c / arm_backtrace_fp.c) is only
+# built where the architecture actually provides it.  It is NOT tied to
+# CONFIG_SCHED_BACKTRACE: that option selects the libc sched_backtrace()
+# engine, which unwinds the current thread through libgcc's EHABI unwinder and
+# needs no arch support.  arm_backtrace_thumb.c additionally relies on the
+# _stext_flash/_etext_flash linker symbols, which not every board exports.
+ifeq ($(CONFIG_ARCH_HAVE_BACKTRACE),y)
   ifeq ($(CONFIG_FRAME_POINTER),y)
     ifeq ($(CONFIG_ARM_THUMB),y)
       CMN_CSRCS += arm_backtrace_thumb.c
