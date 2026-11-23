@@ -103,7 +103,6 @@ int tpf_select_libcurl(int maxfds, fd_set* reads, fd_set* writes,
 #define VALID_SOCK(x) 1
 #define VERIFY_SOCK(x) Curl_nop_stmt
 #else
-#define FD_SETSIZE     (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)
 #define VALID_SOCK(s) (((s) >= 0) && ((s) < FD_SETSIZE))
 #define VERIFY_SOCK(x) do { \
   if(!VALID_SOCK(x)) { \
