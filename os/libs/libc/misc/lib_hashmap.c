@@ -21,7 +21,7 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/hashmap.h>
 
-#include "lib_internal.h"
+#include <tinyara/lib/lib.h>
 
 /* this should be prime */
 #define TABLE_STARTSIZE 1021
@@ -97,7 +97,9 @@ struct hashmap_s *hashmap_create(int startsize)
 	if (hm == NULL) {
 		return NULL;
 	}
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	DEBUG_SET_CALLER_ADDR(hm);
+#endif
 
 	if (!startsize) {
 		startsize = TABLE_STARTSIZE;
@@ -106,9 +108,11 @@ struct hashmap_s *hashmap_create(int startsize)
 	}
 
 	hm->table = (h_entry_t *)lib_calloc(sizeof(h_entry_t), startsize);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	if (!hm->table) {
 		DEBUG_SET_CALLER_ADDR(hm->table);
 	}
+#endif
 	hm->size = startsize;
 	hm->count = 0;
 
@@ -189,7 +193,9 @@ unsigned long* hashmap_get_keyset(struct hashmap_s *hash)
 
 		keyset = (unsigned long *)lib_malloc(sizeof(unsigned long) * hash->count);
 		if (keyset != NULL) {
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
 			DEBUG_SET_CALLER_ADDR(keyset);
+#endif
 			for (i = 0; i < hash->size; i++) {
 				if (hash->table[i].flags & ACTIVE) {
 					keyset[idx++] = hash->table[i].key;
