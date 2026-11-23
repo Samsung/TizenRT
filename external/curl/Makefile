@@ -55,6 +55,10 @@ BIN		= ../libexternal$(LIBEXT)
 
 CFLAGS+= -D__TIZENRT__
 
+# The sources in vtls/ and vauth/ include "curl_setup.h" of this directory,
+# like the lib/ include path of the upstream curl build.
+CFLAGS += -I.
+
 all: .built
 .PHONY: .depend depend clean distclean
 
