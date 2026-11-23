@@ -92,7 +92,6 @@
 #define ADAM110_FW_CHKSUM_WAITTIME  (100 * 1000) /* Min 100ms */
 #define ADAM110_ALIVENESS_CHECK_PERIOD_US	(3 * 1000 * 1000) /* 3 sec */
 #define ADAM110_XSOSC_WAIT_MAX_CNT			5	/* 0x07 x 5 (4 periods, 12 sec > FW XSOSC check 10 sec) : reset and reload */
-#define ADAM110_BUSY_WAIT_MAX_CNT			2	/* RSLT_BUSY(DM_ENTER_LP_MODE wake session) tolerated once; busy again on the very next keepalive period : reset and reload */
 #define ADAM110_FW_BOOT_MODE_OK		0xB004C0DE
 #define ADAM110_FW_CHKSUM_FAIL		0xDE
 #define ADAM110_FW_DATA_HEADER		2
@@ -168,7 +167,6 @@
 #define RSLT_SYNC_ERR				0x05 /* Sync Byte Error */
 #define RSLT_INTERNAL_ERR			0x06 /* Internal Error */
 #define RSLT_SYS_WAIT_STABLE		0x07 /* XSOSC(32.768kHz) not ready yet */
-#define RSLT_BUSY					0x09 /* Busy now (DM_ENTER_LP_MODE : wake session open), retry later. 0x08 reserved */
 
 /* Keep alive flags (parm3) */
 #define KA_FLAG_WAIT_STABLE			(1u << 0) /* XSOSC wait for ready */

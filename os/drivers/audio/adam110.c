@@ -178,6 +178,7 @@ static struct pm_callback_s g_pm_adam110_cb =
 
 static uint8_t adam110_calculate_checksum(uint8_t *pkt, uint32_t size);
 static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, int txlen, uint8_t *rxpkt, int rxlen, bool delay);
+static void adam110_spi_send_opcode(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, uint8_t op);
 static int adam110_verify_packet(t_proto_pkt *pkt);
 static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt, bool delay);
 static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
@@ -197,11 +198,16 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_GET_EVENT(dev, rx_ptr) \
     adam110_send_cmd(dev, DM_GET_EVENT, 0, 0, 0, 0, rx_ptr, false)
 
-#define ADAM110_GET_SEAMLESS(dev, rx_ptr) \
-    adam110_send_cmd(dev, AUD_GET_SEAMLESS_DATA, 0, 0, 0, 0, rx_ptr, false)
+/* Unlike the other ADAM110_xxx macros, these two don't do a full command/response
+ * round trip - the SPI lock has to stay held across the response and the
+ * variable-length payload that follows it, so adam110_get_audiobuffer() keeps
+ * the lock itself and only uses these to send the opcode (tx_ptr: the t_proto_pkt
+ * to fill in and send). */
+#define ADAM110_GET_SEAMLESS(dev, tx_ptr) \
+    adam110_spi_send_opcode(dev, tx_ptr, AUD_GET_SEAMLESS_DATA)
 
-#define ADAM110_GET_AUDIO(dev, rx_ptr) \
-    adam110_send_cmd(dev, AUD_GET_PREP_DATA, 0, 0, 0, 0, rx_ptr, false)
+#define ADAM110_GET_AUDIO(dev, tx_ptr) \
+    adam110_spi_send_opcode(dev, tx_ptr, AUD_GET_PREP_DATA)
 
 #define ADAM110_AI_CHECK_XMIT(dev, h_size, l_size, rx_ptr) \
     adam110_send_cmd(dev, AC_UPDATE_CHK_XMIT, h_size, l_size, 0, 0, rx_ptr, false)
@@ -366,8 +372,6 @@ static int get_spi_command_error(int errcode)
 		return -ESTRPIPE;
 	case RSLT_SYS_WAIT_STABLE:
 		return -EAGAIN;
-	case RSLT_BUSY:
-		return -EBUSY;
 	default:
 		break;
 	}
@@ -676,6 +680,17 @@ errout_with_fd:
 	return ret;
 }
 
+/* Fill in the opcode, checksum it, and send it - used by ADAM110_GET_SEAMLESS/
+ * ADAM110_GET_AUDIO above, and shared by every case in adam110_get_audiobuffer()
+ * below, since it doesn't take the SPI lock itself (see the comment on those macros). */
+static void adam110_spi_send_opcode(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, uint8_t op)
+{
+	txpkt->op = op;
+	txpkt->checksum = adam110_calculate_checksum((uint8_t *)txpkt, sizeof(t_proto_pkt) - 1);
+	SPI_SNDBLOCK(dev->spi, (void *)txpkt, sizeof(t_proto_pkt));
+	up_udelay(ADAM110_COM_RES_DELAY);
+}
+
 static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t data, uint8_t *buffer, uint32_t *size_ptr)
 {
 	int ret = 0;
@@ -692,10 +707,7 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 
 	switch(data) {
 	case AI_DATA_TYPE_SEAMLESS_R:
-		txpkt.op = AUD_GET_SEAMLESS_DATA;
-		txpkt.checksum = adam110_calculate_checksum((uint8_t *)&txpkt, sizeof(t_proto_pkt) - 1);
-		SPI_SNDBLOCK(dev->spi, (void *)&txpkt, sizeof(t_proto_pkt));
-		up_udelay(ADAM110_COM_RES_DELAY);
+		ADAM110_GET_SEAMLESS(dev, &txpkt);
 		SPI_RECVBLOCK(dev->spi, (void *)&rxpkt, sizeof(t_proto_pkt));
 		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 
@@ -717,23 +729,9 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 			goto out;
 		}
 		*size_ptr = (recvsize < ADAM110_RX_MAX_SIZE) ? recvsize : ADAM110_RX_MAX_SIZE;
-#ifdef CONFIG_AUDIO_ADAM110_TEST_HOOKS
-		if (dev->test_race_armed && dev->test_race_path == AUDIO_RACE_PATH_SEAMLESS) {
-			dev->test_race_count++;
-			if (dev->test_race_count >= dev->test_race_num) {
-				dev->test_race_armed = false;
-				auddbg("[TEST] race: firing at seamless transfer #%u select=%u (still locked)\n",
-					   dev->test_race_count, dev->test_race_select);
-				adam110_givesem(&dev->test_race_sem);
-			}
-		}
-#endif
 		break;
 	case AI_DATA_TYPE_AUDIO:
-		txpkt.op = AUD_GET_PREP_DATA;
-		txpkt.checksum = adam110_calculate_checksum((uint8_t *)&txpkt, sizeof(t_proto_pkt) - 1);
-		SPI_SNDBLOCK(dev->spi, (void *)&txpkt, sizeof(t_proto_pkt));
-		up_udelay(ADAM110_COM_RES_DELAY);
+		ADAM110_GET_AUDIO(dev, &txpkt);
 		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 		break;
 	default:
@@ -828,7 +826,6 @@ errout:
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
 	static int wait_stable_cnt = 0;
-	static int busy_cnt = 0;
 	int ret = OK;
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
@@ -853,19 +850,8 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 			auddbg("[E] XSOSC not stable (%d), reset and reload\n", wait_stable_cnt);
 			break;
 		}
-		/* FW busy (e.g. DM_ENTER_LP_MODE wake session open) : tolerate it once,
-		 * if it's still busy on the very next keepalive period, reset and reload. */
-		if (ret == -EBUSY) {
-			if (++busy_cnt < ADAM110_BUSY_WAIT_MAX_CNT) {
-				auddbg("[I] FW busy (%d), retry next period\n", busy_cnt);
-				return OK;
-			}
-			auddbg("[E] FW busy too long (%d), reset and reload\n", busy_cnt);
-			break;
-		}
 	}
 	wait_stable_cnt = 0;
-	busy_cnt = 0;
 
 	/* FW alive but model is gone (ADAM110 silently rebooted) : reload */
 	if ((ret == OK) && (rxpkt.parm3 & KA_FLAG_MODEL_NONE)) {
@@ -2057,10 +2043,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
    g_adam110 = priv;
 
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
-	/* 4096 overflows: adam110_send_model()'s chunk_buf alone is
-	 * ADAM110_MODEL_CHUNK_SIZE+1 (3841) bytes, reached from here via
-	 * adam110_check_aliveness() -> adam110_load_firmware(). */
-	pid_t pid = kernel_thread("alive_check", 100, 8192, adam110_app_device_alive_check, NULL);
+	pid_t pid = kernel_thread("alive_check", 100, 4096, adam110_app_device_alive_check, NULL);
 	if (pid < 0) {
 		auddbg("Device alive check thread creatiopn failed\n");
 		goto errout;
