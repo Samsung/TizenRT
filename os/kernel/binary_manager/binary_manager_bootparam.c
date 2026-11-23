@@ -33,7 +33,9 @@
 #include "binary_manager_internal.h"
 
 /* Data for Boot parameters */
-static binmgr_bpinfo_t g_bp_info;
+static binmgr_bpinfo_t g_bp_info = {
+	.part_num = -1
+};
 static binmgr_bp_recovery_info_t g_bp_recovery_info;
 
 #define BP_SEEK_OFFSET(index)   (index == 0 ? 0 : BOOTPARAM_PARTSIZE / 2)
@@ -116,20 +118,46 @@ static int binary_manager_open_bootparam(void)
  * Name: binary_manager_dump_bpdata
  *
  * Description:
- *	 This function prints bootparam data.
+ *   Print the supplied BP fields without modifying the data.
  *
  ****************************************************************************/
-void binary_manager_dump_bpdata(void)
+static void binary_manager_dump_bpdata(const binmgr_bpdata_t *bp_data)
+{
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t app_idx;
+#endif
+
+	bmdbg("BP: crc %08x, ver %u, fmt %u, kernel idx %u\n",
+		bp_data->head.crc_hash, bp_data->head.version,
+		bp_data->head.format_ver, bp_data->head.active_idx);
+	bmdbg("BP: kernel addr %08x %08x, try count %u, reason %u\n",
+		bp_data->head.address[0], bp_data->head.address[1],
+		bp_data->tail.try_count, bp_data->tail.bp_update_reason);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bmdbg("BP: app count %u\n", bp_data->head.app_count);
+	for (app_idx = 0; app_idx < bp_data->head.app_count &&
+		app_idx < sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]); app_idx++) {
+		bmdbg("BP: app[%u] name %.*s, idx %u\n", app_idx,
+			BIN_NAME_MAX, bp_data->head.app_data[app_idx].name, bp_data->head.app_data[app_idx].useidx);
+	}
+#endif
+#ifdef CONFIG_RESOURCE_FS
+	bmdbg("BP: resource idx %u\n", bp_data->head.resource_active_idx);
+#endif
+}
+
+/****************************************************************************
+ * Name: binary_manager_dump_all_bpdata
+ *
+ * Description:
+ *   This function prints bootparam data.
+ *
+ ****************************************************************************/
+void binary_manager_dump_all_bpdata(void)
 {
 	int bp_idx;
 	binmgr_bpdata_t *bp_data;
 	bool bp_valid;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	uint32_t bp_app_idx;
-	uint32_t bp_app_count;
-	int bp_app_log_len;
-	char bp_app_log[(CONFIG_NUM_APPS + 1) * 4 + 1];
-#endif
 
 	for (bp_idx = 0; bp_idx < BOOTPARAM_COUNT; bp_idx++) {
 		bp_data = binary_manager_get_slot_bpdata(bp_idx);
@@ -138,19 +166,8 @@ void binary_manager_dump_bpdata(void)
 			continue;
 		}
 		bp_valid = binary_manager_get_slot_bpvalid(bp_idx);
-		bmdbg("BP[%d] valid %d, ver %u, fmt %u, idx %u, addr %08x %08x, reason %u\n", bp_idx, bp_valid, bp_data->head.version, bp_data->head.format_ver, bp_data->head.active_idx, bp_data->head.address[0], bp_data->head.address[1], bp_data->tail.bp_update_reason);
-#ifdef CONFIG_APP_BINARY_SEPARATION
-		bp_app_count = sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]);
-		bp_app_log_len = 0;
-		for (bp_app_idx = 0; bp_app_idx < bp_app_count; bp_app_idx++) {
-			bp_app_log_len += snprintf(&bp_app_log[bp_app_log_len], sizeof(bp_app_log) - bp_app_log_len, "%u ", bp_data->head.app_data[bp_app_idx].useidx);
-		}
-		bp_app_log[bp_app_log_len] = '\0';
-		bmdbg("BP[%d] APP count %u, idx %s\n", bp_idx, bp_data->head.app_count, bp_app_log);
-#endif
-#ifdef CONFIG_RESOURCE_FS
-		bmdbg("BP[%d] RESOURCE idx %u\n", bp_idx, bp_data->head.resource_active_idx);
-#endif
+		bmdbg("BP[%d] valid %d\n", bp_idx, bp_valid);
+		binary_manager_dump_bpdata(bp_data);
 	}
 }
 
@@ -213,6 +230,12 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 		tail_offset = BOOTPARAM_SIZE - sizeof(scanned_bp_data.tail);
 		memcpy(&scanned_bp_data.head, bootparam, sizeof(scanned_bp_data.head));
 		memcpy(&scanned_bp_data.tail, &bootparam[tail_offset], sizeof(scanned_bp_data.tail));
+		/* Treat an erased legacy counter byte as no active trial in the cache.
+		 * CRC validation below still uses the unmodified bytes read from flash.
+		 */
+		if (scanned_bp_data.tail.try_count == BOOTPARAM_TRIAL_UNINITIALIZED) {
+			scanned_bp_data.tail.try_count = 0;
+		}
 		memcpy(&bp_info->bp_data[bp_idx], &scanned_bp_data, sizeof(binmgr_bpdata_t));
 
 		bp_info->bp_valid[bp_idx] = is_valid_bootparam(bootparam);
@@ -278,13 +301,13 @@ int binary_manager_update_bpinfo(void)
 	return ret;
 }
 
-/*********************************************************************************
+/****************************************************************************
  * Name: binary_manager_write_bootparam_to_slot
  *
  * Description:
- *	 This function writes input bootparam data, bp_data, to the requested BP slot.
+ *   This function writes input bootparam data, bp_data, to the requested BP slot.
  *
- ********************************************************************************/
+ ****************************************************************************/
 static int binary_manager_write_bootparam_to_slot(binmgr_bpdata_t *bp_data, uint8_t bp_idx)
 {
 	int fd;
@@ -331,6 +354,9 @@ static int binary_manager_write_bootparam_to_slot(binmgr_bpdata_t *bp_data, uint
 		goto errout_with_fd;
 	}
 
+	bmdbg("Write BP[%u]\n", bp_idx);
+	binary_manager_dump_bpdata(bp_data);
+
 	/* Write bootparam data */
 	ret = write(fd, (FAR uint8_t *)bootparam, BOOTPARAM_SIZE);
 	if (ret != BOOTPARAM_SIZE) {
@@ -362,6 +388,37 @@ int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
 	}
 
 	return binary_manager_write_bootparam_to_slot(bp_data, g_bp_info.inuse_idx ^ 1);
+}
+
+/****************************************************************************
+ * Name: binary_manager_commit_bootparam
+ *
+ * Description:
+ *   Increment the supplied BP version and write it to the BP copy opposite
+ *   to g_bp_info.inuse_idx. Once the write and readback verification succeed,
+ *   cache the written BP, mark it valid and select it in g_bp_info.
+ *   On failure, return the error without updating g_bp_info. The supplied
+ *   BP version remains incremented even if the write fails.
+ *
+ ****************************************************************************/
+int binary_manager_commit_bootparam(binmgr_bpdata_t *bp_data)
+{
+	int ret;
+	uint8_t target_idx;
+
+	target_idx = g_bp_info.inuse_idx ^ 1;
+	bp_data->head.version++;
+	ret = binary_manager_write_bootparam(bp_data);
+	if (ret != BINMGR_OK) {
+		bmdbg("ERROR : Failed to write boot param %d\n", ret);
+		return ret;
+	}
+
+	/* write_bootparam() already verified the target copy by reading it back. */
+	g_bp_info.inuse_idx = target_idx;
+	memcpy(&g_bp_info.bp_data[target_idx], bp_data, sizeof(*bp_data));
+	g_bp_info.bp_valid[target_idx] = true;
+	return BINMGR_OK;
 }
 
 /****************************************************************************
@@ -407,7 +464,7 @@ static bool binary_manager_is_bp_kernel_address_valid(binmgr_bpdata_t *bp_data)
  *   Only AAAA or BBBB can be set as active set.
  *
  ****************************************************************************/
-static bool binary_manager_is_set_mismatch(binmgr_bpdata_t *bp_data)
+static bool binary_manager_is_set_mismatch(const binmgr_bpdata_t *bp_data)
 {
 	uint8_t active_idx;
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -694,7 +751,9 @@ int binary_manager_check_bootparam_set(void)
  * Name: binary_manager_recover_bootparam_set
  *
  * Description:
- *	 This function selects a valid binary set, writes an aligned BP, and reboots.
+ *   With a valid BP and a nonzero trial count, request an immediate trial
+ *   rollback. Otherwise, validate both binary sets, select by their highest
+ *   binary versions, rebuild the BP for that set and reboot after saving.
  *
  ****************************************************************************/
 int binary_manager_recover_bootparam_set(void)
@@ -776,6 +835,10 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 
 	/* Get current bootparam data and update version */
 	memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
+	if (update_bp_data.head.version == UINT32_MAX) {
+		ret = BINMGR_OPERATION_FAIL;
+		goto send_response;
+	}
 	update_bp_data.head.version++;
 	update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
 	update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_UPDATE;
@@ -860,6 +923,22 @@ void binary_manager_update_bootparam(int requester_pid, uint8_t type)
 #endif
 
 	if (is_all_updatable) {
+		if (update_bp_data.head.active_idx != binary_manager_get_bpdata()->head.active_idx) {
+			/* Rollback assigns one slot index to the kernel, apps and resource.
+			 * Require aligned sets before and after the kernel slot switch.
+			 * Reserve BP versions for five attempts and confirmation/rollback.
+			 */
+			if (binary_manager_get_kcount() != PARTS_PER_BIN ||
+				binary_manager_is_set_mismatch(binary_manager_get_bpdata()) ||
+				binary_manager_is_set_mismatch(&update_bp_data) ||
+				update_bp_data.head.version > UINT32_MAX - (BOOTPARAM_TRIAL_MAX + 1)) {
+				ret = BINMGR_OPERATION_FAIL;
+				bmdbg("Update BP validation failed\n");
+				binary_manager_dump_bpdata(&update_bp_data);
+				goto send_response;
+			}
+			update_bp_data.tail.try_count = 1;
+		}
 		/* Then, Write bootparam with updated bootparam data */
 		ret = binary_manager_write_bootparam(&update_bp_data);
 		if (ret == BINMGR_OK) {

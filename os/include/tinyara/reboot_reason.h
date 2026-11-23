@@ -37,6 +37,7 @@ typedef enum {
 	REBOOT_SYSTEM_BINARY_UPDATE        = 57, /* Reboot for Binary Update */
 	REBOOT_SYSTEM_BINARY_RECOVERYFAIL  = 58, /* Binary Recovery Fail */
 	REBOOT_SYSTEM_PERIODIC_REBOOT      = 59, /* Periodic reboot */
+	REBOOT_SYSTEM_BINARY_ROLLBACK      = 60, /* Reboot for Binary Rollback */
 
 	/* System crash reboot reasons (62 ~ 70) */
 	REBOOT_SYSTEM_DATAABORT            = 62, /* Data abort */
