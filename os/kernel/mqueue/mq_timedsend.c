@@ -255,7 +255,7 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 		/* Allocate the message */
 
 		leave_critical_section(saved_state);
-		mqmsg = mq_msgalloc();
+		mqmsg = mq_msgalloc(msglen);
 	} else {
 		int ticks;
 
@@ -311,7 +311,7 @@ int mq_timedsend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio, FAR 
 		 */
 
 		if (ret == OK) {
-			mqmsg = mq_msgalloc();
+			mqmsg = mq_msgalloc(msglen);
 		}
 	}
 

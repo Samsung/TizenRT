@@ -172,7 +172,7 @@ int mq_send(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 		/* Allocate the message */
 
 		leave_critical_section(saved_state);
-		mqmsg = mq_msgalloc();
+		mqmsg = mq_msgalloc(msglen);
 	} else {
 		/* We cannot send the message (and didn't even try to allocate it)
 		 * because:

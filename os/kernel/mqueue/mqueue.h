@@ -61,6 +61,7 @@
 #include <tinyara/compiler.h>
 
 #include <sys/types.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
@@ -80,6 +81,22 @@
 #define MQ_MAX_MSGS    16
 #define MQ_PRIO_MAX    _POSIX_MQ_PRIO_MAX
 
+/* Payload capacity of each message in the general pre-allocated pool
+ * (g_msgfree).  Messages longer than this, or sent when the pool is
+ * exhausted, are allocated from the heap with exactly the size needed.
+ * Defaults to MQ_MAX_BYTES, which gives the classic single-size behaviour.
+ */
+
+#if defined(CONFIG_PREALLOC_MQ_MSGSIZE) && CONFIG_PREALLOC_MQ_MSGSIZE > 0
+#define MQ_PREALLOC_BYTES   CONFIG_PREALLOC_MQ_MSGSIZE
+#else
+#define MQ_PREALLOC_BYTES   MQ_MAX_BYTES
+#endif
+
+#if MQ_PREALLOC_BYTES > MQ_MAX_BYTES
+#error "CONFIG_PREALLOC_MQ_MSGSIZE must not exceed CONFIG_MQ_MAXMSGSIZE"
+#endif
+
 /* This defines the number of messages descriptors to allocate at each
  * "gulp."
  */
@@ -97,20 +114,33 @@
  ****************************************************************************/
 
 enum mqalloc_e {
-	MQ_ALLOC_FIXED = 0,			/* pre-allocated; never freed */
-	MQ_ALLOC_DYN,				/* dynamically allocated; free when unused */
-	MQ_ALLOC_IRQ				/* Preallocated, reserved for interrupt handling */
+	MQ_ALLOC_FIXED = 0,			/* pre-allocated, MQ_PREALLOC_BYTES payload; never freed */
+	MQ_ALLOC_DYN,				/* dynamically allocated (header + msglen); free when unused */
+	MQ_ALLOC_IRQ				/* Preallocated, MQ_MAX_BYTES payload, reserved for interrupt handling */
 };
 
-/* This structure describes one buffered POSIX message. */
+/* This structure describes one buffered POSIX message.  The payload
+ * 'mail' is a flexible array: every message is allocated larger than the
+ * structure so that mail[] can hold the payload (MQ_PREALLOC_BYTES for
+ * pool entries, MQ_MAX_BYTES for interrupt-pool entries, exactly msglen
+ * for MQ_ALLOC_DYN heap messages).  Use MQ_MSG_SIZE(n) for the number
+ * of bytes a message with an n-byte payload occupies.
+ */
 
 struct mqueue_msg_s {
 	FAR struct mqueue_msg_s *next;	/* Forward link to next message */
 	uint8_t type;					/* (Used to manage allocations) */
 	uint8_t priority;				/* priority of message */
 	size_t msglen;					/* Message data length */
-	char mail[MQ_MAX_BYTES];		/* Message data */
+	char mail[1];					/* Message data (payload follows) */
 };
+
+/* Bytes occupied by one message able to carry an n-byte payload, and the
+ * same rounded up to pointer alignment for use as a pool stride.
+ */
+
+#define MQ_MSG_SIZE(n)   (offsetof(struct mqueue_msg_s, mail) + (size_t)(n))
+#define MQ_MSG_BLOCK(n)  ((MQ_MSG_SIZE(n) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
 
 /****************************************************************************
  * Public Variables
@@ -170,7 +200,7 @@ ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuf
 /* mq_sndinternal.c ********************************************************/
 
 int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio);
-FAR struct mqueue_msg_s *mq_msgalloc(void);
+FAR struct mqueue_msg_s *mq_msgalloc(size_t msglen);
 int mq_waitsend(mqd_t mqdes);
 int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, size_t msglen, int prio);
 
