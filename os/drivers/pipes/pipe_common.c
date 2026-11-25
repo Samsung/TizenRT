@@ -359,9 +359,13 @@ int pipecommon_close(FAR struct file *filep)
 	 * last client closes the pipe policy 0, or when the buffer becomes empty.
 	 * In the latter case, the buffer data will remain valid and can be
 	 * obtained when the pipe is re-opened.
+	 *
+	 * If the pipe has already been unlinked, it can never be re-opened, so
+	 * the buffer and the device structure must be released now even under
+	 * policy 1 with unread data. Otherwise both would leak permanently.
 	 */
 
-	else if (PIPE_IS_POLICY_0(dev->d_flags) || dev->d_wrndx == dev->d_rdndx) {
+	else if (PIPE_IS_POLICY_0(dev->d_flags) || dev->d_wrndx == dev->d_rdndx || PIPE_IS_UNLINKED(dev->d_flags)) {
 		/* Policy 0 or the buffer is empty ... deallocate the buffer now. */
 
 		kmm_free(dev->d_buffer);

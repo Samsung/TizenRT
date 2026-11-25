@@ -109,19 +109,19 @@ int bchlib_setup(const char *blkdev, bool readonly, FAR void **handle)
 	ret = bch->inode->u.i_bops->geometry(bch->inode, &geo);
 	if (ret < 0) {
 		fdbg("ERROR: geometry failed: %d\n", -ret);
-		goto errout_with_bch;
+		goto errout_with_driver;
 	}
 
 	if (!geo.geo_available) {
 		fdbg("ERROR: geometry failed: %d\n", -ret);
 		ret = -ENODEV;
-		goto errout_with_bch;
+		goto errout_with_driver;
 	}
 
 	if (!readonly && (!bch->inode->u.i_bops->write || !geo.geo_writeenabled)) {
 		fdbg("ERROR: write access not supported\n");
 		ret = -EACCES;
-		goto errout_with_bch;
+		goto errout_with_driver;
 	}
 
 	/* Save the geometry info and complete initialization of the structure */
@@ -136,11 +136,20 @@ int bchlib_setup(const char *blkdev, bool readonly, FAR void **handle)
 	if (!bch->buffer) {
 		fdbg("ERROR: Failed to allocate sector buffer\n");
 		ret = -ENOMEM;
-		goto errout_with_bch;
+		goto errout_with_sem;
 	}
 
 	*handle = bch;
 	return OK;
+
+errout_with_sem:
+	sem_destroy(&bch->sem);
+
+errout_with_driver:
+	/* Release the reference taken by open_blockdriver() so that the block
+	 * driver inode can be removed later.
+	 */
+	(void)close_blockdriver(bch->inode);
 
 errout_with_bch:
 	kmm_free(bch);

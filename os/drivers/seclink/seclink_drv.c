@@ -192,11 +192,28 @@ int se_register(const char *path, struct sec_lowerhalf_s *lower)
 	int res = lower->ops->init(&hp);
 	if (res < 0) {
 		dbg("Register SE fail(%d)\n", res);
-		kmm_free(upper);
-		return -1;
+		res = -1;
+		goto errout_with_upper;
 	}
 
-	return register_driver(path, &g_seclink_fops, 0666, upper);
+	res = register_driver(path, &g_seclink_fops, 0666, upper);
+	if (res < 0) {
+		dbg("Register SE driver fail(%d)\n", res);
+		(void)lower->ops->deinit();
+		goto errout_with_upper;
+	}
+
+	return res;
+
+errout_with_upper:
+	/* Release everything allocated above: path, lock and upper itself.
+	 * Also clear lower->parent so that it does not point to freed memory.
+	 */
+	lower->parent = NULL;
+	sem_destroy(&upper->su_lock);
+	kmm_free(upper->path);
+	kmm_free(upper);
+	return res;
 }
 
 
