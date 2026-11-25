@@ -72,8 +72,10 @@ static FAR struct bk_csi_dev_s *g_bk_drv;
 
 uint8_t g_bk_csi_rept_read = 0;
 uint8_t g_bk_csi_rept_write = 0;
+uint8_t g_bk_csi_rept_count = 0;
+bool	g_bk_csi_interval_pkt_saved_flag = false;
+bool 	g_bk_csi_report_timer_running = false;
 struct bk_csi_rept_flag_s g_bk_csi_rept_data[BK_CSI_REPT_DATA_MAX_NUM] = {0};
-beken_time_t g_bk_csi_last_report_time = 0;
 uint8_t g_bk_csi_data_cb_flag = 0;
 uint8_t g_bk_csi_timeout_flag = 0;
 
@@ -99,6 +101,15 @@ static inline int bk_wifi_csi_givesem(void)
 			csidbg("bk_wifi_csi_givesem: set sema failed\r\n");
 	}
 	return ret;
+}
+
+static uint8_t bk_wifi_csi_prev_rept_idx(uint8_t idx)
+{
+	if(idx == 0)
+	{
+		return (BK_CSI_REPT_DATA_MAX_NUM - 1);
+	}
+	return (idx - 1);
 }
 
 static int bk_wifi_csi_report_data_len_get(void)
@@ -227,19 +238,32 @@ static void bk_wifi_csi_report_data_transfer(uint32_t buf_len, uint32_t buf,uint
 
 static int bk_wifi_csi_get(uint32_t buf_len, uint8_t *csi_buf, uint32_t *len)
 {
-	struct bk_csi_rept_flag_s *rd_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_read];
-	if(rd_ptr->data_reported_flag == 1)
+	if (g_bk_csi_rept_count == 0) 
 	{
-		bk_wifi_csi_report_data_transfer(buf_len, rd_ptr->data_store_buff_ptr, csi_buf, len);
-		rd_ptr->data_reported_flag = 0;
-		rd_ptr->data_received_flag = 0;
-		g_bk_csi_rept_read = (g_bk_csi_rept_read + 1) % BK_CSI_REPT_DATA_MAX_NUM;
-	}
-	else
-	{
-		csidbg("ERROR: no data to report\r\n");
+		csidbg("ERROR: no data in csi report buffer\r\n");
 		return -1;
 	}
+
+	struct bk_csi_rept_flag_s *rd_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_read];
+
+	if ((rd_ptr->data_received_flag != 1) || (rd_ptr->data_reported_flag != 1)) 
+	{
+		csidbg("ERROR: invalid csi report buffer state rd=%d wr=%d cnt=%d\r\n", g_bk_csi_rept_read, g_bk_csi_rept_write, g_bk_csi_rept_count);
+		return -1;
+	}
+
+	bk_wifi_csi_report_data_transfer(buf_len, rd_ptr->data_store_buff_ptr, csi_buf, len);
+	rd_ptr->data_received_flag = 0;
+	rd_ptr->data_reported_flag = 0;
+	g_bk_csi_rept_read = (g_bk_csi_rept_read + 1) % BK_CSI_REPT_DATA_MAX_NUM;
+	g_bk_csi_rept_count--;
+
+	if((g_bk_csi_rept_count > 0) && (g_bk_csi_report_timer_running == false))
+	{
+		rtos_start_timer(&g_bk_drv->csi_report_timer);
+		g_bk_csi_report_timer_running = true;
+	}
+
 	return 0;
 }
 
@@ -250,23 +274,37 @@ static void bk_wifi_csi_report_timeout_handler(void *arg)
 		csidbg("ERROR: priv null\n");
 		return;
 	}
-	//csidbg(" time:%d\n",rtos_get_time());
-	if(g_bk_csi_data_cb_flag == 0)
+
+	bk_wifi_csi_takesem();
+
+	g_bk_csi_interval_pkt_saved_flag = false;
+	if(g_bk_csi_rept_count == 0)
 	{
-		struct bk_csi_rept_flag_s *wr_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_write];
-		if((wr_ptr->data_received_flag == 1)&&(wr_ptr->data_reported_flag == 0))
-		{
-			//csidbg("timeout report data\n");
-			bk_wifi_csi_report_event();
-			wr_ptr->data_reported_flag = 1;
-			g_bk_csi_rept_write = (g_bk_csi_rept_write + 1) % BK_CSI_REPT_DATA_MAX_NUM;
-			g_bk_csi_last_report_time = rtos_get_time();
-			// donot need to stop timer
-			return;
-		}
+		rtos_stop_timer(&g_bk_drv->csi_report_timer);
+		g_bk_csi_report_timer_running = false;
+		bk_wifi_csi_givesem();
+		return;
 	}
 
-	rtos_stop_timer(&g_bk_drv->csi_report_timer);
+	bool need_notify = false;
+	struct bk_csi_rept_flag_s *rd_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_read];
+
+	if((rd_ptr->data_received_flag == 1) && (rd_ptr->data_reported_flag == 0))
+	{
+		rd_ptr->data_reported_flag = 1;
+		need_notify = true;
+	} 
+	else 
+	{
+		rtos_stop_timer(&g_bk_drv->csi_report_timer);
+		g_bk_csi_report_timer_running = false;
+	}
+
+	bk_wifi_csi_givesem();
+	if(need_notify)
+	{
+		bk_wifi_csi_report_event();
+	}
 }
 
 static bool bk_wifi_csi_report_timer_set(bool enable)
@@ -330,6 +368,9 @@ static bool bk_wifi_csi_data_buffer_create(void)
 	
 	g_bk_csi_rept_read = 0;
 	g_bk_csi_rept_write = 0;
+	g_bk_csi_rept_count = 0;
+	g_bk_csi_report_timer_running = false;
+	g_bk_csi_interval_pkt_saved_flag = false;
 	return true;
 }
 static void bk_wifi_csi_data_buffer_free(void)
@@ -368,7 +409,7 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 	}
 	/* 1. memset config zero */
 	memset(&g_bk_drv->config_param.filter_config, 0, sizeof(wifi_csi_filter_config_t));
-
+	
 	/* 2. assign configs */
 	g_bk_drv->interval_ms = config_args->interval;
 
@@ -391,6 +432,7 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		g_bk_drv->active_mode_config_param.interval = config_args->interval;
 		g_bk_drv->accuracy = 0;
 		break;
+
 	case NON_HT_CSI_DATA_ACC1:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x1;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
@@ -403,7 +445,8 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		return -EINVAL;
 	}
 
-	if(is_ht && config_action == CSI_CONFIG_ENABLE) {
+	if(is_ht && config_action == CSI_CONFIG_ENABLE)
+	{
 		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 1;// src && dst
 		g_bk_drv->config_param.filter_config.filter_src_mac_num = 1;
 		os_memcpy(g_bk_drv->config_param.filter_config.filter_src_mac, link_status.bssid, BK_MAC_ADDR_LEN);
@@ -438,6 +481,7 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 			}
 		}
 	}
+
 	/* 3. call set config for enable/disable */
 	if (config_action == CSI_CONFIG_ENABLE) 
 	{
@@ -447,6 +491,7 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 			csidbg("ERROR: failed to allocate csi data buffer\n");
 			return -ENOMEM;
 		}
+
 		csivdbg("wifi csi enable config requested\n");
 		if (!bk_wifi_csi_report_timer_set(true)) 
 		{
@@ -541,61 +586,81 @@ bool bk_wifi_csi_info_copy(uint32_t buf_ptr, struct wifi_csi_info_t *info)
 
 void bk_wifi_csi_rx_cb(struct wifi_csi_info_t *info)
 {
-	// func handle start
-	g_bk_csi_data_cb_flag = 1;
+	bool should_report = false;
+	bool need_notify = false;
+	bool is_buffer_full = false;
+	bool dropped_reported = false;
+	struct bk_csi_rept_flag_s *wr_ptr = NULL;
+	struct bk_csi_rept_flag_s *rd_ptr = NULL;
 
-	struct bk_csi_rept_flag_s *wr_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_write];
-	if((info != NULL) && (wr_ptr->data_store_buff_ptr != 0))
-	{
-		beken_time_t current_time = rtos_get_time();
-		bool is_report_data = false;
-		if(g_bk_csi_last_report_time == 0)
-		{
-			g_bk_csi_last_report_time = current_time;
-			is_report_data = true;
-		}
-		else
-		{
-			if(current_time > g_bk_csi_last_report_time)
-			{
-				if(current_time - g_bk_csi_last_report_time >= g_bk_drv->interval_ms )
-				{
-					g_bk_csi_last_report_time = current_time;
-					is_report_data = true;
-				}
-				else
-				{
-					/* data store */
-					bk_wifi_csi_info_copy(wr_ptr->data_store_buff_ptr, info);
-					wr_ptr->data_received_flag = 1;
-				}
-			}
-			else
-			{
-				g_bk_csi_last_report_time = current_time;
-			}
-		}
 
-		if(is_report_data)
-		{
-			if(wr_ptr->data_reported_flag == 0)
-			{
-				if(bk_wifi_csi_info_copy(wr_ptr->data_store_buff_ptr, info))
-				{
-					//csidbg("cb report data\n");
-					wr_ptr->data_received_flag = 1;
-					bk_wifi_csi_report_event();
-					wr_ptr->data_reported_flag = 1;
-					g_bk_csi_rept_write = (g_bk_csi_rept_write + 1) % BK_CSI_REPT_DATA_MAX_NUM;
-					
-					rtos_start_timer(&g_bk_drv->csi_report_timer);
-				}
-			}
-		}
-		
+	if ((g_bk_drv == NULL) || (info == NULL)) {
+		return;
 	}
-	// func handle end
-	g_bk_csi_data_cb_flag = 0;
+
+	bk_wifi_csi_takesem();
+
+	if(g_bk_csi_interval_pkt_saved_flag == true)
+	{
+		wr_ptr = &g_bk_csi_rept_data[bk_wifi_csi_prev_rept_idx(g_bk_csi_rept_write)];
+		bk_wifi_csi_info_copy(wr_ptr->data_store_buff_ptr, info);
+		bk_wifi_csi_givesem();
+		return;
+	}
+
+	//First packet OR empty ring buffer:copy and report immediately.
+	if(g_bk_csi_report_timer_running == false && g_bk_csi_rept_count == 0)
+	{
+		should_report = true;
+	}
+
+	is_buffer_full = (g_bk_csi_rept_count == BK_CSI_REPT_DATA_MAX_NUM);
+
+	if(is_buffer_full && g_bk_csi_interval_pkt_saved_flag == false) 
+	{
+		dropped_reported = g_bk_csi_rept_data[g_bk_csi_rept_read].data_reported_flag ? true : false;
+	}
+
+	wr_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_write];
+
+	if(bk_wifi_csi_info_copy(wr_ptr->data_store_buff_ptr, info)) 
+	{
+		if (is_buffer_full && g_bk_csi_interval_pkt_saved_flag == false) {
+			g_bk_csi_rept_read = (g_bk_csi_rept_read + 1) % BK_CSI_REPT_DATA_MAX_NUM;
+			g_bk_csi_rept_count--;
+			if(dropped_reported) 
+			{
+				rd_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_read];
+				if ((rd_ptr->data_received_flag == 1) && (rd_ptr->data_reported_flag == 0)) 
+				{
+					rd_ptr->data_reported_flag = 1;
+				}
+			}
+		}
+
+		wr_ptr->data_received_flag = 1;
+		wr_ptr->data_reported_flag = should_report ? 1 : 0;
+		if(g_bk_csi_interval_pkt_saved_flag == false)
+		{
+			g_bk_csi_rept_write = (g_bk_csi_rept_write + 1) % BK_CSI_REPT_DATA_MAX_NUM;
+			g_bk_csi_rept_count++;
+			g_bk_csi_interval_pkt_saved_flag = true;
+		}
+
+		if (should_report) 
+		{
+			need_notify = true;
+			rtos_start_timer(&g_bk_drv->csi_report_timer);
+			g_bk_csi_report_timer_running = true;
+			g_bk_csi_interval_pkt_saved_flag = false;
+		}
+	}
+
+	bk_wifi_csi_givesem();
+	if (need_notify) 
+	{
+		bk_wifi_csi_report_event();
+	}
 }
 
 static int bk_wifi_csi_ioctl(int cmd, unsigned long arg)
@@ -689,7 +754,6 @@ static int bk_wifi_csi_getcsidata(unsigned char *buffer, size_t buflen) {
 	bk_wifi_csi_givesem();
 	return len;
 }
-
 void bk_wifi_csi_disable_HE_and_VHT(void)
 {
 	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_VHT_EN, 0));
