@@ -273,6 +273,21 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 		/* sem_wait() failed.  Save the errno value */
 
 		errcode = get_errno();
+
+		/* Handle timeout+post race condition:
+		 * If timeout fired (sem_waitirq incremented semcount to restore it)
+		 * and a concurrent sem_post() also incremented semcount before we
+		 * got CPU, there will be a leftover semcount that would cause a
+		 * spurious wakeup on the next sem_wait(). Consume it here and
+		 * return OK since the semaphore was successfully acquired.
+		 * POSIX: "Under no circumstance shall the function fail with a
+		 * timeout if the semaphore can be locked immediately."
+		 */
+		if (errcode == ETIMEDOUT && sem->semcount > 0) {
+			sem->semcount--;
+			ret = OK;
+			errcode = OK;
+		}
 	}
 
 	/* Stop the watchdog timer */
