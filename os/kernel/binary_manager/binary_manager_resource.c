@@ -366,13 +366,7 @@ int binary_manager_mount_resource(void)
 			bmdbg("Invalid Resource Signature, address : 0x%x\n", resource_start_address);
 
 #ifdef CONFIG_USE_BP
-			/* If resource binary is invalid */
-			/* Scan all binaries and set valid binary set in bootparam */
-			ret = binary_manager_recover_bootparam_set();
-			if (ret != BINMGR_OK) {
-				bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
-				return ERROR;
-			}
+			goto recover_bp;
 #endif
 
 			/* Check if a binary exists in another partition. */
@@ -425,13 +419,7 @@ int binary_manager_mount_resource(void)
 		bmdbg("Invalid Resource header[%d] devpath : %s\n", inuse_idx, devpath);
 
 #ifdef CONFIG_USE_BP
-		/* If resource binary is invalid */
-		/* Scan all binaries and set valid binary set in bootparam */
-		ret = binary_manager_recover_bootparam_set();
-		if (ret != BINMGR_OK) {
-			bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
-			return ERROR;
-		}
+		goto recover_bp;
 #endif
 
 		/* Check if a binary exists in another partition. */
@@ -446,6 +434,15 @@ int binary_manager_mount_resource(void)
 	} while (bin_count > 0);
 
 	return OK;
+
+#ifdef CONFIG_USE_BP
+recover_bp:
+	ret = binary_manager_recover_bootparam_set();
+	if (ret != BINMGR_OK) {
+		bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+	}
+	return ERROR;
+#endif
 }
 
 /****************************************************************************

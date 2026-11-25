@@ -201,13 +201,7 @@ static int binary_manager_load(int bin_idx)
 			} else {
 				bmdbg("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
 #ifdef CONFIG_USE_BP
-				/* If bp needs to be updated because either app or common binary is invalid */
-				/* Scan all binaries and set valid binary set in bootparam */
-				ret = binary_manager_recover_bootparam_set();
-				if (ret != BINMGR_OK) {
-					bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
-					return ERROR;
-				}
+				goto recover_bp;
 #endif
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
@@ -240,13 +234,7 @@ static int binary_manager_load(int bin_idx)
 				bmdbg("Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
 
 #ifdef CONFIG_USE_BP
-				/* If bp needs to be updated because either app or common binary is invalid */
-				/* Scan all binaries and set valid binary set in bootparam */
-				ret = binary_manager_recover_bootparam_set();
-				if (ret != BINMGR_OK) {
-					bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
-					return ERROR;
-				}
+				goto recover_bp;
 #endif
 
 				if (--bin_count > 0) {
@@ -297,12 +285,7 @@ static int binary_manager_load(int bin_idx)
 		}
 
 #ifdef CONFIG_USE_BP
-		/* If bp needs to be updated because binary load failed */
-		ret = binary_manager_recover_bootparam_set();
-		if (ret != BINMGR_OK) {
-			bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
-			return ERROR;
-		}
+		goto recover_bp;
 #endif
 
 		if (--bin_count > 0) {
@@ -315,6 +298,15 @@ static int binary_manager_load(int bin_idx)
 	} while (bin_count > 0);
 
 	return ERROR;
+
+#ifdef CONFIG_USE_BP
+recover_bp:
+	ret = binary_manager_recover_bootparam_set();
+	if (ret != BINMGR_OK) {
+		bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+	}
+	return ERROR;
+#endif
 }
 
 /****************************************************************************
@@ -484,6 +476,9 @@ static int loadingall_thread(int argc, char *argv[])
 	uint32_t bin_count;
 
 	if (!binary_manager_scan_ubin_all()) {
+#ifdef CONFIG_USE_BP
+		binary_manager_recover_bootparam_set();
+#endif
 		return BINMGR_OPERATION_FAIL;
 	}
 
