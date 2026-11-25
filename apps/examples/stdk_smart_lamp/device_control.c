@@ -17,9 +17,12 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <stdint.h>
 #include "device_control.h"
 #include <iotbus/iotbus_gpio.h>
 #include "iot_os_util.h"
+#include <sys/types.h>
+#include <tinyara/clock.h>
 
 static iot_os_queue *button_event_queue = NULL;
 static iotbus_gpio_context_h g_pir;

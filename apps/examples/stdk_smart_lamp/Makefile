@@ -171,6 +171,8 @@ depend: .depend
 clean:
 	$(call DELFILE, .built)
 	$(call CLEAN)
+	$(call DELFILE, $(DEVICE_HEADER_FILE))
+	$(call DELFILE, $(PRODUCT_HEADER_FILE))
 
 distclean: clean
 	$(call DELFILE, Make.dep)
