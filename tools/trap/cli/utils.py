@@ -39,6 +39,8 @@ def bytes_needed(n):
 def setup_symbol_table(map_file, is_app):
 	if debug:
 		print('setup_symbol_table : '+ map_file, is_app)
+	if not os.path.exists(map_file):
+		return
 	# Reading the System Map file and preparing the symbol map table
 	with open(map_file) as searchfile:
 		for line in searchfile:
