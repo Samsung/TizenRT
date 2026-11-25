@@ -62,10 +62,6 @@
 #include <debug.h>
 #include <tinyara/arch.h>
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
@@ -987,43 +983,27 @@ void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem
 void sem_release_all(FAR struct tcb_s *htcb)
 {
 	FAR struct semholder_s *pholder;
-	FAR struct tcb_s *stcb;
 
 	while ((pholder = htcb->holdsem) != NULL) {
 		FAR sem_t *sem = pholder->sem;
+		int counts = pholder->counts;
+
+		/* A holder entry represents every count of this semaphore owned by
+		 * the task, so preserve the count before sem_freeholder() clears it.
+		 */
 
 		sem_freeholder(sem, pholder);
 
-		/* Increment the count on the semaphore to release the count that
-		 * was taken by sem_wait() or sem_post().
+		/* Return every count owned by the terminated task.  Use the normal
+		 * post-unblock path for each count so that the highest-priority waiter
+		 * receives it and the priorities of the remaining holders are restored.
 		 */
 
-		sem->semcount++;
+		while (counts-- > 0) {
+			DEBUGASSERT(sem->semcount < SEM_VALUE_MAX);
+			sem->semcount++;
 
-		/* The terminated holder will never post the semaphore. If tasks
-		 * are already blocked waiting for it, wake up the highest priority
-		 * waiter so that the released count is actually consumed, just as
-		 * sem_post() would do.
-		 */
-
-		if (sem->semcount <= 0) {
-			for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; (stcb && stcb->waitsem != sem); stcb = stcb->flink) ;
-
-			if (stcb) {
-				sem_addholder_tcb(stcb, sem);
-
-				/* Let the task take the semaphore */
-
-				stcb->waitsem = NULL;
-
-#ifdef CONFIG_SEMAPHORE_HISTORY
-				save_semaphore_history(sem, (void *)stcb, SEM_ACQUIRE);
-#endif
-
-				/* Restart the waiting task. */
-
-				up_unblock_task(stcb);
-			}
+			sem_unblock_task(sem, htcb);
 		}
 	}
 }
