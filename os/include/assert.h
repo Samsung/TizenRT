@@ -80,7 +80,19 @@ int get_errno(void);
 #include <tinyara/config.h>
 #include <stdint.h>
 
-extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
+/* Size of the buffer that carries the ASSERT_INFO message to up_assert().
+ * CONFIG_STDIO_BUFFER_SIZE is forced to 0 when CONFIG_NFILE_STREAMS is 0,
+ * and a zero-length array cannot take the '\0' initializer, so keep the
+ * buffer at least one byte long. snprintf() with size 0 writes nothing,
+ * so the writers need no change.
+ */
+#if CONFIG_STDIO_BUFFER_SIZE > 0
+#define ASSERT_INFO_STR_SIZE CONFIG_STDIO_BUFFER_SIZE
+#else
+#define ASSERT_INFO_STR_SIZE 1
+#endif
+
+extern char assert_info_str[ASSERT_INFO_STR_SIZE];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
