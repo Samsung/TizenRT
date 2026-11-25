@@ -392,20 +392,24 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 			if (zoneinfo == NULL) {
 				zone = "UTC";
 			} else {
-				int zoneinfo_len;
-				zone = zoneinfo;
 #ifdef CONFIG_LIBC_TZDIR
-				/* If CONFIG_LIBC_TZDIR is enabled, zoneinfo is like "CONFIG_LIBC_TZDIR/XXX". */
-				zoneinfo_len = strlen(CONFIG_LIBC_TZDIR);
+				const char *tzdir = CONFIG_LIBC_TZDIR;
 #else
-				/* If CONFIG_LIBC_TZDIR is not enabled, zoneinfo is like "/usr/local/etc/zoneinfo/XXX". */
-				zoneinfo_len = strlen("/usr/local/etc/zoneinfo");
+				const char *tzdir = "/usr/local/etc/zoneinfo";
 #endif
-				while (zoneinfo_len != 0) {
-					zone++;
-					zoneinfo_len--;
+				size_t tzdir_len = strlen(tzdir);
+
+				/* TZ may hold a full path ("TZDIR/Asia/Seoul"), a relative
+				 * zone name ("Asia/Seoul"), or a POSIX rule ("UTC0"). Only
+				 * strip the directory when it is really there; blindly
+				 * skipping strlen(TZDIR) + 1 bytes on a shorter value walks
+				 * past the end of the string and "%s" then reads out of
+				 * bounds.
+				 */
+				zone = zoneinfo;
+				if (strncmp(zoneinfo, tzdir, tzdir_len) == 0 && zoneinfo[tzdir_len] == '/') {
+					zone = zoneinfo + tzdir_len + 1;
 				}
-				zone++;
 			}
 
 			len = snprintf(dest, chleft, "%s", zone);
