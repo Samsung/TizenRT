@@ -149,6 +149,9 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_
 	void *ret = NULL;
 	int ndx;
 	bool gc_done = false;
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	bool qflush_done = false;
+#endif
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t gc_before_size;
 #endif
@@ -296,6 +299,29 @@ retry_after_gc:
 	}
 
 	mm_givesemaphore(heap);
+
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	if (!ret && qflush_done == false) {
+		/* Before anything more drastic, hand back the memory which is only
+		 * being held for use-after-free detection. Without this step the
+		 * quarantine would turn into allocation failures which do not happen
+		 * with the option disabled.
+		 */
+
+		size_t qfreed;
+
+		mm_takesemaphore(heap);
+		qfreed = mm_quarantine_flush(heap);
+		mm_givesemaphore(heap);
+
+		qflush_done = true;
+
+		if (qfreed > 0) {
+			mdbg("Allocation failed, released %u bytes from the quarantine\n", qfreed);
+			goto retry_after_gc;
+		}
+	}
+#endif
 
 	if (!ret && gc_done == false) {
 		mdbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
