@@ -156,11 +156,14 @@ int wd_delete(WDOG_ID wdog)
 		 * timers, all with interrupts disabled.
 		 */
 
+		wd_mmu_write_begin();	/* Allow writes to wdog protected page */
 		sq_addlast((FAR sq_entry_t *)wdog, &g_wdfreelist);
 		g_wdnfree++;
 		DEBUGASSERT(g_wdnfree <= CONFIG_PREALLOC_WDOGS);
+		wd_mmu_write_end();		/* Re-protect wdog page (Read-Only) */
 		leave_critical_section(state);
 	} else {
+
 		/* There is no guarantee that, this API is not called for statically
 		 * allocated timers as wd_delete is a global function. So restore the
 		 * irq properly so that it does not break the system */

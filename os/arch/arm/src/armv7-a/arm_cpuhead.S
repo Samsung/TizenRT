@@ -272,7 +272,12 @@ __cpu3_start:
 	 * supported and it uses the permissions in the TLB.
 	 */
 
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	/* Domain 0 = Client, Domain 1 = Client (for wdog pool RO access) */
+	mov		r0, #(DACR_CLIENT(0) | DACR_CLIENT(1))
+#else
 	mov		r0, #DACR_CLIENT(0)
+#endif
 	mcr		CP15_DACR(r0)			/* Set domain access register */
 
 	/* Configure the system control register (see sctrl.h) */
