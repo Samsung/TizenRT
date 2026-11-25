@@ -66,6 +66,11 @@
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binfmt/elf.h>
 
+#if defined(CONFIG_COMPRESSED_BINARY) && defined(CONFIG_BINMGR_READ_DECRYPTED_BINARY)
+#include <tinyara/binfmt/compression/compress_read.h>
+#include "binary_manager/binary_manager_internal.h"
+#endif
+
 #include "libelf/libelf.h"
 
 #ifdef CONFIG_ELF
@@ -216,6 +221,14 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 	loadinfo.filelen = binp->filelen;
 	loadinfo.binp = binp;
 
+#if defined(CONFIG_COMPRESSED_BINARY) && defined(CONFIG_BINMGR_READ_DECRYPTED_BINARY)
+	/* User/common binaries are stored encrypted on flash. Provide the physical
+	 * partition address so the compressed image is decrypted on the fly while
+	 * it is being read for decompression and loading.
+	 */
+	compress_set_decrypt_context(true, BIN_PARTADDR(binp->binary_idx, BIN_USEIDX(binp->binary_idx)));
+#endif
+
 	ret = elf_init(binp->filename, &loadinfo);
 	if (ret != 0) {
 		elf_dumploadinfo(&loadinfo);
@@ -263,6 +276,9 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 
 	elf_dumpentrypt(binp, &loadinfo);
 	elf_uninit(&loadinfo);
+#if defined(CONFIG_COMPRESSED_BINARY) && defined(CONFIG_BINMGR_READ_DECRYPTED_BINARY)
+	compress_set_decrypt_context(false, 0);
+#endif
 	return OK;
 
 errout_with_load:
@@ -270,6 +286,9 @@ errout_with_load:
 errout_with_init:
 	elf_uninit(&loadinfo);
 errout:
+#if defined(CONFIG_COMPRESSED_BINARY) && defined(CONFIG_BINMGR_READ_DECRYPTED_BINARY)
+	compress_set_decrypt_context(false, 0);
+#endif
 	return ret;
 }
 

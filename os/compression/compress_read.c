@@ -30,6 +30,9 @@
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/binfmt/compression/compress_read.h>
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY
+#include <tinyara/fs/mtd.h>
+#endif
 
 #if CONFIG_COMPRESSION_TYPE == LZMA
 #include <tinyara/lzma/LzmaLib.h>
@@ -47,10 +50,57 @@ static struct s_header *compression_header;
 static struct s_buffer buffers;
 static int active_filefd = -1;
 
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY
+/* When loading an encrypted binary, the compressed image on flash must be
+ * decrypted before it can be decompressed. The compressed bytes are read
+ * through up_read_decrypted_flash() using the physical partition address of
+ * the binary being loaded instead of the raw mtdblock file descriptor.
+ */
+static bool g_decrypt_enabled;
+static uint32_t g_decrypt_part_addr;
+
+/****************************************************************************
+ * Name: compress_set_decrypt_context
+ *
+ * Description:
+ *   Enable/disable decrypted reads for the binary currently being loaded and
+ *   provide the physical partition address used to compute flash addresses.
+ *   Must be called before compress_init() and cleared after the load.
+ *
+ ****************************************************************************/
+void compress_set_decrypt_context(bool enable, uint32_t part_addr)
+{
+	g_decrypt_enabled = enable;
+	g_decrypt_part_addr = part_addr;
+}
+
+/****************************************************************************
+ * Name: compress_decrypt_read
+ *
+ * Description:
+ *   Read 'nbytes' of compressed data from flash position 'pos' (offset from
+ *   the start of the partition) into 'buf', decrypting on the fly.
+ *
+ * Returned Value:
+ *   Number of bytes read on success, negated errno on failure.
+ *
+ ****************************************************************************/
+static ssize_t compress_decrypt_read(FAR void *buf, size_t nbytes, off_t pos)
+{
+	int ret = up_read_decrypted_flash(g_decrypt_part_addr + pos, buf, nbytes);
+
+	if (ret != OK) {
+		return (ret < 0) ? (ssize_t)ret : -EIO;
+	}
+	return (ssize_t)nbytes;
+}
+#endif
+
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
- 
+
 /****************************************************************************
  * Name: compress_blocks_to_read
  *
@@ -93,24 +143,31 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	off_t max_compheader_size;
 
 	file_size = lseek(filfd, 0, SEEK_END);
-	
+
 	if (file_size <= 0){
 		bcmpdbg("Invalid file size: %d\n", file_size);
 		ret = -EINVAL;
 		goto exit;
 	}
-
-	/* Seek to location of size of compression header */
-	rpos = lseek(filfd, offset, SEEK_SET);
-	if (rpos != offset) {
-		int errval = get_errno();
-		bcmpdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
-		ret = -errval;
-		goto exit;
-	}
-
 	/* Read compression header size from the file data */
-	nbytes = read(filfd, &compheader_size, sizeof(compheader_size));
+	#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY
+		if (g_decrypt_enabled) {
+			nbytes = compress_decrypt_read(&compheader_size, sizeof(compheader_size), offset);
+		} else
+	#endif
+	{
+		/* Seek to location of size of compression header */
+		rpos = lseek(filfd, offset, SEEK_SET);
+		if (rpos != offset) {
+			int errval = get_errno();
+			bcmpdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
+			ret = -errval;
+			goto exit;
+		}
+
+		/* Read compression header size from the file data */
+		nbytes = read(filfd, &compheader_size, sizeof(compheader_size));
+	}
 	if (nbytes != sizeof(compheader_size)) {
 		bcmpdbg("Read for compression header size from offset %lu failed\n", offset);
 		ret = ERROR;
@@ -126,7 +183,7 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	}
 
 	if (compheader_size < sizeof(struct s_header) || compheader_size > max_compheader_size) {
-		bcmpdbg("Invalid compheader_size: %d (max: %ld)\n", 
+		bcmpdbg("Invalid compheader_size: %d (max: %ld)\n",
 		        compheader_size, (long)max_compheader_size);
 		ret = -EINVAL;
 		goto exit;
@@ -144,7 +201,14 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	compression_header->size_header = compheader_size;
 
 	/* Read remaining compression header, including section offsets */
-	nbytes = read(filfd, ((uint8_t *)compression_header + sizeof(compression_header->size_header)), compheader_size - sizeof(compression_header->size_header));
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY
+	if (g_decrypt_enabled) {
+		nbytes = compress_decrypt_read(((uint8_t *)compression_header + sizeof(compression_header->size_header)), compheader_size - sizeof(compression_header->size_header), offset + sizeof(compheader_size));
+	} else
+#endif
+	{
+		nbytes = read(filfd, ((uint8_t *)compression_header + sizeof(compression_header->size_header)), compheader_size - sizeof(compression_header->size_header));
+	}
 	if (nbytes != (compheader_size - sizeof(compression_header->size_header))) {
 		bcmpdbg("Read for compression header from offset %lu failed\n", offset);
 		ret = ERROR;
@@ -159,15 +223,15 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	}
 
 	/* Validate binary_size: must be positive and reasonable (max 10x compressed file size) */
-	if (compression_header->binary_size < 0 || 
+	if (compression_header->binary_size < 0 ||
 	    compression_header->binary_size > file_size * 10) {
-		bcmpdbg("Invalid binary_size: %d\n", 
+		bcmpdbg("Invalid binary_size: %d\n",
 		        compression_header->binary_size);
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	if (compression_header->sections < 0 || 
+	if (compression_header->sections < 0 ||
 	    compression_header->sections > compression_header->binary_size / compression_header->blocksize + 2) {
 		bcmpdbg("Invalid sections: %d\n", compression_header->sections);
 		ret = -EINVAL;
@@ -228,7 +292,7 @@ static off_t compress_offset_block(int filfd, uint16_t binary_header_size, int b
 
 	/* Validate block_number is within sections range to prevent OOB access */
 	if (block_number < 0 || block_number >= compression_header->sections) {
-		bcmpdbg("Block number %d out of range (sections: %d)\n", 
+		bcmpdbg("Block number %d out of range (sections: %d)\n",
 			block_number, compression_header->sections);
 		return -EINVAL;
 	}
@@ -271,7 +335,6 @@ static off_t compress_lseek_block(int filfd, uint16_t binary_header_size, int bl
 
 	return rpos;
 }
-
 /****************************************************************************
  * Name: compress_read_block
  *
@@ -309,15 +372,22 @@ static off_t compress_read_block(int filfd, uint16_t binary_header_size, FAR uin
 		return readsize;
 	}
 
-	/* Seek to location of 'block_number' block in compressed file */
-	rpos = compress_lseek_block(filfd, binary_header_size, block_number);
-	if (rpos < 0) {
-		bcmpdbg("Failed to seek to offset of block number %d\n", block_number);
-		return rpos;
-	}
-
 	/* Read 'block_number' block into buf */
-	nbytes = read(filfd, buf, readsize);
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY
+	if (g_decrypt_enabled) {
+		nbytes = compress_decrypt_read(buf, readsize, current_block_offset);
+	} else
+#endif
+	{
+		/* Seek to location of 'block_number' block in compressed file */
+		rpos = compress_lseek_block(filfd, binary_header_size, block_number);
+		if (rpos < 0) {
+			bcmpdbg("Failed to seek to offset of block number %d\n", block_number);
+			return rpos;
+		}
+
+		nbytes = read(filfd, buf, readsize);
+	}
 	if (nbytes != readsize) {
 		bcmpdbg("Read for compressed block %d failed\n", block_number);
 		return ERROR;
@@ -394,7 +464,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 		size = (long unsigned int)block_readsize;
 #endif
-		writesize = compression_header->blocksize; 
+		writesize = compression_header->blocksize;
 		/* Decompress block in read_buffer to out_buffer */
 		ret = decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size);
 		if (ret != OK) {
@@ -494,7 +564,6 @@ int compress_init(int filfd, uint16_t offset, off_t *filelen)
 error_compress_init:
 	return ret;
 }
-
 /****************************************************************************
  * Name: compress_uninit
  *
@@ -530,3 +599,4 @@ struct s_header *get_compression_header(void)
 {
 	return compression_header;
 }
+
