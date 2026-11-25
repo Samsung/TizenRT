@@ -28,6 +28,61 @@
 
 
 /**
+* @fn                   :itc_timer_delete_n_after_delete
+* @brief                :Test double-delete of timer
+* @scenario             :Delete timer twice, second delete should fail with EINVAL
+* API's covered         :timer_create, timer_delete
+* Preconditions         :Creation of timer_id(timer_create)
+* Postconditions        :none
+*/
+static void itc_timer_delete_n_after_delete(void)
+{
+	int ret_chk = ERROR;
+	clockid_t clockid = CLOCK_REALTIME;
+	struct sigevent st_sigevent;
+	timer_t timer_id;
+
+	st_sigevent.sigev_notify = SIGEV_SIGNAL;
+	st_sigevent.sigev_signo = SIGRTMIN;
+	st_sigevent.sigev_value.sival_ptr = &timer_id;
+
+	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
+	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
+	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
+
+	/* First delete should succeed */
+	ret_chk = timer_delete(timer_id);
+	TC_ASSERT_EQ("timer_delete", ret_chk, OK);
+
+	/* Second delete (double-delete) should fail with EINVAL */
+	ret_chk = timer_delete(timer_id);
+	TC_ASSERT_EQ("timer_delete", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_delete", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+* @fn                   :itc_timer_delete_forged_handle
+* @brief                :Test timer_delete() with forged handle
+* @scenario             :Pass forged stack pointer to timer_delete(), verify ERROR/EINVAL
+* API's covered         :timer_delete
+* Preconditions         :none
+* Postconditions        :none
+*/
+static void itc_timer_delete_forged_handle(void)
+{
+	int ret_chk;
+	int stack_var = 0x12345678;
+
+	ret_chk = timer_delete((timer_t)&stack_var);
+	TC_ASSERT_EQ("timer_delete", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_delete", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
 * @fn                   :itc_timer_set_time_n_after_delete
 * @brief                :arm/disarm and fetch state of POSIX per-process timer
 * @scenario             :arm/disarm and fetch state of POSIX per-process timer after timer delete
@@ -111,6 +166,11 @@ static void itc_timer_get_time_n_after_delete(void)
 
 int itc_timer_main(void)
 {
+	/* Timer security integration tests */
+	itc_timer_delete_n_after_delete();
+	itc_timer_delete_forged_handle();
+
+	/* Existing tests */
 	itc_timer_set_time_n_after_delete();
 	itc_timer_get_time_n_after_delete();
 
