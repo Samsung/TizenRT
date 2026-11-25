@@ -128,6 +128,15 @@ int pthread_sem_trytake(sem_t *sem);
 #endif
 int pthread_sem_give(sem_t *sem);
 
+#if defined(CONFIG_CANCELLATION_POINTS) && defined(CONFIG_PTHREAD_CLEANUP)
+/* Cleanup handler for pthread_cond_wait() and pthread_cond_timedwait().
+ * Decrements cond->waiters when a thread is canceled while waiting on
+ * a condition variable.
+ */
+void cond_wait_cleanup(void *arg);
+#endif
+
+
 #ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
 int pthread_mutex_take(FAR struct pthread_mutex_s *mutex);
 int pthread_mutex_trytake(FAR struct pthread_mutex_s *mutex);

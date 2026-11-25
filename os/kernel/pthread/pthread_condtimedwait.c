@@ -314,6 +314,13 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 						/* Increment the waiter count */
 						cond->waiters++;
 
+						/* Register cleanup handler to decrement waiters on
+						 * cancellation.
+						 */
+#if defined(CONFIG_CANCELLATION_POINTS) && defined(CONFIG_PTHREAD_CLEANUP)
+						pthread_cleanup_push(cond_wait_cleanup, cond);
+#endif
+
 						/* Take the condition semaphore.  Do not restore interrupts
 						 * until we return from the wait.  This is necessary to
 						 * make sure that the watchdog timer and the condition wait
@@ -322,7 +329,19 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 						status = sem_wait((sem_t *)&cond->sem);
 
+						/* Only pop the cleanup handler if the thread was not
+						 * canceled. sem_wait() treats ECANCELED as "semaphore
+						 * acquired" (returns OK), so status may be OK even when
+						 * canceled. We must check the cancel-pending flag.
+						 */
+#if defined(CONFIG_CANCELLATION_POINTS) && defined(CONFIG_PTHREAD_CLEANUP)
+						if ((rtcb->flags & TCB_FLAG_CANCEL_PENDING) == 0) {
+							pthread_cleanup_pop(0);
+						}
+#endif
+
 						/* Did we get the condition semaphore. */
+
 
 						if (status != OK) {
 							/* Handle the special case where the semaphore wait
