@@ -184,3 +184,35 @@ uintptr_t arm_intstack_alloc(void)
   return g_irqstack_top[up_cpu_index()] - INTSTACK_SIZE;
 }
 #endif
+
+/****************************************************************************
+ * Name: arm_intstack_top_for_cpu
+ *
+ * Description:
+ *   Return a pointer to the top the correct interrupt stack allocation
+ *   for the given CPU.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+uintptr_t arm_intstack_top_for_cpu(int cpu)
+{
+  return g_irqstack_top[cpu];
+}
+#endif
+
+/****************************************************************************
+ * Name: arm_intstack_alloc_for_cpu
+ *
+ * Description:
+ *   Return a pointer to the "alloc" the correct interrupt stack allocation
+ *   for the given CPU.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
+uintptr_t arm_intstack_alloc_for_cpu(int cpu)
+{
+  return g_irqstack_top[cpu] - INTSTACK_SIZE;
+}
+#endif

@@ -49,6 +49,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <arch/board/board.h>
+#include <tinyara/clock.h>
 
 #include "up_internal.h"
 #include "group/group.h"
@@ -59,6 +60,8 @@
  ****************************************************************************/
 
 int g_irq_num[CONFIG_SMP_NCPUS] = {-1, };				/* Array to store the last three interrupt numbers */
+int g_last_irq_num[CONFIG_SMP_NCPUS] = {-1, };			/* Array to store last serviced interrupt per cpu */
+clock_t g_last_irq_time[CONFIG_SMP_NCPUS] = {0, };		/* Arrray to store time of last serviced interrupt */
 /****************************************************************************
  * Name: arm_doirq
  *
@@ -120,6 +123,8 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
   CURRENT_REGS = NULL;
 #endif
 	/* Reset the interrupt number values */
+	g_last_irq_num[up_cpu_index()] = g_irq_num[up_cpu_index()];
+	g_last_irq_time[up_cpu_index()] = clock_systimer();
 	g_irq_num[up_cpu_index()] = -1;
 
 	board_autoled_off(LED_INIRQ);
