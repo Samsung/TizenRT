@@ -63,7 +63,7 @@
 
 #if defined(CONFIG_AUDIO_ALC5658CHAR) && defined(CONFIG_S5J_I2S) && defined(CONFIG_S5J_I2C)
 
-#include <tinyara/i2c.h>
+#include <tinyara/i2c/i2c_master.h>
 
 #include "s5j_i2s.h"
 #include "s5j_i2c.h"

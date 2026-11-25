@@ -65,7 +65,7 @@
 #include <tinyara/analog/adc.h>
 #include <tinyara/analog/ioctl.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "s5j_adc.h"
 
 #ifdef CONFIG_S5J_ADC
@@ -291,7 +291,7 @@ static void adc_reset(FAR struct adc_dev_s *dev)
 {
 	irqstate_t flags;
 
-	flags = irqsave();
+	flags = enter_critical_section();
 
 	/* Reset ADC */
 	putreg32(ADC_CON1_SOFTRESET_RESET, S5J_ADC_CON1);
@@ -302,7 +302,7 @@ static void adc_reset(FAR struct adc_dev_s *dev)
 	/* Configuration of the channel conversions */
 	adc_set_ch(dev, 0);
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************

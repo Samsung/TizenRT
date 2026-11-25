@@ -52,7 +52,7 @@
 #define DMAC_FTRD                    (0x038)
 
 #define DMAC_CH_FTR(n)               0x040 + 0x04 * (n)
-#define DMAC_CH_CSR(n)               (u32)(0x100 + 0x08 * (n))
+#define DMAC_CH_CSR(n)               (uint32_t)(0x100 + 0x08 * (n))
 #define DMAC_CH_CPC(n)               0x104 + 0x08 * (n)
 #define DMAC_CH_SAR(n)               0x400 + 0x20 * (n)
 #define DMAC_CH_DAR(n)               0x404 + 0x20 * (n)
@@ -73,7 +73,7 @@
 #define DMAC_CRD                     0xE14
 #define DMAC_WD                      0xE80
 
-#define DMA_BYTE(inst)               (u8)((inst) & 0xFF)
+#define DMA_BYTE(inst)               (uint8_t)((inst) & 0xFF)
 #define DMA_LOOP_MAX                 256
 
 /* CCR BITFIELDS */
@@ -203,7 +203,7 @@ typedef struct dma_drvdata dma_drvdata;
 typedef struct {
 	dma_drvdata *dma;
 	DMA_CHANNEL_NUM dma_chan_num;
-	u8 channel_assigned;
+	uint8_t channel_assigned;
 
 	dma_task *task;
 
@@ -218,9 +218,9 @@ struct dma_drvdata {
 	/* struct dma_device   *dev; */
 
 	/* Add private data structures if it is needed */
-	u32 max_ch_num;
-	u32 max_burst_len;
-	u32 max_burst_size;			/*  data_size */
+	uint32_t max_ch_num;
+	uint32_t max_burst_len;
+	uint32_t max_burst_size;			/*  data_size */
 	/*              bool dma_initialized; */
 	DMA_CH_CONTEXT dma_ch[DMAC_MAX_CH];
 };
@@ -262,40 +262,40 @@ static inline int DMA_Encode_DMALP(char *base, DMA_LC lc, void **iter)
 	return 2;
 }
 
-static inline int DMA_Encode_DMALPEND(char *base, u8 CTRL, char backwards_jump)
+static inline int DMA_Encode_DMALPEND(char *base, uint8_t CTRL, char backwards_jump)
 {
 	base[0] = 0x28 | CTRL;
 	base[1] = backwards_jump;
 	return 2;
 }
 
-static inline int DMA_Encode_DMALD(char *base, u8 CTRL)
+static inline int DMA_Encode_DMALD(char *base, uint8_t CTRL)
 {
 	base[0] = 0x04 | CTRL;
 	return 1;
 }
 
-static inline int DMA_Encode_DMALDP(char *base, u8 CTRL, DMA_REQ_MAP periph)
+static inline int DMA_Encode_DMALDP(char *base, uint8_t CTRL, DMA_REQ_MAP periph)
 {
 	base[0] = 0x25 | CTRL;
 	base[1] = periph << 3;
 	return 2;
 }
 
-static inline int DMA_Encode_DMAST(char *base, u8 CTRL)
+static inline int DMA_Encode_DMAST(char *base, uint8_t CTRL)
 {
 	base[0] = 0x08 | CTRL;
 	return 1;
 }
 
-static inline int DMA_Encode_DMASTP(char *base, u8 CTRL, DMA_REQ_MAP periph)
+static inline int DMA_Encode_DMASTP(char *base, uint8_t CTRL, DMA_REQ_MAP periph)
 {
 	base[0] = 0x29 | CTRL;
 	base[1] = periph << 3;
 	return 2;
 }
 
-static inline int DMA_Encode_DMAWFP(char *base, u8 CTRL, DMA_REQ_MAP periph)
+static inline int DMA_Encode_DMAWFP(char *base, uint8_t CTRL, DMA_REQ_MAP periph)
 {
 	base[0] = 0x30 | CTRL;
 	base[1] = periph << 3;
@@ -316,7 +316,7 @@ static inline int DMA_Encode_DMAEND(char *base)
 	return 1;
 }
 
-static inline int DMA_Encode_DMAFLUSHP(char *base, u8 periph)
+static inline int DMA_Encode_DMAFLUSHP(char *base, uint8_t periph)
 {
 	base[0] = 0x35;
 	base[1] = periph << 3;

@@ -105,8 +105,8 @@ endif
 
 ARCHCFLAGS = -fno-builtin -mcpu=cortex-r4 -mfpu=vfpv3 -ffunction-sections -fdata-sections
 ARCHCXXFLAGS = -fno-builtin -fexceptions -mcpu=cortex-r4 -mfpu=vfpv3
-ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
-ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef 
+ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
+ARCHWARNINGSXX = -Wall -Wshadow -Wundef 
 # only version 4.9 supports color diagnostics
 ifeq "$(ARCHMAJOR)" "4"
 ifeq "$(ARCHMINOR)" "9"

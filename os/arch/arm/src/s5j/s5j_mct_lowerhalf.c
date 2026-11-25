@@ -289,7 +289,7 @@ static void s5j_mct_setcallback(FAR struct timer_lowerhalf_s *lower,
 								tccb_t callback, FAR void *arg)
 {
 	FAR struct s5j_lowerhalf_s *priv = (FAR struct s5j_lowerhalf_s *)lower;
-	irqstate_t flags = irqsave();
+	irqstate_t flags = enter_critical_section();
 
 	/* Save the new callback */
 	priv->callback = callback;
@@ -303,7 +303,7 @@ static void s5j_mct_setcallback(FAR struct timer_lowerhalf_s *lower,
 		s5j_mct_setisr(priv->mct, NULL, NULL);
 	}
 
-	irqrestore(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************

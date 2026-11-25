@@ -98,9 +98,9 @@
  ****************************************************************************/
 static void board_gpio_initialize(void)
 {
-#ifdef CONFIG_GPIO
+#ifdef CONFIG_DEV_GPIO
 	int i;
-	struct gpio_lowerhalf_s *lower;
+	struct gpio_dev_s *dev;
 
 	struct {
 		uint8_t  minor;
@@ -128,10 +128,12 @@ static void board_gpio_initialize(void)
 	};
 
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
-		lower = s5j_gpio_lowerhalf(pins[i].pincfg);
-		gpio_register(pins[i].minor, lower);
+		dev = s5j_gpio_lowerhalf(pins[i].pincfg);
+		if (dev != NULL) {
+			gpio_pin_register(dev, pins[i].minor);
+		}
 	}
-#endif /* CONFIG_GPIO */
+#endif /* CONFIG_DEV_GPIO */
 }
 
 /****************************************************************************
@@ -198,23 +200,23 @@ void s5j_board_initialize(void)
 }
 
 /****************************************************************************
- * Name: board_initialize
+ * Name: board_late_initialize
  *
  * Description:
- *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
+ *   If CONFIG_BOARD_LATE_INITIALIZE is selected, then an additional
  *   initialization call will be performed in the boot-up sequence to a
- *   function called board_initialize(). board_initialize() will be
- *   called immediately after up_intiialize() is called and just before the
- *   initial application is started.  This additional initialization phase
- *   may be used, for example, to initialize board-specific device drivers.
+ *   function called board_late_initialize(). board_late_initialize() will
+ *   be called after up_initialize() is called and just before the initial
+ *   application is started.  This additional initialization phase may be
+ *   used, for example, to initialize board-specific device drivers.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BOARD_INITIALIZE
-void board_initialize(void)
+#ifdef CONFIG_BOARD_LATE_INITIALIZE
+void board_late_initialize(void)
 {
 	/* Perform app-specific initialization here instead of from the TASH. */
-	board_app_initialize();
+	board_app_initialize(0);
 
 #ifdef CONFIG_SCSC_WLAN
 	slldbg("Initialize SCSC driver\n");
@@ -241,4 +243,4 @@ void board_initialize(void)
 
 	board_sensor_initialize();
 }
-#endif /* CONFIG_BOARD_INITIALIZE */
+#endif /* CONFIG_BOARD_LATE_INITIALIZE */

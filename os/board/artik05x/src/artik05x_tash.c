@@ -60,23 +60,24 @@
 #include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <debug.h>
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <tinyara/board.h>
-#include <tinyara/fs/mtd.h>
+#include <tinyara/mtd/mtd.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/fs/mksmartfs.h>
-#include <tinyara/rtc.h>
+#include <tinyara/timers/rtc.h>
 #include <tinyara/analog/adc.h>
-#include <tinyara/configdata.h>
+#include <tinyara/mtd/configdata.h>
 #include <chip.h>
 
 #include "s5j_adc.h"
 #include "s5j_rtc.h"
 #include "s5j_mct.h"
-#include "up_internal.h"
+#include <tinyara/arch.h>
 
 #include <apps/shell/tash.h>
 
@@ -166,7 +167,7 @@ static void scsc_wpa_ctrl_iface_init(void)
  *   Perform architecture specific initialization
  *
  ****************************************************************************/
-int board_app_initialize(void)
+int board_app_initialize(uintptr_t arg)
 {
 	int ret;
 #ifdef CONFIG_FLASH_PARTITION

@@ -65,7 +65,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/spi/spi.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include <s5j_spi.h>
 #include <string.h>
 #include <assert.h>
@@ -148,10 +148,10 @@ struct s5j_spidev_s {
 	uint32_t base;
 	uint8_t port;
 	unsigned int freqid;
-	s32 gpio_clk;
-	s32 gpio_nss;
-	s32 gpio_miso;
-	s32 gpio_mosi;
+	int32_t gpio_clk;
+	int32_t gpio_nss;
+	int32_t gpio_miso;
+	int32_t gpio_mosi;
 
 #ifndef CONFIG_SPI_POLLWAIT
 	sem_t xfrsem;				/* Wait for transfer to complete */
@@ -168,11 +168,11 @@ struct s5j_spidev_s {
 
 /* SPI Driver Methods */
 static int spi_lock(FAR struct spi_dev_s *dev, bool lock);
-static void spi_select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, bool selected);
+static void spi_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected);
 static uint32_t spi_setfrequency(FAR struct spi_dev_s *dev, uint32_t frequency);
 static void spi_setmode(FAR struct spi_dev_s *dev, enum spi_mode_e mode);
 static void spi_setbits(FAR struct spi_dev_s *dev, int nbits);
-static uint16_t spi_send(FAR struct spi_dev_s *dev, uint16_t wd);
+static uint32_t spi_send(FAR struct spi_dev_s *dev, uint32_t wd);
 static void spi_exchange(FAR struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords);
 
 #ifndef CONFIG_SPI_EXCHANGE
@@ -268,7 +268,7 @@ static struct s5j_spidev_s g_spi3dev = {
  ****************************************************************************/
 static int spi_lock(struct spi_dev_s *dev, bool lock)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	if (lock) {
 		while (sem_wait(&priv->exclsem) != 0) {
@@ -290,7 +290,7 @@ static int spi_lock(struct spi_dev_s *dev, bool lock)
  ****************************************************************************/
 static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	s5j_clk_set_rate(priv->freqid, (unsigned long)frequency);
 
@@ -306,9 +306,9 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
  *   all other attempts to select the device until the device is deselecte.
  *
  ****************************************************************************/
-static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selected)
+static void spi_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
@@ -333,7 +333,7 @@ static void spi_select(struct spi_dev_s *dev, enum spi_dev_e devid, bool selecte
  ****************************************************************************/
 static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
@@ -353,7 +353,7 @@ static void spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
  ****************************************************************************/
 static void spi_setbits(struct spi_dev_s *dev, int nbits)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	SPI_SFR *pSPIRegs;
 	pSPIRegs = (SPI_SFR *)priv->base;
@@ -390,7 +390,7 @@ static void spi_setbits(struct spi_dev_s *dev, int nbits)
  *   Exchange one word on SPI. Currently support only byte transfers.
  *
  ****************************************************************************/
-static uint16_t spi_send(struct spi_dev_s *dev, uint16_t wd)
+static uint32_t spi_send(struct spi_dev_s *dev, uint32_t wd)
 {
 	uint8_t txbyte;
 	uint8_t rxbyte;
@@ -411,7 +411,7 @@ static uint16_t spi_send(struct spi_dev_s *dev, uint16_t wd)
  ****************************************************************************/
 static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
 {
-	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev->priv;
+	FAR struct s5j_spidev_s *priv = (FAR struct s5j_spidev_s *)dev;
 
 	size_t sent = 0;
 	size_t received = 0;
@@ -573,8 +573,6 @@ struct spi_dev_s *up_spiinitialize(int port)
 
 	/* Disable Interrupts */
 	putreg32(0, &pSPIRegs->SPI_INT_EN);
-
-	priv->spidev.priv = (void *)priv;
 
 	return &priv->spidev;
 }

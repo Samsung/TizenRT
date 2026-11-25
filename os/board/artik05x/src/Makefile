@@ -91,13 +91,6 @@ ifeq ($(CONFIG_BOARD_CRASHDUMP),y)
 CSRCS += crashdump.c
 endif
 
-# boardctl support
-ifeq ($(CONFIG_LIB_BOARDCTL),y)
-DEPPATH += --dep-path $(TOPDIR)/arch
-VPATH += :$(TOPDIR)/arch
-CSRCS += boardctl.c
-endif
-
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS)

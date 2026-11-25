@@ -66,7 +66,7 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/pwm.h>
+#include <tinyara/timers/pwm.h>
 
 #include "chip.h"
 #include "s5j_pwm.h"

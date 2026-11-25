@@ -59,7 +59,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-size_t up_progmem_npages(void)
+size_t up_progmem_neraseblocks(void)
 {
 	return CONFIG_SIDK_S5JT200_FLASH_CAPACITY /
 				CONFIG_SIDK_S5JT200_FLASH_PAGE_SIZE;
@@ -75,7 +75,7 @@ size_t up_progmem_pagesize(size_t page)
 	return CONFIG_SIDK_S5JT200_FLASH_PAGE_SIZE;
 }
 
-size_t up_progmem_blocksize(void)
+size_t up_progmem_erasesize(size_t block)
 {
 	return CONFIG_SIDK_S5JT200_FLASH_PAGE_SIZE;
 }
