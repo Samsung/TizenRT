@@ -88,6 +88,6 @@ endif
 config SECURITY_LEVEL
 	bool "Enable setting security level"
 	default y
-	depends on CONFIG_SE
+	depends on SE
 	---help---
 		Setting security level high or low.
