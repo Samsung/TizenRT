@@ -184,12 +184,35 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret, sem_t &syncSem)
 		return notifySync(syncSem);
 	}
 
-	if (!mOutputHandler.open()) {
-		meddbg("open() failed. recorder: %x\n", &mRecorder);
-		ret = RECORDER_ERROR_FILE_OPEN_FAILED;
+	mBuffSize = get_input_card_buffer_size();
+	meddbg("mBuffer size : %d\n", mBuffSize);
+
+	if (mBuffSize == 0) {
+		meddbg("Buffer size is too small size : %d. recorder: %x\n", mBuffSize, &mRecorder);
+		mOutputHandler.close();
+		ret = RECORDER_ERROR_INVALID_PARAM;
 		return notifySync(syncSem);
 	}
 
+	mBuffer = new unsigned char[mBuffSize];
+	if (!mBuffer) {
+		meddbg("Buffer alloc failed. recorder: %x\n", &mRecorder);
+		ret = RECORDER_ERROR_OUT_OF_MEMORY;
+		mOutputHandler.close();
+		return notifySync(syncSem);
+	}
+
+	if (!mOutputHandler.prepare(mBuffSize)) {
+		meddbg("MediaRecorder prepare failed. recorder: %x\n", &mRecorder);
+		ret = RECORDER_ERROR_FILE_OPEN_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		return notifySync(syncSem);
+	}
+
+	unsigned int inputSampleRate;
+	unsigned int inputChannels;
+	unsigned int inputBytesPerFormat;
 	audio_manager_result_t result = AUDIO_MANAGER_SUCCESS;
 
 	auto source = mOutputHandler.getDataSource();
@@ -202,21 +225,23 @@ void MediaRecorderImpl::prepareRecorder(recorder_result_t& ret, sem_t &syncSem)
 		return notifySync(syncSem);
 	}
 
-	mBuffSize = get_user_input_frames_to_byte(get_input_frame_count());
+	inputSampleRate = get_input_card_sample_rate();
+	inputChannels = get_input_card_channels();
+	inputBytesPerFormat = get_input_card_bytes_per_format();
 
-	if (mBuffSize == 0) {
-		meddbg("Buffer size is too small size : %d. recorder: %x\n", mBuffSize, &mRecorder);
-		mOutputHandler.close();
-		ret = RECORDER_ERROR_INVALID_PARAM;
-		return notifySync(syncSem);
-	}
-	medvdbg("mBuffer size : %d\n", mBuffSize);
+	meddbg("[PREPARE RECORDER] sampleRate = %d, channels = %d, inputBytesPerFormat = %d\n", inputSampleRate, inputChannels, inputBytesPerFormat);
 
-	mBuffer = new unsigned char[mBuffSize];
-	if (!mBuffer) {
-		meddbg("Buffer alloc failed. recorder: %x\n", &mRecorder);
-		ret = RECORDER_ERROR_OUT_OF_MEMORY;
-		mOutputHandler.close();
+	if (!mOutputHandler.startBuffering(inputSampleRate, inputChannels, inputBytesPerFormat, mBuffSize)) {
+		meddbg("MediaRecorder prepare fail : start buffering fail\n");
+		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
+
+		result = reset_audio_stream_in();
+		if (result != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaRecorder prepare cleanup fail : reset_audio_stream_in fail, res: %d\n", result);
+		}
+
+		delete[] mBuffer;
+		mBuffer = nullptr;
 		return notifySync(syncSem);
 	}
 
@@ -890,12 +915,12 @@ void MediaRecorderImpl::capture()
 		}
 
 		int ret = 0;
-		int size = get_user_input_frames_to_byte(frames);
+		int size = get_card_input_frames_to_byte(frames);
 
 		while (size > 0) {
 			int written = mOutputHandler.write(mBuffer + ret, size);
-			medvdbg("written : %d size : %d frames : %d\n", written, size, frames);
-			medvdbg("mCapturedFrames : %ld totalduration : %d mTotalFrames : %ld\n", mCapturedFrames, mDuration, mTotalFrames);
+			meddbg("written : %d size : %d frames : %d\n", written, size, frames);
+			meddbg("mCapturedFrames : %ld totalduration : %d mTotalFrames : %ld\n", mCapturedFrames, mDuration, mTotalFrames);
 			/* For Error case, we stop Capture */
 			if (written == EOF) {
 				std::lock_guard<std::mutex> lock(mCmdMtx);
