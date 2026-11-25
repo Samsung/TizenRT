@@ -395,6 +395,12 @@ void weak_function sched_process_cpuload(void);
 void sched_clear_cpuload(pid_t pid);
 #endif
 
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+void sched_deadtasklistinit(void);
+void sched_savedeadtaskinfo(pid_t pid, const char *task_name);
+void sched_removedeadtaskinfo(pid_t pid);
+#endif
+
 #ifdef CONFIG_SMP
 FAR struct tcb_s *this_task(void);
 
