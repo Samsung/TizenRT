@@ -186,37 +186,48 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	/* Get the mountpoint inode reference from the file structure and the
 	 * mountpoint private data from the inode structure
 	 */
-
 	inode = filep->f_inode;
 	fs = inode->i_private;
 
 	DEBUGASSERT(fs != NULL);
 
-	/* Take the semaphore */
+	/* If the file has not been opened for writing but an Append or Truncate has
+	 * been requested, return an error
+	 */
+	/* TODO: Do we allow a file to be Created in READ mode only i.e. (O_READ | O_CREAT)?
+	 * 	The file has no data to be read yet, so we will only be able to create an empty file entry.
+	 */
+	if (((oflags & O_ACCMODE) != O_WRONLY) && (oflags & (O_TRUNC | O_APPEND))) {
+		fdbg("Invalid file-opening mode for %s\n", relpath);
+		return -EIO;
+	}
 
+	/* Take the semaphore */
 	smartfs_semtake(fs);
 
 	/* Locate the directory entry for this path */
-
 	sf = (struct smartfs_ofile_s *)kmm_zalloc(sizeof(struct smartfs_ofile_s));
 	if (sf == NULL) {
 		ret = -ENOMEM;
 		goto errout_with_semaphore;
 	}
 
-	/* Allocate a sector buffer if CRC enabled in the MTD layer */
-
+	/* Allocate a sector buffer if the file is opened for writing
+	 * and CRC is enabled in the MTD layer
+	 */
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	sf->buffer = (uint8_t *)kmm_malloc(fs->fs_llformat.availbytes);
-	if (sf->buffer == NULL) {
-		/* Error ... no memory */
+	if ((oflags & O_ACCMODE) == O_WRONLY) {
+		sf->buffer = (uint8_t *)kmm_malloc(fs->fs_llformat.availbytes);
+		if (sf->buffer == NULL) {
+			/* Error, no memory to allocate for sector buffer */
 
-		kmm_free(sf);
-		ret = -ENOMEM;
-		goto errout_with_semaphore;
+			kmm_free(sf);
+			ret = -ENOMEM;
+			goto errout_with_semaphore;
+		}
+		/*The buffer is currently clean */
+		sf->bflags = SMARTFS_BFLAG_UNMOD;
 	}
-
-	sf->bflags = SMARTFS_BFLAG_UNMOD;
 #endif							/* CONFIG_SMARTFS_USE_SECTOR_BUFFER */
 
 	sf->entry.name = NULL;
@@ -228,17 +239,15 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	 */
 
 	if (ret == OK) {
-		/* The name exists -- but is is a file or a directory ? */
+		/* The name exists -- but is it a file or a directory ? */
 
 		if (sf->entry.flags & SMARTFS_DIRENT_TYPE_DIR) {
 			/* Can't open a dir as a file! */
-
 			ret = -EISDIR;
 			goto errout_with_buffer;
 		}
 
 		/* It would be an error if we are asked to create it exclusively */
-
 		if ((oflags & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL)) {
 			/* Already exists -- can't create it exclusively */
 
@@ -255,27 +264,30 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			}
 		}
 
-		/* The file exists already.
-		 * If the file has been requested to be opened in TRUNCATE mode, then shrink the file.
-		 * However, if APPEND mode has also been requested, do not shrink the file to 0.
-		 */
+		/* The file exists already */
 
-		/* TODO: This method for checking the open modes is not in full accordance with POSIX standard.
-		 *       POSIX standard truncates the file i.e. shrinks to 0 irrespective of other included flags.
+		/* Test if the file is opened in APPEND mode. If yes, then seek to the end of the file.
+		 * Seeking will also automatically update the header in the sector buffer
+		 * If not, and the file has been opened in TRUNCATE mode then shrink the file to length 0
 		 */
-
-		if (((oflags & O_TRUNC) != 0) && ((oflags & O_APPEND) == 0)) {
+		/* NOTE: This method for checking the open modes is not in full accordance with POSIX standard.
+		 * 	POSIX standard truncates the file i.e. shrinks to 0 irrespective of other included flags.
+		 */
+		if (oflags & O_APPEND) {
+			smartfs_seek_internal(fs, sf, 0, SEEK_END);
+		} else if (oflags & O_TRUNC) {
 			/* Truncate the file to length 0 as part of the open */
 			ret = smartfs_shrinkfile(fs, sf, 0);
 			if (ret < 0) {
 				goto errout_with_buffer;
 			}
 		}
+
 	} else if (ret == -ENOENT) {
 		/* The file does not exist.  Were we asked to create it? */
+
 		if ((oflags & O_CREAT) == 0) {
 			/* No.. then we fail with -ENOENT */
-
 			ret = -ENOENT;
 			goto errout_with_buffer;
 		}
@@ -283,6 +295,7 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 		/* Yes... test if the parent directory is valid */
 		if (sf->entry.dsector != 0xFFFF) {
 			/* We can create in the given parent directory */
+
 			/* First we allocate a new data sector for the file */
 			ret = smartfs_alloc_firstsector(fs, &sf->entry.firstsector, SMARTFS_DIRENT_TYPE_FILE, sf);
 			if (ret != OK) {
@@ -312,7 +325,6 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 			}
 		} else {
 			/* Trying to create in a directory that doesn't exist */
-
 			ret = -ENOENT;
 			goto errout_with_buffer;
 		}
@@ -321,7 +333,6 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	}
 
 	/* Now perform the "open" on the file in direntry */
-
 	sf->oflags = oflags;
 	sf->crefs = 1;
 	sf->filepos = 0;
@@ -330,38 +341,26 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	sf->byteswritten = 0;
 
 #ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	if ((sf->bflags & SMARTFS_BFLAG_DIRTY) == 0) {
-		/* When using sector buffering, current sector with its header should
-		 * always be present in sf->buffer. Otherwise data corruption may arise
-		 * when writing.
+	/* When using sector buffering, current sector with its header should always be present
+	 *  in sf->buffer. Otherwise data corruption may arise when writing.
+	 */
+	if (((oflags & O_ACCMODE) == O_WRONLY) && (sf->bflags & SMARTFS_BFLAG_DIRTY) == 0 &&\
+			(sf->currsector != SMARTFS_ERASEDSTATE_16BIT)) {
+		/* If the sector buffer flags are dirty, then the logic reponsible for writing to
+		 * the buffer and dirtying the flags is expected to have updated the header.
 		 */
-
-		if (sf->currsector != SMARTFS_ERASEDSTATE_16BIT) {
-			/* For truncate, we already read header and set data in sf->buffer */
-			if (((oflags & (O_CREAT | O_TRUNC)) == 0) || (oflags & O_APPEND)) {
-				smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
-				ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long) &readwrite);
-				if (ret < 0) {
-					fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
-					goto errout_with_buffer;
-				}
+		if ((oflags & (O_CREAT | O_TRUNC | O_APPEND)) == 0) {
+			/* For truncate and append, we already read header and set data in sf->buffer */
+			smartfs_setbuffer(&readwrite, sf->currsector, 0, fs->fs_llformat.availbytes, (uint8_t *)sf->buffer);
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long) &readwrite);
+			if (ret < 0) {
+				fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
+				goto errout_with_buffer;
 			}
 		}
 	}
 #endif
-
-	/* Test if we opened for APPEND mode.  If we did, then seek to the
-	 * end of the file.
-	 */
-
-	if (oflags & O_APPEND) {
-		/* Perform the seek */
-
-		smartfs_seek_internal(fs, sf, 0, SEEK_END);
-	}
-
 	/* Attach the private date to the struct file instance */
-
 	filep->f_priv = sf;
 
 	/* Then insert the new instance into the mountpoint structure.
@@ -369,7 +368,6 @@ static int smartfs_open(FAR struct file *filep, const char *relpath, int oflags,
 	 * all files, and (2) to inform the umount logic that we are busy
 	 * (but a simple reference count could have done that).
 	 */
-
 	sf->fnext = fs->fs_head;
 	fs->fs_head = sf;
 
