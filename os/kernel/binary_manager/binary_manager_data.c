@@ -608,7 +608,7 @@ bool binary_manager_scan_ubin_all(void)
 		bin_idx = binary_manager_get_index_with_name(bp_data->head.app_data[bp_app_idx].name);
 		if (bin_idx < 0) {
 			bmdbg("Fail to find matched binary %s in binary table \n", bp_data->head.app_data[bp_app_idx].name);
-			continue;
+			return false;
 		}
 		BIN_BPIDX(bin_idx) = bp_app_idx;
 		part_idx = bp_data->head.app_data[bp_app_idx].useidx;
@@ -636,6 +636,7 @@ bool binary_manager_scan_ubin_all(void)
 			is_found = true;
 		} else {
 			bmdbg("Fail to find valid binary %s based on BP. \n", BIN_NAME(bin_idx));
+			return false;
 		}
 	}
 #else
