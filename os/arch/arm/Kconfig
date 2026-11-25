@@ -191,107 +191,6 @@ config ARCH_CHIP_AMEBASMART
 
 endchoice # ARM MCU selection
 
-config ARCH_ARM7TDMI
-	bool
-	default n
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	---help---
-		The Arm7TDMI-S is an excellent workhorse processor capable of a wide
-		array of applications. Traditionally used in mobile handsets, the
-		processor is now broadly in many non-mobile applications.
-
-config ARCH_ARM920T
-	bool
-	default n
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	---help---
-		The ARM9 processor family is built around the ARM9TDMI processor and
-		incorporates the 16-bit Thumb instruction set. The ARM9 Thumb family
-		includes the ARM920T and ARM922T cached processor macrocells:
-
-		- Dual 16k caches for applications running Symbian OS, Palm OS,
-		  Linux and Windows CE,
-		- Dual 8k caches for applications running Symbian OS, Palm OS, Linux
-		  and Windows CE Applications
-
-config ARCH_ARM926EJS
-	bool
-	default n
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	---help---
-		Arm926EJ-S is the entry point processor capable of supporting full
-		Operating Systems including Linux, WindowsCE, and Symbian.
-
-		The ARM9E processor family enables single processor solutions for
-		microcontroller, DSP and Java applications. The ARM9E family of
-		products are DSP-enhanced 32-bit RISC processors, for applications
-		requiring a mix of DSP and microcontroller performance. The family
-		includes the ARM926EJ-S, ARM946E-S, ARM966E-S, and ARM968E-S
-		processor macrocells. They include signal processing extensions to
-		enhance 16-bit fixed point performance using a single-cycle 32 x 16
-		multiply-accumulate (MAC) unit, and implement the 16-bit Thumb
-		instruction set. The ARM926EJ-S processor also includes ARM Jazelle
-		technology which enables the direct execution of Java bytecodes in
-		hardware.
-
-config ARCH_ARM1136J
-	bool
-	default n
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	---help---
-		Arm1136J(F)-S is very similar to Arm926EJ-S, but includes an
-		extended pipeline, basic SIMD (Single Instruction Multiple Data)
-		instructions, and improved frequency and performance.
-
-config ARCH_ARM1156T2
-	bool
-	default n
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	---help---
-		Arm1156T2(F)-S is the highest-performance processor in the real-time
-		Classic Arm family.
-
-config ARCH_ARM1176JZ
-	bool
-	default n
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	---help---
-		Arm1176JZ(F)-S is the highest-performance single-core processor in
-		the Classic Arm family. It also introduced TrustZone technology to
-		enable secure execution outside of the reach of malicious code.
-
-config ARCH_ARMV6M
-	bool
-	default n
-	select ARCH_HAVE_CPUINFO
-
-config ARCH_CORTEXM0
-	bool
-	default n
-	select ARM_THUMB
-	select ARCH_ARMV6M
-	select ARCH_HAVE_IRQPRIO
-	select ARCH_HAVE_IRQTRIGGER
-	select ARCH_HAVE_RAMVECTORS
-	select ARCH_HAVE_RESET
-	select ARCH_HAVE_HARDFAULT_DEBUG
-
 config ARCH_ARMV7M
 	bool
 	default n
@@ -356,17 +255,6 @@ config ARCH_ARMV7A
 	select ARCH_HAVE_PERF_EVENTS
 	select ARM_HAVE_WFE_SEV
 
-config ARCH_CORTEXA5
-	bool
-	default n
-	select ARCH_ARMV7A
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	select ARCH_HAVE_TESTSET
-	select ARM_HAVE_MPCORE
-
 config ARCH_CORTEXA7
 	bool
 	default n
@@ -378,16 +266,6 @@ config ARCH_CORTEXA7
 	select ARCH_HAVE_TESTSET
 	select ARCH_HAVE_FPU
 	select ARM_HAVE_MPCORE
-
-config ARCH_CORTEXA8
-	bool
-	default n
-	select ARCH_ARMV7A
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MMU
-	select ARCH_USE_MMU
-	select ARCH_HAVE_TESTSET
 
 config ARCH_CORTEXA9
 	bool
@@ -425,22 +303,6 @@ config ARCH_CORTEXR5
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_TESTSET
 
-config ARCH_CORTEXR7
-	bool
-	default n
-	select ARCH_ARMV7R
-	select ARCH_DCACHE
-	select ARCH_ICACHE
-	select ARCH_HAVE_MPU
-	select ARCH_HAVE_TESTSET
-
-config ARCH_CORTEXR52
-	bool
-	default n
-	select ARCH_ARMV8R
-	select ARCH_HAVE_MPU
-	select ARCH_HAVE_TESTSET
-
 config ARCH_ARMV8M
 	bool
 	default n
@@ -448,37 +310,7 @@ config ARCH_ARMV8M
 	select ARCH_HAVE_DEBUG
 	select ARCH_HAVE_PERF_EVENTS
 
-config ARCH_CORTEXM23
-	bool
-	default n
-	select ARM_THUMB
-	select ARCH_ARMV8M
-	select ARCH_HAVE_IRQPRIO
-	select ARCH_HAVE_IRQTRIGGER
-	select ARCH_HAVE_RAMVECTORS
-	select ARCH_HAVE_HIPRI_INTERRUPT
-	select ARCH_HAVE_RESET
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_HARDFAULT_DEBUG
-
 config ARCH_CORTEXM33
-	bool
-	default n
-	select ARM_THUMB
-	select ARCH_ARMV8M
-	select ARCH_HAVE_IRQPRIO
-	select ARCH_HAVE_IRQTRIGGER
-	select ARCH_HAVE_RAMVECTORS
-	select ARCH_HAVE_HIPRI_INTERRUPT
-	select ARCH_HAVE_RESET
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_HARDFAULT_DEBUG
-	select ARCH_HAVE_MEMFAULT_DEBUG
-	select ARCH_HAVE_BUSFAULT_DEBUG
-	select ARCH_HAVE_USAGEFAULT_DEBUG
-	select ARCH_HAVE_SECUREFAULT_DEBUG if ARCH_TRUSTZONE_SECURE
-
-config ARCH_CORTEXM35P
 	bool
 	default n
 	select ARM_THUMB
@@ -512,42 +344,12 @@ config ARCH_CORTEXM55
 	select ARCH_HAVE_USAGEFAULT_DEBUG
 	select ARCH_HAVE_SECUREFAULT_DEBUG if ARCH_TRUSTZONE_SECURE
 
-config ARCH_CORTEXM85
-	bool
-	default n
-	select ARM_THUMB
-	select ARCH_ARMV8M
-	select ARCH_HAVE_IRQPRIO
-	select ARCH_HAVE_IRQTRIGGER
-	select ARCH_HAVE_RAMVECTORS
-	select ARCH_HAVE_HIPRI_INTERRUPT
-	select ARCH_HAVE_RESET
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_HARDFAULT_DEBUG
-	select ARCH_HAVE_MEMFAULT_DEBUG
-	select ARCH_HAVE_BUSFAULT_DEBUG
-	select ARCH_HAVE_USAGEFAULT_DEBUG
-	select ARCH_HAVE_SECUREFAULT_DEBUG if ARCH_TRUSTZONE_SECURE
-
-config ARCH_ARMV8R
-	bool
-	default n
-	select ARCH_HAVE_CPUINFO
-	select ARCH_HAVE_PERF_EVENTS
-	select ONESHOT
-	select ONESHOT_COUNT
-	select ALARM_ARCH
-
-
 config ARCH_FAMILY
 	string
-	default "arm"		if ARCH_ARM7TDMI || ARCH_ARM920T || ARCH_ARM926EJS || ARCH_ARM1136J || ARCH_ARM1156T2 || ARCH_ARM1176JZ
-	default "armv6-m"	if ARCH_ARMV6M
 	default "armv7-a"	if ARCH_ARMV7A
 	default "armv7-m"	if ARCH_ARMV7M
 	default "armv7-r"	if ARCH_ARMV7R
 	default "armv8-m"	if ARCH_ARMV8M
-	default "armv8-r"	if ARCH_ARMV8R
 
 config ARCH_CHIP
 	string
