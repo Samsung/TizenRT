@@ -39,6 +39,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/log_dump/log_dump.h>
 #include <tinyara/log_dump/log_dump_internal.h>
+#include "mqueue/mqueue.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -607,6 +608,9 @@ int log_dump(int argc, char *argv[])
 		ldpdbg("Fail to open mq, errno %d. EXIT!\n", errno);
 		return 0;
 	}
+
+	/* Cache the descriptor for mq_verifydesg() whitelist */
+	mq_verifydesg_set_logdump_mqdes(mq_fd);
 
 	if (log_dump_init() != LOG_DUMP_OK) {
 		ldpdbg("Fail to init log dump\n");
