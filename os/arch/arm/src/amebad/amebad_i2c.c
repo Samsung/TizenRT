@@ -762,7 +762,11 @@ static int amebad_i2c_isr_process(struct amebad_i2c_priv_s *priv)
 
 	struct i2c_msg_s *w_msgv = priv->msgv;
 #ifdef CONFIG_I2C_WRITEREAD
-	struct i2c_msg_s *r_msgv = ++priv->msgv;
+	/* The second message only exists for writeread transfers. read()/write()
+	 * go through amebad_i2c_process() with a single-element message array, so
+	 * walking to msgv[1] here would read past the end of that array.
+	 */
+	struct i2c_msg_s *r_msgv = (priv->msgc >= 2) ? (priv->msgv + 1) : NULL;
 	uint8_t read_restart;
 	uint8_t write_restart;
 
@@ -779,7 +783,7 @@ static int amebad_i2c_isr_process(struct amebad_i2c_priv_s *priv)
 		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 1);
 #endif
         }
-	if ((r_msgv->flags & I2C_M_READ) != 0) {
+	if (r_msgv != NULL && (r_msgv->flags & I2C_M_READ) != 0) {
 
 		i2cinfo("i2c reading");
 #ifdef CONFIG_I2C_SLAVE
