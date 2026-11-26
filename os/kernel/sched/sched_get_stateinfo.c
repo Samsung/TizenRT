@@ -86,6 +86,7 @@ void nxsched_get_stateinfo(FAR struct tcb_s *tcb, FAR char *state,
 	    "Running",
 	    "Inactive",
 	    "Waiting,Semaphore",
+	    "Waiting,Fin",
 	    "Waiting,Signal"
 #ifdef CONFIG_SCHED_EVENTS
 	    , "Waiting,Event"

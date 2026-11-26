@@ -288,8 +288,10 @@ int binary_manager_faultmsg_sender(int argc, char *argv[])
 	}
 
 	while (1) {
-		/* Wait for fault messages and handle it */
-		up_block_task(this_task(), TSTATE_WAIT_FIN);
+		/* Wait for fault messages and handle it.  fin_wait() consumes
+		 * the notification mailbox, which this loop does not use.
+		 */
+		(void)fin_wait();
 		while (!sq_empty(&g_faultmsg_list)) {
 			msg = (struct faultmsg_s *)sq_remfirst(&g_faultmsg_list);
 			request_msg.cmd = BINMGR_FAULT;
