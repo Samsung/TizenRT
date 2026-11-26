@@ -178,7 +178,9 @@ static int findwidth(FAR const char *buf, FAR const char *fmt)
  *
  * Description:
  *    Fill in the given table from the scanset at the given format.
- *    Return a pointer to the character the closing ']'.
+ *    Return a pointer to the character the closing ']'.  If the format
+ *    string ends before the closing ']' is found, the returned pointer
+ *    refers to the terminating NUL of the format string instead.
  *    The table has a 1 wherever characters should be considered part of the
  *    scanset.
  *
@@ -496,6 +498,17 @@ int vsscanf(FAR const char *buf, FAR const char *fmt, va_list ap)
 				lvdbg("vsscanf: Performing scanset conversion\n");
 
 				fmt = findscanset(fmt, set); /* find scanset */
+
+				/* A scanset without a closing ']' leaves fmt on the NUL
+				 * terminator of the format string.  Stop processing the
+				 * format here: the unconditional fmt++ at the end of this
+				 * specifier would otherwise step past the end of the string
+				 * and the outer while (*fmt) would read beyond it.
+				 */
+
+				if (*fmt == '\0') {
+					break;
+				}
 
 				/* Get a pointer to the char * value.  We need to do this even
 				* if we have reached the end of the input data in order to
