@@ -835,7 +835,11 @@ static int amebasmart_i2c_isr_process(struct amebasmart_i2c_priv_s *priv)
 
 	struct i2c_msg_s *w_msgv = priv->msgv;
 #ifdef CONFIG_I2C_WRITEREAD
-	struct i2c_msg_s *r_msgv = ++priv->msgv;
+	/* The second message only exists for writeread transfers. read()/write()
+	 * go through amebasmart_i2c_process() with a single-element message array,
+	 * so walking to msgv[1] here would read past the end of that array.
+	 */
+	struct i2c_msg_s *r_msgv = (priv->msgc >= 2) ? (priv->msgv + 1) : NULL;
 	uint8_t read_restart;
 	uint8_t write_restart;
 
@@ -852,7 +856,7 @@ static int amebasmart_i2c_isr_process(struct amebasmart_i2c_priv_s *priv)
 		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 1);
 #endif
         }
-	if ((r_msgv->flags & I2C_M_READ) != 0) {
+	if (r_msgv != NULL && (r_msgv->flags & I2C_M_READ) != 0) {
 
 		i2cinfo("i2c reading");
 #ifdef CONFIG_I2C_SLAVE
@@ -1283,12 +1287,19 @@ static uint32_t rtk_i2c_suspend(uint32_t expected_idle_time, void *param)
 	(void)expected_idle_time;
 	(void)param;
 
-	/* Need to destroy semaphore and release i2c object to prevent memory leak */
+	/* Need to destroy semaphore and release i2c object to prevent memory leak.
+	 * Skip buses that were never initialized so that we do not detach IRQs
+	 * that were never attached; rtk_i2c_resume() uses the same test.
+	 */
 #ifdef CONFIG_AMEBASMART_I2C1
-	amebasmart_i2c_deinit(&amebasmart_i2c1_priv);
+	if (amebasmart_i2c1_priv.i2c_object != NULL) {
+		amebasmart_i2c_deinit(&amebasmart_i2c1_priv);
+	}
 #endif
 #ifdef CONFIG_AMEBASMART_I2C2
-	amebasmart_i2c_deinit(&amebasmart_i2c2_priv);
+	if (amebasmart_i2c2_priv.i2c_object != NULL) {
+		amebasmart_i2c_deinit(&amebasmart_i2c2_priv);
+	}
 #endif
 	return 1;
 }
@@ -1297,13 +1308,24 @@ static uint32_t rtk_i2c_resume(uint32_t expected_idle_time, void *param)
 {
 	(void)expected_idle_time;
 	(void)param;
-	/* For PG Sleep, I2C 1/2 HW will be lost power, thus a reinitialization is required here 
+	/* For PG Sleep, I2C 1/2 HW will be lost power, thus a reinitialization is required here
 	I2C0 is under SYSON block, so it will not require to be reinitialized*/
+
+	/* Only touch a bus that is actually initialized. up_i2cuninitialize()
+	 * frees i2c_object and sets it back to NULL, so resuming an unused or
+	 * already-uninitialized bus would dereference NULL in
+	 * amebasmart_i2c_init(). The PM hook is registered unconditionally by
+	 * i2c_pminitialize() regardless of whether any bus came up.
+	 */
 #ifdef CONFIG_AMEBASMART_I2C1
-	amebasmart_i2c_init(&amebasmart_i2c1_priv);
+	if (amebasmart_i2c1_priv.i2c_object != NULL) {
+		amebasmart_i2c_init(&amebasmart_i2c1_priv);
+	}
 #endif
 #ifdef CONFIG_AMEBASMART_I2C2
-	amebasmart_i2c_init(&amebasmart_i2c2_priv);
+	if (amebasmart_i2c2_priv.i2c_object != NULL) {
+		amebasmart_i2c_init(&amebasmart_i2c2_priv);
+	}
 #endif
 	return 1;
 }

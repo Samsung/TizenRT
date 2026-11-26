@@ -209,10 +209,13 @@ static alarm_irq_handler amebasmart_alarm_callback(void)
 static int amebasmart_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *rtctime)
 {
 	FAR struct amebasmart_lowerhalf_s *rtc;
+	FAR struct tm *result;
 	time_t timer;
-	int ret;
 
 	DEBUGASSERT(lower != NULL);
+	if (lower == NULL || rtctime == NULL) {
+		return -EINVAL;
+	}
 	rtc = (FAR struct amebasmart_lowerhalf_s *)lower;
 	sem_wait(&rtc->devsem);
 	/* The resolution of time is only 1 second */
@@ -221,11 +224,13 @@ static int amebasmart_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_t
 
 	/* Convert the one second epoch time to a struct tm */
 
-	ret = (int)gmtime_r(&timer, (FAR struct tm *)rtctime);
+	result = gmtime_r(&timer, (FAR struct tm *)rtctime);
 
 	sem_post(&rtc->devsem);
 
-	if (ret == 0) return -EOVERFLOW;
+	if (result == NULL) {
+		return -EOVERFLOW;
+	}
 
 	return OK;
 }
@@ -249,6 +254,10 @@ static int amebasmart_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_t
 static int amebasmart_settime(FAR struct rtc_lowerhalf_s *lower, FAR const struct rtc_time *rtctime)
 {
 	struct timespec ts;
+
+	if (lower == NULL || rtctime == NULL) {
+		return -EINVAL;
+	}
 
 	/* Convert the struct rtc_time to a time_t.  Here we assume that struct
 	 * rtc_time is cast compatible with struct tm.
