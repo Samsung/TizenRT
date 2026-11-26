@@ -513,12 +513,22 @@ CONFIG_USERMAIN_STACKSIZE=2048
 # CONFIG_MPU_STACKGAURD is not set
 CONFIG_PTHREAD_STACK_MIN=256
 CONFIG_PTHREAD_STACK_DEFAULT=2048
-# CONFIG_LOG_DUMP is not set
-# NOTE: LOG_DUMP is deliberately disabled on this config.  Its 12.13
-# adaptation compresses log chunks from the console write path
-# (uart_putxmitchar -> log_dump_save) and busy-waits for the log_dump
-# kthread while holding the console xmit lock; when that kthread stalls
-# on the kernel heap the whole console wedges permanently.
+# log_dump captures the console stream and compresses it in a kernel thread.
+# compress_full_bufs() waits for that thread and allocates for the compressed
+# stream from inside the console write path, so it does so while holding the
+# console lock: keep the syslog output off the console (see Debug Options
+# below), otherwise a task holding the kernel heap can block on the console
+# and wedge it permanently. The hang detector is the tripwire for such a
+# stall.
+CONFIG_LOG_DUMP=y
+CONFIG_LOG_DUMP_PRIO=200
+CONFIG_LOG_DUMP_CHUNK_SIZE=4096
+CONFIG_LOG_DUMP_MAX_SIZE=262144
+CONFIG_LOG_DUMP_MEMCHECK_SIZE=1024
+CONFIG_LOG_DUMP_MAX_FREE_HEAP=20
+CONFIG_LOG_DUMP_NUMBUFS=2
+CONFIG_LOG_DUMP_DEBUG_DETECT_HANG=y
+CONFIG_LOG_DUMP_HANG_CHECK_SEC=150
 
 #
 # Device Drivers
@@ -1566,8 +1576,7 @@ CONFIG_EXTERNAL_CMSIS_NN=y
 #
 # Compression
 #
-# COMPIOC_* ioctls dropped by 12.13 base - port queued
-# CONFIG_COMPRESSION is not set
+CONFIG_COMPRESSION=y
 CONFIG_COMPRESSION_TYPE=2
 CONFIG_COMPRESSION_BLOCK_SIZE=16384
 
