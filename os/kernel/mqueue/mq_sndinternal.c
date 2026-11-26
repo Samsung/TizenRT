@@ -58,6 +58,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <mqueue.h>
 #include <string.h>
@@ -153,21 +154,22 @@ int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
  *
  * Description:
  *   The mq_msgalloc function will get a free message for use by the
- *   operating system.  The message will be allocated from the g_msgfree
+ *   operating system.  If the payload fits in a pool message
+ *   (msglen <= MQ_PREALLOC_BYTES) the message is taken from the g_msgfree
  *   list.
  *
- *   If the list is empty AND the message is NOT being allocated from the
- *   interrupt level, then the message will be allocated.  If a message
- *   cannot be obtained, the operating system is dead and therefore cannot
- *   continue.
+ *   If no pool message can be used (payload too long, or list empty) AND
+ *   the message IS being allocated from the interrupt level, the message
+ *   is taken from the g_msgfreeirq list (full MQ_MAX_BYTES payload).  Both
+ *   lookups are done under a single critical section.  If this is
+ *   unsuccessful, the calling interrupt handler will be notified.
  *
- *   If the list is empty AND the message IS being allocated from the
- *   interrupt level.  This function will attempt to get a message from
- *   the g_msgfreeirq list.  If this is unsuccessful, the calling interrupt
- *   handler will be notified.
+ *   If no pool message can be used AND the message is NOT being allocated
+ *   from the interrupt level, then a message of exactly MQ_MSG_SIZE(msglen)
+ *   bytes is allocated from the heap.
  *
  * Inputs:
- *   None
+ *   msglen - Length of the payload the message must hold
  *
  * Return Value:
  *   A reference to the allocated msg structure.
@@ -177,54 +179,52 @@ int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
  *
  ****************************************************************************/
 
-FAR struct mqueue_msg_s *mq_msgalloc(void)
+FAR struct mqueue_msg_s *mq_msgalloc(size_t msglen)
 {
-	FAR struct mqueue_msg_s *mqmsg;
+	FAR struct mqueue_msg_s *mqmsg = NULL;
 	irqstate_t saved_state;
+	bool from_isr = up_interrupt_context();
 
-	/* If we were called from an interrupt handler, then try to get the message
-	 * from generally available list of messages. If this fails, then try the
-	 * list of messages reserved for interrupt handlers
+	/* Pool lookups, under one critical section because both lists are
+	 * shared with interrupt handlers: the general free list if the payload
+	 * fits in a pool message, then the list reserved for interrupt handlers
+	 * if we are one.  A task sending a payload larger than a pool message
+	 * skips the pools (and the lock) entirely.
 	 */
 
-	if (up_interrupt_context()) {
-		/* Try the general free list */
+	if (msglen <= MQ_PREALLOC_BYTES || from_isr) {
 		saved_state = enter_critical_section();
-		mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfree);
-		if (!mqmsg) {
-			/* Try the free list reserved for interrupt handlers */
-
+		if (msglen <= MQ_PREALLOC_BYTES) {
+			mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfree);
+		}
+		if (!mqmsg && from_isr) {
 			mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfreeirq);
 		}
 		leave_critical_section(saved_state);
-		if (!mqmsg) {
-			set_errno(EBUSY);
-		}
 	}
 
-	/* We were not called from an interrupt handler. */
+	if (mqmsg) {
+		return mqmsg;
+	}
 
-	else {
-		/* Try to get the message from the generally available free list.
-		 * Disable interrupts -- we might be called from an interrupt handler.
-		 */
+	/* An interrupt handler has no further fallback. */
 
-		saved_state = enter_critical_section();
-		mqmsg = (FAR struct mqueue_msg_s *)sq_remfirst(&g_msgfree);
-		leave_critical_section(saved_state);
+	if (from_isr) {
+		set_errno(EBUSY);
+		return NULL;
+	}
 
-		/* If we cannot a message from the free list, then we will have to allocate one. */
+	/* We were not called from an interrupt handler: allocate a message
+	 * sized for exactly this payload.
+	 */
 
-		if (!mqmsg) {
-			mqmsg = (FAR struct mqueue_msg_s *)kmm_malloc((sizeof(struct mqueue_msg_s)));
+	mqmsg = (FAR struct mqueue_msg_s *)kmm_malloc(MQ_MSG_SIZE(msglen));
 
-			/* Check if we got an allocated message */
-			if (mqmsg) {
-				mqmsg->type = MQ_ALLOC_DYN;
-			} else {
-				set_errno(ENOMEM);
-			}
-		}
+	/* Check if we got an allocated message */
+	if (mqmsg) {
+		mqmsg->type = MQ_ALLOC_DYN;
+	} else {
+		set_errno(ENOMEM);
 	}
 
 	return mqmsg;
@@ -371,7 +371,9 @@ int mq_dosend(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR const char *msg, 
 	mqmsg->priority = prio;
 	mqmsg->msglen = msglen;
 
-	/* Copy the message data into the message */
+	/* Copy the message data into the message.  mq_msgalloc(msglen)
+	 * guarantees that mail[] is large enough for this payload.
+	 */
 
 	memcpy((void *)mqmsg->mail, (FAR const void *)msg, msglen);
 

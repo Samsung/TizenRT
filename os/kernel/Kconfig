@@ -972,12 +972,25 @@ config PREALLOC_MQ_MSGS
 		The number of pre-allocated message structures.  The system manages
 		a pool of preallocated message structures to minimize dynamic allocations
 
+config PREALLOC_MQ_MSGSIZE
+	int "Payload size of pre-allocated messages"
+	default MQ_MAXMSGSIZE
+	---help---
+		Payload size of each of the PREALLOC_MQ_MSGS pre-allocated messages.
+		A message longer than this (up to MQ_MAXMSGSIZE), or any message sent
+		while all pre-allocated messages are in use, is allocated from the
+		heap with exactly the size it needs, so the pool can be sized for
+		the common short messages instead of the rare large ones. Must not
+		exceed MQ_MAXMSGSIZE. Equal to MQ_MAXMSGSIZE gives the classic
+		single-size behaviour.
+
 config MQ_MAXMSGSIZE
 	int "Maximum message size"
 	default 32
 	---help---
-		Message structures are allocated with a fixed payload size given by this
-		setting (does not include other message structure overhead).
+		The largest message payload any queue may accept (upper bound for the
+		msgsize given to mq_open). Messages reserved for interrupt handlers
+		are allocated with this payload size.
 
 endmenu # POSIX Message Queue Options
 

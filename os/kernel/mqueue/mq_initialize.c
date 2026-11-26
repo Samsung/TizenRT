@@ -129,30 +129,46 @@ static sq_queue_t g_desalloc;
  * Name: mq_msgblockalloc
  *
  * Description:
- *   Allocate a block of messages and place them on the free list.
+ *   Allocate a block of messages and place them on the free list.  Each
+ *   message in the block is MQ_MSG_BLOCK(bufsize) bytes, i.e. the header
+ *   followed by a bufsize-byte payload, so the block cannot be indexed as
+ *   an array of struct mqueue_msg_s.
  *
  * Inputs Parameters:
- *  queue
+ *  queue      - free list to fill
+ *  nmsgs      - number of messages
+ *  bufsize    - payload capacity of each message
+ *  alloc_type - MQ_ALLOC_* tag stored in each header
+ *
+ * Return Value:
+ *   Start of the block, or NULL.
  *
  ************************************************************************/
 
-static struct mqueue_msg_s *mq_msgblockalloc(FAR sq_queue_t *queue, uint16_t nmsgs, uint8_t alloc_type)
+static struct mqueue_msg_s *mq_msgblockalloc(FAR sq_queue_t *queue, uint16_t nmsgs, uint16_t bufsize, uint8_t alloc_type)
 {
 	struct mqueue_msg_s *mqmsgblock;
+	size_t stride = MQ_MSG_BLOCK(bufsize);
 
-	/* The g_msgfree must be loaded at initialization time to hold the
+	if (nmsgs == 0) {
+		return NULL;
+	}
+
+	/* The free list must be loaded at initialization time to hold the
 	 * configured number of messages.
 	 */
 
-	mqmsgblock = (FAR struct mqueue_msg_s *)kmm_malloc(sizeof(struct mqueue_msg_s) * nmsgs);
+	mqmsgblock = (FAR struct mqueue_msg_s *)kmm_malloc(stride * nmsgs);
 
 	if (mqmsgblock) {
-		struct mqueue_msg_s *mqmsg = mqmsgblock;
+		char *ptr = (char *)mqmsgblock;
 		int i;
 
-		for (i = 0; i < nmsgs; i++) {
+		for (i = 0; i < nmsgs; i++, ptr += stride) {
+			FAR struct mqueue_msg_s *mqmsg = (FAR struct mqueue_msg_s *)ptr;
+
 			mqmsg->type = alloc_type;
-			sq_addlast((FAR sq_entry_t *)mqmsg++, queue);
+			sq_addlast((FAR sq_entry_t *)mqmsg, queue);
 		}
 	}
 
@@ -187,15 +203,18 @@ void mq_initialize(void)
 	sq_init(&g_msgfreeirq);
 	sq_init(&g_desalloc);
 
-	/* Allocate a block of messages for general use */
-
-	g_msgalloc = mq_msgblockalloc(&g_msgfree, CONFIG_PREALLOC_MQ_MSGS, MQ_ALLOC_FIXED);
-
-	/* Allocate a block of messages for use exclusively by
-	 * interrupt handlers
+	/* Allocate a block of messages for general use.  Each holds up to
+	 * MQ_PREALLOC_BYTES of payload; longer messages go to the heap.
 	 */
 
-	g_msgfreeirqalloc = mq_msgblockalloc(&g_msgfreeirq, NUM_INTERRUPT_MSGS, MQ_ALLOC_IRQ);
+	g_msgalloc = mq_msgblockalloc(&g_msgfree, CONFIG_PREALLOC_MQ_MSGS, MQ_PREALLOC_BYTES, MQ_ALLOC_FIXED);
+
+	/* Allocate a block of messages for use exclusively by interrupt
+	 * handlers.  These keep the full MQ_MAX_BYTES payload because an
+	 * interrupt handler has no heap fallback.
+	 */
+
+	g_msgfreeirqalloc = mq_msgblockalloc(&g_msgfreeirq, NUM_INTERRUPT_MSGS, MQ_MAX_BYTES, MQ_ALLOC_IRQ);
 
 	/* Allocate a block of message queue descriptors */
 
