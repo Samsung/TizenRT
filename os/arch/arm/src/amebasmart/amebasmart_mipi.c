@@ -57,6 +57,13 @@ static sem_t g_read_cmd_done;
 static volatile spinlock_t g_txfer_lock = SP_UNLOCKED;
 
 #define MIPI_TRANSFER_TIMEOUT 1 /*one second timeout for mipi transfer*/
+
+/* Maximum DCS payload that amebasmart_mipidsi_send_cmd() can stage before
+ * pushing it to the hardware FIFO. cmd_addr holds the command byte plus the
+ * payload, and the word packer reads up to cmd_addr[127].
+ */
+
+#define MIPI_CMD_FIFO_SIZE 128
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
 	MIPI_TypeDef *MIPIx;
@@ -84,7 +91,7 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 static void amebasmart_register_interrupt(void);
 
 /* MIPI methods */
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list, u8 cmd_type);
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, uint32_t payload_len, const u8 *para_list, u8 cmd_type);
 static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg);
@@ -189,10 +196,23 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
 }
 
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list, u8 cmd_type)
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, uint32_t payload_len, const u8 *para_list, u8 cmd_type)
 {
 	u32 word0, word1, addr, idx;
-	u8 cmd_addr[128];
+	u8 cmd_addr[MIPI_CMD_FIFO_SIZE];
+
+	/* cmd_addr holds cmd plus the payload; the packet header is not part of it.
+	 * Reject anything that would not fit instead of silently truncating: the
+	 * payload length used to be a u8 while the caller passes a size_t, so a
+	 * large generic write could wrap to a small value and then walk cmd_addr
+	 * out of bounds.
+	 */
+
+	if (payload_len > (MIPI_CMD_FIFO_SIZE - 1)) {
+		mipidbg("payload too long: %u\n", payload_len);
+		return;
+	}
+
 	if (MIPI_LPTX_IS_READ(cmd_type)) {
 		spin_lock(&g_txfer_lock);
 		receive_cmd_done = 0;
@@ -452,6 +472,15 @@ static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct
 
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg)
 {
+	/* Guard the arguments before the first dereference at msg->type below.
+	 * mipi_dsi_create_packet() performs the same check, but it is only reached
+	 * after msg has already been dereferenced here.
+	 */
+
+	if (dsi_host == NULL || msg == NULL) {
+		mipidbg("invalid argument, dsi_host %p msg %p\n", dsi_host, msg);
+		return -EINVAL;
+	}
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 1);
 #endif
@@ -465,8 +494,18 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	  irq cmd mode callback here
 	*/
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
+
+	/* g_rtl8730e_config_dev_s_underflow is shared with the LCDC underflow ISR
+	 * (rtl8730e_hv_isr).  It must only ever be held for the flag test-and-clear
+	 * below: acquiring it with plain spin_lock() and then blocking on
+	 * sem_timedwait() lets the ISR spin forever on this CPU when it tries to
+	 * take the same non-reentrant lock, and the holder can never resume to
+	 * release it.  spin_lock_irqsave() is required because the ISR contends on
+	 * this lock from interrupt context.
+	 */
+
 #ifdef CONFIG_SMP
-	spin_lock(&g_rtl8730e_config_dev_s_underflow);
+	irqstate_t lockflags = spin_lock_irqsave(&g_rtl8730e_config_dev_s_underflow);
 #endif
 	if (g_rtl8730e_config_dev_s.underflow) {
 		amebasmart_register_interrupt();
@@ -474,11 +513,12 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 		g_rtl8730e_config_dev_s.underflow = 0;
 		mipidbg("underflow happened, re-register mipi irq to handle cmd mode interrupt\n");
 	}
+#ifdef CONFIG_SMP
+	spin_unlock_irqrestore(&g_rtl8730e_config_dev_s_underflow, lockflags);
+#endif
+
 	if (msg->type == MIPI_DSI_END_OF_TRANSMISSION) {
 		MIPI_DSI_INT_Config(g_dsi_host.MIPIx, DISABLE, DISABLE, FALSE);
-#ifdef CONFIG_SMP
-		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
-#endif
 #ifdef CONFIG_PM
 		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
@@ -486,9 +526,6 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	}
 	int ret = mipi_dsi_create_packet(&packet, msg);
 	if (ret != OK) {
-#ifdef CONFIG_SMP
-		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
-#endif
 #ifdef CONFIG_PM
 		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
@@ -568,9 +605,6 @@ cleanup:
 	rx_data_len = 0;
 	spin_unlock(&g_txfer_lock);
 	irqrestore(flags);
-#ifdef CONFIG_SMP
-	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
-#endif
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
