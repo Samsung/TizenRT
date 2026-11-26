@@ -73,8 +73,11 @@ extern "C"
  * Description:
  *   Continue CRC calculation on a part of the buffer.
  *
- *   The default polynomial is 0x1021 (x^16 + x^12 + x^5 + 1)
- *   See crc16xmodempart()
+ *   MODI_TR: The result value of crc16part() and crc16() intentionally does
+ *   NOT match any standard CRC method - it is a frozen on-flash/on-wire
+ *   format kept for SmartFS, ROMFS and OTN/product compatibility (see
+ *   TizenRT PR #5818).  Do not "fix" it; for standards-conformant CRC-16
+ *   use crc16xmodem(), crc16ccitt() or the crc16_ccitt_* family instead.
  *
  ****************************************************************************/
 
@@ -85,9 +88,8 @@ uint16_t crc16part(FAR const uint8_t *src, size_t len, uint16_t crc16val);
  *
  * Description:
  *   Return a 16-bit CRC of the contents of the 'src' buffer, length 'len'
- *
- *   The default polynomial is 0x1021 (x^16 + x^12 + x^5 + 1)
- *   See crc16xmodem()
+ *   using the frozen legacy algorithm described above (crc16part() with a
+ *   zero seed).
  *
  ****************************************************************************/
 
