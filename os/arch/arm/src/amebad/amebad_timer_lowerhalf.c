@@ -148,6 +148,16 @@ static void amebad_gpt_handler(uint32_t data)
 	if (priv->freerunmode) {	/* Free Run Mode */
 		priv->num_of_4294967ms_elapse++;
 	} else {					/* Alarm Mode */
+		/* The handler stays registered across a TCIOC_SETMODE switch, so a
+		 * timer started in freerun mode can reach this branch with no
+		 * callback installed. Calling through a NULL pointer would fault in
+		 * interrupt context.
+		 */
+		if (priv->callback == NULL) {
+			amebad_gpt_stop((struct timer_lowerhalf_s *)priv);
+			return;
+		}
+
 		if (priv->callback(&next_interval_us, priv->arg)) {
 			if (next_interval_us > 0) {
 				priv->gpt_timeout = next_interval_us;
@@ -398,6 +408,14 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 	case TCIOC_GETDIV:
 		break;
 	case TCIOC_SETMODE:
+		/* Switching mode under a running timer leaves obj.handler registered
+		 * while the other branch's assumptions no longer hold, so refuse it
+		 * the same way settimeout() does.
+		 */
+		if (priv->started) {
+			ret = -EBUSY;
+			break;
+		}
 		if ((timer_mode_t)arg == MODE_FREERUN) {
 			priv->freerunmode = true;
 			priv->num_of_4294967ms_elapse = 0;
@@ -413,9 +431,16 @@ static int amebad_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned l
 			ret = OK;
 		}
 		break;
+#ifdef CONFIG_ARCH_IRQPRIO
 	case TCIOC_SETIRQPRIO:
-		ret = up_prioritize_irq(TIM_x[priv->obj.timer_id], arg);
+		/* TIM_x[] holds peripheral base addresses, not IRQ numbers. Passing one
+		 * to up_prioritize_irq() fails the debug assert and, in a release
+		 * build, indexes NVIC->IPR far out of range. TIMx_irq[] maps a timer id
+		 * to its interrupt number.
+		 */
+		ret = up_prioritize_irq(TIMx_irq[priv->obj.timer_id], arg);
 		break;
+#endif
 	case TCIOC_SETCLKSRC:
 		break;
 	default:
