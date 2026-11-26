@@ -139,7 +139,7 @@ static inline char *med3(char *a, char *b, char *c, int (*compar)(const void *, 
 void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *))
 {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-	int d, r, swaptype, swap_cnt;
+	int d, r, rl, rr, swaptype, swap_cnt;
 
 loop:
 	SWAPINIT(base, size);
@@ -215,15 +215,32 @@ loop:
 	r = min(pd - pc, pn - pd - size);
 	vecswap(pb, pn - r, r);
 
-	if ((r = pb - pa) > size) {
-		qsort(base, r / size, size, compar);
-	}
+	/* Recurse into the smaller partition and iterate over the larger one.
+	 * This bounds the recursion depth by log2(nmemb) even for adversarial
+	 * input (median-of-3 killer sequences), where always recursing on the
+	 * left side would reach a depth of about nmemb / 2.
+	 */
 
-	if ((r = pd - pc) > size) {
-		/* Iterate rather than recurse to save stack space */
+	rl = pb - pa;
+	rr = pd - pc;
+	if (rl < rr) {
+		if (rl > size) {
+			qsort(base, rl / size, size, compar);
+		}
 
-		base = pn - r;
-		nmemb = r / size;
-		goto loop;
+		if (rr > size) {
+			base = pn - rr;
+			nmemb = rr / size;
+			goto loop;
+		}
+	} else {
+		if (rr > size) {
+			qsort(pn - rr, rr / size, size, compar);
+		}
+
+		if (rl > size) {
+			nmemb = rl / size;
+			goto loop;
+		}
 	}
 }
