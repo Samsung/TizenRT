@@ -149,7 +149,7 @@ extern int g_irq_num[CONFIG_SMP_NCPUS];
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
-char assert_info_str[CONFIG_STDIO_BUFFER_SIZE] = { '\0', };
+char assert_info_str[ASSERT_INFO_STR_SIZE] = { '\0', };
 
 /****************************************************************************
  * Private Data
@@ -523,6 +523,10 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 			lldbg_noarg("===========================================================\n");
 			lldbg_noarg("Checking app %d heap for corruption \n",index);
 			lldbg_noarg("===========================================================\n");
+			if ((BIN_STATE(index) != BINARY_LOADED && BIN_STATE(index) != BINARY_RUNNING) || BIN_LOADINFO(index) == NULL) {
+				lldbg_noarg("App %d is not loaded (state %d, binp %p), skip\n", index, BIN_STATE(index), BIN_LOADINFO(index));
+				continue;
+			}
 			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
 			lldbg_noarg("mm_holder: %d\n", app_heap->mm_holder);
 			mm_check_heap_corruption(app_heap);
