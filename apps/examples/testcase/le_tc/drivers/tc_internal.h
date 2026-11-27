@@ -48,6 +48,10 @@ void pwm_main(void);
 void watchdog_main(void);
 #endif
 
+#ifdef CONFIG_TC_DRIVERS_WATCHDOG_SECURITY
+void watchdog_security_main(void);
+#endif
+
 #ifdef CONFIG_TC_DRIVERS_LOOP
 void loop_main(void);
 #endif
