@@ -1,0 +1,117 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+name: QEMU Kernel TC
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qemu-kernel-tc-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kernel-tc:
+    name: Run kernel_tc on qemu/build_test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      EVIDENCE: tmp/qemu-kernel-tc
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build qemu/build_test binary
+        id: compile
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE"
+          git rev-parse HEAD > "$EVIDENCE/source-commit.txt"
+          cp build/configs/qemu/build_test/defconfig "$EVIDENCE/requested.config"
+          docker run --rm --pull=always --platform linux/amd64 \
+              -v "$GITHUB_WORKSPACE:/root/tizenrt" -w /root/tizenrt/os/tools \
+              tizenrt/tizenrt:1.5.8 bash -eo pipefail -c '
+                  arm-none-eabi-gcc --version
+                  ./configure.sh qemu/build_test
+                  cd ..
+                  make
+                  test -s ../build/output/bin/tinyara
+              ' </dev/null 2>&1 | tee "$EVIDENCE/build.log"
+
+      - name: Build patched ARM QEMU
+        id: emulator
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends libglib2.0-dev libpixman-1-dev python3-pexpect
+          bash .github/workflows/scripts/build-qemu.sh build/configs/qemu/qemu-2.12.0-rc1_16m_ram_size.patch \
+              "$RUNNER_TEMP/qemu" 2>&1 | tee "$EVIDENCE/qemu-build.log"
+
+      - name: Run kernel_tc on QEMU
+        id: kernel_tc
+        run: |
+          /usr/bin/python3 .github/workflows/scripts/run_kernel_tc.py "$RUNNER_TEMP/qemu/arm-softmmu/qemu-system-arm" \
+              build/output/bin/tinyara "$EVIDENCE"
+
+      - name: Summarize QEMU kernel TC
+        if: always()
+        env:
+          BINARY: ${{ steps.compile.outcome }}
+          EMULATOR: ${{ steps.emulator.outcome }}
+          KERNEL_TC: ${{ steps.kernel_tc.outcome }}
+        run: |
+          {
+            echo '## QEMU kernel TC'
+            echo
+            echo "Binary build: $BINARY · QEMU build: $EMULATOR · kernel_tc: $KERNEL_TC"
+            if [[ -f "$EVIDENCE/kernel-tc.txt" ]]; then
+              echo
+              cat "$EVIDENCE/kernel-tc.txt"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Collect binary and effective configuration
+        if: always()
+        run: |
+          if [[ -f os/.config ]]; then
+            cp os/.config "$EVIDENCE/effective.config"
+          fi
+          if [[ -f build/output/bin/tinyara ]]; then
+            cp build/output/bin/tinyara "$EVIDENCE/"
+          fi
+
+      - name: Upload QEMU kernel TC evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qemu-kernel-tc-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}/
+          retention-days: 7
+          if-no-files-found: warn
