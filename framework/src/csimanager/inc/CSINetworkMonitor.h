@@ -30,4 +30,3 @@ typedef void (*network_status_listener)(CONNECTION_STATE state);
 int network_monitor_init(network_status_listener network_status_callback);
 int network_monitor_deinit(void);
 int checkWifiConnection(void);
-
