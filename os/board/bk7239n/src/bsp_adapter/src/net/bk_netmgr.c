@@ -115,6 +115,30 @@ static bool bk_trwifi_scan_config_has_empty_ssid(wifi_scan_config_t *scan_config
 	return false;
 }
 
+/* Event cb stays registered across reset. Gate LWNL posts so leftover
+ * STA/AP events do not reach wifi_manager between deinit and the next
+ * scan/join/start. Scan semaphore and local flags are still updated.
+ */
+static bool g_lwnl_evt_en = true;
+
+static void bk_trwifi_enable_lwnl_events(void)
+{
+	g_lwnl_evt_en = true;
+}
+
+static void bk_trwifi_disable_lwnl_events(void)
+{
+	g_lwnl_evt_en = false;
+}
+
+static void bk_trwifi_post_lwnl(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len)
+{
+	if (!g_lwnl_evt_en) {
+		return;
+	}
+	trwifi_post_event(dev, evt, buffer, buf_len);
+}
+
 
 trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev);
 trwifi_result_e bk_wifi_netmgr_deinit(struct netdev *dev);
@@ -258,10 +282,10 @@ void beken_report_wrong_password( void )
                                       bk_get_last_join_wpa_state());
     //set80211_sta_error_flag(CLP_STA_WRONG_PASSWORD);
     if (auth_fail_cnt%2 == 1) {
-        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
+        bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
     } else {
         /* If only auth-fail is produced, application stops to connect ap*/
-        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
+        bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
     }
 }
 
@@ -457,6 +481,71 @@ static void bk_trwifi_deinit_scan_timer(void)
 			ndbg("[BK] scan deinit timer failed, ret=%d\r\n", ret);
 		}
 	}
+}
+
+/* Disable driver auto-reconnect before sta_stop, otherwise a leftover
+ * sta_config can associate again after reset.
+ */
+static void bk_trwifi_disable_sta_autoreconnect(void)
+{
+	g_sta_auto_reconnect = false;
+#if CONFIG_STA_AUTO_RECONNECT
+	{
+		wlan_auto_reconnect_t ar_config = {0};
+
+		ar_config.disable_reconnect_when_disconnect = true;
+		wlan_sta_set_autoreconnect(&ar_config);
+	}
+#endif
+}
+
+/* wifi_manager deinit on CONNECTED already called sta_stop once; SoftAP-only
+ * reset also hits this path. Treat a second/idle stop as success.
+ */
+static void bk_trwifi_stop_sta_best_effort(void)
+{
+	bk_trwifi_disable_sta_autoreconnect();
+	if (bk_wifi_sta_stop() != BK_OK) {
+		ndbg("[BK] sta_stop returned fail (already stopped?)\n");
+	}
+	/* Do not bk_wifi_sta_set_config({0}): auto_reconnect_count 0 means
+	 * always reconnect, and set_config while still associated reconnects.
+	 */
+	g_sta_connecting = false;
+	g_sta_is_start = 0;
+	auth_fail_cnt = 0;
+}
+
+/* scanlistbusy is created once in init and must stay alive: the reset path
+ * (deinit + wifi_manager_reinit) never calls init again.
+ *
+ * Stop the timer *before* taking scanlistbusy. The timer callback also locks
+ * that mutex; deinit_timer waits for the callback, so holding the lock first
+ * deadlocks.
+ */
+static void bk_trwifi_reset_scan_state(void)
+{
+	bk_trwifi_deinit_scan_timer();
+	rtos_lock_mutex(&scanlistbusy);
+	bk_trwifi_clear_saved_scan_cache();
+	bk_trwifi_clear_scan_chain_list();
+	bk_trwifi_clear_multi_scan_cache();
+	g_scan_flag = 0;
+	rtos_unlock_mutex(&scanlistbusy);
+}
+
+static trwifi_result_e bk_trwifi_stop_softap_if_running(void)
+{
+	if (g_softap_if != BK_WIFI_SOFTAP_IF) {
+		return TRWIFI_SUCCESS;
+	}
+	if (bk_wifi_ap_stop() != BK_OK) {
+		ndbg("[BK] Failed to stop SoftAP mode\n");
+		return TRWIFI_FAIL;
+	}
+	g_softap_if = BK_WIFI_NONE;
+	g_bridge_on = false;
+	return TRWIFI_SUCCESS;
 }
 
 /* Forward declaration for timer reset helper */
@@ -954,7 +1043,7 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
         os_memcpy(msg.bssid, sta_connected->bssid, WIFI_BSSID_LEN);
         g_sta_connecting = false;
-        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_CONNECTED, &msg, sizeof(trwifi_cbk_msg_s));
+        bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_STA_CONNECTED, &msg, sizeof(trwifi_cbk_msg_s));
         break;
 
     case EVENT_WIFI_STA_DISCONNECTED:
@@ -965,11 +1054,11 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         if (g_sta_connecting) {
             bk_netmgr_log_sta_connect_failure(sta_disconnected->disconnect_reason,
                                               bk_get_last_join_wpa_state());
-            trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
+            bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
         } else {
             bk_netmgr_log_sta_disconnection(sta_disconnected->disconnect_reason,
                                             sta_disconnected->local_generated);
-            trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
+            bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
         }
         g_sta_connecting = false;
         break;
@@ -991,9 +1080,9 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
 			(*bk_trwifi_new_sta_join_func)();
 		}
 #ifdef CONFIG_BK_CONCURRENT_MODE
-        trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+        bk_trwifi_post_lwnl(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
 #else
-        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+        bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
 #endif
         break;
 
@@ -1006,9 +1095,9 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
             ndbg(BK_MAC_FORMAT" disconnected from BK AP, reason(%d)\n",
                 BK_MAC_STR(ap_disconnected->mac), ap_disconnected->disconnect_reason);
 #ifdef CONFIG_BK_CONCURRENT_MODE
-            trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+            bk_trwifi_post_lwnl(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
 #else
-            trwifi_post_event(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+            bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
 #endif
         }
         break;
@@ -1019,7 +1108,7 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
 
     default:
         BK_WIFI_LOGI("BEKEN_WIFI_EVENT", "rx event <%d %d>\n", event_module, event_id);
-        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
+        bk_trwifi_post_lwnl(armino_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
         break;
     }
 
@@ -1032,16 +1121,20 @@ trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev)
     trwifi_result_e wnret = TRWIFI_FAIL;
     BK_WIFI_LOGI("BK_NETMGR_INIT", "\n[BK] Init netmgr with dev %s\n",dev->ifname);
     if (!(memcmp(dev->ifname, "wlan0", 5))) {
-        /* init bk event */
-        BK_LOG_ON_ERR(bk_event_init());
-        /* register beken callback to receive event*/
-        bk_err_t err = bk_event_register_cb(EVENT_MOD_WIFI, EVENT_ID_ALL, beken_wifi_event_cb, NULL);
-        if (err != BK_OK) {
-            ndbg("[BK] Failed to register event callback\n");
-            return TRWIFI_FAIL;
-        }
-
+        /* deinit keeps the callback and the mutex alive, so they are only
+         * created on the very first init. bk_event_register_cb() would fail
+         * with BK_ERR_EVENT_CB_EXIST if it were called twice.
+         */
         if (!g_netmgr_init) {
+            /* init bk event */
+            BK_LOG_ON_ERR(bk_event_init());
+            /* register beken callback to receive event*/
+            bk_err_t err = bk_event_register_cb(EVENT_MOD_WIFI, EVENT_ID_ALL, beken_wifi_event_cb, NULL);
+            if (err != BK_OK) {
+                ndbg("[BK] Failed to register event callback\n");
+                return TRWIFI_FAIL;
+            }
+
             wifi_init_config_t wifi_config = WIFI_DEFAULT_INIT_CONFIG();
             wnret = bk_wifi_init(&wifi_config);
             if (wnret != TRWIFI_SUCCESS) {
@@ -1050,9 +1143,9 @@ trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev)
                 bk_event_unregister_cb(EVENT_MOD_WIFI, EVENT_ID_ALL, beken_wifi_event_cb);
                 return TRWIFI_FAIL;
             }
+            rtos_init_mutex(&scanlistbusy);
         }
         g_station_if = BK_WIFI_STATION_IF;
-        rtos_init_mutex(&scanlistbusy);
     } else if (!(memcmp(dev->ifname, "wlan1", 5))) {
         BK_WIFI_LOGI("BK_NETMGR_INIT", "[BK] Init netmgr with softAP mode\n");
     } else {
@@ -1066,49 +1159,53 @@ trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev)
     #endif
 
     g_netmgr_init = true;
+    bk_trwifi_enable_lwnl_events();
     return TRWIFI_SUCCESS;
 }
 
+/* The framework uses deinit as a driver reset: wifi_manager_reinit() rebuilds
+ * the framework state only and never sends LWNL_REQ_WIFI_INIT again. So this
+ * restores the state right after init instead of tearing the driver down, and
+ * everything created in init (event callback, scanlistbusy, CSI device,
+ * g_netmgr_init, g_station_if) has to stay alive.
+ *
+ * Do not call bk_wifi_deinit() here. That would power off the MAC and make
+ * wifi_manager_reinit() unable to scan/join. True MAC teardown belongs on a
+ * reboot or a dedicated power-off path, not LWNL_REQ_WIFI_DEINIT.
+ */
 trwifi_result_e bk_wifi_netmgr_deinit(struct netdev *dev)
 {
-    ndbg("\n[BK] Deinit netmgr with dev %s\n",dev->ifname);
+    ndbg("\n[BK] Reset netmgr with dev %s\n",dev->ifname);
 
-    if (g_station_if == BK_WIFI_STATION_IF) {
-        bk_err_t err = bk_wifi_sta_stop();
-        if (err != BK_OK) {
-            ndbg("[BK] Failed to stop STA mode\n");
+    if (!memcmp(dev->ifname, "wlan0", 5)) {
+        /* wifi_manager already waited for disconnect before calling deinit.
+         * Drop further LWNL posts until the next scan/join/start (reinit does
+         * not send WIFI_INIT).
+         */
+        bk_trwifi_disable_lwnl_events();
+        /* STA lives on wlan0. SoftAP also starts on wlan0 when HOMELYNK is off. */
+        bk_trwifi_stop_sta_best_effort();
+        if (bk_trwifi_stop_softap_if_running() != TRWIFI_SUCCESS) {
             return TRWIFI_FAIL;
         }
-    } else if (g_softap_if == BK_WIFI_SOFTAP_IF) {
-        bk_err_t err = bk_wifi_ap_stop();
-        if (err != BK_OK) {
-            ndbg("[BK] Failed to stop BK7239\n");
-            return TRWIFI_FAIL;
-        }
+        bk_trwifi_reset_scan_state();
+        g_station_if = BK_WIFI_STATION_IF;
+        return TRWIFI_SUCCESS;
     }
 
-    g_station_if = BK_WIFI_NONE;
-    g_softap_if = BK_WIFI_NONE;
+    if (!memcmp(dev->ifname, "wlan1", 5)) {
+        /* HOMELYNK SoftAP lives on wlan1. Do not touch STA/scan state here. */
+        bk_trwifi_disable_lwnl_events();
+        return bk_trwifi_stop_softap_if_running();
+    }
 
-    // Clean up scan related resources
-    rtos_lock_mutex(&scanlistbusy);
-    // Stop and deinit scan timer
-    bk_trwifi_deinit_scan_timer();
-    // Free scan lists
-    bk_trwifi_clear_saved_scan_cache();
-    bk_trwifi_clear_scan_chain_list();
-    bk_trwifi_clear_multi_scan_cache();
-    rtos_unlock_mutex(&scanlistbusy);
-	rtos_deinit_mutex(&scanlistbusy);
-
-    /* unregister beken event callback*/
-    bk_event_unregister_cb(EVENT_MOD_WIFI, EVENT_ID_ALL, beken_wifi_event_cb);
-
-    return TRWIFI_SUCCESS;
+    ndbg("[BK] Unknown interface name\n");
+    return TRWIFI_FAIL;
 }
 
 trwifi_result_e bk_wifi_netmgr_scan_ap(struct netdev *dev, trwifi_scan_config_s *config)
 {
+	bk_trwifi_enable_lwnl_events();
 	wifi_scan_config_t scan_config = {0};
 	os_memset(&scan_config,0,sizeof(wifi_scan_config_t));
 
@@ -1144,6 +1241,8 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 	bool invalid_chan_exist = false;
 	int ssid_config_count = 0;
 	trwifi_result_e ret = TRWIFI_FAIL;
+
+	bk_trwifi_enable_lwnl_events();
 
 	if(config == NULL) {
 		ndbg("[BK] ERROR: scan config param is invalid\r\n");
@@ -1328,6 +1427,8 @@ trwifi_result_e bk_wifi_netmgr_connect_ap(struct netdev *dev, trwifi_ap_config_s
 		return TRWIFI_INVALID_ARGS;
 	}
 
+	bk_trwifi_enable_lwnl_events();
+
 	wifi_sta_config_t sta_config = {0};
 	os_memset(&sta_config,0,sizeof(wifi_sta_config_t));
 
@@ -1382,6 +1483,7 @@ trwifi_result_e bk_wifi_netmgr_connect_ap(struct netdev *dev, trwifi_ap_config_s
 trwifi_result_e bk_wifi_netmgr_disconnect_ap(struct netdev *dev, void *arg)
 {
 	trwifi_result_e ret = TRWIFI_FAIL;
+	bk_trwifi_enable_lwnl_events();
 	int res = bk_wifi_sta_stop();
 	if (res == BK_OK) {
 		nvdbg("[BK] WiFiNetworkLeave success\n");
@@ -1513,6 +1615,8 @@ trwifi_result_e bk_wifi_netmgr_start_softap(struct netdev *dev, trwifi_softap_co
 		return TRWIFI_INVALID_ARGS;
 	}
 
+	bk_trwifi_enable_lwnl_events();
+
 	if (g_softap_if == BK_WIFI_SOFTAP_IF)
 	    nwdbg("[BK] softap is already running!\n");
 
@@ -1540,6 +1644,7 @@ trwifi_result_e bk_wifi_netmgr_start_sta(struct netdev *dev)
 {
 	trwifi_result_e ret = TRWIFI_FAIL;
 
+	bk_trwifi_enable_lwnl_events();
 	g_station_if = BK_WIFI_STATION_IF;
 #ifndef CONFIG_BK_CONCURRENT_MODE
 	g_bk_wifi_current_vif = 0;
