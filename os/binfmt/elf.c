@@ -65,6 +65,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binfmt/elf.h>
+#include <tinyara/userspace.h>
 
 #include "libelf/libelf.h"
 
@@ -203,6 +204,7 @@ static void elf_dumpentrypt(FAR struct binary_s *binp, FAR struct elf_loadinfo_s
 static int elf_loadbinary(FAR struct binary_s *binp)
 {
 	struct elf_loadinfo_s loadinfo;	/* Contains globals for libelf */
+	struct userspace_s* uspace;
 	int ret;
 
 	binfo("Loading file: %s\n", binp->filename);
@@ -259,6 +261,13 @@ static int elf_loadbinary(FAR struct binary_s *binp)
 
 	binp->dtors = loadinfo.dtors;
 	binp->ndtors = loadinfo.ndtors;
+#endif
+
+#ifdef CONFIG_LIBCXX_EXCEPTION
+	uspace = loadinfo.binp->sections[BIN_TEXT] + 4;
+	loadinfo.binp->exidx_start = uspace->exidx_start;
+	loadinfo.binp->exidx_end = uspace->exidx_end;
+	loadinfo.binp->register_exidx = uspace->register_exidx;
 #endif
 
 	elf_dumpentrypt(binp, &loadinfo);
