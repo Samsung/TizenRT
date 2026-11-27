@@ -700,6 +700,12 @@ int binary_manager_check_bootparam_set(binmgr_bp_update_reason_e *update_reason)
 
 	bp_data = binary_manager_get_bpdata();
 
+	if (bp_data->tail.bp_update_reason >= BP_UPDATE_BOOTLOADER_BP_CRC_FAIL && bp_data->tail.bp_update_reason <= BP_UPDATE_BOOTLOADER_SPECIFIC_3) {
+		bmdbg("Don't trust the recovery by bootloader, try to recover again.\n");
+		*update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_BOOTLOADER_RECOVERED;
+		return BINMGR_OPERATION_FAIL;
+	}
+
 	if (binary_manager_is_set_mismatch(bp_data)) {
 		bmdbg("BP set mismatch detected. Run BP recovery from partition information\n");
 		*update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_SET_ALIGNMENT;
@@ -709,12 +715,6 @@ int binary_manager_check_bootparam_set(binmgr_bp_update_reason_e *update_reason)
 	if (!binary_manager_is_bp_kernel_address_valid(bp_data)) {
 		bmdbg("Invalid in-use BP kernel address detected. Run BP recovery from partition information\n");
 		*update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_KERNEL_ADDR_MISMATCH;
-		return BINMGR_OPERATION_FAIL;
-	}
-
-	if (bp_data->tail.bp_update_reason >= BP_UPDATE_BOOTLOADER_BP_CRC_FAIL && bp_data->tail.bp_update_reason <= BP_UPDATE_BOOTLOADER_SPECIFIC_3) {
-		bmdbg("Don't trust the recovery by bootloader, try to recover again.\n");
-		*update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_BOOTLOADER_RECOVERED;
 		return BINMGR_OPERATION_FAIL;
 	}
 
