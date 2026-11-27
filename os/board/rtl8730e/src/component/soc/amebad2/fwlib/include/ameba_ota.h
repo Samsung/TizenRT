@@ -247,6 +247,17 @@ int ota_update_init(ota_context *ctx, char *host, int port, char *resource, u8 t
 void ota_update_deinit(ota_context *ctx);
 int ota_update_start(ota_context *ctx);
 
+/*
+ * Runtime image signature verification. The check itself is performed in the
+ * secure world; only @a input_addr is passed across the SMC boundary.
+ *
+ *   input_addr - physical flash address of the image to verify
+ *
+ * Returns TRUE when the image verified, FALSE otherwise.
+ */
+int OTA_KernelImageSignatureCheck(u32 input_addr);
+int OTA_UserImageSignatureCheck(u32 input_addr);
+
 #define OTA_GET_FWVERSION(address) \
 	(HAL_READ16(SPI_FLASH_BASE, address + 22) << 16) | HAL_READ16(SPI_FLASH_BASE, address + 20)
 

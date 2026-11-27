@@ -347,32 +347,23 @@ int ameba_hal_SignatureVerify(uint32_t *imagehdr_addr)
 	return ret;
 }
 
-/* Kernel Image Verification */
-int ameba_SBOOT_Validate_Algorithm(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
+/* OTA Image Verification
+ *
+ * The signature verification itself is implemented in the secure world
+ * (BL32, libtizenrt_se.a: service/rtl_se_ota_function.c). Only the image
+ * address crosses the SMC boundary.
+ */
+int ameba_OTA_KernelImageSignatureCheck(uint32_t input_addr)
 {
 	int ret = 0;
-	ret = invoke_securetest(0x82000034, (uint32_t)OTA_adapter, 0, 0, 0);
-	return ret;
-} 
- 
-int ameba_SBOOT_Validate_Signature(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
-{
-	int ret = 0;
-	ret = invoke_securetest(0x82000035, (uint32_t)OTA_adapter, 0, 0, 0);
+	ret = invoke_securetest(0x82000045, input_addr, 0, 0, 0);
 	return ret;
 }
 
-int ameba_SBOOT_Validate_ImgHash(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
+int ameba_OTA_UserImageSignatureCheck(uint32_t input_addr)
 {
 	int ret = 0;
-	ret = invoke_securetest(0x82000036, (uint32_t)OTA_adapter, 0, 0, 0);
-	return ret;
-}
-
-int ameba_SBOOT_Validate_PubKey(OTA_SIG_CHECK_ADAPTER *OTA_adapter)
-{
-	int ret = 0;
-	ret = invoke_securetest(0x82000037, (uint32_t)OTA_adapter, 0, 0, 0);
+	ret = invoke_securetest(0x82000046, input_addr, 0, 0, 0);
 	return ret;
 }
 
