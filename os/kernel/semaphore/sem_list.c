@@ -18,7 +18,7 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 
 #include <tinyara/arch.h>

@@ -171,7 +171,7 @@ endif
 bin kbin:
 	$(Q) mkdir -p $@
 
-context: bin kbin
+context:: bin kbin
 ifeq ($(CONFIG_LIBC_ZONEINFO_ROMFS),y)
 	$(Q) $(MAKE) $(JOBS) -C zoneinfo context TOPDIR=$(TOPDIR)
 endif
@@ -195,7 +195,7 @@ depend: .depend
 
 # Clean most derived files, retaining the configuration
 
-clean:
+clean::
 	$(call DELFILE, bin$(DELIM)*$(OBJEXT))
 	$(call DELFILE, kbin$(DELIM)*$(OBJEXT))
 	$(call DELFILE, $(BIN))
@@ -205,7 +205,7 @@ clean:
 
 # Deep clean -- removes all traces of the configuration
 
-distclean: clean
+distclean:: clean
 	$(call DELDIR, bin)
 	$(call DELDIR, kbin)
 	$(Q) $(MAKE) -C zoneinfo distclean TOPDIR=$(TOPDIR)
@@ -220,9 +220,9 @@ distclean: clean
 ifeq ($(CONFIG_LIBC_ELF),y)
 elf/gnu-elf.ld: elf/gnu-elf.ld.in $(TOPDIR)/include/tinyara/config.h
 	$(call PREPROCESS, $<, $@)
-context: elf/gnu-elf.ld
+context:: elf/gnu-elf.ld
 endif
 
 distclean_elf:
 	$(call DELFILE, elf/gnu-elf.ld)
-distclean: distclean_elf
+distclean:: distclean_elf

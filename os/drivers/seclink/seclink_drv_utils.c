@@ -17,7 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <fcntl.h>
-#include <tinyara/timer.h>
+#include <tinyara/timers/timer.h>
 #include "seclink_drv_utils.h"
 
 int sldrv_start_time(sldrv_timer_handle *hnd)

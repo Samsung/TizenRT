@@ -68,7 +68,7 @@
 #include "lwip/netif/etharp.h"
 #include "lwip/err.h"
 #include "ethernetif_tizenrt.h"
-#include "queue.h"
+#include <tinyara/queue.h>
 #include "rtk_lwip_netconf.h"
 
 #include "lwip/ethip6.h" //Add for ipv6

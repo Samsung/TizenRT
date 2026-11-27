@@ -23,7 +23,7 @@
 #endif
 #ifdef CONFIG_SECURITY_LINK_DRV_PROFILE
 #include <unistd.h>
-#include <tinyara/timer.h>
+#include <tinyara/timers/timer.h>
 #endif
 
 #define SLDRV_LOG printf

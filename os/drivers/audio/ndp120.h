@@ -22,7 +22,7 @@
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/ndp120.h>
 #include <semaphore.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <syntiant_ilib/syntiant_ndp.h>
 #include <syntiant_ilib/syntiant_ndp120.h>
 #include <syntiant_evb_io.h>

@@ -58,7 +58,7 @@
 
 #include <sys/types.h>
 #include <sched.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <arch/irq.h>
 
 #include <tinyara/arch.h>

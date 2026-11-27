@@ -20,7 +20,7 @@
 /// @brief Test Case Example for rtc driver
 #include <tinyara/config.h>
 #include <tinyara/rtc.h>
-#include <tinyara/time.h>
+#include <tinyara/clock.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <signal.h>

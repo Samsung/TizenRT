@@ -45,37 +45,11 @@
 #define atomic_set(v,i) atomic_store(v, i)
 #else
 
-/* old implement */
-// typedef struct {
-// 	volatile int counter;
-// } atomic_t;
+/* 12.13.0 base: atomic_t is a scalar (volatile int32_t) and the base
+ * tinyara/atomic.h provides atomic_read()/atomic_set() for it.  The old
+ * struct-with-counter implementation no longer applies. */
 
-// #define ATOMIC_T atomic_t
-
-//----- ------------------------------------------------------------------
-// Atomic Operation
-//----- ------------------------------------------------------------------
-
-/*
- * atomic_read - read atomic variable
- * @v: pointer of type atomic_t
- *
- * Atomically reads the value of @v.  Note that the guaranteed
- * useful range of an atomic_t is only 24 bits.
- */
-#undef atomic_read
-#define atomic_read(v)  ((v)->counter)
-
-/*
- * atomic_set - set atomic variable
- * @v: pointer of type atomic_t
- * @i: required value
- *
- * Atomically sets the value of @v to @i.  Note that the guaranteed
- * useful range of an atomic_t is only 24 bits.
- */
-#undef atomic_set
-#define atomic_set(v,i) ((v)->counter = (i))
+#include <tinyara/atomic.h>
 #endif
 
 #define GFP_ATOMIC			1

@@ -23,7 +23,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <time.h>
-#include <tinyara/time.h>
+#include <tinyara/clock.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>

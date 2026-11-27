@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <debug.h>
 #include <osif.h>
 #include <basic_types.h>
 #include <platform_opts_bt.h>

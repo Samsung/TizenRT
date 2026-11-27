@@ -30,7 +30,7 @@
 
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/fs/dirent.h>
+#include <dirent.h>
 
 #ifdef CONFIG_LIBC_TZDIR
 #define TZDIR CONFIG_LIBC_TZDIR

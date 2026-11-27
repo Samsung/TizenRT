@@ -36,6 +36,7 @@
 #include <debug.h>
 #include <assert.h>
 
+#include <tinyara/mqueue.h>
 #include <tinyara/queue.h>
 #include <tinyara/clock.h>
 #include <tinyara/log_dump/log_dump.h>
@@ -95,7 +96,15 @@ struct log_dump_chunk_s {
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
-static mqd_t mq_fd;
+/* An mqd_t is an index into the fd table of the calling task group, so a
+ * descriptor created by this kernel thread cannot be resolved by the tasks
+ * that feed log_dump_save() from the serial write path. Use file objects
+ * instead: they are valid in every context. mq_recv_file is received from by
+ * the log_dump kernel thread only, mq_send_file is sent to by the console
+ * write path and by the /proc/logsave clients.
+ */
+static struct file mq_recv_file;
+static struct file mq_send_file;
 static sq_queue_t log_dump_chunks;	/* queue for holding the logs */
 static int compress_curbytes = 0;	/* number of bytes in the current chunk that were filled */
 static int compress_rdptr = 0;		/* current pointer for compressed data read */
@@ -194,9 +203,9 @@ int log_dump_read_wake(void)
 	compress_last_block = true;
 	int ret;
 	int msg_compress = true;
-	ret = mq_send(mq_fd, (const char *)&msg_compress, sizeof(int), 100);
+	ret = file_mq_send(&mq_send_file, (const char *)&msg_compress, sizeof(int), 100);
 	if (ret < 0) {
-		ldpdbg("failed mq_send ret = %d\n", ret);
+		ldpdbg("failed mq_send ret = %d\n", -ret);
 		return ERROR;
 	}
 
@@ -428,7 +437,7 @@ static int compress_full_bufs(void)
 		compress_full_block = true;
 		comp_idx = i;
 
-		mq_send(mq_fd, (const char *)&msg_compress, sizeof(int), 100);
+		file_mq_send(&mq_send_file, (const char *)&msg_compress, sizeof(int), 100);
 		leave_critical_section(flags);
 
 		/* wait for completion of the current full block compression */
@@ -618,16 +627,32 @@ int log_dump(int argc, char *argv[])
 	g_log_dump_pid = getpid();
 #endif
 
-	/* Create log dump message queue */
-	mq_fd = mq_open(LOG_DUMP_MSGQ, O_RDWR | O_CREAT, 0666, &attr);
-	if (mq_fd == (mqd_t)ERROR) {
-		ldpdbg("Fail to open mq, errno %d. EXIT!\n", errno);
+	/* Create log dump message queue.
+	 *
+	 * The queue is opened into two file objects. Since the 12.13 base an
+	 * mqd_t is an fd table index of the calling task group, so a descriptor
+	 * created here could not be resolved by the tasks that feed
+	 * log_dump_save() from the serial write path, while a struct file is
+	 * valid in every context.
+	 */
+	int ret = file_mq_open(&mq_recv_file, LOG_DUMP_MSGQ, O_RDWR | O_CREAT, 0666, &attr);
+
+	if (ret < 0) {
+		ldpdbg("Fail to open mq, errno %d. EXIT!\n", -ret);
+		return 0;
+	}
+
+	ret = file_mq_open(&mq_send_file, LOG_DUMP_MSGQ, O_RDWR);
+	if (ret < 0) {
+		ldpdbg("Fail to open send mq, errno %d. EXIT!\n", -ret);
+		file_mq_close(&mq_recv_file);
 		return 0;
 	}
 
 	if (log_dump_init() != LOG_DUMP_OK) {
 		ldpdbg("Fail to init log dump\n");
-		mq_close(mq_fd);
+		file_mq_close(&mq_recv_file);
+		file_mq_close(&mq_send_file);
 		return 0;
 	}
 
@@ -635,7 +660,7 @@ int log_dump(int argc, char *argv[])
 	int nbytes;
 
 	while (true) {
-		nbytes = mq_receive(mq_fd, (char *)&msg_compress, sizeof(int), NULL);
+		nbytes = file_mq_receive(&mq_recv_file, (char *)&msg_compress, sizeof(int), NULL);
 		if (nbytes <= 0) {
 			continue;
 		}

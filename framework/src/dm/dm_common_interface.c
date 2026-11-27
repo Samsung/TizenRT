@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <debug.h>
 #include "dm_common_interface.h"
 
 int readonce(FAR const char *filename, FAR char *buffer, uint8_t buflen)

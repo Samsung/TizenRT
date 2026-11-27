@@ -51,6 +51,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <errno.h>
+#include <tinyara/queue.h>
 #include <debug.h>
 
 #include <tinyara/arch.h>

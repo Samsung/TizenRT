@@ -297,6 +297,9 @@
 /  SemaphoreHandle_t and etc. A header file for O/S definitions needs to be
 /  included somewhere in the scope of ff.h. */
 
+/* 12.13.0 base: parse the system dirent.h first so its DIR typedef is
+ * not renamed by the FatFS "DIR" -> "FDIR" mapping below */
+#include <dirent.h>
 #define DIR FDIR
 
 /*--- End of configuration options ---*/

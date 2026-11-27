@@ -5,6 +5,16 @@
 
 comment "File system configuration"
 
+config FS_WRITABLE
+	bool "Writable File System Support"
+	default n
+	---help---
+		Enables the CONFIG_FS_WRITABLE macro consumed by the kernel
+		testcases (LIBC_STDLIB TC) and filesystem TCs.  Note: this
+		symbol existed in the pre-12.13 Kconfig and was dropped during
+		the NuttX 12.13 sync while defconfigs and TC code still
+		reference it.
+
 config DISABLE_MOUNTPOINT
 	bool "Disable support for mount points"
 	default n

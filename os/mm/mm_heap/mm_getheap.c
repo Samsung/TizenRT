@@ -38,7 +38,7 @@
  * Public Variables
  ****************************************************************************/
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(__KERNEL__)
-#include <queue.h>
+#include <tinyara/queue.h>
 
 typedef struct app_heap_s {
 	struct app_heap_s *flink;

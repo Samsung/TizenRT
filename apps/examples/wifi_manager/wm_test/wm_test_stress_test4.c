@@ -20,7 +20,7 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <sys/types.h>
 #include <stdio.h>

@@ -26,7 +26,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include "tc_internal.h"
 
 #define ITEM_COUNT  4

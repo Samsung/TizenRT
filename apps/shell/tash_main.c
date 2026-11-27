@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <debug.h>
 #if !defined(CONFIG_DISABLE_POLL)
 #include <sys/select.h>
 #endif

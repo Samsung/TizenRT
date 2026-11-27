@@ -4,7 +4,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "queue.h"
+#include <tinyara/queue.h>
 #include "utils/os.h"
 #if CONFIG_LWIP_LAYER
 #include <lwip_netconf.h>

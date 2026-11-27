@@ -22,7 +22,7 @@
 
 #include "../../platform/dlist.h"
 
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <sched.h>
 #include <semaphore.h>
 #include <signal.h>

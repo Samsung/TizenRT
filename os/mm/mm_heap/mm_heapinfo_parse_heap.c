@@ -60,7 +60,7 @@
 #include <stdio.h>
 #include <syslog.h>
 #ifdef CONFIG_WATCHDOG
-#include <tinyara/watchdog.h>
+#include <tinyara/timers/watchdog.h>
 #include <fcntl.h>
 #include <errno.h>
 #endif

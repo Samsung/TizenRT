@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <semaphore.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/audio/i2s.h>
 #include <tinyara/audio/audio.h>

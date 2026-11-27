@@ -59,7 +59,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <string.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/mm.h>

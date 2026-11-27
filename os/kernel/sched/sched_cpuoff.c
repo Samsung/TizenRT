@@ -33,7 +33,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <assert.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/spinlock.h>

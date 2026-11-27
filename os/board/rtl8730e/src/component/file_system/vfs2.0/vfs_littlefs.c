@@ -255,9 +255,7 @@ struct dirent *littlefs_readdir(vfs_file *finfo)
 	if (info.name[0] == 0) {
 		return NULL;
 	}
-	ent->d_ino = 0;
-	ent->d_off = 0;
-	ent->d_reclen = info.size;
+	ent->d_type = 0;      /* d_ino/d_off removed in the 12.13.0 dirent */
 	if (info.type == LFS_TYPE_DIR) {
 		ent->d_type = DT_DIR;
 	} else {

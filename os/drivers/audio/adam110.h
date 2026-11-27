@@ -56,7 +56,7 @@
 
 #include <tinyara/audio/audio.h>
 #include <semaphore.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 
 #include <tinyara/pm/pm.h>
 

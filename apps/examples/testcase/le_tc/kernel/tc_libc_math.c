@@ -25,8 +25,8 @@
 
 #include <tinyara/compiler.h>
 #include <stdio.h>
-#include <tinyara/math.h>
-#include <tinyara/float.h>
+#include <math.h>
+#include <float.h>
 #include "tc_internal.h"
 
 #ifdef CONFIG_HAVE_DOUBLE

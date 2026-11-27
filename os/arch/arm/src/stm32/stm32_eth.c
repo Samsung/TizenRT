@@ -52,6 +52,7 @@
 #include <assert.h>
 #include <debug.h>
 #include <assert.h>
+#include <tinyara/queue.h>
 #include <errno.h>
 
 #include <arpa/inet.h>

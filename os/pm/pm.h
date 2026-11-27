@@ -59,7 +59,7 @@
 
 #include <tinyara/config.h>
 #include <semaphore.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <tinyara/clock.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/pm/pm.h>

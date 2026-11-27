@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
-#include <tinyara/time.h>
+#include <tinyara/clock.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <tinyara/os_api_test_drv.h>

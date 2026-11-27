@@ -940,8 +940,8 @@ static void tc_fs_vfs_dup_invalid_fd_n(void)
 	TC_ASSERT_LT_CLEANUP("dup", fd, 0, close(fd));
 #endif
 
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-	fd = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS);
+#if defined(CONFIG_NET) && CONFIG_NBSDSOCKET_DESCRIPTORS > 0
+	fd = dup(CONFIG_NFILE_DESCRIPTORS + CONFIG_NBSDSOCKET_DESCRIPTORS);
 	TC_ASSERT_LT_CLEANUP("dup", fd, 0, close(fd));
 #endif
 
@@ -1021,7 +1021,7 @@ static void tc_fs_vfs_dup2_invalid_fd_n(void)
 
 	/* Testcase */
 	fd = -1;
-	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS, fd);
+	ret = dup2(CONFIG_NFILE_DESCRIPTORS + CONFIG_NBSDSOCKET_DESCRIPTORS, fd);
 	close(fd);
 	TC_ASSERT_LT("dup2", fd, 0);
 	TC_ASSERT_EQ("dup2", ret, ERROR);

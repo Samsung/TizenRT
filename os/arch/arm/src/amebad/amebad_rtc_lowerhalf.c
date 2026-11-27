@@ -62,7 +62,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/rtc.h>
+#include <tinyara/timers/rtc.h>
 
 #include "up_arch.h"
 

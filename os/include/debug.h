@@ -47,6 +47,7 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 #include <tinyara/streams.h>
+#include <assert.h>
 
 #ifdef CONFIG_ARCH_DEBUG_H
 #  include <arch/debug.h>

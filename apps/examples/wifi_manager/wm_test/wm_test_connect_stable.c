@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <errno.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <string.h>
 #include <errno.h>

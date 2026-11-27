@@ -35,7 +35,7 @@
 
 #include <stdint.h>
 
-#include "queue.h"
+#include <tinyara/queue.h>
 
 #ifdef __cplusplus
 extern "C" {

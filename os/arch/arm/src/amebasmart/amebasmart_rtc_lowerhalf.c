@@ -62,7 +62,7 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/rtc.h>
+#include <tinyara/timers/rtc.h>
 
 #include "chip.h"
 #include "amebasmart_rtc.h"

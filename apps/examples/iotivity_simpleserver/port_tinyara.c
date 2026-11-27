@@ -27,7 +27,7 @@
 #include <ocstack.h>
 #include "uuid/uuid.h"
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#if CONFIG_NBSDSOCKET_DESCRIPTORS > 0
 extern struct netif *g_netdevices;
 #endif
 

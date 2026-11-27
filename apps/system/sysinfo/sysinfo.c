@@ -105,16 +105,27 @@ void sysinfo(void)
 		line = strtok_r(NULL, "\n", &saveptr);
 	}
 
-	/* Get the current time as specific format in the buffer */
-	now = time(NULL);
-	ptm = (struct tm *)localtime(&now);
-	(void)strftime(sysinfo_str, MAX_BUF_SIZE, "%d %b %Y, %H:%M:%S", ptm);
+	/* Get the current time as specific format in the buffer.  When the
+	 * RTC counter is unset the clock reads back as a negative time and
+	 * localtime() fails; formatting from a NULL tm would fault. */
 
-	/* Print System Time information */
-	printf("\tSystem Time: %s [s] UTC "
+	now = time(NULL);
+	if (now > 0) {
+		ptm = (struct tm *)localtime(&now);
+		if (ptm != NULL) {
+			(void)strftime(sysinfo_str, MAX_BUF_SIZE, "%d %b %Y, %H:%M:%S", ptm);
+
+			/* Print System Time information */
+			printf("\tSystem Time: %s [s] UTC "
 #ifdef CONFIG_RTC
-		   "Hardware RTC Support"
+				   "Hardware RTC Support"
 #endif
-		   "\n", sysinfo_str);
+				   "\n", sysinfo_str);
+		} else {
+			printf("\tSystem Time: localtime failed\n");
+		}
+	} else {
+		printf("\tSystem Time: clock not set\n");
+	}
 
 }

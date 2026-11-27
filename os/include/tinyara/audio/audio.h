@@ -75,7 +75,7 @@
 #include <tinyara/spi/spi.h>
 #include <mqueue.h>
 #include <semaphore.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 
 #ifdef CONFIG_AUDIO
 

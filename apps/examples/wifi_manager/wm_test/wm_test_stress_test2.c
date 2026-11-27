@@ -20,7 +20,7 @@
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <queue.h>
+#include <tinyara/queue.h>
 #include <semaphore.h>
 #include <assert.h>
 #include <string.h>
