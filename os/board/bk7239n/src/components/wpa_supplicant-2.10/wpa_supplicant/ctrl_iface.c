@@ -772,9 +772,18 @@ int wpa_supplicant_ctrl_iface_set_network(struct wpa_supplicant *wpa_s, wlan_sta
 			//}
 		}
 		break;
-	case WLAN_STA_FIELD_WEP_KEY0:
-		//wpa_config_parse_wep_key
-		break;
+	case WLAN_STA_FIELD_WEP_KEY0: {
+		//wpa_config_parse_wep_key, set_wep_key
+		char *key = config->u.wep_key;
+		int key_len = strlen(key);
+		if (key_len == 5 || key_len == 13) {
+			memcpy(ssid->wep_key[0], key, key_len);
+			ssid->wep_key_len[0] = key_len;
+		} else if (key_len == 10 || key_len == 26) {
+			ssid->wep_key_len[0] = key_len / 2;
+			hexstr2bin(key, ssid->wep_key[0], ssid->wep_key_len[0]);
+		}
+	}	break;
 	case WLAN_STA_FIELD_WEP_KEY1:
 		break;
 	case WLAN_STA_FIELD_WEP_KEY2:
@@ -825,6 +834,26 @@ int wpa_supplicant_ctrl_iface_set_network(struct wpa_supplicant *wpa_s, wlan_sta
 			//}
 		}
 	}	break;
+
+	case WLAN_STA_FIELD_SAE_PWE: {
+		wpa_s->conf->sae_pwe = config->u.sae_pwe;
+	}	break;
+
+	case WLAN_STA_FIELD_SET_QUERY_REASON: {
+		extern int wnm_send_bss_transition_mgmt_query(struct wpa_supplicant *wpa_s, u8 query_reason,
+													  const char *btm_candidates, int cand_list);
+		wnm_send_bss_transition_mgmt_query(wpa_s, config->u.query_reason, NULL, 0);
+	} break;
+
+#ifdef CONFIG_MBO
+	case WLAN_SET_FIELD_SET_MBO_CELL_CAPA: {
+		wpas_mbo_update_cell_capa(wpa_s, config->u.mbo_cell_capa);
+	} break;
+
+	case WLAN_STA_FIELD_SET_NON_PREF_CHAN: {
+		wpas_mbo_update_non_pref_chan(wpa_s, config->u.non_pre_chan);
+	} break;
+#endif
 
 	case WLAN_STA_FIELD_MFP:
 #ifdef CONFIG_IEEE80211W
@@ -2034,9 +2063,9 @@ int wpa_supplicant_handle_events(wpah_msg_t *msg)
 				// handle dot11d
 				const uint8_t *country_ie = get_ie(data.assoc_info.resp_ies,
 						data.assoc_info.resp_ies_len, WLAN_EID_COUNTRY);
-				if (!country_ie)
+				if (!country_ie && wpa_s->current_bss)
 					country_ie = wpa_bss_get_ie(wpa_s->current_bss, WLAN_EID_COUNTRY);
-				if (country_ie)
+				if (country_ie && wpa_s->current_bss)
 					rwnx_regulatory_hint_11d(wpa_s->current_bss->freq, country_ie + 2, *(country_ie + 1));
 #endif
 

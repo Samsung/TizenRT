@@ -128,6 +128,10 @@ typedef enum wlan_sta_field {
 	WLAN_STA_FIELD_PRIVATE_KEY,
 	WLAN_STA_FIELD_PRIVATE_KEY_PASSWD,
 	WLAN_STA_FIELD_PHASE1,
+	WLAN_STA_FIELD_SAE_PWE,
+	WLAN_SET_FIELD_SET_MBO_CELL_CAPA,
+	WLAN_STA_FIELD_SET_NON_PREF_CHAN,
+	WLAN_STA_FIELD_SET_QUERY_REASON,
 
 	/* for debug */
 	WLAN_STA_FIELD_DEBUG_LEVEL,
@@ -235,8 +239,13 @@ typedef struct wlan_sta_config {
 
 
 		int sae_groups[16];
+		int sae_pwe;
 
 		int ieee80211w;
+
+		int query_reason;
+		int mbo_cell_capa;
+		char non_pre_chan[64];
 
 		/* ocv capability */
 		int ocv;

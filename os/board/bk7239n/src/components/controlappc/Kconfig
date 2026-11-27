@@ -1,0 +1,10 @@
+menu "controlappc"
+	config QUICK_TRACK
+		bool "Enable wfa quicktrack"
+		default n
+	config QUICK_TRACK_UART_PORT
+		int "quicktrack uart port"
+		default 1
+		help
+			0: uart0, 1: uart1, etc.
+endmenu

@@ -150,6 +150,17 @@ extern uint32_t wpa_hostapd_queue_poll(uint32_t param);
 void wpa_supplicant_external_auth_timeout(void *eloop_ctx, void *timeout_ctx);
 extern void sme_send_external_auth_status(struct wpa_supplicant *wpa_s,
 					  u16 status);
+extern bool rwnx_mod_param_get_use_2040();
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+#if defined(CONFIG_WFA_CA) && CONFIG_WFA_CA
+extern bool is_wfa_prog_pmf();
+#else
+static bool is_wfa_prog_pmf(void)
+{
+	return false;
+}
+#endif
+#endif
 #endif
 
 #ifdef CONFIG_WEP
@@ -1436,6 +1447,9 @@ void wpas_set_mgmt_group_cipher(struct wpa_supplicant *wpa_s,
 				struct wpa_ssid *ssid, struct wpa_ie_data *ie)
 {
 	int sel;
+#if BK_SUPPLICANT
+	unsigned int pmf;
+#endif
 
 	sel = ie->mgmt_group_cipher;
 	if (ssid->group_mgmt_cipher)
@@ -1468,9 +1482,44 @@ void wpas_set_mgmt_group_cipher(struct wpa_supplicant *wpa_s,
 	}
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_MGMT_GROUP,
 			 wpa_s->mgmt_group_cipher);
+
+#if BK_SUPPLICANT
+	pmf = wpas_get_ssid_pmf(wpa_s, ssid);
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	// FIX MBO test failure.
+	if (!is_wfa_prog_pmf() && pmf != NO_MGMT_FRAME_PROTECTION &&
+		(ie->capabilities & (WPA_CAPABILITY_MFPC | WPA_CAPABILITY_MFPR)) == (WPA_CAPABILITY_MFPC | WPA_CAPABILITY_MFPR))
+		pmf = MGMT_FRAME_PROTECTION_REQUIRED;
+#endif
+	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_MFP, pmf);
+#else
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_MFP,
 			 wpas_get_ssid_pmf(wpa_s, ssid));
+#endif
 }
+
+
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+/*
+ * Check whether SAE was previously rejected by this AP with an
+ * "authentication algorithm not supported" style error and the PSK fallback
+ * window is still valid.
+ */
+static int wpas_sae_psk_fallback_active(struct wpa_supplicant *wpa_s,
+					const u8 *bssid)
+{
+	struct os_reltime now;
+
+	if (!wpa_s->sae_psk_fallback || !bssid)
+		return 0;
+	os_get_reltime(&now);
+	if (os_reltime_before(&wpa_s->sae_psk_fallback_until, &now)) {
+		wpa_s->sae_psk_fallback = 0;
+		return 0;
+	}
+	return os_memcmp(bssid, wpa_s->sae_psk_fallback_bssid, ETH_ALEN) == 0;
+}
+#endif /* CONFIG_QUICK_TRACK */
 
 
 /**
@@ -1687,6 +1736,13 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 				  WPA_DRIVER_FLAGS_UPDATE_FT_IES)))
 		sel &= ~WPA_KEY_MGMT_FT;
 #endif /* CONFIG_IEEE80211R */
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	if (bss && wpas_sae_psk_fallback_active(wpa_s, bss->bssid)) {
+		wpa_msg(wpa_s, MSG_INFO,
+			"WPA: AP rejected SAE authentication - fall back to PSK for this BSS");
+		sel &= ~(WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_FT_SAE);
+	}
+#endif /* CONFIG_QUICK_TRACK */
 	wpa_dbg(wpa_s, MSG_DEBUG,
 		"WPA: AP key_mgmt 0x%x network profile key_mgmt 0x%x; available key_mgmt 0x%x",
 		ie.key_mgmt, ssid->key_mgmt, sel);
@@ -2035,6 +2091,10 @@ static void wpas_ext_capab_byte(struct wpa_supplicant *wpa_s, u8 *pos, int idx)
 
 	switch (idx) {
 	case 0: /* Bits 0-7 */
+#ifdef BK_SUPPLICANT
+		if (rwnx_mod_param_get_use_2040())
+			*pos |= 0x01; /* 20_40 Coexistence Management */
+#endif
 		break;
 	case 1: /* Bits 8-15 */
 		if (wpa_s->conf->coloc_intf_reporting) {
@@ -3097,7 +3157,7 @@ static u8 * wpas_populate_assoc_ies(
 	size_t max_wpa_ie_len = 500;
 	size_t wpa_ie_len;
 	int algs = WPA_AUTH_ALG_OPEN;
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 	const u8 *mbo_ie;
 #endif
 #if defined(CONFIG_SAE) || defined(CONFIG_FILS)
@@ -3389,7 +3449,7 @@ static u8 * wpas_populate_assoc_ies(
 	}
 #endif /* CONFIG_FST */
 
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 	mbo_ie = bss ? wpa_bss_get_vendor_ie(bss, MBO_IE_VENDOR_TYPE) : NULL;
 	if (!wpa_s->disable_mbo_oce && mbo_ie) {
 		int len;
@@ -3754,7 +3814,7 @@ fail:
 }
 
 
-#ifdef CONFIG_MBO
+#ifdef CONFIG_QUICK_MBO
 void wpas_update_mbo_connect_params(struct wpa_supplicant *wpa_s)
 {
 	struct wpa_driver_associate_params params;
@@ -8074,7 +8134,23 @@ void wpas_connection_failed(struct wpa_supplicant *wpa_s, const u8 *bssid)
 	 * Add the failed BSSID into the ignore list and speed up next scan
 	 * attempt if there could be other APs that could accept association.
 	 */
+#if defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+	/*
+	 * Skip the ignore list when this failure was an SAE authentication
+	 * rejection so the BSS can be retried with PSK without delay.
+	 */
+	if (wpas_sae_psk_fallback_active(wpa_s, bssid)) {
+		wpa_printf(MSG_INFO,
+			   "SAE rejected by AP " MACSTR
+			   " - skip ignore list to retry with PSK",
+			   MAC2STR(bssid));
+		count = 0;
+	} else {
+		count = wpa_bssid_ignore_add(wpa_s, bssid);
+	}
+#else
 	count = wpa_bssid_ignore_add(wpa_s, bssid);
+#endif /* CONFIG_QUICK_TRACK */
 	if (count == 1 && wpa_s->current_bss) {
 		/*
 		 * This BSS was not in the ignore list before. If there is
@@ -8531,7 +8607,7 @@ void wpas_clear_temp_disabled(struct wpa_supplicant *wpa_s,
 }
 
 
-#ifdef CONFIG_FULL_SUPPLICANT
+#ifdef CONFIG_QUICK_MBO
 int disallowed_bssid(struct wpa_supplicant *wpa_s, const u8 *bssid)
 {
 	size_t i;

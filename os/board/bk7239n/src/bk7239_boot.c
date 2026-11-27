@@ -371,6 +371,11 @@ void board_initialize(void)
 		}
 	}
 #endif
+#ifdef CONFIG_QUICK_TRACK
+	extern int quicktrack_drv_register(void);
+	quicktrack_drv_register();
+#endif
+
 	/*pm pre init*/
 	board_pm_pre_init();
 

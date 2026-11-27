@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <os/os.h>
-#include "cli.h"
+#include "../cli.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -950,6 +950,8 @@ void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	struct wpa_driver_scan_params params;
 	struct wpa_driver_scan_params *scan_params;
 	size_t max_ssids;
+	const u8 *scan_ssid_txt = NULL;
+	size_t scan_ssid_txt_len = 0;
 	int connect_without_scan = 0;
 #ifdef CONFIG_P2P
 	int p2p_in_prog;
@@ -1258,9 +1260,11 @@ void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 			wpa_s->prev_scan_ssid = ssid;
 			wpa_s->prev_scan_wildcard = 0;
 #endif // !BK_SUPPLICANT
+			scan_ssid_txt = ssid ? ssid->ssid : params.ssids[0].ssid;
+			scan_ssid_txt_len = ssid ? ssid->ssid_len : params.ssids[0].ssid_len;
 			wpa_dbg(wpa_s, MSG_DEBUG,
 				"Starting AP scan for specific SSID: %s",
-				wpa_ssid_txt(ssid->ssid, ssid->ssid_len));
+				wpa_ssid_txt(scan_ssid_txt, scan_ssid_txt_len));
 #ifndef BK_SUPPLICANT
 		}
 #endif // BK_SUPPLICANT

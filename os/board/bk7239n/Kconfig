@@ -30,6 +30,7 @@ source "board/bk7239n/src/components/bk_cli/uart_debug/Kconfig"
 source "board/bk7239n/src/components/bk_cli/Kconfig"
 source "board/bk7239n/src/components/bk_phy/Kconfig"
 source "board/bk7239n/src/components/easy_flash/Kconfig"
+source "board/bk7239n/src/components/controlappc/Kconfig"
 # source "board/bk7239n/src/components/secure_deployment/Kconfig"
 source "board/bk7239n/src/libs/Kconfig"
 

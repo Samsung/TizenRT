@@ -199,8 +199,10 @@ int l2_packet_send_sync(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto
 
 static void l2_packet_receive(int sock, void *eloop_ctx, void *sock_ctx)
 {
-#if CONFIG_WPA2_ENTERPRISE || defined(CONFIG_P2P)
-#define TMP_BUF_LEN     1500
+#if CONFIG_WPA2_ENTERPRISE || (defined(CONFIG_P2P) && CONFIG_P2P) || CONFIG_WAPI_SUPPORT
+#define TMP_BUF_LEN     1600   //default 1500,add WAPI changed to 1600
+#elif defined(CONFIG_QUICK_TRACK) && CONFIG_QUICK_TRACK
+#define TMP_BUF_LEN     1024
 #else
 #define TMP_BUF_LEN     512
 #endif

@@ -469,6 +469,13 @@ typedef struct {
 	char private_key_passwd[32];       /**< client's private key password */
 	char phase1[32];                   /**< client's phase1 parameters */
 #endif
+#if CONFIG_QUICK_TRACK
+	int key_mgmt;
+	int pairwise_cipher;
+	int group_cipher;
+	int proto;	   // WPA, RSN
+	int ieee80211w;
+#endif
 } wifi_sta_config_t;
 
 typedef struct {
