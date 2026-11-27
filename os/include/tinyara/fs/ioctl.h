@@ -102,10 +102,11 @@
 #define _THERMALBASE	(0x2900)	/* thermal camera control ioctl commands */
 #define _COMPBASE       (0x2a00)	/* compress ioctl commands */
 #define _PMBASE         (0x2b00)    	/* pm ioctl commands */
-#define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
 #define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
 #define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
+#define _HMIOCBASE      (0x3c00)	/* Health monitor ioctl commands */
+#define _TESTIOCBASE    (0xfe00)	/* KERNEL TEST DRV module ioctl commands */
 
 
 /* boardctl() commands share the same number space */
@@ -534,6 +535,15 @@
 
 #define _LWNLIOCVALID(c) (_IOC_TYPE(c) == _LWNLIOCBASE)
 #define _LWNLIOC(nr)     _IOC(_LWNLIOCBASE, nr)
+
+/* Health monitor ioctl commands ************************************/
+
+#define _HMIOCVALID(c)  (_IOC_TYPE(c) == _HMIOCBASE)
+#define _HMIOC(nr)      _IOC(_HMIOCBASE, nr)
+
+#define HMIOC_START _HMIOC(0x0001)
+#define HMIOC_STOP  _HMIOC(0x0002)
+#define HMIOC_KICK  _HMIOC(0x0003)
 
 /****************************************************************************
  * Public Type Definitions

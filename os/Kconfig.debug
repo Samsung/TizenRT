@@ -1296,6 +1296,13 @@ config STACK_COLORATION
 
 		Only supported by a few architectures.
 
+config STACKDUMP_ALL_TASKS
+	bool "Dump registers and stacks of all tasks on assertions"
+	default n
+	depends on ARCH_STACKDUMP
+	---help---
+		Add register and stack dumps for all tasks after the task list.
+
 comment "Build Debug Options"
 
 config DEBUG_SYMBOLS

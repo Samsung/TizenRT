@@ -134,6 +134,9 @@ void notify_cancellation(FAR struct tcb_s *tcb);
 void thread_termination_handler(void);
 #endif
 
+void task_dump_registers(FAR struct tcb_s *tcb);
+void task_dump(FAR struct tcb_s *tcb);
+
 void task_show_alivetask_list(void);
 
 void task_show_tcbinfo(struct tcb_s *tcb);

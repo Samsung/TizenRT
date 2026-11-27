@@ -45,6 +45,8 @@ typedef enum {
 	REBOOT_SYSTEM_WATCHDOG             = 65, /* Watchdog timeout */
 	REBOOT_SYSTEM_ASSERT               = 66, /* Reboot from ASSERT or PANIC */
 	REBOOT_SYSTEM_WITHOUT_SET_REASON   = 67, /* Software reboot without setting reboot reason beforehand */
+	REBOOT_SYSTEM_HEALTH_MONITOR_TIMEOUT 		 = 68, /* Kernel thread health monitor deadline expired */
+	REBOOT_SYSTEM_HEALTH_MONITOR_UNEXPECTED_EXIT = 69, /* Monitored kernel thread exited without STOP */
 
 	/* User crash reboot reasons (71 ~ 79) */
 	REBOOT_USER_DATAABORT              = 71, /* Data abort by User */
@@ -53,6 +55,8 @@ typedef enum {
 	REBOOT_USER_WATCHDOG               = 74, /* Watchdog timeout by User */
 	REBOOT_USER_ASSERT                 = 75, /* Reboot from ASSERT or PANIC by User */
 	REBOOT_USER_WITHOUT_SET_REASON     = 76, /* Software reboot by User without setting reboot reason beforehand */
+	REBOOT_USER_HEALTH_MONITOR_TIMEOUT 			= 77, /* User thread health monitor  deadline expired */
+	REBOOT_USER_HEALTH_MONITOR_UNEXPECTED_EXIT 	= 78, /* Monitored user thread exited without STOP */
 
 	REBOOT_NETWORK_WIFICORE_WATCHDOG   = 80, /* Wi-Fi Core Watchdog Reset */
 	REBOOT_NETWORK_WIFICORE_PANIC      = 81, /* Wi-Fi Core Panic */

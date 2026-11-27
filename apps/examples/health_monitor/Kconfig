@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config EXAMPLES_HEALTH_MONITOR
+	bool "Health monitor validation example"
+	default n
+	depends on HEALTH_MONITOR && !DISABLE_PTHREAD && !DISABLE_MQUEUE
+	---help---
+		Enable the health_monitor command for start, kick and stop through a
+		worker thread, a periodic run cycle and numbered scenarios. Scenario 1
+		tests two-thread ping-pong; scenarios 2..6 deliberately test missing
+		kicks, semaphore deadlock, CPU starvation, sched_lock and unexpected
+		exit. Scenario 7 uses a 10-second timeout, logs wall-clock and uptime
+		changes, kicks after moving time forward/backward, then restores time
+		and stops normally. No thread is monitored until a
+		command explicitly starts monitoring.
+		Scenarios 2..6 and expire deliberately trigger PANIC; reset behavior
+		follows the board watchdog and panic configuration.
