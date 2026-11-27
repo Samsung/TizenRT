@@ -123,38 +123,11 @@ typedef struct {
 	size_t dlen;
 } secure_kdf_struc;
 
-/* Kernel & User Image Verification Structure */
-#ifdef CONFIG_AMEBASMART_TRUSTZONE
-#include "amebahp_secure_boot.h"
-#include "hal_platform.h"
-
-#define IMAGE_HEADER_LEN		0x20
-#define Cert_PKHash_OTP_ADDR		0x0320
-#define OTPC_REG_BASE			0x42000000
-
-typedef struct {
-	uint8_t *AuthAlg;
-	uint8_t *HashAlg;
-	uint8_t ManiAuth;
-	uint8_t ManiHash;
-	uint8_t *Pk;
-	uint8_t *Msg;
-	uint32_t Len;
-	uint8_t *Sig;
-	uint8_t *Hash;
-	uint8_t *ImgHash;
-	SubImgInfo_TypeDef *SubImgInfo;
-	Manifest_TypeDef *Manifest;
-	uint8_t Num;
-} OTA_SIG_CHECK_ADAPTER;
-
-typedef struct {
-	uint32_t signature[2];
-	uint32_t image_size;
-	uint32_t image_addr;
-
-	/* reserved for extension */
-	uint32_t sb_header;
-	uint32_t reserved[3];
-} IMAGE_HEADER;
-#endif
+/* Kernel & User Image Verification Structure
+ *
+ * The signature verification itself moved to the secure world. The non-secure
+ * side only passes an image address, so the manifest/certificate layouts and
+ * the OTA_SIG_CHECK_ADAPTER marshalling struct are no longer needed here.
+ */
+int ameba_OTA_KernelImageSignatureCheck(uint32_t input_addr);
+int ameba_OTA_UserImageSignatureCheck(uint32_t input_addr);
