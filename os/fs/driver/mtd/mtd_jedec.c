@@ -59,6 +59,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -82,26 +83,34 @@
 #endif
 
 /* Instructions */
-/*      Command             Value	   N Description             Addr Dummy Data   */
-#define JEDEC_WREN           0x06	/* 1 Write Enable              0   0     0     */
-#define JEDEC_WRDI           0x04	/* 1 Write Disable             0   0     0     */
-#define JEDEC_RDID           0x9f	/* 1 Read Identification       0   0     1-3   */
-#define JEDEC_RDSR           0x05	/* 1 Read Status Register      0   0     >=1   */
-#define JEDEC_WRSR           0x01	/* 1 Write Status Register     0   0     1     */
-#define JEDEC_READ           0x03	/* 1 Read Data Bytes           3   0     >=1   */
-#define JEDEC_READ4BYTE      0x13	/* 1 Read Data Bytes           4   0     >=1   */
-#define JEDEC_FAST_READ      0x0b	/* 1 Higher speed read         3   1     >=1   */
-#define JEDEC_FAST_READ4BYTE 0x0C	/* 1 Higher speed read         4   1     >=1   */
-#define JEDEC_PP             0x02	/* 1 Page Program              3   0     1-256 */
-#define JEDEC_PP4BYTE        0x12	/* 1 Page Program              4   0     1-256 */
-#define JEDEC_SE             0xd8	/* 1 Sector Erase              3   0     0     */
-#define JEDEC_SE4BYTE        0xdc	/* 1 Sector Erase              4   0     0     */
-#define JEDEC_BE             0xc7	/* 1 Bulk Erase                0   0     0     */
-#define JEDEC_DP             0xb9	/* 2 Deep power down           0   0     0     */
-#define JEDEC_RES            0xab	/* 2 Read Electronic Signature 0   3     >=1   */
-#define JEDEC_SSE            0x20	/* 3 Sub-Sector Erase          3   0     0     */
-#define JEDEC_SSE4BYTE       0x21   /* 3 Sub-Sector Erase          4   0     0     */
-#define JEDEC_ADDR4BYTE      0xb7   /* 3 4-byte Address mode       0   0     0     */
+/*      Command             	Value	   N Description             Addr Dummy Data   */
+#define JEDEC_WREN           	0x06	/* 1 Write Enable              0   0     0     */
+#define JEDEC_WRDI           	0x04	/* 1 Write Disable             0   0     0     */
+#define JEDEC_RDID           	0x9f	/* 1 Read Identification       0   0     1-3   */
+#define JEDEC_RDSR           	0x05	/* 1 Read Status Register      0   0     >=1   */
+#define JEDEC_WRSR           	0x01	/* 1 Write Status Register     0   0     1     */
+#define JEDEC_READ           	0x03	/* 1 Read Data Bytes           3   0     >=1   */
+#define JEDEC_READ4BYTE      	0x13	/* 1 Read Data Bytes           4   0     >=1   */
+#define JEDEC_FAST_READ      	0x0b	/* 1 Higher speed read         3   1     >=1   */
+#define JEDEC_FAST_READ4BYTE 	0x0C	/* 1 Higher speed read         4   1     >=1   */
+#define JEDEC_PP             	0x02	/* 1 Page Program              3   0     1-256 */
+#define JEDEC_PP4BYTE        	0x12	/* 1 Page Program              4   0     1-256 */
+#define JEDEC_SE             	0xd8	/* 1 Sector Erase              3   0     0     */
+#define JEDEC_SE4BYTE        	0xdc	/* 1 Sector Erase              4   0     0     */
+#define JEDEC_BE             	0xc7	/* 1 Bulk Erase                0   0     0     */
+#define JEDEC_DP             	0xb9	/* 2 Deep power down           0   0     0     */
+#define JEDEC_RES            	0xab	/* 2 Read Electronic Signature 0   3     >=1   */
+#define JEDEC_SSE            	0x20	/* 3 Sub-Sector Erase          3   0     0     */
+#define JEDEC_SSE4BYTE       	0x21	/* 3 Sub-Sector Erase          4   0     0     */
+#define JEDEC_ADDR4BYTE      	0xb7	/* 3 4-byte Address mode       0   0     0     */
+#define JEDEC_RDSFDP         	0x5a	/* - Read SFDP                 3   1     >=1   */
+
+/* SFDP parameters */
+#define JEDEC_SFDP_BFPT      	0xff00	/* Basic Flash Parameter Table ID */
+#define JEDEC_SFDP_SECTORMAP 	0xff81	/* Sector Map Table ID */
+#define JEDEC_SFDP_4BAIT     	0xff84	/* 4-Byte Address Instruction Table ID */
+#define JEDEC_SFDP_MAX_HEADERS	32		/* Maximum number of parameter headers */
+#define JEDEC_SFDP_ADDR_SPACE_SIZE 0x1000000u /* 3-byte SFDP address space size */
 
 /* Status register bit definitions */
 #define JEDEC_SR_WIP            (1 << 0)	/* Bit 0: Write in progress bit */
@@ -125,13 +134,13 @@
  * Private Types
  ************************************************************************************/
 
-/* Structure for static mapping of different flash's */
+/* JEDEC identification and flash geometry obtained from SFDP. */
 struct jedec_geometry_info_s {
 	uint16_t manufacturer;		/* Manufacturer ID */
 	uint16_t memory;			/* Memory Type */
-	uint16_t capacity;			/* Memory Capacity */
-	char *manufacturer_name;	/* Manufacturer Name */
+	uint16_t capacity;			/* Memory Capacity ID */
 	char *flash_size;			/* Flash Size string */
+	char flash_size_buffer[16];	/* Storage for the flash size string */
 	uint8_t sectorshift;		/* Size of erasable block */
 	uint16_t nsectors;			/* Number of erasable blocks */
 	uint8_t pageshift;			/* Size of programmable page */
@@ -141,18 +150,18 @@ struct jedec_geometry_info_s {
 
 typedef struct jedec_geometry_info_s jedec_geometry_t;
 
-/* Update this list for new spi based flash */
-jedec_geometry_t g_jedec_device_info_list[] = {
-	{0xA1, 0x28, 0x16, "Fudan", "4MB", 16, 64, 8, 16384, 12},
-	{0xA1, 0x40, 0x19, "Fudan", "32MB", 16, 512, 8, 131072, 12},
-	{0xEF, 0x40, 0x16, "Winbond", "4MB", 16, 64, 8, 16384, 12},
-	{0xEF, 0x40, 0x17, "Winbond", "8MB", 16, 128, 8, 32768, 12},
-	{0xEF, 0x40, 0x19, "Winbond", "32MB", 16, 512, 8, 131072, 12},
-	{0xEF, 0x40, 0x20, "Winbond", "64MB", 16, 1024, 8, 262144, 12},
-	{0x9D, 0x60, 0x16, "ISSI", "4MB", 16, 64, 8, 16384, 12},
-	{0x20, 0x40, 0x16, "XMC", "4MB", 16, 64, 8, 16384, 12},
-	{0x0b, 0x40, 0x19, "XTX", "32MB", 16, 512, 8, 131072, 12},
-	{0x0b, 0x65, 0x1a, "XTX", "64MB", 16, 1024, 8, 262144, 12},
+struct jedec_manufacturer_s {
+	uint8_t id;
+	const char *name;
+};
+
+/* Used only for display; manufacturer IDs may be shared by vendors. */
+static const struct jedec_manufacturer_s g_jedec_manufacturers[] = {
+	{0x0b, "XTX"},
+	{0x20, "XMC / ST / Micron"},
+	{0x9d, "ISSI"},
+	{0xa1, "Fudan"},
+	{0xef, "Winbond"},
 };
 
 /* This type represents the state of the MTD device.  The struct mtd_dev_s
@@ -202,36 +211,6 @@ static int jedec_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
 /************************************************************************************
  * Private Functions
  ************************************************************************************/
-static int jedec_set_geometry(struct jedec_dev_s *priv, uint16_t manufacturer,
-					uint16_t memory, uint16_t capacity)
-{
-	int i;
-
-	for (i = 0; i < sizeof(g_jedec_device_info_list) / sizeof(g_jedec_device_info_list[0]); i++) {
-
-		if ((manufacturer == g_jedec_device_info_list[i].manufacturer) &&
-			(memory == g_jedec_device_info_list[i].memory) &&
-			(capacity == g_jedec_device_info_list[i].capacity)) {
-
-			/* Save the FLASH geometry */
-
-			priv->geo.sectorshift = g_jedec_device_info_list[i].sectorshift;
-			priv->geo.nsectors = g_jedec_device_info_list[i].nsectors;
-			priv->geo.pageshift = g_jedec_device_info_list[i].pageshift;
-			priv->geo.npages = g_jedec_device_info_list[i].npages;
-			priv->geo.subsectorshift = g_jedec_device_info_list[i].subsectorshift;
-
-			fdbg("Vendor : %s, Size = %s\n", g_jedec_device_info_list[i].manufacturer_name,
-				g_jedec_device_info_list[i].flash_size);
-
-			return OK;
-		}
-
-	}
-
-	return ERROR;
-}
-
 /************************************************************************************
  * Name: jedec_lock
  ************************************************************************************/
@@ -268,6 +247,239 @@ static inline void jedec_unlock(FAR struct spi_dev_s *dev)
 	(void)SPI_LOCK(dev, false);
 }
 
+/* SFDP has its own 24-bit address space, regardless of flash address mode. */
+static void jedec_read_sfdp(struct jedec_dev_s *priv, uint32_t addr, uint8_t *data, size_t len)
+{
+	size_t i;
+
+	jedec_lock(priv->dev);
+	jedec_waitwritecomplete(priv);
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
+	(void)SPI_SEND(priv->dev, JEDEC_RDSFDP);
+	(void)SPI_SEND(priv->dev, (addr >> 16) & 0xff);
+	(void)SPI_SEND(priv->dev, (addr >> 8) & 0xff);
+	(void)SPI_SEND(priv->dev, addr & 0xff);
+	(void)SPI_SEND(priv->dev, JEDEC_DUMMY);
+	for (i = 0; i < len; i++) {
+		data[i] = SPI_SEND(priv->dev, JEDEC_DUMMY);
+	}
+	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
+	jedec_unlock(priv->dev);
+}
+
+static uint32_t jedec_sfdp_u32(const uint8_t *p)
+{
+	return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
+		((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
+static uint32_t jedec_sfdp_pointer(const uint8_t *header)
+{
+	return (uint32_t)header[4] | ((uint32_t)header[5] << 8) |
+		((uint32_t)header[6] << 16);
+}
+
+static const char *jedec_manufacturer_name(uint16_t id)
+{
+	unsigned int i;
+
+	for (i = 0; i < sizeof(g_jedec_manufacturers) / sizeof(g_jedec_manufacturers[0]); i++) {
+		if (g_jedec_manufacturers[i].id == id) {
+			return g_jedec_manufacturers[i].name;
+		}
+	}
+
+	return "Unknown";
+}
+
+/* Decode the BFPT density field and validate the flash size in bytes. */
+static int jedec_sfdp_get_flash_size(uint32_t density, uint64_t *size)
+{
+	uint64_t bits;
+	uint64_t bytes;
+
+	if (density & 0x80000000u) {
+		uint32_t exponent = density & 0x7fffffffu;
+		if (exponent > 31) {
+			return -ENOTSUP;
+		}
+		bits = (uint64_t)1 << exponent;
+	} else {
+		bits = (uint64_t)density + 1;
+	}
+	bytes = bits >> 3;
+	if ((bits & 7) || bytes < (1u << 20) || bytes > (1u << 28) || (bytes & (bytes - 1))) {
+		fdbg("unsupported density\n");
+		return -ENOTSUP;
+	}
+	*size = bytes;
+	return OK;
+}
+
+/* Select only configurations supported by the existing MTD operations. */
+static int jedec_set_geometry(struct jedec_dev_s *priv, jedec_geometry_t *info, uint8_t *address_length)
+{
+	uint8_t header[8];
+	uint8_t bfpt[44];
+	uint8_t bait[8];
+	uint32_t bfpt_addr = 0;
+	uint32_t bait_addr = 0;
+	uint32_t bfpt_dword1;
+	uint32_t bfpt_dword2;
+	uint32_t bfpt_dword8;
+	uint32_t bfpt_dword9;
+	uint32_t bfpt_dword11;
+	uint32_t flags;
+	uint64_t size;
+	uint8_t bfpt_minor = 0;
+	uint8_t bfpt_words = 0;
+	uint8_t bait_words = 0;
+	uint8_t sectorshift = 0;
+	uint8_t subsectorshift = 0;
+	uint8_t pageshift;
+	uint8_t addrmode;
+	uint8_t addr_len;
+	bool bfpt_found = false;
+	bool sector_map_found = false;
+	int sector_type = -1;
+	int subsector_type = -1;
+	unsigned int count;
+	unsigned int i;
+
+	/* Read and check the SFDP header. */
+	jedec_read_sfdp(priv, 0, header, sizeof(header));
+	if (header[0] != 'S' || header[1] != 'F' || header[2] != 'D' || header[3] != 'P') {
+		fdbg("SFDP signature is missing or invalid\n");
+		return -ENOTSUP;
+	}
+	if (header[5] != 1) {
+		fdbg("Unsupported SFDP major revision: %u\n", (unsigned int)header[5]);
+		return -ENOTSUP;
+	}
+
+	/* Read and check the parameter headers. */
+	count = (unsigned int)header[6] + 1;
+	for (i = 0; i < count; i++) {
+		uint16_t id;
+		jedec_read_sfdp(priv, 8 + i * 8, header, sizeof(header));
+		id = ((uint16_t)header[7] << 8) | header[0];
+		if (id == JEDEC_SFDP_SECTORMAP) {
+			sector_map_found = true;
+		} else if (id == JEDEC_SFDP_BFPT && header[2] == 1 &&
+		    (!bfpt_found || header[1] > bfpt_minor ||
+		     (header[1] == bfpt_minor && header[3] > bfpt_words))) {
+			bfpt_found = true;
+			bfpt_minor = header[1];
+			bfpt_words = header[3];
+			bfpt_addr = jedec_sfdp_pointer(header);
+		} else if (id == JEDEC_SFDP_4BAIT && header[2] == 1 && header[3] >= 2) {
+			bait_words = header[3];
+			bait_addr = jedec_sfdp_pointer(header);
+		}
+	}
+
+	/* The existing driver assumes one uniform erase layout. */
+	if (sector_map_found) {
+		fdbg("Sector map is not supported by this driver\n");
+		return -ENOTSUP;
+	}
+	/* Require a BFPT containing the page-size field in DWORD11. */
+	if (!bfpt_found || bfpt_words < 11) {
+		fdbg("BFPT missing or shorter than 11 DWORDs; cannot read page size\n");
+		return -ENOTSUP;
+	}
+	if ((bfpt_addr & 3) || bfpt_addr > JEDEC_SFDP_ADDR_SPACE_SIZE - sizeof(bfpt)) {
+		fdbg("Invalid BFPT address\n");
+		return -ENOTSUP;
+	}
+	jedec_read_sfdp(priv, bfpt_addr, bfpt, sizeof(bfpt));
+	/* Decode the BFPT DWORDs used to configure priv->geo and priv->addr_len. */
+	bfpt_dword1 = jedec_sfdp_u32(bfpt);
+	bfpt_dword2 = jedec_sfdp_u32(bfpt + 4);
+	bfpt_dword8 = jedec_sfdp_u32(bfpt + 28);
+	bfpt_dword9 = jedec_sfdp_u32(bfpt + 32);
+	bfpt_dword11 = jedec_sfdp_u32(bfpt + 40);
+
+	/* DWORD2 supplies the flash size used to calculate sector and page counts. */
+	if (jedec_sfdp_get_flash_size(bfpt_dword2, &size) < 0) {
+		return -ENOTSUP;
+	}
+
+	/* DWORD8/9 describe four erase types; find the sector and subsector sizes. */
+	for (i = 0; i < 4; i++) {
+		uint32_t erase_dword = i < 2 ? bfpt_dword8 : bfpt_dword9;
+		unsigned int bit_offset = (i % 2) * 16;
+		uint8_t shift = (erase_dword >> bit_offset) & 0xff;
+		uint8_t opcode = (erase_dword >> (bit_offset + 8)) & 0xff;
+		if (opcode == JEDEC_SE && shift && !sectorshift) {
+			sectorshift = shift;
+			sector_type = i;
+		} else if (opcode == JEDEC_SSE && shift && !subsectorshift) {
+			subsectorshift = shift;
+			subsector_type = i;
+		}
+	}
+	/* DWORD11 supplies the page size used for reads and page programming. */
+	pageshift = (bfpt_dword11 >> 4) & 0xf;
+	if (pageshift < 8 || pageshift > 12 || sectorshift < pageshift || sectorshift > 20 ||
+	    (subsectorshift && (subsectorshift < pageshift || subsectorshift >= sectorshift)) ||
+	    (size >> sectorshift) == 0 || (size >> sectorshift) > 0xffff) {
+		fdbg("unsupported page or erase geometry\n");
+		return -ENOTSUP;
+	}
+
+	/* DWORD1 and the flash size determine the address length used by priv. */
+	addrmode = (bfpt_dword1 >> 17) & 3;
+	if (addrmode == 3 || (size > (1u << 24) && addrmode == 0)) {
+		fdbg("unsupported address mode\n");
+		return -ENOTSUP;
+	}
+	addr_len = (size > (1u << 24) || addrmode == 2) ? 4 : 3;
+	if (addr_len == 4) {
+		/* The existing read/program/erase paths use dedicated 4-byte opcodes. */
+		if (!bait_words || (bait_addr & 3) || bait_addr > JEDEC_SFDP_ADDR_SPACE_SIZE - sizeof(bait)) {
+			fdbg("missing 4-byte instruction table\n");
+			return -ENOTSUP;
+		}
+		jedec_read_sfdp(priv, bait_addr, bait, sizeof(bait));
+		flags = jedec_sfdp_u32(bait);
+#ifdef CONFIG_JEDEC_SLOWREAD
+		if (!(flags & (1u << 0))) {
+#else
+		if (!(flags & (1u << 1))) {
+#endif
+			fdbg("4-byte read instruction unavailable\n");
+			return -ENOTSUP;
+		}
+		if (!(flags & (1u << 6)) || !(flags & (1u << (9 + sector_type))) ||
+		    bait[4 + sector_type] != JEDEC_SE4BYTE ||
+		    (subsector_type >= 0 && (!(flags & (1u << (9 + subsector_type))) ||
+		     bait[4 + subsector_type] != JEDEC_SSE4BYTE))) {
+			fdbg("required 4-byte program or erase instruction unavailable\n");
+			return -ENOTSUP;
+		}
+	}
+
+	/* Apply the validated geometry and address length to priv. */
+	info->sectorshift = sectorshift;
+	info->nsectors = (uint16_t)(size >> sectorshift);
+	info->pageshift = pageshift;
+	info->npages = (uint32_t)(size >> pageshift);
+	info->subsectorshift = subsectorshift;
+	(void)snprintf(info->flash_size_buffer, sizeof(info->flash_size_buffer),
+		       "%u MiB", (unsigned int)(size >> 20));
+	info->flash_size = info->flash_size_buffer;
+	*address_length = addr_len;
+	fdbg("Total memory size: %lu KiB, sector: %lu %s, subsector: %lu %s, page: %lu bytes, %u-byte address\n",
+	     (unsigned long)(size >> 10),
+	     (unsigned long)((1u << sectorshift) >> (sectorshift >= 10 ? 10 : 0)),
+	     sectorshift >= 10 ? "KiB" : "bytes",
+	     subsectorshift ? (unsigned long)((1u << subsectorshift) >> (subsectorshift >= 10 ? 10 : 0)) : 0ul,
+	     subsectorshift ? (subsectorshift >= 10 ? "KiB" : "bytes") : "(not supported)",
+	     (unsigned long)(1u << pageshift), addr_len);
+	return OK;
+}
+
 /************************************************************************************
  * Name: jedec_readid
  ************************************************************************************/
@@ -299,16 +511,19 @@ static inline int jedec_readid(struct jedec_dev_s *priv)
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, false);
 	jedec_unlock(priv->dev);
 
-	fdbg("manufacturer: %02x memory: %02x capacity: %02x\n", manufacturer, memory, capacity);
-
-	if (jedec_set_geometry(priv, manufacturer, memory, capacity) != OK) {
-		fdbg("can't find such kind of driver\n");
+	/* Use the SFDP geometry and addressing requirements for every device. */
+	if (jedec_set_geometry(priv, &priv->geo, &priv->addr_len) != OK) {
+		fdbg("JEDEC ID %02x %02x %02x: no usable SFDP geometry\n", manufacturer, memory, capacity);
 		return -ENODEV;
 	}
-	
-	if (capacity >= 0x19) {
-		priv->addr_len = 4;
-	}
+
+	fdbg("manufacturer: %s (0x%02x), memory type: 0x%02x, capacity ID: 0x%02x\n",
+	     jedec_manufacturer_name(manufacturer), manufacturer, memory, capacity);
+
+	/* The JEDEC ID is obtained from the Read ID command. */
+	priv->geo.manufacturer = manufacturer;
+	priv->geo.memory = memory;
+	priv->geo.capacity = capacity;
 
 	return OK;
 }
@@ -800,7 +1015,11 @@ static int jedec_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nbloc
 
 		/* Not using sub-sector erase.  Erase each full sector */
 
-		jedec_sectorerase(priv, startblock, JEDEC_SE);
+		if (priv->addr_len == 4) {
+			jedec_sectorerase(priv, startblock, JEDEC_SE4BYTE);
+		} else {
+			jedec_sectorerase(priv, startblock, JEDEC_SE);
+		}
 		startblock++;
 		blocksleft--;
 	}
@@ -1096,14 +1315,11 @@ FAR struct mtd_dev_s *jedec_initialize(FAR struct spi_dev_s *dev)
 #endif
 		priv->mtd.ioctl = jedec_ioctl;
 		priv->dev = dev;
-		/* Under 23MB of flash, we will use 24bit address mode */
-		priv->addr_len = 3;
-
 		/* Deselect the FLASH */
 
 		SPI_SELECT(dev, SPIDEV_FLASH, false);
 
-		/* Identify the FLASH chip and get its capacity */
+		/* Identify the FLASH chip and get its geometry from SFDP. */
 
 		ret = jedec_readid(priv);
 		if (ret != OK) {
