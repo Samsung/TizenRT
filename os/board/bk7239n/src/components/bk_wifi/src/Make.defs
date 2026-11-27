@@ -88,3 +88,39 @@ CSRCS += \
 
 DEPPATH += --dep-path components/bk_wifi/src
 VPATH += :components/bk_wifi/src
+
+# ---------------------------------------------------------------------------
+# Single-pass regeneration of regdb_bin.c from scripts/db.txt.
+#
+# The bk7239n firmware is compiled by the TizenRT Makefile system (this file,
+# pulled in by board/bk7239n/src/Makefile), NOT by the component CMakeLists.txt.
+# So the "edit db.txt -> rebuild picks it up" logic has to live here to take
+# effect. (The CMakeLists.txt has an equivalent block, but that one is only used
+# by the standalone armino/CMake build of bk_wifi; the two must be kept in sync.)
+# Editing scripts/db.txt regenerates src/regdb_bin.c (and refreshes the
+# human-readable channel-map xlsx) right before regdb_bin.o is recompiled, so
+# db.txt / regdb_bin.c / regdb_channel_map.xlsx stay in sync and get committed
+# together. The final chown keeps the generated files owned by whoever owns
+# db.txt (the in-Docker build runs as root) so they remain git-committable.
+# ---------------------------------------------------------------------------
+BK_WIFI_DIR        := components/bk_wifi
+BK_WIFI_SCRIPTS    := $(BK_WIFI_DIR)/scripts
+BK_WIFI_REGDB_DB   := $(BK_WIFI_SCRIPTS)/db.txt
+BK_WIFI_REGDB_C    := $(BK_WIFI_DIR)/src/regdb_bin.c
+BK_WIFI_REGDB_XLSX := $(BK_WIFI_SCRIPTS)/regdb_channel_map.xlsx
+BK_WIFI_REGDB_TMP  := $(BK_WIFI_SCRIPTS)/.regulatory.db
+
+ifneq ($(wildcard $(BK_WIFI_SCRIPTS)/db2fw.py),)
+$(BK_WIFI_REGDB_C): $(BK_WIFI_REGDB_DB) $(BK_WIFI_SCRIPTS)/db2fw.py $(BK_WIFI_SCRIPTS)/bin2c.py $(BK_WIFI_SCRIPTS)/dbparse.py
+	@echo "REGDB: regenerating $(BK_WIFI_REGDB_C) from $(BK_WIFI_REGDB_DB)"
+	$(Q) python3 $(BK_WIFI_SCRIPTS)/db2fw.py $(BK_WIFI_REGDB_TMP) $(BK_WIFI_REGDB_DB)
+	$(Q) python3 $(BK_WIFI_SCRIPTS)/bin2c.py $(BK_WIFI_REGDB_TMP) $(BK_WIFI_REGDB_C)
+	$(Q) python3 $(BK_WIFI_SCRIPTS)/gen_regdb_xlsx.py $(BK_WIFI_REGDB_DB) $(BK_WIFI_REGDB_XLSX) || true
+	$(Q) rm -f $(BK_WIFI_REGDB_TMP)
+	$(Q) chown --reference=$(BK_WIFI_REGDB_DB) $(BK_WIFI_REGDB_C) $(BK_WIFI_REGDB_XLSX) 2>/dev/null || true
+
+# Attach the generated source as an extra prerequisite of its own object so the
+# pattern rule ($(COBJS): %.o: %.c) recompiles it whenever db.txt changes. This
+# only adds a prerequisite; the compile recipe still comes from the board Makefile.
+regdb_bin$(OBJEXT): $(BK_WIFI_REGDB_C)
+endif

@@ -34,7 +34,12 @@ static void bk_worker_task(void *arg)
 		/* have work to do. */
 		GLOBAL_INT_DISABLE();
 		work = list_entry(queue->work_list.next, struct bk_work, work_node);
-		list_del(&work->work_node);
+		/* Must re-init: bk_work_run() deletes the node again when the work
+		* is re-queued, and a plain list_del() leaves it pointing at its
+		* old neighbours. Replaying that stale unlink against the live list
+		* silently drops whichever work was queued in the meantime, while
+		* its semaphore token stays outstanding. */
+		list_del_init(&work->work_node);
 		queue->work_current = work;
 		work->exist = false;
 		GLOBAL_INT_RESTORE();
@@ -178,7 +183,7 @@ bk_err_t bk_work_cancel(struct bk_work *work)
 		return BK_WORKQUEUE_WORK_EXIST;
 	}
 
-	list_del(&work->work_node);
+	list_del_init(&work->work_node);
 	work->wq = NULL;
 	GLOBAL_INT_RESTORE();
 

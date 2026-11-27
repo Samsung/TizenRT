@@ -1458,6 +1458,7 @@ int ieee80211_freq_khz_to_channel(u32 freq);
 const char *regdom_flag_str(uint32_t channel_flags);
 enum nl80211_dfs_regions reg_get_dfs_region(struct wiphy *wiphy);
 bool rwnx_ieee80211_check_conn_instrument(const struct mac_ssid *ssid, const struct mac_addr *bssid);
+void rwnx_reg_update_max_txpower(struct mac_chan_op *chan);
 #endif // _RW_IEEE80211_H_
 // eof
 
